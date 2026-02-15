@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api } from "@/api";
 import type { Business } from "@/types/auth";
 import type { DashboardData } from "@/types/dashboard";
 

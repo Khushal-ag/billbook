@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, generateIdempotencyKey } from "@/lib/api";
+import { api, generateIdempotencyKey } from "@/api";
 import { buildQueryString } from "@/lib/utils";
 import type {
   Invoice,

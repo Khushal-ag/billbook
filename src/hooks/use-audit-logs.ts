@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api } from "@/api";
 import { buildQueryString } from "@/lib/utils";
 import type { AuditLog } from "@/types/audit-log";
 import type { PaginatedResponse } from "@/types/api";

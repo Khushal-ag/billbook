@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import type { SessionUser, LoginRequest, SignupRequest, AuthResponse } from "@/types/auth";
-import { setAccessToken, setRefreshToken, ApiClientError } from "@/lib/api";
+import { setAccessToken, setRefreshToken, ApiClientError } from "@/api";
 
 interface AuthState {
   user: SessionUser | null;

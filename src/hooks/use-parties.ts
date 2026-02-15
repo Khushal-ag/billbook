@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api } from "@/api";
 import { buildQueryString } from "@/lib/utils";
 import type { Party, CreatePartyRequest } from "@/types/party";
 import type { PaginatedResponse } from "@/types/api";

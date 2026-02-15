@@ -1,6 +1,8 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import type { ApiResponse } from "@/types/api";
 import { env } from "@/lib/env";
+import { getAccessToken, setAccessToken, getRefreshToken, setRefreshToken } from "./token";
+import { ApiClientError } from "./error";
 
 // ── Axios instance ──────────────────────────────────────
 
@@ -10,33 +12,14 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
-// ── Token management ────────────────────────────────────
-
-let accessToken: string | null = null;
-let refreshToken: string | null = null;
-let refreshPromise: Promise<string> | null = null;
-
-export function setAccessToken(token: string | null) {
-  accessToken = token;
-}
-
-export function getAccessToken() {
-  return accessToken;
-}
-
-export function setRefreshToken(token: string | null) {
-  refreshToken = token;
-}
-
-export function getRefreshToken() {
-  return refreshToken;
-}
-
 // ── Request interceptor ─────────────────────────────────
 
+let refreshPromise: Promise<string> | null = null;
+
 axiosInstance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
+  const token = getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
@@ -48,7 +31,7 @@ axiosInstance.interceptors.response.use(
   async (error: AxiosError<{ error?: string; details?: unknown }>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (error.response?.status === 401 && accessToken && !originalRequest._retry) {
+    if (error.response?.status === 401 && getAccessToken() && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
@@ -74,17 +57,19 @@ axiosInstance.interceptors.response.use(
 
 async function refreshAccessToken(): Promise<string> {
   if (refreshPromise) return refreshPromise;
-  if (!refreshToken) throw new Error("No refresh token");
+  const currentRefreshToken = getRefreshToken();
+  if (!currentRefreshToken) throw new Error("No refresh token");
 
   refreshPromise = axiosInstance
     .post<ApiResponse<{ tokens: { accessToken: string; refreshToken: string } }>>(
       "/auth/refresh-token",
-      { refreshToken },
+      { refreshToken: currentRefreshToken },
     )
     .then((res) => {
-      accessToken = res.data.data.tokens.accessToken;
-      refreshToken = res.data.data.tokens.refreshToken;
-      return res.data.data.tokens.accessToken;
+      const { accessToken, refreshToken } = res.data.data.tokens;
+      setAccessToken(accessToken);
+      setRefreshToken(refreshToken);
+      return accessToken;
     })
     .finally(() => {
       refreshPromise = null;
@@ -93,23 +78,9 @@ async function refreshAccessToken(): Promise<string> {
   return refreshPromise;
 }
 
-// ── Error class ─────────────────────────────────────────
-
-export class ApiClientError extends Error {
-  status: number;
-  details?: unknown;
-
-  constructor(message: string, status: number, details?: unknown) {
-    super(message);
-    this.name = "ApiClientError";
-    this.status = status;
-    this.details = details;
-  }
-}
-
-// ── HTTP methods ────────────────────────────────────────
+// ── HTTP helpers ────────────────────────────────────────
 // All methods return the raw API response { success, data, message }.
-// Callers should unwrap `.data` as needed.
+// Callers unwrap `.data` as needed.
 
 export const api = {
   get: <T>(path: string) => axiosInstance.get<ApiResponse<T>>(path).then((r) => r.data),
