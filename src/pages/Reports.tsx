@@ -19,7 +19,6 @@ export default function Reports() {
     setStartDate,
     setEndDate,
     error: dateRangeError,
-    isValid,
     validStartDate,
     validEndDate,
   } = useDateRange();

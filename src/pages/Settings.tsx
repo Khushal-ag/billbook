@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { useBusinessProfile, useUpdateBusinessProfile } from "@/hooks/use-business";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const profileSchema = z.object({
   name: z.string().trim().min(1, "Business name is required").max(200),
@@ -26,7 +26,6 @@ const profileSchema = z.object({
 type ProfileForm = z.infer<typeof profileSchema>;
 
 export default function Settings() {
-  const { toast } = useToast();
   const { data: business, isLoading } = useBusinessProfile();
   const updateProfile = useUpdateBusinessProfile();
 
@@ -54,12 +53,10 @@ export default function Settings() {
   const onSubmit = async (data: ProfileForm) => {
     try {
       await updateProfile.mutateAsync(data);
-      toast({ title: "Business profile updated" });
+      toast.success("Business profile updated");
     } catch (err) {
-      toast({
-        title: "Failed to update",
+      toast.error("Failed to update", {
         description: err instanceof Error ? err.message : "Please try again.",
-        variant: "destructive",
       });
     }
   };
