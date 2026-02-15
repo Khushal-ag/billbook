@@ -19,7 +19,7 @@ export default function DateRangePicker({
 }: DateRangePickerProps) {
   return (
     <>
-      <div className="flex flex-wrap items-end gap-3 mb-6">
+      <div className="mb-6 flex flex-wrap items-end gap-3">
         <div>
           <Label className="text-xs text-muted-foreground">From</Label>
           <Input

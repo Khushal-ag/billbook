@@ -16,9 +16,7 @@ export default function Products() {
 
   const products = data?.data || [];
   const filtered = products.filter(
-    (p) =>
-      !p.deletedAt &&
-      (!search || p.name.toLowerCase().includes(search.toLowerCase())),
+    (p) => !p.deletedAt && (!search || p.name.toLowerCase().includes(search.toLowerCase())),
   );
 
   return (
@@ -28,7 +26,7 @@ export default function Products() {
         description="Manage your inventory and service catalog"
         action={
           <Button>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Add Product
           </Button>
         }
@@ -38,7 +36,7 @@ export default function Products() {
         value={search}
         onChange={setSearch}
         placeholder="Search products..."
-        className="max-w-sm mb-4"
+        className="mb-4 max-w-sm"
       />
 
       <ErrorBanner error={error} fallbackMessage="Failed to load products" />
@@ -52,7 +50,7 @@ export default function Products() {
           description="Add your first product or service to start creating invoices."
           action={
             <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Add Product
             </Button>
           }
@@ -62,31 +60,21 @@ export default function Products() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/30">
-                <th className="text-left font-medium text-muted-foreground px-6 py-3">
-                  Name
-                </th>
-                <th className="text-left font-medium text-muted-foreground px-3 py-3">
-                  Type
-                </th>
-                <th className="text-left font-medium text-muted-foreground px-3 py-3">
-                  HSN/SAC
-                </th>
-                <th className="text-right font-medium text-muted-foreground px-3 py-3">
+                <th className="px-6 py-3 text-left font-medium text-muted-foreground">Name</th>
+                <th className="px-3 py-3 text-left font-medium text-muted-foreground">Type</th>
+                <th className="px-3 py-3 text-left font-medium text-muted-foreground">HSN/SAC</th>
+                <th className="px-3 py-3 text-right font-medium text-muted-foreground">
                   Selling Price
                 </th>
-                <th className="text-right font-medium text-muted-foreground px-3 py-3">
-                  Stock
-                </th>
-                <th className="text-right font-medium text-muted-foreground px-3 py-3">
-                  GST
-                </th>
+                <th className="px-3 py-3 text-right font-medium text-muted-foreground">Stock</th>
+                <th className="px-3 py-3 text-right font-medium text-muted-foreground">GST</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((p) => (
                 <tr
                   key={p.id}
-                  className="border-b last:border-0 hover:bg-muted/20 transition-colors cursor-pointer"
+                  className="cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/20"
                 >
                   <td className="px-6 py-3 font-medium">{p.name}</td>
                   <td className="px-3 py-3">
@@ -94,12 +82,8 @@ export default function Products() {
                       {p.type}
                     </Badge>
                   </td>
-                  <td className="px-3 py-3 text-muted-foreground">
-                    {p.hsnCode || "—"}
-                  </td>
-                  <td className="px-3 py-3 text-right">
-                    {formatCurrency(p.sellingPrice)}
-                  </td>
+                  <td className="px-3 py-3 text-muted-foreground">{p.hsnCode || "—"}</td>
+                  <td className="px-3 py-3 text-right">{formatCurrency(p.sellingPrice)}</td>
                   <td className="px-3 py-3 text-right">
                     {p.type === "STOCK" ? p.currentStock : "—"}
                   </td>

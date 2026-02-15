@@ -22,9 +22,7 @@ export default function Parties() {
 
   const parties = data?.data || [];
   const filtered = parties.filter(
-    (p) =>
-      !p.deletedAt &&
-      (!search || p.name.toLowerCase().includes(search.toLowerCase())),
+    (p) => !p.deletedAt && (!search || p.name.toLowerCase().includes(search.toLowerCase())),
   );
 
   return (
@@ -34,7 +32,7 @@ export default function Parties() {
         description="Customers and suppliers"
         action={
           <Button>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Add Party
           </Button>
         }
@@ -51,7 +49,7 @@ export default function Parties() {
         value={search}
         onChange={setSearch}
         placeholder="Search parties..."
-        className="max-w-sm mb-4"
+        className="mb-4 max-w-sm"
       />
 
       <ErrorBanner error={error} fallbackMessage="Failed to load parties" />
@@ -69,23 +67,15 @@ export default function Parties() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/30">
-                <th className="text-left font-medium text-muted-foreground px-6 py-3">
-                  Name
-                </th>
-                <th className="text-left font-medium text-muted-foreground px-3 py-3">
-                  Phone
-                </th>
-                <th className="text-left font-medium text-muted-foreground px-3 py-3">
-                  GSTIN
-                </th>
-                <th className="text-left font-medium text-muted-foreground px-3 py-3">
-                  State
-                </th>
-                <th className="text-right font-medium text-muted-foreground px-3 py-3">
+                <th className="px-6 py-3 text-left font-medium text-muted-foreground">Name</th>
+                <th className="px-3 py-3 text-left font-medium text-muted-foreground">Phone</th>
+                <th className="px-3 py-3 text-left font-medium text-muted-foreground">GSTIN</th>
+                <th className="px-3 py-3 text-left font-medium text-muted-foreground">State</th>
+                <th className="px-3 py-3 text-right font-medium text-muted-foreground">
                   Outstanding
                 </th>
                 {isOwner && (
-                  <th className="text-center font-medium text-muted-foreground px-3 py-3">
+                  <th className="px-3 py-3 text-center font-medium text-muted-foreground">
                     Actions
                   </th>
                 )}
@@ -95,18 +85,14 @@ export default function Parties() {
               {filtered.map((p) => (
                 <tr
                   key={p.id}
-                  className="border-b last:border-0 hover:bg-muted/20 transition-colors cursor-pointer"
+                  className="cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/20"
                 >
                   <td className="px-6 py-3 font-medium">{p.name}</td>
-                  <td className="px-3 py-3 text-muted-foreground">
-                    {p.phone || "—"}
-                  </td>
-                  <td className="px-3 py-3 text-muted-foreground font-mono text-xs">
+                  <td className="px-3 py-3 text-muted-foreground">{p.phone || "—"}</td>
+                  <td className="px-3 py-3 font-mono text-xs text-muted-foreground">
                     {p.gstin || "—"}
                   </td>
-                  <td className="px-3 py-3 text-muted-foreground">
-                    {p.state || "—"}
-                  </td>
+                  <td className="px-3 py-3 text-muted-foreground">{p.state || "—"}</td>
                   <td className="px-3 py-3 text-right font-medium">
                     {formatCurrency(p.outstandingBalance)}
                   </td>
@@ -118,9 +104,7 @@ export default function Parties() {
                         className="text-destructive hover:text-destructive"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (
-                            confirm(`Delete ${p.name}? This cannot be undone.`)
-                          ) {
+                          if (confirm(`Delete ${p.name}? This cannot be undone.`)) {
                             deleteParty.mutate(p.id);
                           }
                         }}

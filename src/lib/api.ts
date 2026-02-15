@@ -28,7 +28,7 @@ export function getRefreshToken() {
 
 async function apiFetch<T>(
   path: string,
-  options: RequestInit & { idempotencyKey?: string } = {}
+  options: RequestInit & { idempotencyKey?: string } = {},
 ): Promise<T> {
   const { idempotencyKey, ...fetchOptions } = options;
 
@@ -72,7 +72,7 @@ async function apiFetch<T>(
     throw new ApiClientError(
       errorBody.error || `Request failed (${response.status})`,
       response.status,
-      errorBody.details
+      errorBody.details,
     );
   }
 
@@ -92,7 +92,9 @@ async function refreshAccessToken(): Promise<string> {
   })
     .then(async (res) => {
       if (!res.ok) throw new Error("Refresh failed");
-      const json = (await res.json()) as ApiResponse<{ tokens: { accessToken: string; refreshToken: string } }>;
+      const json = (await res.json()) as ApiResponse<{
+        tokens: { accessToken: string; refreshToken: string };
+      }>;
       accessToken = json.data.tokens.accessToken;
       refreshToken = json.data.tokens.refreshToken;
       return json.data.tokens.accessToken;

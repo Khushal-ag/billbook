@@ -94,9 +94,7 @@ export function useStockLedger(productId: number | undefined) {
   return useQuery({
     queryKey: ["stock-ledger", productId],
     queryFn: async () => {
-      const res = await api.get<StockLedgerEntry[]>(
-        `/products/${productId}/ledger`,
-      );
+      const res = await api.get<StockLedgerEntry[]>(`/products/${productId}/ledger`);
       return res.data;
     },
     enabled: !!productId,

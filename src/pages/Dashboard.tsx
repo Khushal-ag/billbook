@@ -152,15 +152,15 @@ export default function Dashboard() {
       <div className="page-container animate-fade-in">
         <div className="page-header">
           <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-64 mt-2" />
+          <Skeleton className="mt-2 h-4 w-64" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <Skeleton key={i} className="h-28 rounded-xl" />
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <Skeleton className="h-72 lg:col-span-2 rounded-xl" />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <Skeleton className="h-72 rounded-xl lg:col-span-2" />
           <Skeleton className="h-72 rounded-xl" />
         </div>
       </div>
@@ -180,7 +180,7 @@ export default function Dashboard() {
       />
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Total Sales (This Month)"
           value={`₹${stats.totalSalesCurrentMonth}`}
@@ -204,7 +204,7 @@ export default function Dashboard() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -214,25 +214,15 @@ export default function Dashboard() {
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={chartData}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="hsl(220, 13%, 89%)"
-                />
-                <XAxis
-                  dataKey="month"
-                  tick={{ fontSize: 12 }}
-                  stroke="hsl(220, 10%, 46%)"
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 13%, 89%)" />
+                <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="hsl(220, 10%, 46%)" />
                 <YAxis
                   tick={{ fontSize: 12 }}
                   stroke="hsl(220, 10%, 46%)"
                   tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
                 />
                 <Tooltip
-                  formatter={(value: number) => [
-                    `₹${value.toLocaleString("en-IN")}`,
-                    "Sales",
-                  ]}
+                  formatter={(value: number) => [`₹${value.toLocaleString("en-IN")}`, "Sales"]}
                   contentStyle={{
                     borderRadius: 8,
                     border: "1px solid hsl(220,13%,89%)",
@@ -277,16 +267,13 @@ export default function Dashboard() {
                 <Tooltip contentStyle={{ borderRadius: 8, fontSize: 13 }} />
               </PieChart>
             </ResponsiveContainer>
-            <div className="flex gap-4 mt-2">
+            <div className="mt-2 flex gap-4">
               {pieData.map((s) => (
                 <div
                   key={s.name}
                   className="flex items-center gap-1.5 text-xs text-muted-foreground"
                 >
-                  <div
-                    className="h-2.5 w-2.5 rounded-full"
-                    style={{ backgroundColor: s.color }}
-                  />
+                  <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} />
                   {s.name} ({s.value})
                 </div>
               ))}
@@ -296,7 +283,7 @@ export default function Dashboard() {
       </div>
 
       {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -307,29 +294,21 @@ export default function Dashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-xs text-muted-foreground">
-                  <th className="text-left font-medium px-6 py-2.5">Invoice</th>
-                  <th className="text-left font-medium px-3 py-2.5">Party</th>
-                  <th className="text-right font-medium px-3 py-2.5">Amount</th>
-                  <th className="text-center font-medium px-3 py-2.5">
-                    Status
-                  </th>
+                  <th className="px-6 py-2.5 text-left font-medium">Invoice</th>
+                  <th className="px-3 py-2.5 text-left font-medium">Party</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Amount</th>
+                  <th className="px-3 py-2.5 text-center font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {stats.recentInvoices.map((inv) => (
                   <tr
                     key={inv.id}
-                    className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                    className="border-b transition-colors last:border-0 hover:bg-muted/30"
                   >
-                    <td className="px-6 py-3 font-medium">
-                      {inv.invoiceNumber}
-                    </td>
-                    <td className="px-3 py-3 text-muted-foreground">
-                      {inv.partyName}
-                    </td>
-                    <td className="px-3 py-3 text-right font-medium">
-                      ₹{inv.totalAmount}
-                    </td>
+                    <td className="px-6 py-3 font-medium">{inv.invoiceNumber}</td>
+                    <td className="px-3 py-3 text-muted-foreground">{inv.partyName}</td>
+                    <td className="px-3 py-3 text-right font-medium">₹{inv.totalAmount}</td>
                     <td className="px-3 py-3 text-center">
                       <StatusBadge status={inv.status} />
                     </td>
@@ -342,16 +321,14 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <AlertTriangle className="h-4 w-4 text-status-pending" />
               Low Stock Alerts
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {stats.lowStockProducts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No low stock alerts
-              </p>
+              <p className="text-sm text-muted-foreground">No low stock alerts</p>
             ) : (
               stats.lowStockProducts.map((p) => (
                 <div key={p.id} className="flex items-center justify-between">
@@ -369,20 +346,12 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-}) {
+function StatCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
     <div className="stat-card">
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3 flex items-center justify-between">
         <span className="stat-label">{label}</span>
-        <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
+        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-muted-foreground">
           {icon}
         </div>
       </div>

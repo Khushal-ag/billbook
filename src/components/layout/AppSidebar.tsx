@@ -52,29 +52,29 @@ export default function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
     return pathname.startsWith(path);
   };
 
-  const visibleItems = navItems.filter(
-    (item) => !item.ownerOnly || user?.role === "OWNER"
-  );
+  const visibleItems = navItems.filter((item) => !item.ownerOnly || user?.role === "OWNER");
 
   return (
     <aside
       className={cn(
-        "h-screen bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border transition-all duration-200 shrink-0",
-        collapsed ? "w-16" : "w-60"
+        "flex h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-200",
+        collapsed ? "w-16" : "w-60",
       )}
     >
       {/* Logo */}
-      <div className="h-14 flex items-center gap-2 px-4 shrink-0">
-        <div className="h-8 w-8 rounded-md bg-sidebar-primary flex items-center justify-center shrink-0">
+      <div className="flex h-14 shrink-0 items-center gap-2 px-4">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary">
           <FileText className="h-4 w-4 text-sidebar-primary-foreground" />
         </div>
-        {!collapsed && <span className="text-sm font-bold text-sidebar-primary-foreground">BillCraft</span>}
+        {!collapsed && (
+          <span className="text-sm font-bold text-sidebar-primary-foreground">BillCraft</span>
+        )}
       </div>
 
       <Separator className="bg-sidebar-border" />
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-2">
         {visibleItems.map((item) => (
           <Link
             key={item.path}
@@ -82,8 +82,8 @@ export default function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
               isActive(item.path)
-                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
             )}
             title={collapsed ? item.label : undefined}
           >
@@ -96,11 +96,11 @@ export default function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
       <Separator className="bg-sidebar-border" />
 
       {/* Footer */}
-      <div className="p-2 space-y-1 shrink-0">
+      <div className="shrink-0 space-y-1 p-2">
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          className="w-full justify-start text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
           onClick={logout}
           title="Logout"
         >
@@ -111,11 +111,13 @@ export default function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          className="w-full justify-start text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
           onClick={onToggle}
           title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <ChevronLeft className={cn("h-4 w-4 shrink-0 transition-transform", collapsed && "rotate-180")} />
+          <ChevronLeft
+            className={cn("h-4 w-4 shrink-0 transition-transform", collapsed && "rotate-180")}
+          />
           {!collapsed && <span className="ml-3">Collapse</span>}
         </Button>
       </div>

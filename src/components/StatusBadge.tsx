@@ -22,9 +22,9 @@ export default function StatusBadge({ status, className }: StatusBadgeProps) {
     <Badge
       variant="outline"
       className={cn(
-        "font-medium text-xs px-2 py-0.5",
+        "px-2 py-0.5 text-xs font-medium",
         statusStyles[status] || "bg-secondary text-secondary-foreground",
-        className
+        className,
       )}
     >
       {status}

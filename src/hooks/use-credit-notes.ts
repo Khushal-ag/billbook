@@ -4,18 +4,14 @@ import { buildQueryString } from "@/lib/utils";
 import type { CreditNote, CreateCreditNoteRequest } from "@/types/credit-note";
 import type { PaginatedResponse } from "@/types/api";
 
-export function useCreditNotes(
-  params: { page?: number; pageSize?: number } = {},
-) {
+export function useCreditNotes(params: { page?: number; pageSize?: number } = {}) {
   const { page = 1, pageSize = 20 } = params;
   const qs = buildQueryString({ page, pageSize });
 
   return useQuery({
     queryKey: ["credit-notes", page, pageSize],
     queryFn: async () => {
-      const res = await api.get<PaginatedResponse<CreditNote>>(
-        `/credit-notes?${qs}`,
-      );
+      const res = await api.get<PaginatedResponse<CreditNote>>(`/credit-notes?${qs}`);
       return res.data;
     },
   });

@@ -11,7 +11,7 @@ export default function AppLayout() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -22,9 +22,9 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen flex w-full bg-background">
+    <div className="flex min-h-screen w-full bg-background">
       <AppSidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
         <main className="flex-1 overflow-auto">
           <Outlet />

@@ -50,14 +50,14 @@ export default function Invoices() {
         description="Manage and track all your invoices"
         action={
           <Button>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             New Invoice
           </Button>
         }
       />
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <SearchInput
           value={search}
           onChange={setSearch}
@@ -72,7 +72,7 @@ export default function Invoices() {
           }}
         >
           <SelectTrigger className="w-[160px]">
-            <Filter className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+            <Filter className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -95,7 +95,7 @@ export default function Invoices() {
           description="Create your first invoice to get started with billing."
           action={
             <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               New Invoice
             </Button>
           }
@@ -106,25 +106,19 @@ export default function Invoices() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="text-left font-medium text-muted-foreground px-6 py-3">
+                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">
                     Invoice #
                   </th>
-                  <th className="text-left font-medium text-muted-foreground px-3 py-3">
-                    Party
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-3 py-3">
-                    Date
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-3 py-3">
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">Party</th>
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">Date</th>
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">
                     Due Date
                   </th>
-                  <th className="text-right font-medium text-muted-foreground px-3 py-3">
-                    Amount
-                  </th>
-                  <th className="text-right font-medium text-muted-foreground px-3 py-3">
+                  <th className="px-3 py-3 text-right font-medium text-muted-foreground">Amount</th>
+                  <th className="px-3 py-3 text-right font-medium text-muted-foreground">
                     Balance Due
                   </th>
-                  <th className="text-center font-medium text-muted-foreground px-3 py-3">
+                  <th className="px-3 py-3 text-center font-medium text-muted-foreground">
                     Status
                   </th>
                 </tr>
@@ -133,7 +127,7 @@ export default function Invoices() {
                 {filtered.map((inv) => (
                   <tr
                     key={inv.id}
-                    className="border-b last:border-0 hover:bg-muted/20 transition-colors cursor-pointer"
+                    className="cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/20"
                   >
                     <td className="px-6 py-3">
                       <Link
@@ -144,18 +138,10 @@ export default function Invoices() {
                       </Link>
                     </td>
                     <td className="px-3 py-3">{inv.partyName}</td>
-                    <td className="px-3 py-3 text-muted-foreground">
-                      {inv.invoiceDate}
-                    </td>
-                    <td className="px-3 py-3 text-muted-foreground">
-                      {inv.dueDate}
-                    </td>
-                    <td className="px-3 py-3 text-right font-medium">
-                      ₹{inv.totalAmount}
-                    </td>
-                    <td className="px-3 py-3 text-right font-medium">
-                      ₹{inv.balanceDue}
-                    </td>
+                    <td className="px-3 py-3 text-muted-foreground">{inv.invoiceDate}</td>
+                    <td className="px-3 py-3 text-muted-foreground">{inv.dueDate}</td>
+                    <td className="px-3 py-3 text-right font-medium">₹{inv.totalAmount}</td>
+                    <td className="px-3 py-3 text-right font-medium">₹{inv.balanceDue}</td>
                     <td className="px-3 py-3 text-center">
                       <StatusBadge status={inv.status} />
                     </td>

@@ -14,13 +14,7 @@ import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/TableSkeleton";
 import { useAuditLogs } from "@/hooks/use-audit-logs";
 
-const AUDIT_ACTIONS = [
-  "CREATE",
-  "UPDATE",
-  "DELETE",
-  "FINALIZE",
-  "CANCEL",
-] as const;
+const AUDIT_ACTIONS = ["CREATE", "UPDATE", "DELETE", "FINALIZE", "CANCEL"] as const;
 
 export default function AuditLogs() {
   const [page, setPage] = useState(1);
@@ -39,12 +33,9 @@ export default function AuditLogs() {
 
   return (
     <div className="page-container animate-fade-in">
-      <PageHeader
-        title="Audit Logs"
-        description="Track all actions performed in your business"
-      />
+      <PageHeader title="Audit Logs" description="Track all actions performed in your business" />
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
         <Select
           value={actionFilter}
           onValueChange={(v) => {
@@ -71,43 +62,32 @@ export default function AuditLogs() {
       {isLoading ? (
         <TableSkeleton rows={5} />
       ) : logs.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-8">
-          No audit logs found.
-        </p>
+        <p className="py-8 text-center text-sm text-muted-foreground">No audit logs found.</p>
       ) : (
         <>
           <div className="data-table-container">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="text-left font-medium text-muted-foreground px-6 py-3">
-                    Action
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-3 py-3">
+                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">Action</th>
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">
                     Resource
                   </th>
-                  <th className="text-left font-medium text-muted-foreground px-3 py-3">
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">
                     Resource ID
                   </th>
-                  <th className="text-left font-medium text-muted-foreground px-3 py-3">
-                    User
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-3 py-3">
-                    Role
-                  </th>
-                  <th className="text-left font-medium text-muted-foreground px-3 py-3">
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">User</th>
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">Role</th>
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">
                     Timestamp
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {logs.map((log) => (
-                  <tr
-                    key={log.id}
-                    className="border-b last:border-0 hover:bg-muted/20"
-                  >
+                  <tr key={log.id} className="border-b last:border-0 hover:bg-muted/20">
                     <td className="px-6 py-3">
-                      <Badge variant="secondary" className="text-xs font-mono">
+                      <Badge variant="secondary" className="font-mono text-xs">
                         {log.action}
                       </Badge>
                     </td>
@@ -116,23 +96,17 @@ export default function AuditLogs() {
                         {log.resourceType}
                       </Badge>
                     </td>
-                    <td className="px-3 py-3 text-accent font-medium">
-                      #{log.resourceId}
-                    </td>
-                    <td className="px-3 py-3 text-muted-foreground">
-                      {log.userName}
-                    </td>
+                    <td className="px-3 py-3 font-medium text-accent">#{log.resourceId}</td>
+                    <td className="px-3 py-3 text-muted-foreground">{log.userName}</td>
                     <td className="px-3 py-3">
                       <Badge
-                        variant={
-                          log.userRole === "OWNER" ? "default" : "secondary"
-                        }
+                        variant={log.userRole === "OWNER" ? "default" : "secondary"}
                         className="text-xs"
                       >
                         {log.userRole}
                       </Badge>
                     </td>
-                    <td className="px-3 py-3 text-muted-foreground text-xs">
+                    <td className="px-3 py-3 text-xs text-muted-foreground">
                       {new Date(log.createdAt).toLocaleString()}
                     </td>
                   </tr>

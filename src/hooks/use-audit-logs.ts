@@ -4,9 +4,7 @@ import { buildQueryString } from "@/lib/utils";
 import type { AuditLog } from "@/types/audit-log";
 import type { PaginatedResponse } from "@/types/api";
 
-export function useAuditLogs(
-  params: { page?: number; pageSize?: number; action?: string } = {},
-) {
+export function useAuditLogs(params: { page?: number; pageSize?: number; action?: string } = {}) {
   const { page = 1, pageSize = 20, action } = params;
   const qs = buildQueryString({ page, pageSize, action });
 

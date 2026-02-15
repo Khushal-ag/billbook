@@ -7,13 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 
@@ -65,14 +59,14 @@ export default function Signup() {
   return (
     <AuthLayout>
       <Card>
-        <CardHeader className="text-center pb-4">
+        <CardHeader className="pb-4 text-center">
           <CardTitle className="text-lg">Create your account</CardTitle>
           <CardDescription>Start managing your invoices today</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
-              <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+              <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -80,45 +74,24 @@ export default function Signup() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First name</Label>
-                <Input
-                  id="firstName"
-                  placeholder="John"
-                  {...register("firstName")}
-                />
+                <Input id="firstName" placeholder="John" {...register("firstName")} />
                 {errors.firstName && (
-                  <p className="text-xs text-destructive">
-                    {errors.firstName.message}
-                  </p>
+                  <p className="text-xs text-destructive">{errors.firstName.message}</p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last name</Label>
-                <Input
-                  id="lastName"
-                  placeholder="Doe"
-                  {...register("lastName")}
-                />
+                <Input id="lastName" placeholder="Doe" {...register("lastName")} />
                 {errors.lastName && (
-                  <p className="text-xs text-destructive">
-                    {errors.lastName.message}
-                  </p>
+                  <p className="text-xs text-destructive">{errors.lastName.message}</p>
                 )}
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@company.com"
-                {...register("email")}
-              />
-              {errors.email && (
-                <p className="text-xs text-destructive">
-                  {errors.email.message}
-                </p>
-              )}
+              <Input id="email" type="email" placeholder="you@company.com" {...register("email")} />
+              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -130,9 +103,7 @@ export default function Signup() {
                 {...register("password")}
               />
               {errors.password && (
-                <p className="text-xs text-destructive">
-                  {errors.password.message}
-                </p>
+                <p className="text-xs text-destructive">{errors.password.message}</p>
               )}
             </div>
 
@@ -144,25 +115,18 @@ export default function Signup() {
                 {...register("businessName")}
               />
               {errors.businessName && (
-                <p className="text-xs text-destructive">
-                  {errors.businessName.message}
-                </p>
+                <p className="text-xs text-destructive">{errors.businessName.message}</p>
               )}
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create account
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link
-                to="/login"
-                className="text-accent font-medium hover:underline"
-              >
+              <Link to="/login" className="font-medium text-accent hover:underline">
                 Sign in
               </Link>
             </div>

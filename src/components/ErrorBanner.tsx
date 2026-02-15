@@ -19,7 +19,7 @@ export default function ErrorBanner({
   return (
     <div
       className={cn(
-        "rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive mb-4 flex items-center gap-2",
+        "mb-4 flex items-center gap-2 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive",
         className,
       )}
     >

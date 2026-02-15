@@ -1,17 +1,5 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  type ReactNode,
-} from "react";
-import type {
-  SessionUser,
-  LoginRequest,
-  SignupRequest,
-  AuthResponse,
-} from "@/types/auth";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import type { SessionUser, LoginRequest, SignupRequest, AuthResponse } from "@/types/auth";
 import { setAccessToken, setRefreshToken, ApiClientError } from "@/lib/api";
 
 interface AuthState {
@@ -28,10 +16,7 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function toSessionUser(
-  auth: AuthResponse,
-  role: "OWNER" | "STAFF" = "OWNER",
-): SessionUser {
+function toSessionUser(auth: AuthResponse, role: "OWNER" | "STAFF" = "OWNER"): SessionUser {
   return {
     id: auth.user.id,
     email: auth.user.email,
@@ -146,9 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated, login, signup, logout }}
-    >
+    <AuthContext.Provider value={{ user, isLoading, isAuthenticated, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

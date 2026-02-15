@@ -8,34 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
-import {
-  useBusinessProfile,
-  useUpdateBusinessProfile,
-} from "@/hooks/use-business";
+import { useBusinessProfile, useUpdateBusinessProfile } from "@/hooks/use-business";
 import { useToast } from "@/hooks/use-toast";
 
 const profileSchema = z.object({
   name: z.string().trim().min(1, "Business name is required").max(200),
-  email: z
-    .string()
-    .trim()
-    .email("Invalid email")
-    .max(255)
-    .optional()
-    .or(z.literal("")),
+  email: z.string().trim().email("Invalid email").max(255).optional().or(z.literal("")),
   phone: z.string().trim().max(15).optional().or(z.literal("")),
-  gstin: z
-    .string()
-    .trim()
-    .length(15, "GSTIN must be 15 characters")
-    .optional()
-    .or(z.literal("")),
-  pan: z
-    .string()
-    .trim()
-    .length(10, "PAN must be 10 characters")
-    .optional()
-    .or(z.literal("")),
+  gstin: z.string().trim().length(15, "GSTIN must be 15 characters").optional().or(z.literal("")),
+  pan: z.string().trim().length(10, "PAN must be 10 characters").optional().or(z.literal("")),
   address: z.string().trim().max(500).optional().or(z.literal("")),
   city: z.string().trim().max(100).optional().or(z.literal("")),
   state: z.string().trim().max(100).optional().or(z.literal("")),
@@ -88,7 +69,7 @@ export default function Settings() {
       <div className="page-container animate-fade-in">
         <div className="page-header">
           <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-64 mt-2" />
+          <Skeleton className="mt-2 h-4 w-64" />
         </div>
         <Skeleton className="h-96 max-w-2xl rounded-xl" />
       </div>
@@ -113,19 +94,13 @@ export default function Settings() {
                 <div className="space-y-2">
                   <Label>Business Name</Label>
                   <Input {...register("name")} />
-                  {errors.name && (
-                    <p className="text-xs text-destructive">
-                      {errors.name.message}
-                    </p>
-                  )}
+                  {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label>Email</Label>
                   <Input type="email" {...register("email")} />
                   {errors.email && (
-                    <p className="text-xs text-destructive">
-                      {errors.email.message}
-                    </p>
+                    <p className="text-xs text-destructive">{errors.email.message}</p>
                   )}
                 </div>
               </div>
@@ -138,9 +113,7 @@ export default function Settings() {
                   <Label>GSTIN</Label>
                   <Input placeholder="22AAAAA0000A1Z5" {...register("gstin")} />
                   {errors.gstin && (
-                    <p className="text-xs text-destructive">
-                      {errors.gstin.message}
-                    </p>
+                    <p className="text-xs text-destructive">{errors.gstin.message}</p>
                   )}
                 </div>
               </div>
@@ -148,11 +121,7 @@ export default function Settings() {
                 <div className="space-y-2">
                   <Label>PAN</Label>
                   <Input placeholder="AAAAA0000A" {...register("pan")} />
-                  {errors.pan && (
-                    <p className="text-xs text-destructive">
-                      {errors.pan.message}
-                    </p>
-                  )}
+                  {errors.pan && <p className="text-xs text-destructive">{errors.pan.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label>Pincode</Label>
@@ -171,15 +140,9 @@ export default function Settings() {
               </div>
               <div className="space-y-2">
                 <Label>Address</Label>
-                <Input
-                  placeholder="Business address"
-                  {...register("address")}
-                />
+                <Input placeholder="Business address" {...register("address")} />
               </div>
-              <Button
-                type="submit"
-                disabled={isSubmitting || updateProfile.isPending}
-              >
+              <Button type="submit" disabled={isSubmitting || updateProfile.isPending}>
                 {(isSubmitting || updateProfile.isPending) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}

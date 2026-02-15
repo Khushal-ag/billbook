@@ -10,8 +10,7 @@ export function cn(...inputs: ClassValue[]) {
  * Handles comma-separated strings from the API.
  */
 export function formatCurrency(value: string | number): string {
-  const num =
-    typeof value === "string" ? parseFloat(value.replace(/,/g, "")) : value;
+  const num = typeof value === "string" ? parseFloat(value.replace(/,/g, "")) : value;
   if (isNaN(num)) return "₹0.00";
   return `₹${num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
@@ -26,9 +25,7 @@ export function buildQueryString(
     ([, v]) => v !== undefined && v !== null && v !== "",
   );
   if (entries.length === 0) return "";
-  return new URLSearchParams(
-    entries.map(([k, v]) => [k, String(v)]),
-  ).toString();
+  return new URLSearchParams(entries.map(([k, v]) => [k, String(v)])).toString();
 }
 
 /**

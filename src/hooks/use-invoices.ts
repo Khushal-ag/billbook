@@ -11,11 +11,7 @@ import type {
 } from "@/types/invoice";
 import type { PaginatedResponse } from "@/types/api";
 
-export function useInvoices(params: {
-  page?: number;
-  pageSize?: number;
-  status?: string;
-}) {
+export function useInvoices(params: { page?: number; pageSize?: number; status?: string }) {
   const { page = 1, pageSize = 20, status } = params;
   const qs = buildQueryString({
     page,
@@ -26,9 +22,7 @@ export function useInvoices(params: {
   return useQuery({
     queryKey: ["invoices", page, pageSize, status],
     queryFn: async () => {
-      const res = await api.get<PaginatedResponse<InvoiceSummary>>(
-        `/invoices?${qs}`,
-      );
+      const res = await api.get<PaginatedResponse<InvoiceSummary>>(`/invoices?${qs}`);
       return res.data;
     },
   });
@@ -49,11 +43,7 @@ export function useCreateInvoice() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: CreateInvoiceRequest) => {
-      const res = await api.post<Invoice>(
-        "/invoices",
-        data,
-        generateIdempotencyKey(),
-      );
+      const res = await api.post<Invoice>("/invoices", data, generateIdempotencyKey());
       return res.data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["invoices"] }),

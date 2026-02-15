@@ -109,14 +109,19 @@
     font-feature-settings: "cv11", "ss01";
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply tracking-tight font-semibold text-foreground;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-semibold tracking-tight text-foreground;
   }
 }
 
 @layer components {
   .page-container {
-    @apply p-6 lg:p-8 max-w-7xl mx-auto;
+    @apply mx-auto max-w-7xl p-6 lg:p-8;
   }
 
   .page-header {
@@ -132,7 +137,7 @@
   }
 
   .stat-card {
-    @apply bg-card border rounded-lg p-5;
+    @apply rounded-lg border bg-card p-5;
   }
 
   .stat-value {
@@ -144,6 +149,6 @@
   }
 
   .data-table-container {
-    @apply bg-card border rounded-lg overflow-hidden;
+    @apply overflow-hidden rounded-lg border bg-card;
   }
 }

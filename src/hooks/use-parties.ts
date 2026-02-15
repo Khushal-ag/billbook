@@ -4,9 +4,7 @@ import { buildQueryString } from "@/lib/utils";
 import type { Party, CreatePartyRequest } from "@/types/party";
 import type { PaginatedResponse } from "@/types/api";
 
-export function useParties(
-  params: { type?: string; page?: number; pageSize?: number } = {},
-) {
+export function useParties(params: { type?: string; page?: number; pageSize?: number } = {}) {
   const { type, page = 1, pageSize = 50 } = params;
   const qs = buildQueryString({ page, pageSize, type });
 
