@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 220 25% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 10%;
+
+    --primary: 220 70% 22%;
+    --primary-foreground: 220 20% 97%;
+
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 220 25% 10%;
+
+    --muted: 220 14% 93%;
+    --muted-foreground: 220 10% 46%;
+
+    --accent: 217 91% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 89%;
+    --input: 220 13% 89%;
+    --ring: 217 91% 55%;
+
+    --radius: 0.5rem;
+
+    /* Status colors */
+    --status-paid: 152 60% 40%;
+    --status-paid-bg: 152 60% 95%;
+    --status-pending: 38 92% 50%;
+    --status-pending-bg: 38 92% 95%;
+    --status-draft: 220 10% 54%;
+    --status-draft-bg: 220 14% 93%;
+    --status-overdue: 0 72% 51%;
+    --status-overdue-bg: 0 72% 96%;
+    --status-cancelled: 0 0% 55%;
+    --status-cancelled-bg: 0 0% 93%;
+    --status-final: 217 91% 55%;
+    --status-final-bg: 217 91% 95%;
+
+    /* Sidebar */
+    --sidebar-background: 220 70% 14%;
+    --sidebar-foreground: 220 20% 85%;
+    --sidebar-primary: 217 91% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 60% 20%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 220 50% 22%;
+    --sidebar-ring: 217 91% 55%;
+    --sidebar-muted: 220 30% 40%;
+
+    /* Chart colors */
+    --chart-1: 217 91% 55%;
+    --chart-2: 152 60% 40%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 280 65% 55%;
+    --chart-5: 0 72% 51%;
+  }
+
+  .dark {
+    --background: 220 25% 8%;
+    --foreground: 220 20% 93%;
+    --card: 220 25% 12%;
+    --card-foreground: 220 20% 93%;
+    --popover: 220 25% 12%;
+    --popover-foreground: 220 20% 93%;
+    --primary: 217 91% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 220 20% 93%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 15% 60%;
+    --accent: 217 91% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 217 91% 55%;
+    --sidebar-background: 220 30% 6%;
+    --sidebar-foreground: 220 20% 80%;
+    --sidebar-primary: 217 91% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 25% 14%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 220 25% 14%;
+    --sidebar-ring: 217 91% 55%;
+    --sidebar-muted: 220 15% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-semibold text-foreground;
+  }
+}
+
+@layer components {
+  .page-container {
+    @apply p-6 lg:p-8 max-w-7xl mx-auto;
+  }
+
+  .page-header {
+    @apply mb-6 flex flex-col gap-1;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold;
+  }
+
+  .page-description {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .stat-card {
+    @apply bg-card border rounded-lg p-5;
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold tracking-tight;
+  }
+
+  .stat-label {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .data-table-container {
+    @apply bg-card border rounded-lg overflow-hidden;
+  }
+}
