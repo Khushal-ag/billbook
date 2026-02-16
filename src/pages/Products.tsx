@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Package, Pencil, Trash2, ArrowLeftRight, ArrowLeft } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Plus, Package, Pencil, Trash2, ArrowLeftRight, ArrowLeft, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,8 +20,9 @@ import {
   useStockReport,
 } from "@/hooks/use-products";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useResourceAuditLogs } from "@/hooks/use-audit-logs";
 import { useDebounce } from "@/hooks/use-debounce";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Product } from "@/types/product";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
@@ -49,24 +50,26 @@ export default function Products() {
       (!debouncedSearch || p.name.toLowerCase().includes(debouncedSearch.toLowerCase())),
   );
 
-  const openCreate = () => {
+  const openCreate = useCallback(() => {
     setEditProduct(undefined);
     setDialogOpen(true);
-  };
-  const openEdit = (p: Product) => {
+  }, []);
+
+  const openEdit = useCallback((p: Product) => {
     setEditProduct(p);
     setDialogOpen(true);
-  };
-  const openStockAdjust = (p: Product) => {
+  }, []);
+
+  const openStockAdjust = useCallback((p: Product) => {
     setStockProduct({ id: p.id, name: p.name });
     setStockDialogOpen(true);
-  };
+  }, []);
 
-  const handleDelete = (p: Product) => {
+  const handleDelete = useCallback((p: Product) => {
     setDeleteConfirm({ open: true, product: p });
-  };
+  }, []);
 
-  const confirmDelete = () => {
+  const confirmDelete = useCallback(() => {
     if (!deleteConfirm.product) return;
     deleteMutation.mutate(deleteConfirm.product.id, {
       onSuccess: () => {
@@ -78,7 +81,7 @@ export default function Products() {
         setDeleteConfirm({ open: false, product: null });
       },
     });
-  };
+  }, [deleteConfirm.product, deleteMutation]);
 
   // If viewing a product detail (stock ledger)
   if (detailId) {
@@ -328,6 +331,7 @@ function StockReportTab() {
 function ProductDetailView({ id, onBack }: { id: number; onBack: () => void }) {
   const { data: product, isPending: productPending } = useProduct(id);
   const { data: ledger, isPending: ledgerPending } = useStockLedger(id);
+  const { data: auditData } = useResourceAuditLogs("PRODUCT", id);
   const isPending = productPending || ledgerPending;
 
   return (
@@ -437,6 +441,42 @@ function ProductDetailView({ id, onBack }: { id: number; onBack: () => void }) {
               )}
             </CardContent>
           </Card>
+
+          {/* Audit History */}
+          {auditData?.logs && auditData.logs.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <History className="h-4 w-4" />
+                  Audit History
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {auditData.logs.map((log) => (
+                    <div key={log.id} className="flex justify-between border-b pb-3 last:border-0">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={log.action === "DELETE" ? "destructive" : "default"}
+                            className="text-xs"
+                          >
+                            {log.action}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(log.createdAt)}
+                          </span>
+                        </div>
+                        {log.actorRole && (
+                          <p className="text-xs text-muted-foreground">By {log.actorRole}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
     </div>

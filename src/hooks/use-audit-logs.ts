@@ -6,7 +6,10 @@ import type { AuditLogListResponse } from "@/types/audit-log";
 export function useAuditLogs(params: { page?: number; pageSize?: number; action?: string } = {}) {
   const { page = 1, pageSize = 20, action } = params;
 
-  const qs = action ? `action=${encodeURIComponent(action)}` : buildQueryString({ page, pageSize });
+  // Build query string with both pagination and action filter
+  const qs = action
+    ? buildQueryString({ page, pageSize, action })
+    : buildQueryString({ page, pageSize });
 
   const endpoint = action ? `/audit/by-action?${qs}` : `/audit?${qs}`;
 
@@ -16,5 +19,16 @@ export function useAuditLogs(params: { page?: number; pageSize?: number; action?
       const res = await api.get<AuditLogListResponse>(endpoint);
       return res.data;
     },
+  });
+}
+
+export function useResourceAuditLogs(resourceType: string, resourceId: number | undefined) {
+  return useQuery({
+    queryKey: ["audit-logs", "resource", resourceType, resourceId],
+    queryFn: async () => {
+      const res = await api.get<AuditLogListResponse>(`/audit/${resourceType}/${resourceId}`);
+      return res.data;
+    },
+    enabled: !!resourceId,
   });
 }

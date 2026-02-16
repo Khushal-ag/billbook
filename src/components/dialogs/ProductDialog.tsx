@@ -62,7 +62,7 @@ export default function ProductDialog({ open, onOpenChange, product }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { type: "STOCK", unit: "nos" },
+    defaultValues: { type: "STOCK" },
   });
 
   const productType = watch("type");
@@ -75,7 +75,7 @@ export default function ProductDialog({ open, onOpenChange, product }: Props) {
           type: product.type,
           hsnCode: product.hsnCode ?? "",
           sacCode: product.sacCode ?? "",
-          unit: product.unit ?? "nos",
+          unit: product.unit ?? "",
           description: product.description ?? "",
           sellingPrice: product.sellingPrice ?? "",
           purchasePrice: product.purchasePrice ?? "",
@@ -87,7 +87,7 @@ export default function ProductDialog({ open, onOpenChange, product }: Props) {
         reset({
           name: "",
           type: "STOCK",
-          unit: "nos",
+          unit: "",
           hsnCode: "",
           sacCode: "",
           description: "",
@@ -172,16 +172,25 @@ export default function ProductDialog({ open, onOpenChange, product }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Unit</Label>
-              <Input placeholder="nos" {...register("unit")} />
+          {productType === "STOCK" && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Unit</Label>
+                <Input placeholder="nos" {...register("unit")} />
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea rows={1} {...register("description")} />
+              </div>
             </div>
+          )}
+
+          {productType === "SERVICE" && (
             <div className="space-y-2">
               <Label>Description</Label>
-              <Textarea rows={1} {...register("description")} />
+              <Textarea rows={2} {...register("description")} />
             </div>
-          </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -191,13 +200,15 @@ export default function ProductDialog({ open, onOpenChange, product }: Props) {
                 <p className="text-xs text-destructive">{errors.sellingPrice.message}</p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label>Purchase Price</Label>
-              <Input placeholder="499.99" {...register("purchasePrice")} />
-              {errors.purchasePrice && (
-                <p className="text-xs text-destructive">{errors.purchasePrice.message}</p>
-              )}
-            </div>
+            {productType === "STOCK" && (
+              <div className="space-y-2">
+                <Label>Purchase Price</Label>
+                <Input placeholder="499.99" {...register("purchasePrice")} />
+                {errors.purchasePrice && (
+                  <p className="text-xs text-destructive">{errors.purchasePrice.message}</p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-4">

@@ -32,3 +32,23 @@ export interface GSTItemizedRow {
   igst: string;
   totalTax: string;
 }
+
+export interface GSTExportData {
+  period: { startDate: string; endDate: string };
+  summary: {
+    totalCgst: string;
+    totalSgst: string;
+    totalIgst: string;
+  };
+  invoices: Array<{
+    invoiceNumber: string;
+    invoiceDate: string;
+    cgstAmount: string;
+    sgstAmount: string;
+    igstAmount: string;
+    totalTax: string;
+    totalAmount: string;
+  }>;
+  invoiceCount: number;
+  exportedAt: string;
+}

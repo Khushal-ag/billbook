@@ -99,6 +99,23 @@ export interface RecordPaymentRequest {
   notes?: string;
 }
 
+export interface FinalizeInvoiceResponse {
+  id: number;
+  invoiceNumber: string;
+  status: InvoiceStatus;
+  totalAmount: string;
+  paidAmount: string;
+  finalizedAt: string;
+}
+
+export interface StockCheckError {
+  code: string;
+  productId: number;
+  productName: string;
+  required: string;
+  available: string;
+}
+
 export interface InvoicePdfResponse {
   invoiceId: number;
   invoiceNumber: string;

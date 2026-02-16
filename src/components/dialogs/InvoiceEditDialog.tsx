@@ -111,15 +111,23 @@ export default function InvoiceEditDialog({ open, onOpenChange, invoice }: Props
               value={String(watch("partyId"))}
               onValueChange={(v) => setValue("partyId", Number(v))}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select party" />
+              <SelectTrigger disabled={parties.length === 0}>
+                <SelectValue
+                  placeholder={parties.length === 0 ? "No parties available" : "Select party"}
+                />
               </SelectTrigger>
               <SelectContent>
-                {parties.map((p) => (
-                  <SelectItem key={p.id} value={String(p.id)}>
-                    {p.name}
-                  </SelectItem>
-                ))}
+                {parties.length === 0 ? (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                    No parties available. Create a party first.
+                  </div>
+                ) : (
+                  parties.map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>
+                      {p.name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             {errors.partyId && <p className="text-xs text-destructive">{errors.partyId.message}</p>}

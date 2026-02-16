@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Filter, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import InvoiceDialog from "@/components/dialogs/InvoiceDialog";
 import { useInvoices } from "@/hooks/use-invoices";
 import { useDebounce } from "@/hooks/use-debounce";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 export default function Invoices() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
@@ -53,13 +53,32 @@ export default function Invoices() {
       )
     : invoices;
 
+  const handleStatusChange = useCallback((v: string) => {
+    setStatusFilter(v);
+    setPage(1);
+  }, []);
+
+  const handleStartDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setStartDate(e.target.value);
+    setPage(1);
+  }, []);
+
+  const handleEndDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEndDate(e.target.value);
+    setPage(1);
+  }, []);
+
+  const handleDialogOpen = useCallback(() => {
+    setDialogOpen(true);
+  }, []);
+
   return (
     <div className="page-container animate-fade-in">
       <PageHeader
         title="Invoices"
         description="Manage and track all your invoices"
         action={
-          <Button onClick={() => setDialogOpen(true)}>
+          <Button onClick={handleDialogOpen}>
             <Plus className="mr-2 h-4 w-4" />
             New Invoice
           </Button>
@@ -74,19 +93,13 @@ export default function Invoices() {
           placeholder="Search invoices..."
           className="flex-1"
         />
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => {
-            setStatusFilter(v);
-            setPage(1);
-          }}
-        >
+        <Select value={statusFilter} onValueChange={handleStatusChange}>
           <SelectTrigger className="w-[160px]">
             <Filter className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All Status</SelectItem>
+            <SelectItem value="ALL">All</SelectItem>
             <SelectItem value="DRAFT">Draft</SelectItem>
             <SelectItem value="FINAL">Final</SelectItem>
             <SelectItem value="CANCELLED">Cancelled</SelectItem>
@@ -99,10 +112,7 @@ export default function Invoices() {
               type="date"
               className="h-9 w-[140px]"
               value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setPage(1);
-              }}
+              onChange={handleStartDateChange}
             />
           </div>
           <div className="space-y-1">
@@ -111,10 +121,7 @@ export default function Invoices() {
               type="date"
               className="h-9 w-[140px]"
               value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setPage(1);
-              }}
+              onChange={handleEndDateChange}
             />
           </div>
         </div>
@@ -189,8 +196,10 @@ export default function Invoices() {
                       </Link>
                     </td>
                     <td className="px-3 py-3">{inv.partyName ?? "—"}</td>
-                    <td className="px-3 py-3 text-muted-foreground">{inv.invoiceDate}</td>
-                    <td className="px-3 py-3 text-muted-foreground">{inv.dueDate ?? "—"}</td>
+                    <td className="px-3 py-3 text-muted-foreground">
+                      {formatDate(inv.invoiceDate)}
+                    </td>
+                    <td className="px-3 py-3 text-muted-foreground">{formatDate(inv.dueDate)}</td>
                     <td className="px-3 py-3 text-right font-medium">
                       {formatCurrency(inv.totalAmount ?? "0")}
                     </td>

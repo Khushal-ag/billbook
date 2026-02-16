@@ -1,6 +1,11 @@
 export interface DashboardData {
   business: DashboardBusiness;
-  metrics: DashboardMetrics;
+  totalInvoices: number;
+  totalRevenue: number;
+  totalPaid: number;
+  totalOutstanding: number;
+  totalProducts: number;
+  totalParties: number;
   revenueByMonth: RevenueByMonth[];
   topProducts: TopProduct[];
   topCustomers: TopCustomer[];
@@ -14,15 +19,6 @@ export interface DashboardBusiness {
   name: string;
   gstin: string | null;
   taxType: string;
-}
-
-export interface DashboardMetrics {
-  totalInvoices: number;
-  totalRevenue: number;
-  totalPaid: number;
-  totalOutstanding: number;
-  totalProducts: number;
-  totalParties: number;
 }
 
 export interface RevenueByMonth {

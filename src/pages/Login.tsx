@@ -41,6 +41,13 @@ export default function Login() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (e.key === "Enter" && !isSubmitting) {
+      e.preventDefault();
+      handleSubmit(onSubmit)();
+    }
+  };
+
   return (
     <AuthLayout>
       <Card className="border-border/50 shadow-lg backdrop-blur-sm">
@@ -49,7 +56,7 @@ export default function Login() {
           <CardDescription>Sign in to your account to continue</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="space-y-4">
             {error && (
               <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
                 {error}

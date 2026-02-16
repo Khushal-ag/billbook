@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
-import type { GSTSummaryData, GSTItemizedData } from "@/types/tax";
+import type { GSTSummaryData, GSTItemizedData, GSTExportData } from "@/types/tax";
 
 export function useGSTSummary(startDate: string, endDate: string) {
   return useQuery({
@@ -32,7 +32,7 @@ export function useGSTExport(startDate: string, endDate: string, enabled = false
   return useQuery({
     queryKey: ["tax", "gst-export", startDate, endDate],
     queryFn: async () => {
-      const res = await api.get<unknown>(
+      const res = await api.get<GSTExportData>(
         `/tax/gst/export?startDate=${startDate}&endDate=${endDate}`,
       );
       return res.data;

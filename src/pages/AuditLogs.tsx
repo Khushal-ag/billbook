@@ -12,8 +12,55 @@ import TablePagination from "@/components/TablePagination";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import { useAuditLogs } from "@/hooks/use-audit-logs";
+import { formatDate } from "@/lib/utils";
 
 const AUDIT_ACTIONS = ["CREATE", "UPDATE", "DELETE", "FINALIZE", "CANCEL"] as const;
+
+function getActionBadgeVariant(
+  action: string,
+): "default" | "secondary" | "destructive" | "outline" {
+  switch (action) {
+    case "CREATE":
+      return "default";
+    case "UPDATE":
+      return "secondary";
+    case "DELETE":
+      return "destructive";
+    case "FINALIZE":
+      return "default";
+    case "CANCEL":
+      return "destructive";
+    default:
+      return "outline";
+  }
+}
+
+function getChangesDisplay(changes: Record<string, unknown> | null): string {
+  if (!changes) return "—";
+
+  // Handle nested changes object
+  const actualChanges =
+    typeof changes === "object" &&
+    changes !== null &&
+    "changes" in changes &&
+    typeof (changes as Record<string, unknown>).changes === "object"
+      ? ((changes as Record<string, unknown>).changes as Record<string, unknown>)
+      : changes;
+
+  const entries = Object.entries(actualChanges);
+  if (entries.length === 0) return "—";
+
+  // Show key: value pairs for first 2 items
+  return (
+    entries
+      .slice(0, 2)
+      .map(([k, v]) => {
+        const displayValue = typeof v === "string" && v.length > 20 ? v.slice(0, 20) + "..." : v;
+        return `${k}: ${displayValue}`;
+      })
+      .join(" • ") + (entries.length > 2 ? ` • +${entries.length - 2} more` : "")
+  );
+}
 
 export default function AuditLogs() {
   const [page, setPage] = useState(1);
@@ -68,25 +115,29 @@ export default function AuditLogs() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">Action</th>
+                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">
+                    Timestamp
+                  </th>
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">Action</th>
                   <th className="px-3 py-3 text-left font-medium text-muted-foreground">
                     Resource
                   </th>
-                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">
-                    Resource ID
-                  </th>
-                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">User</th>
+                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">Changes</th>
                   <th className="px-3 py-3 text-left font-medium text-muted-foreground">Role</th>
-                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">
-                    Timestamp
-                  </th>
                 </tr>
               </thead>
               <tbody>
                 {logs.map((log) => (
                   <tr key={log.id} className="border-b last:border-0 hover:bg-muted/20">
+                    <td className="px-6 py-3 text-xs text-muted-foreground">
+                      {" "}
+                      {formatDate(log.createdAt)}
+                    </td>
                     <td className="px-6 py-3">
-                      <Badge variant="secondary" className="font-mono text-xs">
+                      <Badge
+                        variant={getActionBadgeVariant(log.action)}
+                        className="font-mono text-xs"
+                      >
                         {log.action}
                       </Badge>
                     </td>
@@ -94,12 +145,12 @@ export default function AuditLogs() {
                       <Badge variant="outline" className="text-xs">
                         {log.resourceType}
                       </Badge>
+                      {log.resourceId != null && (
+                        <span className="ml-2 font-medium text-accent">#{log.resourceId}</span>
+                      )}
                     </td>
-                    <td className="px-3 py-3 font-medium text-accent">
-                      {log.resourceId != null ? `#${log.resourceId}` : "—"}
-                    </td>
-                    <td className="px-3 py-3 text-muted-foreground">
-                      {log.actorUserId != null ? `User #${log.actorUserId}` : "—"}
+                    <td className="px-3 py-3 text-xs text-muted-foreground">
+                      {getChangesDisplay(log.changes)}
                     </td>
                     <td className="px-3 py-3">
                       <Badge
@@ -108,9 +159,6 @@ export default function AuditLogs() {
                       >
                         {log.actorRole ?? "—"}
                       </Badge>
-                    </td>
-                    <td className="px-3 py-3 text-xs text-muted-foreground">
-                      {new Date(log.createdAt).toLocaleString()}
                     </td>
                   </tr>
                 ))}

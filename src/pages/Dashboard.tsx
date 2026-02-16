@@ -88,37 +88,37 @@ export default function Dashboard() {
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <StatCard
               label="Total Invoices"
-              value={String(dashboard.metrics.totalInvoices)}
+              value={String(dashboard.totalInvoices)}
               icon={<FileText className="h-4 w-4" />}
               href="/invoices"
             />
             <StatCard
               label="Total Revenue"
-              value={formatCurrency(dashboard.metrics.totalRevenue)}
+              value={formatCurrency(dashboard.totalRevenue)}
               icon={<IndianRupee className="h-4 w-4" />}
               href="/reports"
             />
             <StatCard
               label="Total Paid"
-              value={formatCurrency(dashboard.metrics.totalPaid)}
+              value={formatCurrency(dashboard.totalPaid)}
               icon={<TrendingUp className="h-4 w-4" />}
               variant="success"
             />
             <StatCard
               label="Outstanding"
-              value={formatCurrency(dashboard.metrics.totalOutstanding)}
+              value={formatCurrency(dashboard.totalOutstanding)}
               icon={<AlertCircle className="h-4 w-4" />}
               variant="warning"
             />
             <StatCard
               label="Products"
-              value={String(dashboard.metrics.totalProducts)}
+              value={String(dashboard.totalProducts)}
               icon={<Package className="h-4 w-4" />}
               href="/products"
             />
             <StatCard
               label="Parties"
-              value={String(dashboard.metrics.totalParties)}
+              value={String(dashboard.totalParties)}
               icon={<Users className="h-4 w-4" />}
               href="/parties"
             />

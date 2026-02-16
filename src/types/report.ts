@@ -2,30 +2,41 @@ import type { InvoiceStatus } from "./invoice";
 
 export interface SalesReportData {
   period: { startDate: string; endDate: string };
-  totalAmount: string;
-  totalTax: string;
-  invoiceCount: number;
-  data: SalesReportRow[];
+  sales: SalesReportRow[];
+  summary: {
+    totalInvoices: number;
+    totalAmount: string;
+    totalTax: string;
+    totalPaid: string;
+    totalOutstanding: string;
+  };
 }
 
 export interface SalesReportRow {
-  invoiceId: number;
+  date: string;
   invoiceNumber: string;
-  invoiceDate: string;
   partyName: string;
-  subTotal: string;
-  taxAmount: string;
   totalAmount: string;
+  totalTax: string;
+  paidAmount: string;
+  outstanding: string;
   status: InvoiceStatus;
 }
 
 export interface PartyOutstandingData {
-  data: PartyOutstandingRow[];
+  parties: PartyOutstandingRow[];
+  summary: {
+    totalParties: number;
+    totalInvoiced: string;
+    totalPaid: string;
+    totalOutstanding: string;
+  };
 }
 
 export interface PartyOutstandingRow {
   partyId: number;
   partyName: string;
+  type: string;
   totalInvoiced: string;
   totalPaid: string;
   outstanding: string;
@@ -33,14 +44,21 @@ export interface PartyOutstandingRow {
 
 export interface ProductSalesData {
   period: { startDate: string; endDate: string };
-  data: ProductSalesRow[];
+  products: ProductSalesRow[];
+  summary: {
+    totalProducts: number;
+    totalQuantity: string;
+    totalAmount: string;
+  };
 }
 
 export interface ProductSalesRow {
   productId: number;
   productName: string;
-  quantitySold: string;
+  unit: string;
+  totalQuantity: string;
   totalAmount: string;
+  avgPrice: string;
 }
 
 export interface ExportData {
@@ -48,6 +66,21 @@ export interface ExportData {
   exportedAt: string;
   period: { startDate: string; endDate: string };
   recordCount: number;
-  data: unknown[];
-  summary: { totalAmount: string; totalTax: string };
+  data: Array<{
+    date: string;
+    invoiceNumber: string;
+    partyName: string;
+    totalAmount: string;
+    totalTax: string;
+    paidAmount: string;
+    outstanding: string;
+    status: string;
+  }>;
+  summary: {
+    totalInvoices: number;
+    totalAmount: string;
+    totalTax: string;
+    totalPaid: string;
+    totalOutstanding: string;
+  };
 }

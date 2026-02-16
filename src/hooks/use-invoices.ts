@@ -9,6 +9,7 @@ import type {
   UpdateInvoiceRequest,
   RecordPaymentRequest,
   InvoicePdfResponse,
+  FinalizeInvoiceResponse,
   Payment,
 } from "@/types/invoice";
 
@@ -77,7 +78,7 @@ export function useFinalizeInvoice() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const res = await api.post<Invoice>(
+      const res = await api.post<FinalizeInvoiceResponse>(
         `/invoices/${id}/finalize`,
         undefined,
         generateIdempotencyKey(),

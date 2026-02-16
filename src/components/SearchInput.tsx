@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -9,7 +10,7 @@ interface SearchInputProps {
   className?: string;
 }
 
-export default function SearchInput({
+const SearchInput = memo(function SearchInput({
   value,
   onChange,
   placeholder = "Search...",
@@ -26,4 +27,6 @@ export default function SearchInput({
       />
     </div>
   );
-}
+});
+
+export default SearchInput;

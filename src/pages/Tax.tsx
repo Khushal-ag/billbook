@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,7 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import DateRangePicker from "@/components/DateRangePicker";
 import { useGSTSummary, useGSTItemized, useGSTExport } from "@/hooks/use-tax";
 import { useDateRange } from "@/hooks/use-date-range";
-import { downloadJSON } from "@/lib/utils";
+import { generateGSTReportHTML, downloadHTML, formatMonthYear, formatDate } from "@/lib/utils";
 
 export default function Tax() {
   const {
@@ -36,11 +36,14 @@ export default function Tax() {
     exportRequested,
   );
 
-  // When export data arrives, download it
-  if (exportData && exportRequested) {
-    downloadJSON(exportData, `gst-export-${startDate}-${endDate}.json`);
-    setExportRequested(false);
-  }
+  // Handle export download when data arrives
+  useEffect(() => {
+    if (exportData && exportRequested) {
+      const htmlContent = generateGSTReportHTML(exportData);
+      downloadHTML(htmlContent, `gst-report-${startDate}-${endDate}.html`);
+      setExportRequested(false);
+    }
+  }, [exportData, exportRequested, startDate, endDate]);
 
   const handleExport = () => {
     if (!validStartDate || !validEndDate) return;
@@ -77,7 +80,7 @@ export default function Tax() {
         error={dateRangeError}
       />
 
-      <Tabs defaultValue="summary">
+      <Tabs defaultValue="summary" className="mt-6">
         <TabsList className="mb-4">
           <TabsTrigger value="summary">Monthly Summary</TabsTrigger>
           <TabsTrigger value="itemized">Itemized</TabsTrigger>
@@ -118,7 +121,7 @@ export default function Tax() {
                   <tbody>
                     {(gstSummary.monthlyBreakdown ?? []).map((row) => (
                       <tr key={row.month} className="border-b last:border-0 hover:bg-muted/20">
-                        <td className="px-6 py-3 font-medium">{row.month}</td>
+                        <td className="px-6 py-3 font-medium">{formatMonthYear(row.month)}</td>
                         <td className="px-3 py-3 text-right">₹{row.cgst}</td>
                         <td className="px-3 py-3 text-right">₹{row.sgst}</td>
                         <td className="px-3 py-3 text-right">₹{row.igst}</td>
@@ -176,7 +179,9 @@ export default function Tax() {
                     <tr key={row.invoiceId} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="px-6 py-3 font-medium text-accent">{row.invoiceNumber}</td>
                       <td className="px-3 py-3">{row.partyName}</td>
-                      <td className="px-3 py-3 text-muted-foreground">{row.invoiceDate}</td>
+                      <td className="px-3 py-3 text-muted-foreground">
+                        {formatDate(row.invoiceDate)}
+                      </td>
                       <td className="px-3 py-3 text-right">₹{row.taxableAmount}</td>
                       <td className="px-3 py-3 text-right">₹{row.cgst}</td>
                       <td className="px-3 py-3 text-right">₹{row.sgst}</td>

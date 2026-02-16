@@ -103,15 +103,23 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
               value={String(watch("invoiceId"))}
               onValueChange={(v) => setValue("invoiceId", Number(v))}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select invoice" />
+              <SelectTrigger disabled={invoices.length === 0}>
+                <SelectValue
+                  placeholder={invoices.length === 0 ? "No invoices available" : "Select invoice"}
+                />
               </SelectTrigger>
               <SelectContent>
-                {invoices.map((inv) => (
-                  <SelectItem key={inv.id} value={String(inv.id)}>
-                    {inv.invoiceNumber} — {inv.partyName ?? `Party #${inv.partyId}`}
-                  </SelectItem>
-                ))}
+                {invoices.length === 0 ? (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                    No finalized invoices available. Create and finalize an invoice first.
+                  </div>
+                ) : (
+                  invoices.map((inv) => (
+                    <SelectItem key={inv.id} value={String(inv.id)}>
+                      {inv.invoiceNumber} — {inv.partyName ?? `Party #${inv.partyId}`}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             {errors.invoiceId && (

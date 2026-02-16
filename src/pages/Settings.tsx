@@ -101,7 +101,7 @@ export default function Settings() {
         description="Manage your business profile and preferences"
       />
 
-      <div className="max-w-2xl space-y-6">
+      <div className="mx-auto max-w-2xl space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Business Information</CardTitle>

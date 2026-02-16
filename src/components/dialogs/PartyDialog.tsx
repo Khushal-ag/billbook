@@ -178,6 +178,7 @@ export default function PartyDialog({
             <div className="space-y-2">
               <Label>GSTIN</Label>
               <Input placeholder="22AAAAA0000A1Z5" {...register("gstin")} />
+              {errors.gstin && <p className="text-xs text-destructive">{errors.gstin.message}</p>}
             </div>
             <div className="space-y-2">
               <Label>Opening Balance</Label>

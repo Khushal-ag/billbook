@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import DateRangePicker from "@/components/DateRangePicker";
+import PageHeader from "@/components/PageHeader";
 import {
   useSalesReport,
   usePartyOutstandingReport,
@@ -12,7 +13,7 @@ import {
   useSalesExport,
 } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
-import { downloadJSON } from "@/lib/utils";
+import { generateSalesReportHTML, downloadHTML, formatDate } from "@/lib/utils";
 
 export default function Reports() {
   const {
@@ -39,11 +40,14 @@ export default function Reports() {
     exportRequested,
   );
 
-  // When export data arrives, download it
-  if (exportData && exportRequested) {
-    downloadJSON(exportData, `sales-export-${startDate}-${endDate}.json`);
-    setExportRequested(false);
-  }
+  // Handle export download when data arrives
+  useEffect(() => {
+    if (exportData && exportRequested) {
+      const htmlContent = generateSalesReportHTML(exportData);
+      downloadHTML(htmlContent, `sales-report-${startDate}-${endDate}.html`);
+      setExportRequested(false);
+    }
+  }, [exportData, exportRequested, startDate, endDate]);
 
   const handleExport = () => {
     if (!validStartDate || !validEndDate) return;
@@ -52,12 +56,27 @@ export default function Reports() {
 
   return (
     <div className="page-container animate-fade-in">
-      <div className="page-header">
-        <h1 className="page-title">Reports</h1>
-        <p className="page-description">Sales, outstanding, and product reports</p>
-      </div>
+      <PageHeader
+        title="Reports"
+        description="Sales, outstanding, and product reports"
+        action={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            disabled={!validStartDate || !validEndDate || exportFetching}
+          >
+            {exportFetching ? (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-3.5 w-3.5" />
+            )}
+            Export
+          </Button>
+        }
+      />
 
-      <div className="mb-6 flex flex-wrap items-end gap-3">
+      <div className="mb-6">
         <DateRangePicker
           startDate={startDate}
           endDate={endDate}
@@ -65,19 +84,6 @@ export default function Reports() {
           onEndDateChange={setEndDate}
           error={dateRangeError}
         />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExport}
-          disabled={!validStartDate || !validEndDate || exportFetching}
-        >
-          {exportFetching ? (
-            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Download className="mr-2 h-3.5 w-3.5" />
-          )}
-          Export
-        </Button>
       </div>
 
       <Tabs defaultValue="sales">
@@ -94,12 +100,12 @@ export default function Reports() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Sales Report — ₹{salesData.totalAmount ?? "0"} total,{" "}
-                  {salesData.invoiceCount ?? 0} invoices
+                  Sales Report — ₹{salesData.summary?.totalAmount ?? "0"} total,{" "}
+                  {salesData.summary?.totalInvoices ?? 0} invoices
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {(salesData.data ?? []).length > 0 ? (
+                {(salesData.sales ?? []).length > 0 ? (
                   <div className="data-table-container">
                     <table className="w-full text-sm">
                       <thead>
@@ -125,18 +131,22 @@ export default function Reports() {
                         </tr>
                       </thead>
                       <tbody>
-                        {(salesData.data ?? []).map((row) => (
+                        {(salesData.sales ?? []).map((row) => (
                           <tr
-                            key={row.invoiceId}
+                            key={row.invoiceNumber}
                             className="border-b last:border-0 hover:bg-muted/20"
                           >
                             <td className="px-6 py-3 font-medium text-accent">
                               {row.invoiceNumber}
                             </td>
                             <td className="px-3 py-3">{row.partyName}</td>
-                            <td className="px-3 py-3 text-muted-foreground">{row.invoiceDate}</td>
-                            <td className="px-3 py-3 text-right">₹{row.subTotal}</td>
-                            <td className="px-3 py-3 text-right">₹{row.taxAmount}</td>
+                            <td className="px-3 py-3 text-muted-foreground">
+                              {formatDate(row.date)}
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              ₹{parseFloat(row.totalAmount) - parseFloat(row.totalTax)}
+                            </td>
+                            <td className="px-3 py-3 text-right">₹{row.totalTax}</td>
                             <td className="px-6 py-3 text-right font-medium">₹{row.totalAmount}</td>
                           </tr>
                         ))}
@@ -160,7 +170,7 @@ export default function Reports() {
         <TabsContent value="outstanding">
           {outstandingPending ? (
             <ReportTabSkeleton height="h-60" />
-          ) : outstandingData && (outstandingData.data ?? []).length > 0 ? (
+          ) : outstandingData && (outstandingData.parties ?? []).length > 0 ? (
             <div className="data-table-container">
               <table className="w-full text-sm">
                 <thead>
@@ -176,7 +186,7 @@ export default function Reports() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(outstandingData.data ?? []).map((p) => (
+                  {(outstandingData.parties ?? []).map((p) => (
                     <tr key={p.partyId} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="px-6 py-3 font-medium">{p.partyName}</td>
                       <td className="px-3 py-3 text-right">₹{p.totalInvoiced}</td>
@@ -195,7 +205,7 @@ export default function Reports() {
         <TabsContent value="product-sales">
           {productSalesPending ? (
             <ReportTabSkeleton height="h-60" />
-          ) : productSalesData && (productSalesData.data ?? []).length > 0 ? (
+          ) : productSalesData && (productSalesData.products ?? []).length > 0 ? (
             <div className="data-table-container">
               <table className="w-full text-sm">
                 <thead>
@@ -212,10 +222,10 @@ export default function Reports() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(productSalesData.data ?? []).map((row) => (
+                  {(productSalesData.products ?? []).map((row) => (
                     <tr key={row.productId} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="px-6 py-3 font-medium">{row.productName}</td>
-                      <td className="px-3 py-3 text-right">{row.quantitySold}</td>
+                      <td className="px-3 py-3 text-right">{row.totalQuantity}</td>
                       <td className="px-6 py-3 text-right font-medium">₹{row.totalAmount}</td>
                     </tr>
                   ))}

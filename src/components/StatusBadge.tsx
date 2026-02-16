@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { InvoiceStatus } from "@/types/invoice";
 import type { CreditNoteStatus } from "@/types/credit-note";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +18,7 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-export default function StatusBadge({ status, className }: StatusBadgeProps) {
+const StatusBadge = memo(function StatusBadge({ status, className }: StatusBadgeProps) {
   return (
     <Badge
       variant="outline"
@@ -30,4 +31,6 @@ export default function StatusBadge({ status, className }: StatusBadgeProps) {
       {status}
     </Badge>
   );
-}
+});
+
+export default StatusBadge;
