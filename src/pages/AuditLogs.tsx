@@ -10,7 +10,7 @@ import {
 import ErrorBanner from "@/components/ErrorBanner";
 import TablePagination from "@/components/TablePagination";
 import PageHeader from "@/components/PageHeader";
-import TableSkeleton from "@/components/TableSkeleton";
+import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import { useAuditLogs } from "@/hooks/use-audit-logs";
 
 const AUDIT_ACTIONS = ["CREATE", "UPDATE", "DELETE", "FINALIZE", "CANCEL"] as const;

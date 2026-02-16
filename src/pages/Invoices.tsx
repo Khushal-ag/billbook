@@ -17,7 +17,7 @@ import ErrorBanner from "@/components/ErrorBanner";
 import TablePagination from "@/components/TablePagination";
 import SearchInput from "@/components/SearchInput";
 import PageHeader from "@/components/PageHeader";
-import TableSkeleton from "@/components/TableSkeleton";
+import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import InvoiceDialog from "@/components/dialogs/InvoiceDialog";
 import { useInvoices } from "@/hooks/use-invoices";
 import { formatCurrency } from "@/lib/utils";

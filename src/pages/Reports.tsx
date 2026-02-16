@@ -3,7 +3,7 @@ import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import DateRangePicker from "@/components/DateRangePicker";
 import {
   useSalesReport,
@@ -89,7 +89,7 @@ export default function Reports() {
 
         <TabsContent value="sales">
           {salesLoading ? (
-            <Skeleton className="h-80 rounded-xl" />
+            <ReportTabSkeleton height="h-80" />
           ) : salesData ? (
             <Card>
               <CardHeader className="pb-2">
@@ -159,7 +159,7 @@ export default function Reports() {
 
         <TabsContent value="outstanding">
           {outstandingLoading ? (
-            <Skeleton className="h-60 rounded-xl" />
+            <ReportTabSkeleton height="h-60" />
           ) : outstandingData && (outstandingData.data ?? []).length > 0 ? (
             <div className="data-table-container">
               <table className="w-full text-sm">
@@ -194,7 +194,7 @@ export default function Reports() {
 
         <TabsContent value="product-sales">
           {productSalesLoading ? (
-            <Skeleton className="h-60 rounded-xl" />
+            <ReportTabSkeleton height="h-60" />
           ) : productSalesData && (productSalesData.data ?? []).length > 0 ? (
             <div className="data-table-container">
               <table className="w-full text-sm">

@@ -24,34 +24,30 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useCreateInvoice } from "@/hooks/use-invoices";
 import { useParties } from "@/hooks/use-parties";
 import { useProducts } from "@/hooks/use-products";
-import { toast } from "sonner";
+import {
+  quantityString,
+  priceString,
+  requiredPriceString,
+  percentString,
+  dateString,
+  optionalString,
+} from "@/lib/validation-schemas";
+import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 
 const itemSchema = z.object({
   productId: z.coerce.number().min(1, "Select a product"),
-  quantity: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid quantity"),
-  unitPrice: z.string().regex(/^[0-9]+(\.[0-9]{1,2})?$/, "Invalid price"),
-  discountPercent: z
-    .string()
-    .regex(/^$|^\d+(\.\d{1,2})?$/, "Invalid %")
-    .optional()
-    .or(z.literal("")),
+  quantity: quantityString(),
+  unitPrice: requiredPriceString,
+  discountPercent: percentString,
 });
 
 const schema = z.object({
   partyId: z.coerce.number().min(1, "Select a party"),
-  invoiceDate: z.string().min(1, "Required"),
-  dueDate: z.string().optional().or(z.literal("")),
-  notes: z.string().optional().or(z.literal("")),
-  discountAmount: z
-    .string()
-    .regex(/^$|^[0-9]+(\.[0-9]{1,2})?$/, "Invalid amount")
-    .optional()
-    .or(z.literal("")),
-  discountPercent: z
-    .string()
-    .regex(/^$|^\d+(\.\d{1,2})?$/, "Invalid %")
-    .optional()
-    .or(z.literal("")),
+  invoiceDate: dateString,
+  dueDate: optionalString,
+  notes: optionalString,
+  discountAmount: priceString,
+  discountPercent: percentString,
   items: z.array(itemSchema).min(1, "At least one item is required"),
 });
 
@@ -130,12 +126,10 @@ export default function InvoiceDialog({ open, onOpenChange }: Props) {
     };
     try {
       await createMutation.mutateAsync(payload);
-      toast.success("Invoice created");
+      showSuccessToast("Invoice created");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Failed to create invoice", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
+      showErrorToast(err, "Failed to create invoice");
     }
   };
 

@@ -24,12 +24,13 @@ import {
 import { Loader2 } from "lucide-react";
 import { useCreateCreditNote } from "@/hooks/use-credit-notes";
 import { useInvoices } from "@/hooks/use-invoices";
-import { toast } from "sonner";
+import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
+import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 
 const schema = z.object({
   invoiceId: z.coerce.number().min(1, "Select an invoice"),
-  amount: z.string().regex(/^[0-9]+(\.[0-9]{1,2})?$/, "Enter a valid amount"),
-  reason: z.string().optional().or(z.literal("")),
+  amount: requiredPriceString,
+  reason: optionalString,
   affectsInventory: z.boolean().optional(),
 });
 
@@ -82,12 +83,10 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
         reason: data.reason || undefined,
         affectsInventory: data.affectsInventory,
       });
-      toast.success("Credit note created");
+      showSuccessToast("Credit note created");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Failed to create credit note", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
+      showErrorToast(err, "Failed to create credit note");
     }
   };
 

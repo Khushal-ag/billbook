@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import SettingsSkeleton from "@/components/skeletons/SettingsSkeleton";
 import {
   Select,
   SelectContent,
@@ -20,7 +21,7 @@ import {
   useUpdateBusinessProfile,
   useBusinessUsers,
 } from "@/hooks/use-business";
-import { toast } from "sonner";
+import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
 const profileSchema = z.object({
   name: z.string().trim().min(1, "Business name is required").max(200),
@@ -68,24 +69,14 @@ export default function Settings() {
   const onSubmit = async (data: ProfileForm) => {
     try {
       await updateProfile.mutateAsync({ ...data, name: data.name });
-      toast.success("Business profile updated");
+      showSuccessToast("Business profile updated");
     } catch (err) {
-      toast.error("Failed to update", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
+      showErrorToast(err, "Failed to update");
     }
   };
 
   if (isLoading) {
-    return (
-      <div className="page-container animate-fade-in">
-        <div className="page-header">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="mt-2 h-4 w-64" />
-        </div>
-        <Skeleton className="h-96 max-w-2xl rounded-xl" />
-      </div>
-    );
+    return <SettingsSkeleton />;
   }
 
   return (

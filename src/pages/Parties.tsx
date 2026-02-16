@@ -6,21 +6,20 @@ import EmptyState from "@/components/EmptyState";
 import ErrorBanner from "@/components/ErrorBanner";
 import SearchInput from "@/components/SearchInput";
 import PageHeader from "@/components/PageHeader";
-import TableSkeleton from "@/components/TableSkeleton";
+import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import PartyDialog from "@/components/dialogs/PartyDialog";
 import { useParties, useDeleteParty } from "@/hooks/use-parties";
-import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/use-permissions";
 import { formatCurrency } from "@/lib/utils";
 import type { Party } from "@/types/party";
-import { toast } from "sonner";
+import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
 export default function Parties() {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("CUSTOMER");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editParty, setEditParty] = useState<Party | undefined>();
-  const { user } = useAuth();
-  const isOwner = user?.role === "OWNER";
+  const { isOwner } = usePermissions();
 
   const { data, isLoading, error } = useParties({ type: tab });
   const deleteParty = useDeleteParty();
@@ -45,8 +44,8 @@ export default function Parties() {
   const handleDelete = (p: Party) => {
     if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
     deleteParty.mutate(p.id, {
-      onSuccess: () => toast.success("Party deleted"),
-      onError: (err) => toast.error("Failed to delete", { description: err.message }),
+      onSuccess: () => showSuccessToast("Party deleted"),
+      onError: (err) => showErrorToast(err, "Failed to delete"),
     });
   };
 

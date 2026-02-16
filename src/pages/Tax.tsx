@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import PageHeader from "@/components/PageHeader";
 import DateRangePicker from "@/components/DateRangePicker";
 import { useGSTSummary, useGSTItemized, useGSTExport } from "@/hooks/use-tax";
@@ -85,7 +85,7 @@ export default function Tax() {
 
         <TabsContent value="summary">
           {summaryLoading ? (
-            <Skeleton className="h-60 rounded-xl" />
+            <ReportTabSkeleton height="h-60" />
           ) : gstSummary && (gstSummary.monthlyBreakdown ?? []).length > 0 ? (
             <>
               <div className="data-table-container">
@@ -149,7 +149,7 @@ export default function Tax() {
 
         <TabsContent value="itemized">
           {itemizedLoading ? (
-            <Skeleton className="h-60 rounded-xl" />
+            <ReportTabSkeleton height="h-60" />
           ) : gstItemized && (gstItemized.data ?? []).length > 0 ? (
             <div className="data-table-container">
               <table className="w-full text-sm">

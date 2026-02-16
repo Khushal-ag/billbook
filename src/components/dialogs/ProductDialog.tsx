@@ -22,41 +22,22 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useCreateProduct, useUpdateProduct } from "@/hooks/use-products";
+import { priceString, hsnCode, sacCode, optionalString } from "@/lib/validation-schemas";
+import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import type { Product } from "@/types/product";
-import { toast } from "sonner";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   type: z.enum(["STOCK", "SERVICE"]),
-  hsnCode: z.string().max(8).optional().or(z.literal("")),
-  sacCode: z.string().max(6).optional().or(z.literal("")),
-  unit: z.string().optional().or(z.literal("")),
-  description: z.string().optional().or(z.literal("")),
-  sellingPrice: z
-    .string()
-    .regex(/^$|^[0-9]+(\.[0-9]{1,2})?$/, "Invalid price")
-    .optional()
-    .or(z.literal("")),
-  purchasePrice: z
-    .string()
-    .regex(/^$|^[0-9]+(\.[0-9]{1,2})?$/, "Invalid price")
-    .optional()
-    .or(z.literal("")),
-  cgstRate: z
-    .string()
-    .regex(/^$|^[0-9]+(\.[0-9]{1,2})?$/, "Invalid rate")
-    .optional()
-    .or(z.literal("")),
-  sgstRate: z
-    .string()
-    .regex(/^$|^[0-9]+(\.[0-9]{1,2})?$/, "Invalid rate")
-    .optional()
-    .or(z.literal("")),
-  igstRate: z
-    .string()
-    .regex(/^$|^[0-9]+(\.[0-9]{1,2})?$/, "Invalid rate")
-    .optional()
-    .or(z.literal("")),
+  hsnCode,
+  sacCode,
+  unit: optionalString,
+  description: optionalString,
+  sellingPrice: priceString,
+  purchasePrice: priceString,
+  cgstRate: priceString,
+  sgstRate: priceString,
+  igstRate: priceString,
 });
 
 type FormData = z.infer<typeof schema>;
@@ -137,16 +118,14 @@ export default function ProductDialog({ open, onOpenChange, product }: Props) {
     try {
       if (isEdit) {
         await updateMutation.mutateAsync(payload);
-        toast.success("Product updated");
+        showSuccessToast("Product updated");
       } else {
         await createMutation.mutateAsync(payload);
-        toast.success("Product created");
+        showSuccessToast("Product created");
       }
       onOpenChange(false);
     } catch (err) {
-      toast.error(isEdit ? "Failed to update product" : "Failed to create product", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
+      showErrorToast(err, isEdit ? "Failed to update product" : "Failed to create product");
     }
   };
 

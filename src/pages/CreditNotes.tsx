@@ -5,35 +5,32 @@ import StatusBadge from "@/components/StatusBadge";
 import EmptyState from "@/components/EmptyState";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
-import TableSkeleton from "@/components/TableSkeleton";
+import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import CreditNoteDialog from "@/components/dialogs/CreditNoteDialog";
 import {
   useCreditNotes,
   useFinalizeCreditNote,
   useDeleteCreditNote,
 } from "@/hooks/use-credit-notes";
-import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/use-permissions";
 import { formatCurrency } from "@/lib/utils";
-import { toast } from "sonner";
+import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
 export default function CreditNotes() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { data, isLoading, error } = useCreditNotes();
   const finalizeMutation = useFinalizeCreditNote();
   const deleteMutation = useDeleteCreditNote();
-  const { user } = useAuth();
-  const isOwner = user?.role === "OWNER";
+  const { isOwner } = usePermissions();
 
   const creditNotes = data?.creditNotes ?? [];
 
   const handleFinalize = async (id: number) => {
     try {
       await finalizeMutation.mutateAsync(id);
-      toast.success("Credit note finalized");
+      showSuccessToast("Credit note finalized");
     } catch (err) {
-      toast.error("Failed to finalize", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
+      showErrorToast(err, "Failed to finalize");
     }
   };
 
@@ -41,11 +38,9 @@ export default function CreditNotes() {
     if (!confirm("Delete this credit note? This cannot be undone.")) return;
     try {
       await deleteMutation.mutateAsync(id);
-      toast.success("Credit note deleted");
+      showSuccessToast("Credit note deleted");
     } catch (err) {
-      toast.error("Failed to delete", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
+      showErrorToast(err, "Failed to delete");
     }
   };
 

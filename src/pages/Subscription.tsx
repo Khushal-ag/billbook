@@ -4,14 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/contexts/AuthContext";
+import SubscriptionSkeleton from "@/components/skeletons/SubscriptionSkeleton";
+import { usePermissions } from "@/hooks/use-permissions";
 import { useSubscription, usePlans, useSubscribePlan } from "@/hooks/use-subscription";
 import type { SubscriptionPlan } from "@/types/subscription";
 
 export default function Subscription() {
-  const { user } = useAuth();
-  const isOwner = user?.role === "OWNER";
+  const { isOwner } = usePermissions();
 
   const { data: subscription, isLoading: subLoading } = useSubscription();
   const { data: plansData, isLoading: plansLoading } = usePlans();
@@ -26,20 +25,7 @@ export default function Subscription() {
   );
 
   if (subLoading || plansLoading) {
-    return (
-      <div className="page-container animate-fade-in">
-        <div className="page-header">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="mt-2 h-4 w-64" />
-        </div>
-        <Skeleton className="mb-6 h-40 rounded-xl" />
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-64 rounded-xl" />
-          ))}
-        </div>
-      </div>
-    );
+    return <SubscriptionSkeleton />;
   }
 
   return (

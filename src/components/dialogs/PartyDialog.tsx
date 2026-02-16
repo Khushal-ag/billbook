@@ -22,23 +22,20 @@ import {
 import { Loader2 } from "lucide-react";
 import { useCreateParty, useUpdateParty } from "@/hooks/use-parties";
 import type { Party } from "@/types/party";
-import { toast } from "sonner";
+import { gstinString, optionalEmail, priceString, optionalString } from "@/lib/validation-schemas";
+import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   type: z.enum(["CUSTOMER", "SUPPLIER"]).default("CUSTOMER"),
-  gstin: z.string().optional().or(z.literal("")),
-  email: z.string().email("Invalid email").optional().or(z.literal("")),
-  phone: z.string().optional().or(z.literal("")),
-  address: z.string().optional().or(z.literal("")),
-  city: z.string().optional().or(z.literal("")),
-  state: z.string().optional().or(z.literal("")),
-  postalCode: z.string().optional().or(z.literal("")),
-  openingBalance: z
-    .string()
-    .regex(/^$|^\d+(\.\d{2})?$/, "Invalid amount")
-    .optional()
-    .or(z.literal("")),
+  gstin: gstinString,
+  email: optionalEmail,
+  phone: optionalString,
+  address: optionalString,
+  city: optionalString,
+  state: optionalString,
+  postalCode: optionalString,
+  openingBalance: priceString,
 });
 
 type FormData = z.infer<typeof schema>;
@@ -122,16 +119,14 @@ export default function PartyDialog({
     try {
       if (isEdit) {
         await updateMutation.mutateAsync(payload);
-        toast.success("Party updated");
+        showSuccessToast("Party updated");
       } else {
         await createMutation.mutateAsync(payload);
-        toast.success("Party created");
+        showSuccessToast("Party created");
       }
       onOpenChange(false);
     } catch (err) {
-      toast.error(isEdit ? "Failed to update party" : "Failed to create party", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
+      showErrorToast(err, isEdit ? "Failed to update party" : "Failed to create party");
     }
   };
 

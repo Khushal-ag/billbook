@@ -24,23 +24,16 @@ import { Loader2 } from "lucide-react";
 import { useUpdateInvoice } from "@/hooks/use-invoices";
 import { useParties } from "@/hooks/use-parties";
 import type { InvoiceDetail } from "@/types/invoice";
-import { toast } from "sonner";
+import { dateString, optionalString, priceString, percentString } from "@/lib/validation-schemas";
+import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 
 const schema = z.object({
   partyId: z.coerce.number().min(1, "Select a party"),
-  invoiceDate: z.string().min(1, "Required"),
-  dueDate: z.string().optional().or(z.literal("")),
-  notes: z.string().optional().or(z.literal("")),
-  discountAmount: z
-    .string()
-    .regex(/^$|^[0-9]+(\.[0-9]{1,2})?$/, "Invalid amount")
-    .optional()
-    .or(z.literal("")),
-  discountPercent: z
-    .string()
-    .regex(/^$|^\d+(\.\d{1,2})?$/, "Invalid %")
-    .optional()
-    .or(z.literal("")),
+  invoiceDate: dateString,
+  dueDate: optionalString,
+  notes: optionalString,
+  discountAmount: priceString,
+  discountPercent: percentString,
 });
 
 type FormData = z.infer<typeof schema>;
@@ -98,12 +91,10 @@ export default function InvoiceEditDialog({ open, onOpenChange, invoice }: Props
         discountAmount: data.discountAmount || undefined,
         discountPercent: data.discountPercent || undefined,
       });
-      toast.success("Invoice updated");
+      showSuccessToast("Invoice updated");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Failed to update invoice", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
+      showErrorToast(err, "Failed to update invoice");
     }
   };
 

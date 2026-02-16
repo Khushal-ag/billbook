@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Download, Loader2, Pencil, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import InvoiceDetailSkeleton from "@/components/skeletons/InvoiceDetailSkeleton";
 import StatusBadge from "@/components/StatusBadge";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
@@ -15,16 +15,15 @@ import {
   useCancelInvoice,
   useInvoicePdf,
 } from "@/hooks/use-invoices";
-import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/use-permissions";
 import { formatCurrency } from "@/lib/utils";
-import { toast } from "sonner";
+import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
 export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const invoiceId = id ? Number(id) : undefined;
-  const { user } = useAuth();
-  const isOwner = user?.role === "OWNER";
+  const { isOwner } = usePermissions();
 
   const [editOpen, setEditOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -38,11 +37,9 @@ export default function InvoiceDetail() {
     if (!invoiceId) return;
     try {
       await finalizeMutation.mutateAsync(invoiceId);
-      toast.success("Invoice finalized");
+      showSuccessToast("Invoice finalized");
     } catch (err) {
-      toast.error("Failed to finalize", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
+      showErrorToast(err, "Failed to finalize");
     }
   };
 
@@ -51,22 +48,15 @@ export default function InvoiceDetail() {
     if (!confirm("Cancel this invoice? This cannot be undone.")) return;
     try {
       await cancelMutation.mutateAsync(invoiceId);
-      toast.success("Invoice cancelled");
+      showSuccessToast("Invoice cancelled");
       navigate("/invoices");
     } catch (err) {
-      toast.error("Failed to cancel", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
+      showErrorToast(err, "Failed to cancel");
     }
   };
 
   if (isLoading) {
-    return (
-      <div className="page-container animate-fade-in">
-        <Skeleton className="mb-4 h-8 w-48" />
-        <Skeleton className="h-96 rounded-xl" />
-      </div>
-    );
+    return <InvoiceDetailSkeleton />;
   }
 
   return (

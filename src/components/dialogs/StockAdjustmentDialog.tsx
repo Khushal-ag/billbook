@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { useAdjustStock } from "@/hooks/use-products";
-import { toast } from "sonner";
+import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 
 const schema = z.object({
   quantity: z.string().regex(/^-?\d+(\.\d{1,2})?$/, "Enter a valid quantity (can be negative)"),
@@ -56,12 +56,10 @@ export default function StockAdjustmentDialog({
   const onSubmit = async (data: FormData) => {
     try {
       await mutation.mutateAsync({ quantity: data.quantity, reason: data.reason });
-      toast.success("Stock adjusted");
+      showSuccessToast("Stock adjusted");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Failed to adjust stock", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
+      showErrorToast(err, "Failed to adjust stock");
     }
   };
 

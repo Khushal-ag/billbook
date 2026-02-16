@@ -23,13 +23,14 @@ import {
 import { Loader2 } from "lucide-react";
 import { useRecordPayment } from "@/hooks/use-invoices";
 import type { PaymentMethod } from "@/types/invoice";
-import { toast } from "sonner";
+import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
+import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 
 const schema = z.object({
-  amount: z.string().regex(/^[0-9]+(\.[0-9]{1,2})?$/, "Enter a valid amount"),
+  amount: requiredPriceString,
   paymentMethod: z.enum(["CASH", "CHEQUE", "UPI", "BANK_TRANSFER", "CARD"]),
-  referenceNumber: z.string().optional().or(z.literal("")),
-  notes: z.string().optional().or(z.literal("")),
+  referenceNumber: optionalString,
+  notes: optionalString,
 });
 
 type FormData = z.infer<typeof schema>;
@@ -88,12 +89,10 @@ export default function PaymentDialog({ open, onOpenChange, invoiceId, balanceDu
         referenceNumber: data.referenceNumber || undefined,
         notes: data.notes || undefined,
       });
-      toast.success("Payment recorded");
+      showSuccessToast("Payment recorded");
       onOpenChange(false);
     } catch (err) {
-      toast.error("Failed to record payment", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      });
+      showErrorToast(err, "Failed to record payment");
     }
   };
 

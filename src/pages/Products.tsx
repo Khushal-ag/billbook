@@ -8,7 +8,7 @@ import EmptyState from "@/components/EmptyState";
 import ErrorBanner from "@/components/ErrorBanner";
 import SearchInput from "@/components/SearchInput";
 import PageHeader from "@/components/PageHeader";
-import TableSkeleton from "@/components/TableSkeleton";
+import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import ProductDialog from "@/components/dialogs/ProductDialog";
 import StockAdjustmentDialog from "@/components/dialogs/StockAdjustmentDialog";
 import {
@@ -18,10 +18,10 @@ import {
   useStockLedger,
   useStockReport,
 } from "@/hooks/use-products";
-import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/use-permissions";
 import { formatCurrency } from "@/lib/utils";
 import type { Product } from "@/types/product";
-import { toast } from "sonner";
+import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
 export default function Products() {
   const [search, setSearch] = useState("");
@@ -31,8 +31,7 @@ export default function Products() {
   const [stockProduct, setStockProduct] = useState<{ id: number; name: string } | null>(null);
   const [detailId, setDetailId] = useState<number | undefined>();
 
-  const { user } = useAuth();
-  const isOwner = user?.role === "OWNER";
+  const { isOwner } = usePermissions();
   const { data, isLoading, error } = useProducts();
   const deleteMutation = useDeleteProduct();
 
@@ -57,8 +56,8 @@ export default function Products() {
   const handleDelete = (p: Product) => {
     if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
     deleteMutation.mutate(p.id, {
-      onSuccess: () => toast.success("Product deleted"),
-      onError: (err) => toast.error("Failed to delete", { description: err.message }),
+      onSuccess: () => showSuccessToast("Product deleted"),
+      onError: (err) => showErrorToast(err, "Failed to delete"),
     });
   };
 
