@@ -1,19 +1,26 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Menu } from "lucide-react";
+import { Menu, ChevronLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface TopBarProps {
   onMenuClick?: () => void;
+  onSidebarToggle?: () => void;
+  sidebarCollapsed?: boolean;
 }
 
-export default function TopBar({ onMenuClick }: TopBarProps) {
+export default function TopBar({
+  onMenuClick,
+  onSidebarToggle,
+  sidebarCollapsed = false,
+}: TopBarProps) {
   const { user } = useAuth();
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "";
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/70 bg-card px-4 sm:px-6">
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/70 bg-card px-2 sm:px-3">
       <div className="flex items-center gap-3">
         {onMenuClick && (
           <Button
@@ -25,6 +32,21 @@ export default function TopBar({ onMenuClick }: TopBarProps) {
             aria-label="Open menu"
           >
             <Menu className="h-5 w-5" />
+          </Button>
+        )}
+        {onSidebarToggle && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="hidden md:flex"
+            onClick={onSidebarToggle}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label="Toggle sidebar"
+          >
+            <ChevronLeft
+              className={cn("h-5 w-5 transition-transform", sidebarCollapsed && "rotate-180")}
+            />
           </Button>
         )}
         <h2 className="truncate text-sm font-semibold">{user?.businessName}</h2>

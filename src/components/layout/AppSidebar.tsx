@@ -9,10 +9,8 @@ import {
   Receipt,
   FileMinus,
   CreditCard,
-  ScrollText,
   Settings,
   LogOut,
-  ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,32 +24,49 @@ interface NavItem {
   ownerOnly?: boolean;
 }
 
-const navItems: NavItem[] = [
-  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-  { label: "Invoices", path: "/invoices", icon: FileText },
-  { label: "Products", path: "/products", icon: Package },
-  { label: "Parties", path: "/parties", icon: Users },
-  { label: "Credit Notes", path: "/credit-notes", icon: FileMinus },
-  { label: "Reports", path: "/reports", icon: BarChart3 },
-  { label: "GST / Tax", path: "/tax", icon: Receipt },
-  { label: "Subscription", path: "/subscription", icon: CreditCard },
-  { label: "Audit Logs", path: "/audit-logs", icon: ScrollText, ownerOnly: true },
-  { label: "Settings", path: "/settings", icon: Settings, ownerOnly: true },
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+const navSections: NavSection[] = [
+  {
+    title: "Core",
+    items: [
+      { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+      { label: "Invoices", path: "/invoices", icon: FileText },
+      { label: "Credit Notes", path: "/credit-notes", icon: FileMinus },
+    ],
+  },
+  {
+    title: "Manage",
+    items: [
+      { label: "Parties", path: "/parties", icon: Users },
+      { label: "Products", path: "/products", icon: Package },
+    ],
+  },
+  {
+    title: "Reports",
+    items: [
+      { label: "Reports", path: "/reports", icon: BarChart3 },
+      { label: "Tax / GST", path: "/tax", icon: Receipt },
+    ],
+  },
+  {
+    title: "Account",
+    items: [
+      { label: "Subscription", path: "/subscription", icon: CreditCard },
+      { label: "Audit Logs", path: "/audit-logs", icon: BarChart3, ownerOnly: true },
+    ],
+  },
 ];
 
 interface AppSidebarProps {
   collapsed: boolean;
-  onToggle: () => void;
   onNavigate?: () => void;
-  showCollapseToggle?: boolean;
 }
 
-export default function AppSidebar({
-  collapsed,
-  onToggle,
-  onNavigate,
-  showCollapseToggle = true,
-}: AppSidebarProps) {
+export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -70,13 +85,18 @@ export default function AppSidebar({
     return pathname.startsWith(path);
   };
 
-  const visibleItems = navItems.filter((item) => !item.ownerOnly || user?.role === "OWNER");
+  const getVisibleSections = (): NavSection[] => {
+    return navSections.map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.ownerOnly || user?.role === "OWNER"),
+    }));
+  };
 
   return (
     <aside
       className={cn(
         "flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-200",
-        collapsed ? "w-16" : "w-60",
+        collapsed ? "w-16" : "w-64",
       )}
     >
       {/* Logo */}
@@ -95,23 +115,36 @@ export default function AppSidebar({
       <Separator className="bg-sidebar-border" />
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-2">
-        {visibleItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-              isActive(item.path)
-                ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+      <nav className="flex-1 space-y-4 overflow-y-auto px-2 py-3">
+        {getVisibleSections().map((section) => (
+          <div key={section.title}>
+            {/* Section Title */}
+            {!collapsed && (
+              <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+                {section.title}
+              </h3>
             )}
-            title={collapsed ? item.label : undefined}
-          >
-            <item.icon className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>{item.label}</span>}
-          </Link>
+            {/* Section Items */}
+            <div className="space-y-0.5">
+              {section.items.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                    isActive(item.path)
+                      ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+                  )}
+                  title={collapsed ? item.label : undefined}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
+                </Link>
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
 
@@ -119,6 +152,22 @@ export default function AppSidebar({
 
       {/* Footer */}
       <div className="shrink-0 space-y-1 p-2">
+        {!collapsed && (
+          <Link
+            to="/settings"
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+              isActive("/settings")
+                ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+            )}
+          >
+            <Settings className="h-4 w-4 shrink-0" />
+            <span>Settings</span>
+          </Link>
+        )}
+
         <Button
           variant="ghost"
           size="sm"
@@ -129,21 +178,6 @@ export default function AppSidebar({
           <LogOut className="h-4 w-4 shrink-0" />
           {!collapsed && <span className="ml-3">Logout</span>}
         </Button>
-
-        {showCollapseToggle && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-            onClick={onToggle}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            <ChevronLeft
-              className={cn("h-4 w-4 shrink-0 transition-transform", collapsed && "rotate-180")}
-            />
-            {!collapsed && <span className="ml-3">Collapse</span>}
-          </Button>
-        )}
       </div>
     </aside>
   );
