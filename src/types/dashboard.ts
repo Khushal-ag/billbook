@@ -1,28 +1,18 @@
-import type { InvoiceSummary } from "./invoice";
-
 export interface DashboardData {
-  totalSalesCurrentMonth: string;
-  outstandingAmount: string;
-  invoiceCountDraft: number;
-  invoiceCountFinal: number;
-  lowStockProducts: LowStockProduct[];
-  recentInvoices: InvoiceSummary[];
-  monthlySalesTrend: MonthlySales[];
-  invoiceStatusBreakdown: StatusCount[];
+  business: DashboardBusiness;
+  metrics: DashboardMetrics;
 }
 
-export interface MonthlySales {
-  month: string;
-  amount: string;
-}
-
-export interface StatusCount {
-  status: string;
-  count: number;
-}
-
-export interface LowStockProduct {
+export interface DashboardBusiness {
   id: number;
   name: string;
-  currentStock: string;
+  gstin: string | null;
+  taxType: string;
+}
+
+export interface DashboardMetrics {
+  totalInvoices: number;
+  totalAmount: number;
+  totalProducts: number;
+  totalParties: number;
 }

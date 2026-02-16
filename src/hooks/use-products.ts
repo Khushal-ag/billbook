@@ -1,29 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
-import { buildQueryString } from "@/lib/utils";
 import type {
   Product,
+  ProductDetail,
+  ProductListResponse,
   CreateProductRequest,
   StockAdjustmentRequest,
-  StockLedgerEntry,
-  StockReportItem,
+  StockMovement,
 } from "@/types/product";
-import type { PaginatedResponse } from "@/types/api";
 
-export function useProducts(
-  params: { page?: number; pageSize?: number; includeDeleted?: boolean } = {},
-) {
-  const { page = 1, pageSize = 50, includeDeleted = false } = params;
-  const qs = buildQueryString({
-    page,
-    pageSize,
-    includeDeleted: includeDeleted || undefined,
-  });
-
+export function useProducts() {
   return useQuery({
-    queryKey: ["products", page, pageSize, includeDeleted],
+    queryKey: ["products"],
     queryFn: async () => {
-      const res = await api.get<PaginatedResponse<Product>>(`/products?${qs}`);
+      const res = await api.get<ProductListResponse>("/products");
       return res.data;
     },
   });
@@ -33,7 +23,7 @@ export function useProduct(id: number | undefined) {
   return useQuery({
     queryKey: ["product", id],
     queryFn: async () => {
-      const res = await api.get<Product>(`/products/${id}`);
+      const res = await api.get<ProductDetail>(`/products/${id}`);
       return res.data;
     },
     enabled: !!id,
@@ -94,7 +84,7 @@ export function useStockLedger(productId: number | undefined) {
   return useQuery({
     queryKey: ["stock-ledger", productId],
     queryFn: async () => {
-      const res = await api.get<StockLedgerEntry[]>(`/products/${productId}/ledger`);
+      const res = await api.get<StockMovement[]>(`/products/${productId}/ledger`);
       return res.data;
     },
     enabled: !!productId,
@@ -105,7 +95,7 @@ export function useStockReport() {
   return useQuery({
     queryKey: ["stock-report"],
     queryFn: async () => {
-      const res = await api.get<StockReportItem[]>("/products/stock/report");
+      const res = await api.get<unknown>("/products/stock/report");
       return res.data;
     },
   });

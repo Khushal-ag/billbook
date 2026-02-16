@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Filter, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -16,30 +18,36 @@ import TablePagination from "@/components/TablePagination";
 import SearchInput from "@/components/SearchInput";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/TableSkeleton";
+import InvoiceDialog from "@/components/dialogs/InvoiceDialog";
 import { useInvoices } from "@/hooks/use-invoices";
+import { formatCurrency } from "@/lib/utils";
 
 export default function Invoices() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
   const pageSize = 20;
 
   const { data, isLoading, error } = useInvoices({
     page,
     pageSize,
     status: statusFilter,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
   });
 
-  // Fallback demo data for when API isn't connected
-  const invoices = data?.data || [];
-  const totalPages = data?.totalPages || 1;
-  const total = data?.total || 0;
+  const invoices = data?.invoices ?? [];
+  const totalPages = Math.ceil((data?.count ?? 0) / pageSize) || 1;
+  const total = data?.count ?? 0;
 
   const filtered = search
     ? invoices.filter(
         (inv) =>
           inv.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
-          inv.partyName.toLowerCase().includes(search.toLowerCase()),
+          (inv.partyName ?? "").toLowerCase().includes(search.toLowerCase()),
       )
     : invoices;
 
@@ -49,7 +57,7 @@ export default function Invoices() {
         title="Invoices"
         description="Manage and track all your invoices"
         action={
-          <Button>
+          <Button onClick={() => setDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
             New Invoice
           </Button>
@@ -57,7 +65,7 @@ export default function Invoices() {
       />
 
       {/* Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
         <SearchInput
           value={search}
           onChange={setSearch}
@@ -82,6 +90,32 @@ export default function Invoices() {
             <SelectItem value="CANCELLED">Cancelled</SelectItem>
           </SelectContent>
         </Select>
+        <div className="flex items-end gap-2">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">From</Label>
+            <Input
+              type="date"
+              className="h-9 w-[140px]"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">To</Label>
+            <Input
+              type="date"
+              className="h-9 w-[140px]"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       <ErrorBanner error={error} fallbackMessage="Failed to load invoices" />
@@ -94,7 +128,7 @@ export default function Invoices() {
           title="No invoices found"
           description="Create your first invoice to get started with billing."
           action={
-            <Button size="sm">
+            <Button size="sm" onClick={() => setDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               New Invoice
             </Button>
@@ -137,11 +171,18 @@ export default function Invoices() {
                         {inv.invoiceNumber}
                       </Link>
                     </td>
-                    <td className="px-3 py-3">{inv.partyName}</td>
+                    <td className="px-3 py-3">{inv.partyName ?? "—"}</td>
                     <td className="px-3 py-3 text-muted-foreground">{inv.invoiceDate}</td>
-                    <td className="px-3 py-3 text-muted-foreground">{inv.dueDate}</td>
-                    <td className="px-3 py-3 text-right font-medium">₹{inv.totalAmount}</td>
-                    <td className="px-3 py-3 text-right font-medium">₹{inv.balanceDue}</td>
+                    <td className="px-3 py-3 text-muted-foreground">{inv.dueDate ?? "—"}</td>
+                    <td className="px-3 py-3 text-right font-medium">
+                      {formatCurrency(inv.totalAmount ?? "0")}
+                    </td>
+                    <td className="px-3 py-3 text-right font-medium">
+                      {formatCurrency(
+                        parseFloat((inv.totalAmount ?? "0").replace(/,/g, "")) -
+                          parseFloat((inv.paidAmount ?? "0").replace(/,/g, "")),
+                      )}
+                    </td>
                     <td className="px-3 py-3 text-center">
                       <StatusBadge status={inv.status} />
                     </td>
@@ -160,6 +201,8 @@ export default function Invoices() {
           />
         </>
       )}
+
+      <InvoiceDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   );
 }

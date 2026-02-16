@@ -1,6 +1,12 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
-import type { SessionUser, LoginRequest, SignupRequest, AuthResponse } from "@/types/auth";
-import { setAccessToken, setRefreshToken, ApiClientError } from "@/api";
+import type {
+  SessionUser,
+  LoginRequest,
+  SignupRequest,
+  AuthResponse,
+  CurrentUser,
+} from "@/types/auth";
+import { api, setAccessToken, getAccessToken, setRefreshToken, ApiClientError } from "@/api";
 
 interface AuthState {
   user: SessionUser | null;
@@ -16,6 +22,8 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const SESSION_KEY = "billbook_session";
+
 function toSessionUser(auth: AuthResponse, role: "OWNER" | "STAFF" = "OWNER"): SessionUser {
   return {
     id: auth.user.id,
@@ -28,23 +36,15 @@ function toSessionUser(auth: AuthResponse, role: "OWNER" | "STAFF" = "OWNER"): S
   };
 }
 
-// Demo user for frontend development (remove when API is live)
-const DEMO_AUTH: AuthResponse = {
-  user: {
-    id: 1,
-    email: "owner@acme.com",
-    firstName: "Rajesh",
-    lastName: "Kumar",
-  },
-  business: { id: 1, name: "Acme Enterprises" },
-  tokens: {
-    accessToken: "demo-token",
-    refreshToken: "demo-refresh",
-    expiresIn: "15m",
-  },
-};
+function persistSession(sessionUser: SessionUser) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
+}
 
-const STORAGE_KEY = "billbook_user";
+function clearSession() {
+  setAccessToken(null);
+  setRefreshToken(null);
+  localStorage.removeItem(SESSION_KEY);
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -52,26 +52,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAuthenticated = user !== null;
 
-  // Check for existing session on mount
+  // Restore session on mount: read cached user then validate token via /auth/me
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
+    let cancelled = false;
+
+    async function restore() {
+      const token = getAccessToken();
+      const stored = localStorage.getItem(SESSION_KEY);
+
+      if (!token || !stored) {
+        clearSession();
+        setIsLoading(false);
+        return;
+      }
+
+      // Optimistically restore from cache
       try {
-        const parsed = JSON.parse(stored) as SessionUser;
-        setUser(parsed);
-        setAccessToken("demo-token");
+        const cached = JSON.parse(stored) as SessionUser;
+        if (!cancelled) setUser(cached);
       } catch {
-        // corrupted data
+        // corrupted cache — clear everything
+        clearSession();
+        if (!cancelled) setIsLoading(false);
+        return;
+      }
+
+      // Validate token by calling /auth/me
+      try {
+        const res = await api.get<CurrentUser>("/auth/me");
+        const me = res.data;
+        if (!cancelled) {
+          // Update session with latest data from server
+          const updated: SessionUser = {
+            ...JSON.parse(stored),
+            id: me.userId,
+            email: me.email,
+            role: me.role,
+            businessId: me.businessId,
+          };
+          persistSession(updated);
+          setUser(updated);
+        }
+      } catch {
+        // Token invalid — clear session
+        clearSession();
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
     }
-    setIsLoading(false);
+
+    restore();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleAuthSuccess = useCallback((auth: AuthResponse) => {
     const sessionUser = toSessionUser(auth);
     setAccessToken(auth.tokens.accessToken);
     setRefreshToken(auth.tokens.refreshToken);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionUser));
+    persistSession(sessionUser);
     setUser(sessionUser);
     setIsLoading(false);
   }, []);
@@ -79,10 +120,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (data: LoginRequest) => {
       try {
-        // Replace with: const res = await api.post<AuthResponse>("/auth/login", data);
-        // handleAuthSuccess(res.data);
-        void data;
-        handleAuthSuccess(DEMO_AUTH);
+        const res = await api.post<AuthResponse>("/auth/login", data);
+        handleAuthSuccess(res.data);
       } catch (error) {
         if (error instanceof ApiClientError) throw error;
         throw new Error("Login failed. Please try again.");
@@ -94,20 +133,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = useCallback(
     async (data: SignupRequest) => {
       try {
-        // Replace with: const res = await api.post<AuthResponse>("/auth/signup", data);
-        // handleAuthSuccess(res.data);
-        void data;
-        const demoAuth: AuthResponse = {
-          ...DEMO_AUTH,
-          user: {
-            ...DEMO_AUTH.user,
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-          },
-          business: { ...DEMO_AUTH.business, name: data.businessName },
-        };
-        handleAuthSuccess(demoAuth);
+        const res = await api.post<AuthResponse>("/auth/signup", data);
+        handleAuthSuccess(res.data);
       } catch (error) {
         if (error instanceof ApiClientError) throw error;
         throw new Error("Signup failed. Please try again.");
@@ -118,13 +145,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      // await api.post("/auth/logout");
+      await api.post("/auth/logout");
     } catch {
-      // Ignore logout errors
+      // Ignore logout errors — clear locally regardless
     } finally {
-      setAccessToken(null);
-      setRefreshToken(null);
-      localStorage.removeItem(STORAGE_KEY);
+      clearSession();
       setUser(null);
       setIsLoading(false);
     }

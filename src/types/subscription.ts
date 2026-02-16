@@ -1,22 +1,30 @@
-export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELLED" | "TRIAL";
+export type SubscriptionStatus = "ACTIVE" | "EXPIRED" | "CANCELLED";
 
-export interface Subscription {
+export interface SubscriptionPlan {
   id: number;
-  planName: string;
-  invoicesUsed: number;
-  invoicesLimit: number;
-  usersUsed: number;
-  usersLimit: number;
-  validUntil: string;
-  status: SubscriptionStatus;
+  name: string;
+  description: string | null;
+  price: string;
+  currency: string;
+  invoiceLimit: number;
+  userLimit: number;
+  storageLimitGb: number;
+  isActive: boolean;
   createdAt: string;
 }
 
-export interface Plan {
+export interface Subscription {
   id: number;
-  name: string;
-  price: string;
-  invoicesLimit: number;
-  usersLimit: number;
-  features: string[];
+  planId: number;
+  status: SubscriptionStatus;
+  startDate: string;
+  endDate: string | null;
+  invoicesThisMonth: number | null;
+  usersCount: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateSubscription {
+  planId: number;
 }

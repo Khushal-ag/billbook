@@ -2,31 +2,37 @@ export type PartyType = "CUSTOMER" | "SUPPLIER";
 
 export interface Party {
   id: number;
+  businessId: number;
   name: string;
   type: PartyType;
-  email?: string;
-  phone?: string;
-  gstin?: string;
-  pan?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  pincode?: string;
-  outstandingBalance: string;
-  deletedAt?: string | null;
+  gstin: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+  openingBalance: string | null;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface CreatePartyRequest {
   name: string;
-  type: PartyType;
+  type?: PartyType;
+  gstin?: string;
   email?: string;
   phone?: string;
-  gstin?: string;
-  pan?: string;
   address?: string;
   city?: string;
   state?: string;
-  pincode?: string;
+  postalCode?: string;
+  openingBalance?: string;
+}
+
+/** GET /parties response */
+export interface PartyListResponse {
+  parties: Party[];
+  count: number;
 }

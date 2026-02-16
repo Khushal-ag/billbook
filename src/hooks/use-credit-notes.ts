@@ -1,17 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
 import { buildQueryString } from "@/lib/utils";
-import type { CreditNote, CreateCreditNoteRequest } from "@/types/credit-note";
-import type { PaginatedResponse } from "@/types/api";
+import type {
+  CreditNote,
+  CreditNoteListResponse,
+  CreateCreditNoteRequest,
+} from "@/types/credit-note";
 
-export function useCreditNotes(params: { page?: number; pageSize?: number } = {}) {
-  const { page = 1, pageSize = 20 } = params;
-  const qs = buildQueryString({ page, pageSize });
+export function useCreditNotes(params: { invoiceId?: number } = {}) {
+  const { invoiceId } = params;
+  const qs = buildQueryString({ invoiceId });
 
   return useQuery({
-    queryKey: ["credit-notes", page, pageSize],
+    queryKey: ["credit-notes", invoiceId],
     queryFn: async () => {
-      const res = await api.get<PaginatedResponse<CreditNote>>(`/credit-notes?${qs}`);
+      const res = await api.get<CreditNoteListResponse>(`/credit-notes?${qs}`);
       return res.data;
     },
   });

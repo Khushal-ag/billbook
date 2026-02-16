@@ -26,9 +26,9 @@ export default function AuditLogs() {
     action: actionFilter || undefined,
   });
 
-  const logs = data?.data || [];
-  const totalPages = data?.totalPages || 1;
-  const total = data?.total || 0;
+  const logs = data?.logs ?? [];
+  const totalPages = Math.ceil((data?.count ?? 0) / pageSize) || 1;
+  const total = data?.count ?? 0;
 
   return (
     <div className="page-container animate-fade-in">
@@ -95,14 +95,18 @@ export default function AuditLogs() {
                         {log.resourceType}
                       </Badge>
                     </td>
-                    <td className="px-3 py-3 font-medium text-accent">#{log.resourceId}</td>
-                    <td className="px-3 py-3 text-muted-foreground">{log.userName}</td>
+                    <td className="px-3 py-3 font-medium text-accent">
+                      {log.resourceId != null ? `#${log.resourceId}` : "—"}
+                    </td>
+                    <td className="px-3 py-3 text-muted-foreground">
+                      {log.actorUserId != null ? `User #${log.actorUserId}` : "—"}
+                    </td>
                     <td className="px-3 py-3">
                       <Badge
-                        variant={log.userRole === "OWNER" ? "default" : "secondary"}
+                        variant={log.actorRole === "OWNER" ? "default" : "secondary"}
                         className="text-xs"
                       >
-                        {log.userRole}
+                        {log.actorRole ?? "—"}
                       </Badge>
                     </td>
                     <td className="px-3 py-3 text-xs text-muted-foreground">

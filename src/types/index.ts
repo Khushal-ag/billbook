@@ -12,9 +12,3 @@ export * from "./tax";
 export * from "./subscription";
 export * from "./audit-log";
 export * from "./dashboard";
-
-export interface ApiError {
-  message: string;
-  code?: string;
-  details?: Record<string, string[]>;
-}

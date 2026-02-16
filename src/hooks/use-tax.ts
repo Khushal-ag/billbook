@@ -27,3 +27,16 @@ export function useGSTItemized(startDate: string, endDate: string) {
     enabled: !!startDate && !!endDate,
   });
 }
+
+export function useGSTExport(startDate: string, endDate: string, enabled = false) {
+  return useQuery({
+    queryKey: ["tax", "gst-export", startDate, endDate],
+    queryFn: async () => {
+      const res = await api.get<unknown>(
+        `/tax/gst/export?startDate=${startDate}&endDate=${endDate}`,
+      );
+      return res.data;
+    },
+    enabled,
+  });
+}

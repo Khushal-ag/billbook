@@ -12,6 +12,12 @@ const axiosInstance = axios.create({
   withCredentials: true,
 });
 
+/** Plain instance for refresh calls — skips the response interceptor to avoid loops */
+const plainAxios = axios.create({
+  baseURL: env.VITE_API_BASE_URL,
+  headers: { "Content-Type": "application/json" },
+});
+
 // ── Request interceptor ─────────────────────────────────
 
 let refreshPromise: Promise<string> | null = null;
@@ -39,6 +45,9 @@ axiosInstance.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return axiosInstance(originalRequest);
       } catch {
+        // Refresh failed — clear tokens so the app redirects to login
+        setAccessToken(null);
+        setRefreshToken(null);
         throw new ApiClientError("Session expired. Please log in again.", 401);
       }
     }
@@ -53,14 +62,14 @@ axiosInstance.interceptors.response.use(
   },
 );
 
-// ── Token refresh ───────────────────────────────────────
+// ── Token refresh (uses plainAxios to avoid interceptor loop) ──
 
 async function refreshAccessToken(): Promise<string> {
   if (refreshPromise) return refreshPromise;
   const currentRefreshToken = getRefreshToken();
   if (!currentRefreshToken) throw new Error("No refresh token");
 
-  refreshPromise = axiosInstance
+  refreshPromise = plainAxios
     .post<ApiResponse<{ tokens: { accessToken: string; refreshToken: string } }>>(
       "/auth/refresh-token",
       { refreshToken: currentRefreshToken },
@@ -70,6 +79,11 @@ async function refreshAccessToken(): Promise<string> {
       setAccessToken(accessToken);
       setRefreshToken(refreshToken);
       return accessToken;
+    })
+    .catch((err) => {
+      setAccessToken(null);
+      setRefreshToken(null);
+      throw err;
     })
     .finally(() => {
       refreshPromise = null;

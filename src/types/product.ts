@@ -2,31 +2,40 @@ export type ProductType = "STOCK" | "SERVICE";
 
 export interface Product {
   id: number;
+  businessId: number;
   name: string;
   type: ProductType;
-  hsnCode?: string;
-  unit?: string;
-  sellingPrice: string;
-  purchasePrice?: string;
-  cgstRate: string;
-  sgstRate: string;
-  igstRate: string;
-  currentStock: string;
-  deletedAt?: string | null;
+  hsnCode: string | null;
+  sacCode: string | null;
+  unit: string;
+  description: string | null;
+  sellingPrice: string | null;
+  purchasePrice: string | null;
+  cgstRate: string | null;
+  sgstRate: string | null;
+  igstRate: string | null;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
+}
+
+/** GET /products/:id — includes current stock */
+export interface ProductDetail extends Product {
+  currentStock: number;
 }
 
 export interface CreateProductRequest {
   name: string;
   type: ProductType;
   hsnCode?: string;
+  sacCode?: string;
   unit?: string;
-  sellingPrice: string;
+  description?: string;
+  sellingPrice?: string;
   purchasePrice?: string;
-  cgstRate: string;
-  sgstRate: string;
-  igstRate: string;
+  cgstRate?: string;
+  sgstRate?: string;
+  igstRate?: string;
 }
 
 export interface StockAdjustmentRequest {
@@ -36,23 +45,21 @@ export interface StockAdjustmentRequest {
 
 export type StockMovementType = "SALE" | "PURCHASE" | "ADJUSTMENT" | "RETURN";
 
-export interface StockLedgerEntry {
+export interface StockMovement {
   id: number;
+  businessId: number;
   productId: number;
-  productName: string;
-  quantity: string;
   movementType: StockMovementType;
-  referenceId?: number;
-  referenceType?: string;
-  reason?: string;
+  quantity: string;
+  referenceId: number | null;
+  referenceType: string | null;
+  notes: string | null;
+  createdBy: number | null;
   createdAt: string;
 }
 
-export interface StockReportItem {
-  id: number;
-  name: string;
-  type: ProductType;
-  unit?: string;
-  currentStock: string;
-  sellingPrice: string;
+/** GET /products response */
+export interface ProductListResponse {
+  products: Product[];
+  count: number;
 }

@@ -1,17 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
-import { buildQueryString } from "@/lib/utils";
-import type { Party, CreatePartyRequest } from "@/types/party";
-import type { PaginatedResponse } from "@/types/api";
+import type { Party, PartyListResponse, CreatePartyRequest } from "@/types/party";
 
-export function useParties(params: { type?: string; page?: number; pageSize?: number } = {}) {
-  const { type, page = 1, pageSize = 50 } = params;
-  const qs = buildQueryString({ page, pageSize, type });
+export function useParties(params: { type?: string } = {}) {
+  const { type } = params;
 
   return useQuery({
-    queryKey: ["parties", type, page, pageSize],
+    queryKey: ["parties", type],
     queryFn: async () => {
-      const res = await api.get<PaginatedResponse<Party>>(`/parties?${qs}`);
+      const res = await api.get<PartyListResponse>("/parties");
       return res.data;
     },
   });

@@ -1,75 +1,100 @@
 export type InvoiceStatus = "DRAFT" | "FINAL" | "CANCELLED";
 
-export interface InvoiceSummary {
+export type PaymentMethod = "CASH" | "CHEQUE" | "UPI" | "BANK_TRANSFER" | "CARD";
+
+export interface Invoice {
   id: number;
+  businessId: number;
   invoiceNumber: string;
-  partyId: number;
-  partyName: string;
-  invoiceDate: string;
-  dueDate: string;
-  subTotal: string;
-  discountAmount: string;
-  discountPercent: string;
-  taxAmount: string;
-  totalAmount: string;
-  paidAmount: string;
-  balanceDue: string;
+  financialYear: string | null;
   status: InvoiceStatus;
-  notes?: string;
+  partyId: number;
+  invoiceDate: string;
+  dueDate: string | null;
+  subTotal: string;
+  discountAmount: string | null;
+  discountPercent: string | null;
+  cgstAmount: string | null;
+  sgstAmount: string | null;
+  igstAmount: string | null;
+  totalTax: string | null;
+  totalAmount: string;
+  paidAmount: string | null;
+  notes: string | null;
+  storagePath: string | null;
+  finalizedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
+  /** Convenience — joined by backend */
+  partyName?: string;
 }
 
 export interface InvoiceItem {
   id: number;
   productId: number;
-  productName: string;
   quantity: string;
   unitPrice: string;
-  discountPercent: string;
-  cgst: string;
-  sgst: string;
-  igst: string;
-  taxAmount: string;
-  totalAmount: string;
+  discountPercent: string | null;
+  discountAmount: string | null;
+  lineTotal: string;
+  cgstRate: string | null;
+  sgstRate: string | null;
+  igstRate: string | null;
+  cgstAmount: string | null;
+  sgstAmount: string | null;
+  igstAmount: string | null;
+  createdAt: string;
+  /** Convenience — joined by backend */
+  productName?: string;
 }
 
-export interface Invoice extends InvoiceSummary {
+/** GET /invoices/:id */
+export interface InvoiceDetail extends Invoice {
   items: InvoiceItem[];
   payments: Payment[];
+}
+
+export interface InvoiceItemInput {
+  productId: number;
+  quantity: string;
+  unitPrice: string;
+  discountPercent?: string;
 }
 
 export interface CreateInvoiceRequest {
   partyId: number;
   invoiceDate: string;
-  dueDate: string;
+  dueDate?: string;
   notes?: string;
   discountAmount?: string;
   discountPercent?: string;
-  items: {
-    productId: number;
-    quantity: string;
-    unitPrice: string;
-    discountPercent?: string;
-  }[];
+  items: InvoiceItemInput[];
 }
 
-export type UpdateInvoiceRequest = CreateInvoiceRequest;
+/** Only DRAFT invoices can be updated. Cannot modify items after creation. */
+export interface UpdateInvoiceRequest {
+  partyId?: number;
+  invoiceDate?: string;
+  dueDate?: string;
+  notes?: string;
+  discountAmount?: string;
+  discountPercent?: string;
+}
 
 export interface Payment {
   id: number;
   invoiceId: number;
   amount: string;
   paymentMethod: string;
-  referenceNumber?: string;
-  notes?: string;
-  paymentDate: string;
+  referenceNumber: string | null;
+  notes: string | null;
   createdAt: string;
 }
 
 export interface RecordPaymentRequest {
   amount: string;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod;
   referenceNumber?: string;
   notes?: string;
 }
@@ -81,4 +106,12 @@ export interface InvoicePdfResponse {
   format: string;
   generatedAt: string | null;
   message?: string;
+}
+
+/** GET /invoices response */
+export interface InvoiceListResponse {
+  invoices: Invoice[];
+  page: number;
+  pageSize: number;
+  count: number;
 }

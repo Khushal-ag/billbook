@@ -6,9 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
-import { useBusinessProfile, useUpdateBusinessProfile } from "@/hooks/use-business";
+import {
+  useBusinessProfile,
+  useUpdateBusinessProfile,
+  useBusinessUsers,
+} from "@/hooks/use-business";
 import { toast } from "sonner";
 
 const profileSchema = z.object({
@@ -20,7 +31,9 @@ const profileSchema = z.object({
   address: z.string().trim().max(500).optional().or(z.literal("")),
   city: z.string().trim().max(100).optional().or(z.literal("")),
   state: z.string().trim().max(100).optional().or(z.literal("")),
-  pincode: z.string().trim().max(10).optional().or(z.literal("")),
+  postalCode: z.string().trim().max(10).optional().or(z.literal("")),
+  taxType: z.enum(["GST", "NON_GST"]).default("GST"),
+  financialYearStart: z.coerce.number().min(1).max(12).default(4),
 });
 
 type ProfileForm = z.infer<typeof profileSchema>;
@@ -45,14 +58,16 @@ export default function Settings() {
           address: business.address || "",
           city: business.city || "",
           state: business.state || "",
-          pincode: business.pincode || "",
+          postalCode: business.postalCode || "",
+          taxType: business.taxType || "GST",
+          financialYearStart: business.financialYearStart || 4,
         }
       : undefined,
   });
 
   const onSubmit = async (data: ProfileForm) => {
     try {
-      await updateProfile.mutateAsync(data);
+      await updateProfile.mutateAsync({ ...data, name: data.name });
       toast.success("Business profile updated");
     } catch (err) {
       toast.error("Failed to update", {
@@ -121,8 +136,8 @@ export default function Settings() {
                   {errors.pan && <p className="text-xs text-destructive">{errors.pan.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label>Pincode</Label>
-                  <Input placeholder="400001" {...register("pincode")} />
+                  <Label>Postal Code</Label>
+                  <Input placeholder="400001" {...register("postalCode")} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -139,6 +154,60 @@ export default function Settings() {
                 <Label>Address</Label>
                 <Input placeholder="Business address" {...register("address")} />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Tax Type</Label>
+                  <Select
+                    defaultValue={business?.taxType || "GST"}
+                    onValueChange={(v) => {
+                      const event = { target: { name: "taxType", value: v } };
+                      register("taxType").onChange(event as never);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select tax type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="GST">GST</SelectItem>
+                      <SelectItem value="NON_GST">Non-GST</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Financial Year Start Month</Label>
+                  <Select
+                    defaultValue={String(business?.financialYearStart || 4)}
+                    onValueChange={(v) => {
+                      const event = { target: { name: "financialYearStart", value: v } };
+                      register("financialYearStart").onChange(event as never);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[
+                        "January",
+                        "February",
+                        "March",
+                        "April",
+                        "May",
+                        "June",
+                        "July",
+                        "August",
+                        "September",
+                        "October",
+                        "November",
+                        "December",
+                      ].map((month, i) => (
+                        <SelectItem key={i + 1} value={String(i + 1)}>
+                          {month}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <Button type="submit" disabled={isSubmitting || updateProfile.isPending}>
                 {(isSubmitting || updateProfile.isPending) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -148,7 +217,70 @@ export default function Settings() {
             </form>
           </CardContent>
         </Card>
+
+        {/* Team Members */}
+        <BusinessUsersCard />
       </div>
     </div>
+  );
+}
+
+function BusinessUsersCard() {
+  const { data: users, isLoading } = useBusinessUsers();
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Team Members</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-24 rounded-md" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!users || users.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Team Members</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">No team members found.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Team Members</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {users.map((u) => (
+            <div
+              key={u.id}
+              className="flex items-center justify-between rounded-md border px-4 py-3"
+            >
+              <div>
+                <p className="text-sm font-medium">
+                  {u.firstName || u.lastName
+                    ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim()
+                    : u.email}
+                </p>
+                <p className="text-xs text-muted-foreground">{u.email}</p>
+              </div>
+              <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
+                {u.role}
+              </span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

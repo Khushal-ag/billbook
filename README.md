@@ -7,6 +7,7 @@ Invoicing, billing, and inventory management app for small businesses.
 - **React 18** + **TypeScript** — UI framework
 - **Vite** — build tool & dev server
 - **Tailwind CSS** + **shadcn/ui** — styling & component library
+- **Axios** — HTTP client with interceptors
 - **TanStack React Query** — server state management
 - **React Router v6** — client-side routing
 - **React Hook Form** + **Zod** — form handling & validation
@@ -16,36 +17,38 @@ Invoicing, billing, and inventory management app for small businesses.
 
 ```sh
 # Install dependencies
-npm install
+bun install
+
+# Copy env file and configure
+cp .env.example .env
 
 # Start dev server (http://localhost:5173)
-npm run dev
+bun dev
 ```
 
 ## Scripts
 
-| Script               | Description                      |
-| -------------------- | -------------------------------- |
-| `npm run dev`        | Start development server         |
-| `npm run build`      | Type-check & production build    |
-| `npm run lint`       | ESLint + TypeScript type-check   |
-| `npm run lint:fix`   | Auto-fix ESLint issues           |
-| `npm run fmt`        | Format all files with Prettier   |
-| `npm run fmt:check`  | Check formatting without writing |
-| `npm run typecheck`  | TypeScript type-check only       |
-| `npm test`           | Run tests                        |
-| `npm run test:watch` | Run tests in watch mode          |
+| Script          | Description                      |
+| --------------- | -------------------------------- |
+| `bun dev`       | Start development server         |
+| `bun run build` | Type-check & production build    |
+| `bun lint`      | ESLint + TypeScript type-check   |
+| `bun lint:fix`  | Auto-fix ESLint issues           |
+| `bun fmt`       | Format all files with Prettier   |
+| `bun fmt:check` | Check formatting without writing |
+| `bun typecheck` | TypeScript type-check only       |
 
 ## Project Structure
 
 ```
 src/
+├── api/            # Axios client, interceptors, token management
 ├── components/     # Shared & layout components
 │   ├── ui/         # shadcn/ui primitives
 │   └── layout/     # AppLayout, Sidebar, TopBar
 ├── contexts/       # React context providers (Auth)
 ├── hooks/          # Custom hooks (data fetching, business logic)
-├── lib/            # API client, utilities
+├── lib/            # Env validation, utilities
 ├── pages/          # Route-level page components
 └── types/          # Domain-specific TypeScript types
 ```

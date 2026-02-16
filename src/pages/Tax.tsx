@@ -1,10 +1,11 @@
-import { Download } from "lucide-react";
+import { useState } from "react";
+import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import PageHeader from "@/components/PageHeader";
 import DateRangePicker from "@/components/DateRangePicker";
-import { useGSTSummary, useGSTItemized } from "@/hooks/use-tax";
+import { useGSTSummary, useGSTItemized, useGSTExport } from "@/hooks/use-tax";
 import { useDateRange } from "@/hooks/use-date-range";
 import { downloadJSON } from "@/lib/utils";
 
@@ -19,6 +20,8 @@ export default function Tax() {
     validEndDate,
   } = useDateRange();
 
+  const [exportRequested, setExportRequested] = useState(false);
+
   const { data: gstSummary, isLoading: summaryLoading } = useGSTSummary(
     validStartDate,
     validEndDate,
@@ -27,11 +30,21 @@ export default function Tax() {
     validStartDate,
     validEndDate,
   );
+  const { data: exportData, isFetching: exportFetching } = useGSTExport(
+    validStartDate,
+    validEndDate,
+    exportRequested,
+  );
+
+  // When export data arrives, download it
+  if (exportData && exportRequested) {
+    downloadJSON(exportData, `gst-export-${startDate}-${endDate}.json`);
+    setExportRequested(false);
+  }
 
   const handleExport = () => {
-    const exportData = gstSummary || gstItemized;
-    if (!exportData) return;
-    downloadJSON(exportData, `gst-report-${startDate}-${endDate}.json`);
+    if (!validStartDate || !validEndDate) return;
+    setExportRequested(true);
   };
 
   return (
@@ -40,8 +53,17 @@ export default function Tax() {
         title="GST / Tax"
         description="Tax summaries and itemized reports"
         action={
-          <Button variant="outline" size="sm" onClick={handleExport} disabled={!gstSummary}>
-            <Download className="mr-2 h-3.5 w-3.5" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExport}
+            disabled={!validStartDate || !validEndDate || exportFetching}
+          >
+            {exportFetching ? (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-3.5 w-3.5" />
+            )}
             Export for Filing
           </Button>
         }
@@ -64,7 +86,7 @@ export default function Tax() {
         <TabsContent value="summary">
           {summaryLoading ? (
             <Skeleton className="h-60 rounded-xl" />
-          ) : gstSummary && gstSummary.monthlyBreakdown.length > 0 ? (
+          ) : gstSummary && (gstSummary.monthlyBreakdown ?? []).length > 0 ? (
             <>
               <div className="data-table-container">
                 <table className="w-full text-sm">
@@ -94,7 +116,7 @@ export default function Tax() {
                     </tr>
                   </thead>
                   <tbody>
-                    {gstSummary.monthlyBreakdown.map((row) => (
+                    {(gstSummary.monthlyBreakdown ?? []).map((row) => (
                       <tr key={row.month} className="border-b last:border-0 hover:bg-muted/20">
                         <td className="px-6 py-3 font-medium">{row.month}</td>
                         <td className="px-3 py-3 text-right">₹{row.cgst}</td>
@@ -109,9 +131,9 @@ export default function Tax() {
                   <tfoot>
                     <tr className="bg-muted/30 font-medium">
                       <td className="px-6 py-3">Total</td>
-                      <td className="px-3 py-3 text-right">₹{gstSummary.totalCgst}</td>
-                      <td className="px-3 py-3 text-right">₹{gstSummary.totalSgst}</td>
-                      <td className="px-3 py-3 text-right">₹{gstSummary.totalIgst}</td>
+                      <td className="px-3 py-3 text-right">₹{gstSummary.totalCgst ?? "0"}</td>
+                      <td className="px-3 py-3 text-right">₹{gstSummary.totalSgst ?? "0"}</td>
+                      <td className="px-3 py-3 text-right">₹{gstSummary.totalIgst ?? "0"}</td>
                       <td colSpan={3} />
                     </tr>
                   </tfoot>
@@ -128,7 +150,7 @@ export default function Tax() {
         <TabsContent value="itemized">
           {itemizedLoading ? (
             <Skeleton className="h-60 rounded-xl" />
-          ) : gstItemized && gstItemized.data.length > 0 ? (
+          ) : gstItemized && (gstItemized.data ?? []).length > 0 ? (
             <div className="data-table-container">
               <table className="w-full text-sm">
                 <thead>
@@ -150,7 +172,7 @@ export default function Tax() {
                   </tr>
                 </thead>
                 <tbody>
-                  {gstItemized.data.map((row) => (
+                  {(gstItemized.data ?? []).map((row) => (
                     <tr key={row.invoiceId} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="px-6 py-3 font-medium text-accent">{row.invoiceNumber}</td>
                       <td className="px-3 py-3">{row.partyName}</td>

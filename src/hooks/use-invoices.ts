@@ -3,26 +3,35 @@ import { api, generateIdempotencyKey } from "@/api";
 import { buildQueryString } from "@/lib/utils";
 import type {
   Invoice,
-  InvoiceSummary,
+  InvoiceDetail,
+  InvoiceListResponse,
   CreateInvoiceRequest,
   UpdateInvoiceRequest,
   RecordPaymentRequest,
   InvoicePdfResponse,
+  Payment,
 } from "@/types/invoice";
-import type { PaginatedResponse } from "@/types/api";
 
-export function useInvoices(params: { page?: number; pageSize?: number; status?: string }) {
-  const { page = 1, pageSize = 20, status } = params;
+export function useInvoices(params: {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const { page = 1, pageSize = 20, status, startDate, endDate } = params;
   const qs = buildQueryString({
     page,
     pageSize,
     status: status !== "ALL" ? status : undefined,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
   });
 
   return useQuery({
-    queryKey: ["invoices", page, pageSize, status],
+    queryKey: ["invoices", page, pageSize, status, startDate, endDate],
     queryFn: async () => {
-      const res = await api.get<PaginatedResponse<InvoiceSummary>>(`/invoices?${qs}`);
+      const res = await api.get<InvoiceListResponse>(`/invoices?${qs}`);
       return res.data;
     },
   });
@@ -32,7 +41,7 @@ export function useInvoice(id: number | undefined) {
   return useQuery({
     queryKey: ["invoice", id],
     queryFn: async () => {
-      const res = await api.get<Invoice>(`/invoices/${id}`);
+      const res = await api.get<InvoiceDetail>(`/invoices/${id}`);
       return res.data;
     },
     enabled: !!id,
@@ -86,8 +95,7 @@ export function useCancelInvoice() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const res = await api.delete<void>(`/invoices/${id}`);
-      return res.data;
+      await api.delete(`/invoices/${id}`);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["invoices"] }),
   });
@@ -97,7 +105,7 @@ export function useRecordPayment(invoiceId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: RecordPaymentRequest) => {
-      const res = await api.post(`/invoices/${invoiceId}/payments`, data);
+      const res = await api.post<Payment>(`/invoices/${invoiceId}/payments`, data);
       return res.data;
     },
     onSuccess: () => {

@@ -2,20 +2,27 @@ export type CreditNoteStatus = "DRAFT" | "FINAL";
 
 export interface CreditNote {
   id: number;
-  creditNoteNumber: string;
+  businessId: number;
   invoiceId: number;
-  invoiceNumber: string;
-  partyName: string;
+  creditNoteNumber: string;
   amount: string;
-  reason: string;
+  reason: string | null;
+  affectsInventory: boolean;
   status: CreditNoteStatus;
-  deletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
 }
 
 export interface CreateCreditNoteRequest {
   invoiceId: number;
-  reason: string;
   amount: string;
+  reason?: string;
+  affectsInventory?: boolean;
+}
+
+/** GET /credit-notes response */
+export interface CreditNoteListResponse {
+  creditNotes: CreditNote[];
+  count: number;
 }

@@ -1,4 +1,5 @@
-import { Download } from "lucide-react";
+import { useState } from "react";
+import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,6 +9,7 @@ import {
   useSalesReport,
   usePartyOutstandingReport,
   useProductSalesReport,
+  useSalesExport,
 } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
 import { downloadJSON } from "@/lib/utils";
@@ -23,16 +25,29 @@ export default function Reports() {
     validEndDate,
   } = useDateRange();
 
+  const [exportRequested, setExportRequested] = useState(false);
+
   const { data: salesData, isLoading: salesLoading } = useSalesReport(validStartDate, validEndDate);
   const { data: outstandingData, isLoading: outstandingLoading } = usePartyOutstandingReport();
   const { data: productSalesData, isLoading: productSalesLoading } = useProductSalesReport(
     validStartDate,
     validEndDate,
   );
+  const { data: exportData, isFetching: exportFetching } = useSalesExport(
+    validStartDate,
+    validEndDate,
+    exportRequested,
+  );
+
+  // When export data arrives, download it
+  if (exportData && exportRequested) {
+    downloadJSON(exportData, `sales-export-${startDate}-${endDate}.json`);
+    setExportRequested(false);
+  }
 
   const handleExport = () => {
-    if (!salesData) return;
-    downloadJSON(salesData, `sales-report-${startDate}-${endDate}.json`);
+    if (!validStartDate || !validEndDate) return;
+    setExportRequested(true);
   };
 
   return (
@@ -50,9 +65,18 @@ export default function Reports() {
           onEndDateChange={setEndDate}
           error={dateRangeError}
         />
-        <Button variant="outline" size="sm" onClick={handleExport} disabled={!salesData}>
-          <Download className="mr-2 h-3.5 w-3.5" />
-          Export JSON
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleExport}
+          disabled={!validStartDate || !validEndDate || exportFetching}
+        >
+          {exportFetching ? (
+            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Download className="mr-2 h-3.5 w-3.5" />
+          )}
+          Export
         </Button>
       </div>
 
@@ -70,11 +94,12 @@ export default function Reports() {
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Sales Report — ₹{salesData.totalAmount} total, {salesData.invoiceCount} invoices
+                  Sales Report — ₹{salesData.totalAmount ?? "0"} total,{" "}
+                  {salesData.invoiceCount ?? 0} invoices
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {salesData.data.length > 0 ? (
+                {(salesData.data ?? []).length > 0 ? (
                   <div className="data-table-container">
                     <table className="w-full text-sm">
                       <thead>
@@ -100,7 +125,7 @@ export default function Reports() {
                         </tr>
                       </thead>
                       <tbody>
-                        {salesData.data.map((row) => (
+                        {(salesData.data ?? []).map((row) => (
                           <tr
                             key={row.invoiceId}
                             className="border-b last:border-0 hover:bg-muted/20"
@@ -135,7 +160,7 @@ export default function Reports() {
         <TabsContent value="outstanding">
           {outstandingLoading ? (
             <Skeleton className="h-60 rounded-xl" />
-          ) : outstandingData && outstandingData.data.length > 0 ? (
+          ) : outstandingData && (outstandingData.data ?? []).length > 0 ? (
             <div className="data-table-container">
               <table className="w-full text-sm">
                 <thead>
@@ -151,7 +176,7 @@ export default function Reports() {
                   </tr>
                 </thead>
                 <tbody>
-                  {outstandingData.data.map((p) => (
+                  {(outstandingData.data ?? []).map((p) => (
                     <tr key={p.partyId} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="px-6 py-3 font-medium">{p.partyName}</td>
                       <td className="px-3 py-3 text-right">₹{p.totalInvoiced}</td>
@@ -170,7 +195,7 @@ export default function Reports() {
         <TabsContent value="product-sales">
           {productSalesLoading ? (
             <Skeleton className="h-60 rounded-xl" />
-          ) : productSalesData && productSalesData.data.length > 0 ? (
+          ) : productSalesData && (productSalesData.data ?? []).length > 0 ? (
             <div className="data-table-container">
               <table className="w-full text-sm">
                 <thead>
@@ -187,7 +212,7 @@ export default function Reports() {
                   </tr>
                 </thead>
                 <tbody>
-                  {productSalesData.data.map((row) => (
+                  {(productSalesData.data ?? []).map((row) => (
                     <tr key={row.productId} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="px-6 py-3 font-medium">{row.productName}</td>
                       <td className="px-3 py-3 text-right">{row.quantitySold}</td>

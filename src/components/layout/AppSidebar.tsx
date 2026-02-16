@@ -57,7 +57,7 @@ export default function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
   return (
     <aside
       className={cn(
-        "flex h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-200",
+        "flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-200",
         collapsed ? "w-16" : "w-60",
       )}
     >
@@ -67,7 +67,7 @@ export default function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
           <FileText className="h-4 w-4 text-sidebar-primary-foreground" />
         </div>
         {!collapsed && (
-          <span className="text-sm font-bold text-sidebar-primary-foreground">BillCraft</span>
+          <span className="text-sm font-bold text-sidebar-primary-foreground">BillBook</span>
         )}
       </div>
 

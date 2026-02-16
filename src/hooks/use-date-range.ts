@@ -21,8 +21,10 @@ interface UseDateRangeReturn {
 }
 
 export function useDateRange({
-  defaultStartDate = "2025-01-01",
-  defaultEndDate = "2025-02-15",
+  defaultStartDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+    .toISOString()
+    .slice(0, 10),
+  defaultEndDate = new Date().toISOString().slice(0, 10),
   maxMonths = 12,
 }: UseDateRangeOptions = {}): UseDateRangeReturn {
   const [startDate, setStartDate] = useState(defaultStartDate);
