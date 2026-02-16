@@ -8,20 +8,27 @@ import SearchInput from "@/components/SearchInput";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import PartyDialog from "@/components/dialogs/PartyDialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { useParties, useDeleteParty } from "@/hooks/use-parties";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useDebounce } from "@/hooks/use-debounce";
 import { formatCurrency } from "@/lib/utils";
 import type { Party } from "@/types/party";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
 export default function Parties() {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [tab, setTab] = useState("CUSTOMER");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editParty, setEditParty] = useState<Party | undefined>();
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; party: Party | null }>({
+    open: false,
+    party: null,
+  });
   const { isOwner } = usePermissions();
 
-  const { data, isLoading, error } = useParties({ type: tab });
+  const { data, isPending, error } = useParties({ type: tab });
   const deleteParty = useDeleteParty();
 
   const parties = data?.parties ?? [];
@@ -29,7 +36,7 @@ export default function Parties() {
     (p) =>
       !p.deletedAt &&
       p.type === tab &&
-      (!search || p.name.toLowerCase().includes(search.toLowerCase())),
+      (!debouncedSearch || p.name.toLowerCase().includes(debouncedSearch.toLowerCase())),
   );
 
   const openCreate = () => {
@@ -42,10 +49,20 @@ export default function Parties() {
   };
 
   const handleDelete = (p: Party) => {
-    if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
-    deleteParty.mutate(p.id, {
-      onSuccess: () => showSuccessToast("Party deleted"),
-      onError: (err) => showErrorToast(err, "Failed to delete"),
+    setDeleteConfirm({ open: true, party: p });
+  };
+
+  const confirmDelete = () => {
+    if (!deleteConfirm.party) return;
+    deleteParty.mutate(deleteConfirm.party.id, {
+      onSuccess: () => {
+        showSuccessToast("Party deleted");
+        setDeleteConfirm({ open: false, party: null });
+      },
+      onError: (err) => {
+        showErrorToast(err, "Failed to delete");
+        setDeleteConfirm({ open: false, party: null });
+      },
     });
   };
 
@@ -78,7 +95,7 @@ export default function Parties() {
 
       <ErrorBanner error={error} fallbackMessage="Failed to load parties" />
 
-      {isLoading ? (
+      {isPending ? (
         <TableSkeleton rows={3} />
       ) : filtered.length === 0 ? (
         <EmptyState
@@ -94,17 +111,27 @@ export default function Parties() {
         />
       ) : (
         <div className="data-table-container">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" role="table" aria-label="Parties list">
             <thead>
               <tr className="border-b bg-muted/30">
-                <th className="px-6 py-3 text-left font-medium text-muted-foreground">Name</th>
-                <th className="px-3 py-3 text-left font-medium text-muted-foreground">Phone</th>
-                <th className="px-3 py-3 text-left font-medium text-muted-foreground">GSTIN</th>
-                <th className="px-3 py-3 text-left font-medium text-muted-foreground">State</th>
-                <th className="px-3 py-3 text-right font-medium text-muted-foreground">
+                <th scope="col" className="px-6 py-3 text-left font-medium text-muted-foreground">
+                  Name
+                </th>
+                <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
+                  Phone
+                </th>
+                <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
+                  GSTIN
+                </th>
+                <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
+                  State
+                </th>
+                <th scope="col" className="px-3 py-3 text-right font-medium text-muted-foreground">
                   Opening Balance
                 </th>
-                <th className="px-3 py-3 text-center font-medium text-muted-foreground">Actions</th>
+                <th scope="col" className="px-3 py-3 text-center font-medium text-muted-foreground">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -124,7 +151,13 @@ export default function Parties() {
                   </td>
                   <td className="px-3 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(p)} title="Edit">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEdit(p)}
+                        title="Edit"
+                        aria-label={`Edit ${p.name}`}
+                      >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       {isOwner && (
@@ -135,6 +168,7 @@ export default function Parties() {
                           onClick={() => handleDelete(p)}
                           disabled={deleteParty.isPending}
                           title="Delete"
+                          aria-label={`Delete ${p.name}`}
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -153,6 +187,16 @@ export default function Parties() {
         onOpenChange={setDialogOpen}
         party={editParty}
         defaultType={tab as "CUSTOMER" | "SUPPLIER"}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm({ open, party: deleteConfirm.party })}
+        onConfirm={confirmDelete}
+        title="Delete Party"
+        description={`Are you sure you want to delete "${deleteConfirm.party?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="destructive"
       />
     </div>
   );

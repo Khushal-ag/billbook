@@ -20,7 +20,7 @@ export default function AuditLogs() {
   const [actionFilter, setActionFilter] = useState<string>("");
   const pageSize = 20;
 
-  const { data, isLoading, error } = useAuditLogs({
+  const { data, isPending, error } = useAuditLogs({
     page,
     pageSize,
     action: actionFilter || undefined,
@@ -58,7 +58,7 @@ export default function AuditLogs() {
 
       <ErrorBanner error={error} fallbackMessage="Failed to load audit logs" />
 
-      {isLoading ? (
+      {isPending ? (
         <TableSkeleton rows={5} />
       ) : logs.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">No audit logs found.</p>

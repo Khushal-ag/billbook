@@ -18,9 +18,9 @@ export interface Subscription {
   planId: number;
   status: SubscriptionStatus;
   startDate: string;
-  endDate: string | null;
-  invoicesThisMonth: number | null;
-  usersCount: number | null;
+  endDate: string;
+  invoicesThisMonth: number;
+  usersCount: number;
   createdAt: string;
   updatedAt: string;
 }

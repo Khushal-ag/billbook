@@ -22,11 +22,11 @@ export default function Tax() {
 
   const [exportRequested, setExportRequested] = useState(false);
 
-  const { data: gstSummary, isLoading: summaryLoading } = useGSTSummary(
+  const { data: gstSummary, isPending: summaryPending } = useGSTSummary(
     validStartDate,
     validEndDate,
   );
-  const { data: gstItemized, isLoading: itemizedLoading } = useGSTItemized(
+  const { data: gstItemized, isPending: itemizedPending } = useGSTItemized(
     validStartDate,
     validEndDate,
   );
@@ -84,7 +84,7 @@ export default function Tax() {
         </TabsList>
 
         <TabsContent value="summary">
-          {summaryLoading ? (
+          {summaryPending ? (
             <ReportTabSkeleton height="h-60" />
           ) : gstSummary && (gstSummary.monthlyBreakdown ?? []).length > 0 ? (
             <>
@@ -148,7 +148,7 @@ export default function Tax() {
         </TabsContent>
 
         <TabsContent value="itemized">
-          {itemizedLoading ? (
+          {itemizedPending ? (
             <ReportTabSkeleton height="h-60" />
           ) : gstItemized && (gstItemized.data ?? []).length > 0 ? (
             <div className="data-table-container">

@@ -11,6 +11,7 @@ import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import ProductDialog from "@/components/dialogs/ProductDialog";
 import StockAdjustmentDialog from "@/components/dialogs/StockAdjustmentDialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
   useProducts,
   useProduct,
@@ -19,25 +20,33 @@ import {
   useStockReport,
 } from "@/hooks/use-products";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useDebounce } from "@/hooks/use-debounce";
 import { formatCurrency } from "@/lib/utils";
 import type { Product } from "@/types/product";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
 export default function Products() {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | undefined>();
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
   const [stockProduct, setStockProduct] = useState<{ id: number; name: string } | null>(null);
   const [detailId, setDetailId] = useState<number | undefined>();
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; product: Product | null }>({
+    open: false,
+    product: null,
+  });
 
   const { isOwner } = usePermissions();
-  const { data, isLoading, error } = useProducts();
+  const { data, isPending, error } = useProducts();
   const deleteMutation = useDeleteProduct();
 
   const products = data?.products ?? [];
   const filtered = products.filter(
-    (p) => !p.deletedAt && (!search || p.name.toLowerCase().includes(search.toLowerCase())),
+    (p) =>
+      !p.deletedAt &&
+      (!debouncedSearch || p.name.toLowerCase().includes(debouncedSearch.toLowerCase())),
   );
 
   const openCreate = () => {
@@ -54,10 +63,20 @@ export default function Products() {
   };
 
   const handleDelete = (p: Product) => {
-    if (!confirm(`Delete "${p.name}"? This cannot be undone.`)) return;
-    deleteMutation.mutate(p.id, {
-      onSuccess: () => showSuccessToast("Product deleted"),
-      onError: (err) => showErrorToast(err, "Failed to delete"),
+    setDeleteConfirm({ open: true, product: p });
+  };
+
+  const confirmDelete = () => {
+    if (!deleteConfirm.product) return;
+    deleteMutation.mutate(deleteConfirm.product.id, {
+      onSuccess: () => {
+        showSuccessToast("Product deleted");
+        setDeleteConfirm({ open: false, product: null });
+      },
+      onError: (err) => {
+        showErrorToast(err, "Failed to delete");
+        setDeleteConfirm({ open: false, product: null });
+      },
     });
   };
 
@@ -95,7 +114,7 @@ export default function Products() {
 
           <ErrorBanner error={error} fallbackMessage="Failed to load products" />
 
-          {isLoading ? (
+          {isPending ? (
             <TableSkeleton rows={4} />
           ) : filtered.length === 0 ? (
             <EmptyState
@@ -111,22 +130,53 @@ export default function Products() {
             />
           ) : (
             <div className="data-table-container">
-              <table className="w-full text-sm">
+              <table
+                className="w-full text-sm"
+                role="table"
+                aria-label="Products and services list"
+              >
                 <thead>
                   <tr className="border-b bg-muted/30">
-                    <th className="px-6 py-3 text-left font-medium text-muted-foreground">Name</th>
-                    <th className="px-3 py-3 text-left font-medium text-muted-foreground">Type</th>
-                    <th className="px-3 py-3 text-left font-medium text-muted-foreground">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left font-medium text-muted-foreground"
+                    >
+                      Name
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-left font-medium text-muted-foreground"
+                    >
+                      Type
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-left font-medium text-muted-foreground"
+                    >
                       HSN/SAC
                     </th>
-                    <th className="px-3 py-3 text-right font-medium text-muted-foreground">
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-right font-medium text-muted-foreground"
+                    >
                       Selling Price
                     </th>
-                    <th className="px-3 py-3 text-right font-medium text-muted-foreground">
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-right font-medium text-muted-foreground"
+                    >
                       Stock
                     </th>
-                    <th className="px-3 py-3 text-right font-medium text-muted-foreground">GST</th>
-                    <th className="px-3 py-3 text-center font-medium text-muted-foreground">
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-right font-medium text-muted-foreground"
+                    >
+                      GST
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3 text-center font-medium text-muted-foreground"
+                    >
                       Actions
                     </th>
                   </tr>
@@ -162,6 +212,7 @@ export default function Products() {
                             size="sm"
                             onClick={() => openEdit(p)}
                             title="Edit"
+                            aria-label={`Edit ${p.name}`}
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
@@ -171,6 +222,7 @@ export default function Products() {
                               size="sm"
                               onClick={() => openStockAdjust(p)}
                               title="Adjust Stock"
+                              aria-label={`Adjust stock for ${p.name}`}
                             >
                               <ArrowLeftRight className="h-3.5 w-3.5" />
                             </Button>
@@ -183,6 +235,7 @@ export default function Products() {
                               onClick={() => handleDelete(p)}
                               disabled={deleteMutation.isPending}
                               title="Delete"
+                              aria-label={`Delete ${p.name}`}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -212,15 +265,25 @@ export default function Products() {
           productName={stockProduct.name}
         />
       )}
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm({ open, product: deleteConfirm.product })}
+        onConfirm={confirmDelete}
+        title="Delete Product"
+        description={`Are you sure you want to delete "${deleteConfirm.product?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   );
 }
 
 /* ─── Stock Report Tab ─── */
 function StockReportTab() {
-  const { data, isLoading, error } = useStockReport();
+  const { data, isPending, error } = useStockReport();
 
-  if (isLoading) return <TableSkeleton rows={4} />;
+  if (isPending) return <TableSkeleton rows={4} />;
   if (error) return <ErrorBanner error={error} fallbackMessage="Failed to load stock report" />;
 
   const items = (Array.isArray(data) ? data : []) as Array<{
@@ -263,9 +326,9 @@ function StockReportTab() {
 
 /* ─── Product Detail (Stock Ledger) ─── */
 function ProductDetailView({ id, onBack }: { id: number; onBack: () => void }) {
-  const { data: product, isLoading: productLoading } = useProduct(id);
-  const { data: ledger, isLoading: ledgerLoading } = useStockLedger(id);
-  const isLoading = productLoading || ledgerLoading;
+  const { data: product, isPending: productPending } = useProduct(id);
+  const { data: ledger, isPending: ledgerPending } = useStockLedger(id);
+  const isPending = productPending || ledgerPending;
 
   return (
     <div className="page-container animate-fade-in">
@@ -279,7 +342,7 @@ function ProductDetailView({ id, onBack }: { id: number; onBack: () => void }) {
         </button>
       </div>
 
-      {isLoading ? (
+      {isPending ? (
         <TableSkeleton rows={4} />
       ) : !product ? (
         <p className="py-8 text-center text-sm text-muted-foreground">Product not found.</p>

@@ -137,7 +137,15 @@
   }
 
   .stat-card {
-    @apply rounded-lg border bg-card p-5;
+    @apply relative overflow-hidden rounded-lg border bg-card p-5 transition-all hover:shadow-md;
+  }
+
+  .stat-card::before {
+    @apply absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity content-[''];
+  }
+
+  .stat-card:hover::before {
+    @apply opacity-100;
   }
 
   .stat-value {
@@ -149,6 +157,91 @@
   }
 
   .data-table-container {
-    @apply overflow-hidden rounded-lg border bg-card;
+    @apply overflow-hidden rounded-lg border bg-card shadow-sm;
+  }
+
+  /* Enhanced card with gradient border effect */
+  .gradient-card {
+    @apply relative overflow-hidden rounded-lg bg-card p-[1px];
+  }
+
+  .gradient-card::before {
+    @apply absolute inset-0 rounded-lg bg-gradient-to-br from-primary/20 via-accent/10 to-transparent content-[''];
+  }
+
+  .gradient-card-content {
+    @apply relative rounded-lg bg-card p-6;
+  }
+}
+
+@layer utilities {
+  /* Custom animations */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(-16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.4s ease-out;
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.4s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.3s ease-out;
+  }
+
+  /* Animation delays */
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  /* Glass effect */
+  .glass-effect {
+    @apply bg-white/80 backdrop-blur-sm dark:bg-black/30;
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-transform hover:scale-[1.02] hover:shadow-lg;
   }
 }

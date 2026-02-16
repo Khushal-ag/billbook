@@ -12,8 +12,8 @@ import type { SubscriptionPlan } from "@/types/subscription";
 export default function Subscription() {
   const { isOwner } = usePermissions();
 
-  const { data: subscription, isLoading: subLoading } = useSubscription();
-  const { data: plansData, isLoading: plansLoading } = usePlans();
+  const { data: subscription, isPending: subPending } = useSubscription();
+  const { data: plansData, isPending: plansPending } = usePlans();
   const subscribeMutation = useSubscribePlan();
 
   const plans = useMemo(() => plansData?.plans ?? [], [plansData?.plans]);
@@ -24,7 +24,7 @@ export default function Subscription() {
     [plans, subscription?.planId],
   );
 
-  if (subLoading || plansLoading) {
+  if (subPending || plansPending) {
     return <SubscriptionSkeleton />;
   }
 
@@ -44,7 +44,9 @@ export default function Subscription() {
               Current Plan:{" "}
               <span className="text-foreground">{currentPlan?.name ?? "Unknown"}</span>
               <Badge variant="secondary" className="text-xs">
-                {subscription.endDate ? `Valid until ${subscription.endDate}` : subscription.status}
+                {subscription.status === "ACTIVE"
+                  ? `Valid until ${new Date(subscription.endDate).toLocaleDateString()}`
+                  : subscription.status}
               </Badge>
             </CardTitle>
           </CardHeader>
@@ -53,13 +55,14 @@ export default function Subscription() {
               <div className="mb-1 flex justify-between text-sm">
                 <span className="text-muted-foreground">Invoices this month</span>
                 <span className="font-medium">
-                  {subscription.invoicesThisMonth ?? 0} / {currentPlan?.invoiceLimit ?? "∞"}
+                  {subscription.invoicesThisMonth} /{" "}
+                  {!currentPlan || currentPlan.invoiceLimit === -1 ? "∞" : currentPlan.invoiceLimit}
                 </span>
               </div>
               <Progress
                 value={
-                  currentPlan?.invoiceLimit
-                    ? ((subscription.invoicesThisMonth ?? 0) / currentPlan.invoiceLimit) * 100
+                  currentPlan && currentPlan.invoiceLimit > 0
+                    ? (subscription.invoicesThisMonth / currentPlan.invoiceLimit) * 100
                     : 0
                 }
                 className="h-2"
@@ -69,13 +72,14 @@ export default function Subscription() {
               <div className="mb-1 flex justify-between text-sm">
                 <span className="text-muted-foreground">Users</span>
                 <span className="font-medium">
-                  {subscription.usersCount ?? 0} / {currentPlan?.userLimit ?? "∞"}
+                  {subscription.usersCount} /{" "}
+                  {!currentPlan || currentPlan.userLimit === -1 ? "∞" : currentPlan.userLimit}
                 </span>
               </div>
               <Progress
                 value={
-                  currentPlan?.userLimit
-                    ? ((subscription.usersCount ?? 0) / currentPlan.userLimit) * 100
+                  currentPlan && currentPlan.userLimit > 0
+                    ? (subscription.usersCount / currentPlan.userLimit) * 100
                     : 0
                 }
                 className="h-2"
@@ -108,11 +112,15 @@ export default function Subscription() {
                     <ul className="mb-4 space-y-2">
                       <li className="flex items-center gap-2 text-sm">
                         <Check className="h-3.5 w-3.5 text-status-paid" />
-                        Up to {plan.invoiceLimit} invoices/month
+                        {plan.invoiceLimit === -1
+                          ? "Unlimited invoices/month"
+                          : `Up to ${plan.invoiceLimit} invoices/month`}
                       </li>
                       <li className="flex items-center gap-2 text-sm">
                         <Check className="h-3.5 w-3.5 text-status-paid" />
-                        Up to {plan.userLimit} users
+                        {plan.userLimit === -1
+                          ? "Unlimited users"
+                          : `Up to ${plan.userLimit} users`}
                       </li>
                       <li className="flex items-center gap-2 text-sm">
                         <Check className="h-3.5 w-3.5 text-status-paid" />

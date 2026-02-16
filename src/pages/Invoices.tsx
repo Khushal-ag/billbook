@@ -20,18 +20,20 @@ import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import InvoiceDialog from "@/components/dialogs/InvoiceDialog";
 import { useInvoices } from "@/hooks/use-invoices";
+import { useDebounce } from "@/hooks/use-debounce";
 import { formatCurrency } from "@/lib/utils";
 
 export default function Invoices() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [page, setPage] = useState(1);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const pageSize = 20;
 
-  const { data, isLoading, error } = useInvoices({
+  const { data, isPending, error } = useInvoices({
     page,
     pageSize,
     status: statusFilter,
@@ -43,11 +45,11 @@ export default function Invoices() {
   const totalPages = Math.ceil((data?.count ?? 0) / pageSize) || 1;
   const total = data?.count ?? 0;
 
-  const filtered = search
+  const filtered = debouncedSearch
     ? invoices.filter(
         (inv) =>
-          inv.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
-          (inv.partyName ?? "").toLowerCase().includes(search.toLowerCase()),
+          inv.invoiceNumber.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+          (inv.partyName ?? "").toLowerCase().includes(debouncedSearch.toLowerCase()),
       )
     : invoices;
 
@@ -120,7 +122,7 @@ export default function Invoices() {
 
       <ErrorBanner error={error} fallbackMessage="Failed to load invoices" />
 
-      {isLoading ? (
+      {isPending ? (
         <TableSkeleton rows={5} />
       ) : filtered.length === 0 ? (
         <EmptyState
@@ -137,22 +139,37 @@ export default function Invoices() {
       ) : (
         <>
           <div className="data-table-container">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm" role="table" aria-label="Invoices list">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">
+                  <th scope="col" className="px-6 py-3 text-left font-medium text-muted-foreground">
                     Invoice #
                   </th>
-                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">Party</th>
-                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">Date</th>
-                  <th className="px-3 py-3 text-left font-medium text-muted-foreground">
+                  <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
+                    Party
+                  </th>
+                  <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
+                    Date
+                  </th>
+                  <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
                     Due Date
                   </th>
-                  <th className="px-3 py-3 text-right font-medium text-muted-foreground">Amount</th>
-                  <th className="px-3 py-3 text-right font-medium text-muted-foreground">
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-right font-medium text-muted-foreground"
+                  >
+                    Amount
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-right font-medium text-muted-foreground"
+                  >
                     Balance Due
                   </th>
-                  <th className="px-3 py-3 text-center font-medium text-muted-foreground">
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-center font-medium text-muted-foreground"
+                  >
                     Status
                   </th>
                 </tr>

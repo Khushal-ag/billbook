@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Lazy-loaded pages for code splitting
 const Login = lazy(() => import("./pages/Login"));
@@ -33,47 +34,45 @@ const queryClient = new QueryClient({
   },
 });
 
-const PageFallback = () => (
-  <div className="flex min-h-[50vh] items-center justify-center">
-    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-  </div>
-);
+const PageFallback = () => null;
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster position="top-right" richColors closeButton />
-        <BrowserRouter>
-          <Suspense fallback={<PageFallback />}>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster position="top-right" richColors closeButton />
+          <BrowserRouter>
+            <Suspense fallback={<PageFallback />}>
+              <Routes>
+                {/* Public routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
 
-              {/* Authenticated routes */}
-              <Route element={<AppLayout />}>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/invoices" element={<Invoices />} />
-                <Route path="/invoices/:id" element={<InvoiceDetail />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/parties" element={<Parties />} />
-                <Route path="/credit-notes" element={<CreditNotes />} />
-                <Route path="/reports" element={<Reports />} />
-                <Route path="/tax" element={<Tax />} />
-                <Route path="/subscription" element={<Subscription />} />
-                <Route path="/audit-logs" element={<AuditLogs />} />
-                <Route path="/settings" element={<Settings />} />
-              </Route>
+                {/* Authenticated routes */}
+                <Route element={<AppLayout />}>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/invoices" element={<Invoices />} />
+                  <Route path="/invoices/:id" element={<InvoiceDetail />} />
+                  <Route path="/products" element={<Products />} />
+                  <Route path="/parties" element={<Parties />} />
+                  <Route path="/credit-notes" element={<CreditNotes />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/tax" element={<Tax />} />
+                  <Route path="/subscription" element={<Subscription />} />
+                  <Route path="/audit-logs" element={<AuditLogs />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>{" "}
-          </Suspense>{" "}
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+                <Route path="*" element={<NotFound />} />
+              </Routes>{" "}
+            </Suspense>{" "}
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

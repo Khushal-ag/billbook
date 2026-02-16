@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import Logo from "@/components/Logo";
 
 interface NavItem {
   label: string;
@@ -62,14 +63,16 @@ export default function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
       )}
     >
       {/* Logo */}
-      <div className="flex h-14 shrink-0 items-center gap-2 px-4">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary">
-          <FileText className="h-4 w-4 text-sidebar-primary-foreground" />
-        </div>
-        {!collapsed && (
-          <span className="text-sm font-bold text-sidebar-primary-foreground">BillBook</span>
-        )}
-      </div>
+      <Link
+        to="/"
+        className="flex h-14 shrink-0 items-center px-4 transition-opacity hover:opacity-80"
+      >
+        <Logo
+          className="h-8 w-8 shrink-0"
+          showText={!collapsed}
+          textClassName="text-sm font-bold text-sidebar-foreground"
+        />
+      </Link>
 
       <Separator className="bg-sidebar-border" />
 

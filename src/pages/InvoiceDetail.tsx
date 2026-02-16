@@ -9,6 +9,7 @@ import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import InvoiceEditDialog from "@/components/dialogs/InvoiceEditDialog";
 import PaymentDialog from "@/components/dialogs/PaymentDialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
   useInvoice,
   useFinalizeInvoice,
@@ -27,8 +28,9 @@ export default function InvoiceDetail() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [cancelConfirm, setCancelConfirm] = useState(false);
 
-  const { data: invoice, isLoading, error } = useInvoice(invoiceId);
+  const { data: invoice, isPending, error } = useInvoice(invoiceId);
   const { data: pdfData } = useInvoicePdf(invoice?.status === "FINAL" ? invoiceId : undefined);
   const finalizeMutation = useFinalizeInvoice();
   const cancelMutation = useCancelInvoice();
@@ -43,19 +45,24 @@ export default function InvoiceDetail() {
     }
   };
 
-  const handleCancel = async () => {
+  const handleCancel = () => {
+    setCancelConfirm(true);
+  };
+
+  const confirmCancel = async () => {
     if (!invoiceId) return;
-    if (!confirm("Cancel this invoice? This cannot be undone.")) return;
     try {
       await cancelMutation.mutateAsync(invoiceId);
       showSuccessToast("Invoice cancelled");
+      setCancelConfirm(false);
       navigate("/invoices");
     } catch (err) {
       showErrorToast(err, "Failed to cancel");
+      setCancelConfirm(false);
     }
   };
 
-  if (isLoading) {
+  if (isPending) {
     return <InvoiceDetailSkeleton />;
   }
 
@@ -369,6 +376,16 @@ export default function InvoiceDetail() {
               )}
             />
           )}
+
+          <ConfirmDialog
+            open={cancelConfirm}
+            onOpenChange={setCancelConfirm}
+            onConfirm={confirmCancel}
+            title="Cancel Invoice"
+            description="Are you sure you want to cancel this invoice? This action cannot be undone."
+            confirmText="Cancel Invoice"
+            variant="destructive"
+          />
         </>
       )}
     </div>

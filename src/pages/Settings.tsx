@@ -1,6 +1,7 @@
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,13 +41,14 @@ const profileSchema = z.object({
 type ProfileForm = z.infer<typeof profileSchema>;
 
 export default function Settings() {
-  const { data: business, isLoading } = useBusinessProfile();
+  const { data: business, isPending } = useBusinessProfile();
   const updateProfile = useUpdateBusinessProfile();
 
   const {
     register,
+    control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
     values: business
@@ -66,6 +68,19 @@ export default function Settings() {
       : undefined,
   });
 
+  // Warn user before leaving with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
   const onSubmit = async (data: ProfileForm) => {
     try {
       await updateProfile.mutateAsync({ ...data, name: data.name });
@@ -75,7 +90,7 @@ export default function Settings() {
     }
   };
 
-  if (isLoading) {
+  if (isPending) {
     return <SettingsSkeleton />;
   }
 
@@ -93,118 +108,207 @@ export default function Settings() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              {/* Basic Information */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Business Name</Label>
-                  <Input {...register("name")} />
-                  {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+                  <Label htmlFor="name">
+                    Business Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    {...register("name")}
+                    aria-required="true"
+                    aria-invalid={!!errors.name}
+                    aria-describedby={errors.name ? "name-error" : undefined}
+                  />
+                  {errors.name && (
+                    <p id="name-error" className="text-xs text-destructive" role="alert">
+                      {errors.name.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input type="email" {...register("email")} />
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...register("email")}
+                    placeholder="business@example.com"
+                    aria-invalid={!!errors.email}
+                    aria-describedby={errors.email ? "email-error" : undefined}
+                  />
                   {errors.email && (
-                    <p className="text-xs text-destructive">{errors.email.message}</p>
+                    <p id="email-error" className="text-xs text-destructive" role="alert">
+                      {errors.email.message}
+                    </p>
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              {/* Contact Details */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Phone</Label>
-                  <Input placeholder="+91 98765 43210" {...register("phone")} />
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input id="phone" placeholder="+91 98765 43210" {...register("phone")} />
+                  <p className="text-xs text-muted-foreground">Optional contact number</p>
                 </div>
                 <div className="space-y-2">
-                  <Label>GSTIN</Label>
-                  <Input placeholder="22AAAAA0000A1Z5" {...register("gstin")} />
-                  {errors.gstin && (
-                    <p className="text-xs text-destructive">{errors.gstin.message}</p>
+                  <Label htmlFor="gstin">GSTIN</Label>
+                  <Input
+                    id="gstin"
+                    placeholder="22AAAAA0000A1Z5"
+                    {...register("gstin")}
+                    maxLength={15}
+                    aria-invalid={!!errors.gstin}
+                    aria-describedby={errors.gstin ? "gstin-error" : "gstin-hint"}
+                  />
+                  {errors.gstin ? (
+                    <p id="gstin-error" className="text-xs text-destructive" role="alert">
+                      {errors.gstin.message}
+                    </p>
+                  ) : (
+                    <p id="gstin-hint" className="text-xs text-muted-foreground">
+                      15-character GST identification number
+                    </p>
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              {/* Tax Details */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>PAN</Label>
-                  <Input placeholder="AAAAA0000A" {...register("pan")} />
-                  {errors.pan && <p className="text-xs text-destructive">{errors.pan.message}</p>}
+                  <Label htmlFor="pan">PAN</Label>
+                  <Input
+                    id="pan"
+                    placeholder="AAAAA0000A"
+                    {...register("pan")}
+                    maxLength={10}
+                    aria-invalid={!!errors.pan}
+                    aria-describedby={errors.pan ? "pan-error" : "pan-hint"}
+                  />
+                  {errors.pan ? (
+                    <p id="pan-error" className="text-xs text-destructive" role="alert">
+                      {errors.pan.message}
+                    </p>
+                  ) : (
+                    <p id="pan-hint" className="text-xs text-muted-foreground">
+                      10-character permanent account number
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Postal Code</Label>
-                  <Input placeholder="400001" {...register("postalCode")} />
+                  <Label htmlFor="postalCode">Postal Code</Label>
+                  <Input
+                    id="postalCode"
+                    placeholder="400001"
+                    {...register("postalCode")}
+                    maxLength={10}
+                  />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              {/* Location Details */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>City</Label>
-                  <Input {...register("city")} />
+                  <Label htmlFor="city">City</Label>
+                  <Input id="city" {...register("city")} placeholder="Mumbai" />
                 </div>
                 <div className="space-y-2">
-                  <Label>State</Label>
-                  <Input {...register("state")} />
+                  <Label htmlFor="state">State</Label>
+                  <Input id="state" {...register("state")} placeholder="Maharashtra" />
                 </div>
               </div>
+
               <div className="space-y-2">
-                <Label>Address</Label>
-                <Input placeholder="Business address" {...register("address")} />
+                <Label htmlFor="address">Address</Label>
+                <Input
+                  id="address"
+                  placeholder="Business address"
+                  {...register("address")}
+                  maxLength={500}
+                />
+                <p className="text-xs text-muted-foreground">Complete business address</p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              {/* Tax and Financial Settings */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Tax Type</Label>
-                  <Select
-                    defaultValue={business?.taxType || "GST"}
-                    onValueChange={(v) => {
-                      const event = { target: { name: "taxType", value: v } };
-                      register("taxType").onChange(event as never);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select tax type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="GST">GST</SelectItem>
-                      <SelectItem value="NON_GST">Non-GST</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="taxType">Tax Type</Label>
+                  <Controller
+                    name="taxType"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger id="taxType" aria-label="Select tax type">
+                          <SelectValue placeholder="Select tax type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="GST">GST</SelectItem>
+                          <SelectItem value="NON_GST">Non-GST</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <p className="text-xs text-muted-foreground">Select your business tax type</p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Financial Year Start Month</Label>
-                  <Select
-                    defaultValue={String(business?.financialYearStart || 4)}
-                    onValueChange={(v) => {
-                      const event = { target: { name: "financialYearStart", value: v } };
-                      register("financialYearStart").onChange(event as never);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select month" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[
-                        "January",
-                        "February",
-                        "March",
-                        "April",
-                        "May",
-                        "June",
-                        "July",
-                        "August",
-                        "September",
-                        "October",
-                        "November",
-                        "December",
-                      ].map((month, i) => (
-                        <SelectItem key={i + 1} value={String(i + 1)}>
-                          {month}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="financialYearStart">Financial Year Start Month</Label>
+                  <Controller
+                    name="financialYearStart"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={String(field.value)}
+                        onValueChange={(v) => field.onChange(Number(v))}
+                      >
+                        <SelectTrigger
+                          id="financialYearStart"
+                          aria-label="Select financial year start month"
+                        >
+                          <SelectValue placeholder="Select month" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[
+                            "January",
+                            "February",
+                            "March",
+                            "April",
+                            "May",
+                            "June",
+                            "July",
+                            "August",
+                            "September",
+                            "October",
+                            "November",
+                            "December",
+                          ].map((month, i) => (
+                            <SelectItem key={i + 1} value={String(i + 1)}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <p className="text-xs text-muted-foreground">When your financial year begins</p>
                 </div>
               </div>
-              <Button type="submit" disabled={isSubmitting || updateProfile.isPending}>
-                {(isSubmitting || updateProfile.isPending) && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || updateProfile.isPending}
+                  aria-label="Save business profile changes"
+                >
+                  {(isSubmitting || updateProfile.isPending) && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Save Changes
+                </Button>
+                {isDirty && (
+                  <span className="text-xs text-muted-foreground">You have unsaved changes</span>
                 )}
-                Save Changes
-              </Button>
+              </div>
             </form>
           </CardContent>
         </Card>
@@ -217,29 +321,34 @@ export default function Settings() {
 }
 
 function BusinessUsersCard() {
-  const { data: users, isLoading } = useBusinessUsers();
+  const { data: users, isPending } = useBusinessUsers();
 
-  if (isLoading) {
+  if (isPending) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Team Members</CardTitle>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-24 rounded-md" />
+          <div className="space-y-3" aria-label="Loading team members">
+            <Skeleton className="h-16 rounded-md" />
+            <Skeleton className="h-16 rounded-md" />
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (!users || users.length === 0) {
+  if (!users || !Array.isArray(users) || users.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Team Members</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">No team members found.</p>
+          <p className="text-sm text-muted-foreground">
+            No team members found. Add users to collaborate on your business.
+          </p>
         </CardContent>
       </Card>
     );
@@ -251,22 +360,26 @@ function BusinessUsersCard() {
         <CardTitle className="text-base">Team Members</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-3" role="list" aria-label="Team members list">
           {users.map((u) => (
             <div
               key={u.id}
-              className="flex items-center justify-between rounded-md border px-4 py-3"
+              role="listitem"
+              className="flex items-center justify-between rounded-md border px-4 py-3 transition-colors hover:bg-muted/50"
             >
-              <div>
-                <p className="text-sm font-medium">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">
                   {u.firstName || u.lastName
                     ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim()
                     : u.email}
                 </p>
-                <p className="text-xs text-muted-foreground">{u.email}</p>
+                <p className="truncate text-xs text-muted-foreground">{u.email}</p>
               </div>
-              <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
-                {u.role}
+              <span
+                className="ml-3 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium capitalize"
+                aria-label={`Role: ${u.role.toLowerCase()}`}
+              >
+                {u.role.toLowerCase()}
               </span>
             </div>
           ))}

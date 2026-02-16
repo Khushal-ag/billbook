@@ -27,9 +27,9 @@ export default function Reports() {
 
   const [exportRequested, setExportRequested] = useState(false);
 
-  const { data: salesData, isLoading: salesLoading } = useSalesReport(validStartDate, validEndDate);
-  const { data: outstandingData, isLoading: outstandingLoading } = usePartyOutstandingReport();
-  const { data: productSalesData, isLoading: productSalesLoading } = useProductSalesReport(
+  const { data: salesData, isPending: salesPending } = useSalesReport(validStartDate, validEndDate);
+  const { data: outstandingData, isPending: outstandingPending } = usePartyOutstandingReport();
+  const { data: productSalesData, isPending: productSalesPending } = useProductSalesReport(
     validStartDate,
     validEndDate,
   );
@@ -88,7 +88,7 @@ export default function Reports() {
         </TabsList>
 
         <TabsContent value="sales">
-          {salesLoading ? (
+          {salesPending ? (
             <ReportTabSkeleton height="h-80" />
           ) : salesData ? (
             <Card>
@@ -158,7 +158,7 @@ export default function Reports() {
         </TabsContent>
 
         <TabsContent value="outstanding">
-          {outstandingLoading ? (
+          {outstandingPending ? (
             <ReportTabSkeleton height="h-60" />
           ) : outstandingData && (outstandingData.data ?? []).length > 0 ? (
             <div className="data-table-container">
@@ -193,7 +193,7 @@ export default function Reports() {
         </TabsContent>
 
         <TabsContent value="product-sales">
-          {productSalesLoading ? (
+          {productSalesPending ? (
             <ReportTabSkeleton height="h-60" />
           ) : productSalesData && (productSalesData.data ?? []).length > 0 ? (
             <div className="data-table-container">

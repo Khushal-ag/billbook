@@ -7,6 +7,7 @@ import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import CreditNoteDialog from "@/components/dialogs/CreditNoteDialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
   useCreditNotes,
   useFinalizeCreditNote,
@@ -18,7 +19,11 @@ import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
 export default function CreditNotes() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data, isLoading, error } = useCreditNotes();
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null }>({
+    open: false,
+    id: null,
+  });
+  const { data, isPending, error } = useCreditNotes();
   const finalizeMutation = useFinalizeCreditNote();
   const deleteMutation = useDeleteCreditNote();
   const { isOwner } = usePermissions();
@@ -34,13 +39,19 @@ export default function CreditNotes() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this credit note? This cannot be undone.")) return;
+  const handleDelete = (id: number) => {
+    setDeleteConfirm({ open: true, id });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return;
     try {
-      await deleteMutation.mutateAsync(id);
+      await deleteMutation.mutateAsync(deleteConfirm.id);
       showSuccessToast("Credit note deleted");
+      setDeleteConfirm({ open: false, id: null });
     } catch (err) {
       showErrorToast(err, "Failed to delete");
+      setDeleteConfirm({ open: false, id: null });
     }
   };
 
@@ -59,7 +70,7 @@ export default function CreditNotes() {
 
       <ErrorBanner error={error} fallbackMessage="Failed to load credit notes" />
 
-      {isLoading ? (
+      {isPending ? (
         <TableSkeleton rows={3} />
       ) : creditNotes.length === 0 ? (
         <EmptyState
@@ -75,20 +86,29 @@ export default function CreditNotes() {
         />
       ) : (
         <div className="data-table-container">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" role="table" aria-label="Credit notes list">
             <thead>
               <tr className="border-b bg-muted/30">
-                <th className="px-6 py-3 text-left font-medium text-muted-foreground">
+                <th scope="col" className="px-6 py-3 text-left font-medium text-muted-foreground">
                   Credit Note #
                 </th>
-                <th className="px-3 py-3 text-left font-medium text-muted-foreground">
+                <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
                   Invoice ID
                 </th>
-                <th className="px-3 py-3 text-left font-medium text-muted-foreground">Reason</th>
-                <th className="px-3 py-3 text-right font-medium text-muted-foreground">Amount</th>
-                <th className="px-3 py-3 text-center font-medium text-muted-foreground">Status</th>
+                <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
+                  Reason
+                </th>
+                <th scope="col" className="px-3 py-3 text-right font-medium text-muted-foreground">
+                  Amount
+                </th>
+                <th scope="col" className="px-3 py-3 text-center font-medium text-muted-foreground">
+                  Status
+                </th>
                 {isOwner && (
-                  <th className="px-3 py-3 text-center font-medium text-muted-foreground">
+                  <th
+                    scope="col"
+                    className="px-3 py-3 text-center font-medium text-muted-foreground"
+                  >
                     Actions
                   </th>
                 )}
@@ -120,6 +140,7 @@ export default function CreditNotes() {
                               onClick={() => handleFinalize(cn.id)}
                               disabled={finalizeMutation.isPending}
                               title="Finalize"
+                              aria-label={`Finalize credit note ${cn.creditNoteNumber}`}
                             >
                               <CheckCircle className="h-3.5 w-3.5" />
                             </Button>
@@ -130,6 +151,7 @@ export default function CreditNotes() {
                               onClick={() => handleDelete(cn.id)}
                               disabled={deleteMutation.isPending}
                               title="Delete"
+                              aria-label={`Delete credit note ${cn.creditNoteNumber}`}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -146,6 +168,16 @@ export default function CreditNotes() {
       )}
 
       <CreditNoteDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm({ open, id: deleteConfirm.id })}
+        onConfirm={confirmDelete}
+        title="Delete Credit Note"
+        description="Are you sure you want to delete this credit note? This action cannot be undone."
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   );
 }

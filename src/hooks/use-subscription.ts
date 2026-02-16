@@ -6,9 +6,12 @@ export function useSubscription() {
   return useQuery({
     queryKey: ["subscription"],
     queryFn: async () => {
-      const res = await api.get<Subscription>("/subscriptions/current");
-      return res.data;
+      const res = await api.get<{ subscription: Subscription; plan: SubscriptionPlan }>(
+        "/subscriptions/current",
+      );
+      return res.data.subscription;
     },
+    retry: false,
   });
 }
 
@@ -19,6 +22,7 @@ export function usePlans() {
       const res = await api.get<{ plans: SubscriptionPlan[] }>("/subscriptions/plans");
       return res.data;
     },
+    retry: false,
   });
 }
 

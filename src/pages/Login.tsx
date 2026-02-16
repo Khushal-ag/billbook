@@ -43,10 +43,10 @@ export default function Login() {
 
   return (
     <AuthLayout>
-      <Card>
+      <Card className="border-border/50 shadow-lg backdrop-blur-sm">
         <CardHeader className="pb-4 text-center">
-          <CardTitle className="text-lg">Welcome back</CardTitle>
-          <CardDescription>Sign in to your account</CardDescription>
+          <CardTitle className="text-xl">Welcome back</CardTitle>
+          <CardDescription>Sign in to your account to continue</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

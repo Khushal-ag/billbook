@@ -41,5 +41,6 @@ export function useBusinessUsers() {
       const res = await api.get<BusinessUser[]>("/business/users");
       return res.data;
     },
+    retry: false,
   });
 }
