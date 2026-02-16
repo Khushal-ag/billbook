@@ -34,7 +34,7 @@ const NotFound = () => {
         {/* Actions */}
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Button asChild size="lg" className="gap-2">
-            <Link to="/">
+            <Link to="/dashboard">
               <Home className="h-4 w-4" />
               Go to Dashboard
             </Link>

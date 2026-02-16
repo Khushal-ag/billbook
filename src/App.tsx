@@ -2,15 +2,13 @@ import { lazy, Suspense } from "react";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Lazy-loaded pages for code splitting
-const Login = lazy(() => import("./pages/Login"));
-const Signup = lazy(() => import("./pages/Signup"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const Landing = lazy(() => import("./pages/Landing"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Invoices = lazy(() => import("./pages/Invoices"));
 const InvoiceDetail = lazy(() => import("./pages/InvoiceDetail"));
@@ -52,13 +50,14 @@ const App = () => (
             <Suspense fallback={<PageFallback />}>
               <Routes>
                 {/* Public routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/" element={<Landing />} />
+                <Route path="/login" element={<Navigate to="/?auth=login" replace />} />
+                <Route path="/signup" element={<Navigate to="/?auth=signup" replace />} />
+                <Route path="/forgot-password" element={<Navigate to="/?auth=forgot" replace />} />
 
                 {/* Authenticated routes */}
                 <Route element={<AppLayout />}>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/invoices" element={<Invoices />} />
                   <Route path="/invoices/:id" element={<InvoiceDetail />} />
                   <Route path="/products" element={<Products />} />

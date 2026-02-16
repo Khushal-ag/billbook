@@ -19,11 +19,11 @@ export default function TablePagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="mt-4 flex items-center justify-between">
-      <p className="text-sm text-muted-foreground">
+    <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-xs text-muted-foreground sm:text-sm">
         Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
       </p>
-      <div className="flex gap-2">
+      <div className="flex justify-end gap-2">
         <Button
           variant="outline"
           size="sm"

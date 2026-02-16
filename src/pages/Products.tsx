@@ -102,7 +102,7 @@ export default function Products() {
       />
 
       <Tabs defaultValue="catalog">
-        <TabsList className="mb-4">
+        <TabsList className="mb-4 w-full justify-start overflow-x-auto whitespace-nowrap sm:w-auto">
           <TabsTrigger value="catalog">Catalog</TabsTrigger>
           <TabsTrigger value="stock-report">Stock Report</TabsTrigger>
         </TabsList>
@@ -112,7 +112,7 @@ export default function Products() {
             value={search}
             onChange={setSearch}
             placeholder="Search products..."
-            className="mb-4 max-w-sm"
+            className="mb-4 w-full sm:max-w-sm"
           />
 
           <ErrorBanner error={error} fallbackMessage="Failed to load products" />
@@ -142,7 +142,7 @@ export default function Products() {
                   <tr className="border-b bg-muted/30">
                     <th
                       scope="col"
-                      className="px-6 py-3 text-left font-medium text-muted-foreground"
+                      className="px-4 py-3 text-left font-medium text-muted-foreground sm:px-6"
                     >
                       Name
                     </th>
@@ -154,7 +154,7 @@ export default function Products() {
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-3 text-left font-medium text-muted-foreground"
+                      className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell"
                     >
                       HSN/SAC
                     </th>
@@ -166,13 +166,13 @@ export default function Products() {
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-3 text-right font-medium text-muted-foreground"
+                      className="hidden px-3 py-3 text-right font-medium text-muted-foreground lg:table-cell"
                     >
                       Stock
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-3 text-right font-medium text-muted-foreground"
+                      className="hidden px-3 py-3 text-right font-medium text-muted-foreground md:table-cell"
                     >
                       GST
                     </th>
@@ -191,20 +191,26 @@ export default function Products() {
                       className="cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/20"
                       onClick={() => setDetailId(p.id)}
                     >
-                      <td className="px-6 py-3 font-medium">{p.name}</td>
+                      <td className="max-w-[200px] truncate px-4 py-3 font-medium sm:max-w-none sm:px-6">
+                        {p.name}
+                      </td>
                       <td className="px-3 py-3">
                         <Badge variant="secondary" className="text-xs">
                           {p.type}
                         </Badge>
                       </td>
-                      <td className="px-3 py-3 text-muted-foreground">
+                      <td className="hidden px-3 py-3 text-muted-foreground md:table-cell">
                         {p.hsnCode || p.sacCode || "—"}
                       </td>
                       <td className="px-3 py-3 text-right">
                         {formatCurrency(p.sellingPrice ?? "0")}
                       </td>
-                      <td className="px-3 py-3 text-right">{p.type === "SERVICE" ? "N/A" : "—"}</td>
-                      <td className="px-3 py-3 text-right">{p.igstRate ?? "0"}%</td>
+                      <td className="hidden px-3 py-3 text-right lg:table-cell">
+                        {p.type === "SERVICE" ? "N/A" : "—"}
+                      </td>
+                      <td className="hidden px-3 py-3 text-right md:table-cell">
+                        {p.igstRate ?? "0"}%
+                      </td>
                       <td className="px-3 py-3 text-center">
                         <div
                           className="flex items-center justify-center gap-1"

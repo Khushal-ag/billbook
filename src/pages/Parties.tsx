@@ -80,7 +80,7 @@ export default function Parties() {
       />
 
       <Tabs value={tab} onValueChange={setTab} className="mb-4">
-        <TabsList>
+        <TabsList className="w-full justify-start overflow-x-auto whitespace-nowrap sm:w-auto">
           <TabsTrigger value="CUSTOMER">Customers</TabsTrigger>
           <TabsTrigger value="SUPPLIER">Suppliers</TabsTrigger>
         </TabsList>
@@ -90,7 +90,7 @@ export default function Parties() {
         value={search}
         onChange={setSearch}
         placeholder="Search parties..."
-        className="mb-4 max-w-sm"
+        className="mb-4 w-full sm:max-w-sm"
       />
 
       <ErrorBanner error={error} fallbackMessage="Failed to load parties" />
@@ -114,16 +114,25 @@ export default function Parties() {
           <table className="w-full text-sm" role="table" aria-label="Parties list">
             <thead>
               <tr className="border-b bg-muted/30">
-                <th scope="col" className="px-6 py-3 text-left font-medium text-muted-foreground">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left font-medium text-muted-foreground sm:px-6"
+                >
                   Name
                 </th>
                 <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
                   Phone
                 </th>
-                <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
+                <th
+                  scope="col"
+                  className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell"
+                >
                   GSTIN
                 </th>
-                <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
+                <th
+                  scope="col"
+                  className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell"
+                >
                   State
                 </th>
                 <th scope="col" className="px-3 py-3 text-right font-medium text-muted-foreground">
@@ -140,12 +149,16 @@ export default function Parties() {
                   key={p.id}
                   className="border-b transition-colors last:border-0 hover:bg-muted/20"
                 >
-                  <td className="px-6 py-3 font-medium">{p.name}</td>
+                  <td className="max-w-[200px] truncate px-4 py-3 font-medium sm:max-w-none sm:px-6">
+                    {p.name}
+                  </td>
                   <td className="px-3 py-3 text-muted-foreground">{p.phone || "—"}</td>
-                  <td className="px-3 py-3 font-mono text-xs text-muted-foreground">
+                  <td className="hidden px-3 py-3 font-mono text-xs text-muted-foreground md:table-cell">
                     {p.gstin || "—"}
                   </td>
-                  <td className="px-3 py-3 text-muted-foreground">{p.state || "—"}</td>
+                  <td className="hidden px-3 py-3 text-muted-foreground md:table-cell">
+                    {p.state || "—"}
+                  </td>
                   <td className="px-3 py-3 text-right font-medium">
                     {formatCurrency(p.openingBalance ?? "0")}
                   </td>

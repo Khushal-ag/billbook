@@ -24,8 +24,8 @@ export default function Logo({
       >
         <defs>
           <linearGradient id={gid} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#3b82f6" />
-            <stop offset="100%" stopColor="#1e40af" />
+            <stop offset="0%" stopColor="hsl(var(--accent))" />
+            <stop offset="100%" stopColor="hsl(var(--primary))" />
           </linearGradient>
         </defs>
 
@@ -37,16 +37,64 @@ export default function Logo({
         <path d="M58 16 L58 30 L72 30 Z" fill="white" fillOpacity={0.55} />
 
         {/* Invoice line items */}
-        <rect x="35" y="38" width="30" height="3" rx="1.5" fill="#3b82f6" opacity={0.55} />
-        <rect x="35" y="47" width="21" height="3" rx="1.5" fill="#3b82f6" opacity={0.4} />
-        <rect x="35" y="56" width="26" height="3" rx="1.5" fill="#3b82f6" opacity={0.4} />
+        <rect
+          x="35"
+          y="38"
+          width="30"
+          height="3"
+          rx="1.5"
+          fill="hsl(var(--accent))"
+          opacity={0.55}
+        />
+        <rect
+          x="35"
+          y="47"
+          width="21"
+          height="3"
+          rx="1.5"
+          fill="hsl(var(--accent))"
+          opacity={0.4}
+        />
+        <rect
+          x="35"
+          y="56"
+          width="26"
+          height="3"
+          rx="1.5"
+          fill="hsl(var(--accent))"
+          opacity={0.4}
+        />
 
         {/* Separator */}
-        <line x1="35" y1="66" x2="65" y2="66" stroke="#3b82f6" strokeWidth={1.5} opacity={0.2} />
+        <line
+          x1="35"
+          y1="66"
+          x2="65"
+          y2="66"
+          stroke="hsl(var(--accent))"
+          strokeWidth={1.5}
+          opacity={0.2}
+        />
 
         {/* Total amount */}
-        <rect x="35" y="72" width="12" height="3" rx="1.5" fill="#1e40af" opacity={0.55} />
-        <rect x="55" y="72" width="10" height="3" rx="1.5" fill="#1e40af" opacity={0.75} />
+        <rect
+          x="35"
+          y="72"
+          width="12"
+          height="3"
+          rx="1.5"
+          fill="hsl(var(--primary))"
+          opacity={0.55}
+        />
+        <rect
+          x="55"
+          y="72"
+          width="10"
+          height="3"
+          rx="1.5"
+          fill="hsl(var(--primary))"
+          opacity={0.75}
+        />
       </svg>
       {showText && (
         <span className={textClassName}>

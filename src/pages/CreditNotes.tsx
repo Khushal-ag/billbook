@@ -89,13 +89,22 @@ export default function CreditNotes() {
           <table className="w-full text-sm" role="table" aria-label="Credit notes list">
             <thead>
               <tr className="border-b bg-muted/30">
-                <th scope="col" className="px-6 py-3 text-left font-medium text-muted-foreground">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left font-medium text-muted-foreground sm:px-6"
+                >
                   Credit Note #
                 </th>
-                <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
+                <th
+                  scope="col"
+                  className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell"
+                >
                   Invoice ID
                 </th>
-                <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
+                <th
+                  scope="col"
+                  className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell"
+                >
                   Reason
                 </th>
                 <th scope="col" className="px-3 py-3 text-right font-medium text-muted-foreground">
@@ -120,9 +129,9 @@ export default function CreditNotes() {
                   key={cn.id}
                   className="border-b transition-colors last:border-0 hover:bg-muted/20"
                 >
-                  <td className="px-6 py-3 font-medium">{cn.creditNoteNumber}</td>
-                  <td className="px-3 py-3 text-accent">#{cn.invoiceId}</td>
-                  <td className="max-w-[200px] truncate px-3 py-3 text-muted-foreground">
+                  <td className="px-4 py-3 font-medium sm:px-6">{cn.creditNoteNumber}</td>
+                  <td className="hidden px-3 py-3 text-accent md:table-cell">#{cn.invoiceId}</td>
+                  <td className="hidden max-w-[240px] truncate px-3 py-3 text-muted-foreground md:table-cell">
                     {cn.reason ?? "—"}
                   </td>
                   <td className="px-3 py-3 text-right font-medium">{formatCurrency(cn.amount)}</td>

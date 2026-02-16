@@ -27,7 +27,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", path: "/", icon: LayoutDashboard },
+  { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
   { label: "Invoices", path: "/invoices", icon: FileText },
   { label: "Products", path: "/products", icon: Package },
   { label: "Parties", path: "/parties", icon: Users },
@@ -42,14 +42,21 @@ const navItems: NavItem[] = [
 interface AppSidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  onNavigate?: () => void;
+  showCollapseToggle?: boolean;
 }
 
-export default function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
+export default function AppSidebar({
+  collapsed,
+  onToggle,
+  onNavigate,
+  showCollapseToggle = true,
+}: AppSidebarProps) {
   const { pathname } = useLocation();
   const { user, logout } = useAuth();
 
   const isActive = (path: string) => {
-    if (path === "/") return pathname === "/";
+    if (path === "/dashboard") return pathname === "/dashboard";
     return pathname.startsWith(path);
   };
 
@@ -64,8 +71,9 @@ export default function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
     >
       {/* Logo */}
       <Link
-        to="/"
+        to="/dashboard"
         className="flex h-14 shrink-0 items-center px-4 transition-opacity hover:opacity-80"
+        onClick={onNavigate}
       >
         <Logo
           className="h-8 w-8 shrink-0"
@@ -82,6 +90,7 @@ export default function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
           <Link
             key={item.path}
             to={item.path}
+            onClick={onNavigate}
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
               isActive(item.path)
@@ -111,18 +120,20 @@ export default function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
           {!collapsed && <span className="ml-3">Logout</span>}
         </Button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full justify-start text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-          onClick={onToggle}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <ChevronLeft
-            className={cn("h-4 w-4 shrink-0 transition-transform", collapsed && "rotate-180")}
-          />
-          {!collapsed && <span className="ml-3">Collapse</span>}
-        </Button>
+        {showCollapseToggle && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+            onClick={onToggle}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <ChevronLeft
+              className={cn("h-4 w-4 shrink-0 transition-transform", collapsed && "rotate-180")}
+            />
+            {!collapsed && <span className="ml-3">Collapse</span>}
+          </Button>
+        )}
       </div>
     </aside>
   );

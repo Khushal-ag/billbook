@@ -41,6 +41,18 @@ const STATUS_COLORS: Record<string, string> = {
   UNPAID: "hsl(var(--status-overdue))",
 };
 
+const INVOICE_STATUS_LABELS: Record<string, string> = {
+  DRAFT: "Draft",
+  FINAL: "Final",
+  CANCELLED: "Cancelled",
+};
+
+const INVOICE_STATUS_ORDER: Record<string, number> = {
+  DRAFT: 1,
+  FINAL: 2,
+  CANCELLED: 3,
+};
+
 export default function Dashboard() {
   const { data: dashboard, isPending, error } = useDashboard();
 
@@ -84,368 +96,467 @@ export default function Dashboard() {
         />
       ) : (
         <>
-          {/* ── Key Metrics ────────────────────────────────────── */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            <StatCard
-              label="Total Invoices"
-              value={String(dashboard.totalInvoices)}
-              icon={<FileText className="h-4 w-4" />}
-              href="/invoices"
-            />
-            <StatCard
-              label="Total Revenue"
-              value={formatCurrency(dashboard.totalRevenue)}
-              icon={<IndianRupee className="h-4 w-4" />}
-              href="/reports"
-            />
-            <StatCard
-              label="Total Paid"
-              value={formatCurrency(dashboard.totalPaid)}
-              icon={<TrendingUp className="h-4 w-4" />}
-              variant="success"
-            />
-            <StatCard
-              label="Outstanding"
-              value={formatCurrency(dashboard.totalOutstanding)}
-              icon={<AlertCircle className="h-4 w-4" />}
-              variant="warning"
-            />
-            <StatCard
-              label="Products"
-              value={String(dashboard.totalProducts)}
-              icon={<Package className="h-4 w-4" />}
-              href="/products"
-            />
-            <StatCard
-              label="Parties"
-              value={String(dashboard.totalParties)}
-              icon={<Users className="h-4 w-4" />}
-              href="/parties"
-            />
-          </div>
+          {(() => {
+            const invoiceStatusData = (dashboard.invoiceStatusBreakdown ?? [])
+              .map((r) => ({
+                ...r,
+                label: INVOICE_STATUS_LABELS[r.status] ?? r.status,
+              }))
+              .sort(
+                (a, b) =>
+                  (INVOICE_STATUS_ORDER[a.status] ?? 99) - (INVOICE_STATUS_ORDER[b.status] ?? 99),
+              );
+            const totalInvoicesByStatus = invoiceStatusData.reduce(
+              (sum, r) => sum + (r.count ?? 0),
+              0,
+            );
+            return (
+              <>
+                {/* ── Key Metrics ────────────────────────────────────── */}
+                <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-6">
+                  <StatCard
+                    label="Total Invoices"
+                    value={String(dashboard.totalInvoices)}
+                    icon={<FileText className="h-4 w-4" />}
+                    href="/invoices"
+                  />
+                  <StatCard
+                    label="Total Revenue"
+                    value={formatCurrency(dashboard.totalRevenue)}
+                    icon={<IndianRupee className="h-4 w-4" />}
+                    href="/reports"
+                  />
+                  <StatCard
+                    label="Total Paid"
+                    value={formatCurrency(dashboard.totalPaid)}
+                    icon={<TrendingUp className="h-4 w-4" />}
+                    variant="success"
+                  />
+                  <StatCard
+                    label="Outstanding"
+                    value={formatCurrency(dashboard.totalOutstanding)}
+                    icon={<AlertCircle className="h-4 w-4" />}
+                    variant="warning"
+                  />
+                  <StatCard
+                    label="Products"
+                    value={String(dashboard.totalProducts)}
+                    icon={<Package className="h-4 w-4" />}
+                    href="/products"
+                  />
+                  <StatCard
+                    label="Parties"
+                    value={String(dashboard.totalParties)}
+                    icon={<Users className="h-4 w-4" />}
+                    href="/parties"
+                  />
+                </div>
 
-          {/* ── Charts ─────────────────────────────────────────── */}
-          <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {/* Revenue Trend */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Revenue Trend</CardTitle>
-                <ChartLink to="/reports" label="View report" />
-              </CardHeader>
-              <CardContent>
-                {dashboard.revenueByMonth.length > 0 ? (
-                  <ChartContainer
-                    config={{
-                      revenue: {
-                        label: "Revenue",
-                        color: "hsl(var(--chart-1))",
-                      },
-                    }}
-                    className="h-[220px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={dashboard.revenueByMonth}>
-                        <defs>
-                          <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={0.2} />
-                            <stop offset="100%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          vertical={false}
-                          className="stroke-border"
-                        />
-                        <XAxis
-                          dataKey="month"
-                          tick={{ fontSize: 11 }}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis
-                          tick={{ fontSize: 11 }}
-                          tickLine={false}
-                          axisLine={false}
-                          tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}
-                        />
-                        <ChartTooltip
-                          content={
-                            <ChartTooltipContent formatter={(v) => formatCurrency(Number(v))} />
-                          }
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="revenue"
-                          stroke="hsl(var(--chart-1))"
-                          strokeWidth={2}
-                          fill="url(#revGrad)"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                ) : (
-                  <EmptyPlaceholder text="No revenue data yet" />
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Invoice Status */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Invoice Status</CardTitle>
-                <ChartLink to="/invoices" label="All invoices" />
-              </CardHeader>
-              <CardContent>
-                {dashboard.invoiceStatusBreakdown.length > 0 ? (
-                  <ChartContainer
-                    config={{
-                      count: {
-                        label: "Count",
-                        color: "hsl(var(--chart-1))",
-                      },
-                    }}
-                    className="h-[220px]"
-                  >
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dashboard.invoiceStatusBreakdown} barCategoryGap="25%">
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          vertical={false}
-                          className="stroke-border"
-                        />
-                        <XAxis
-                          dataKey="status"
-                          tick={{ fontSize: 11 }}
-                          tickLine={false}
-                          axisLine={false}
-                        />
-                        <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                          {dashboard.invoiceStatusBreakdown.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={STATUS_COLORS[entry.status] ?? "hsl(var(--chart-4))"}
-                            />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                ) : (
-                  <EmptyPlaceholder text="No invoice data yet" />
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* ── Payment Status & Top Products ──────────────────── */}
-          <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {/* Payment Status */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Payment Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {dashboard.paymentStatusBreakdown.length > 0 ? (
-                  <div className="space-y-4">
-                    {dashboard.paymentStatusBreakdown.map((item) => {
-                      const color = STATUS_COLORS[item.status] ?? "hsl(var(--chart-4))";
-                      const total = dashboard.paymentStatusBreakdown.reduce(
-                        (s, i) => s + i.count,
-                        0,
-                      );
-                      const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
-                      return (
-                        <div key={item.status} className="space-y-1.5">
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="inline-block h-2.5 w-2.5 rounded-full"
-                                style={{ backgroundColor: color }}
+                {/* ── Charts ─────────────────────────────────────────── */}
+                <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  {/* Revenue Trend */}
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium">Revenue Trend</CardTitle>
+                      <ChartLink to="/reports" label="View report" />
+                    </CardHeader>
+                    <CardContent>
+                      {dashboard.revenueByMonth.length > 0 ? (
+                        <ChartContainer
+                          config={{
+                            revenue: {
+                              label: "Revenue",
+                              color: "hsl(var(--chart-1))",
+                            },
+                          }}
+                          className="h-[220px]"
+                        >
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={dashboard.revenueByMonth}>
+                              <defs>
+                                <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop
+                                    offset="0%"
+                                    stopColor="hsl(var(--chart-1))"
+                                    stopOpacity={0.2}
+                                  />
+                                  <stop
+                                    offset="100%"
+                                    stopColor="hsl(var(--chart-1))"
+                                    stopOpacity={0}
+                                  />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                vertical={false}
+                                className="stroke-border"
                               />
-                              <span className="font-medium">{item.status}</span>
-                              <span className="text-muted-foreground">({item.count})</span>
-                            </div>
-                            <span className="font-medium tabular-nums">
-                              {formatCurrency(item.totalAmount)}
-                            </span>
-                          </div>
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                              <XAxis
+                                dataKey="month"
+                                tick={{ fontSize: 11 }}
+                                tickLine={false}
+                                axisLine={false}
+                              />
+                              <YAxis
+                                tick={{ fontSize: 11 }}
+                                tickLine={false}
+                                axisLine={false}
+                                tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}
+                              />
+                              <ChartTooltip
+                                content={
+                                  <ChartTooltipContent
+                                    formatter={(v) => formatCurrency(Number(v))}
+                                  />
+                                }
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="revenue"
+                                stroke="hsl(var(--chart-1))"
+                                strokeWidth={2}
+                                fill="url(#revGrad)"
+                              />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </ChartContainer>
+                      ) : (
+                        <EmptyPlaceholder text="No revenue data yet" />
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Invoice Status */}
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium">Invoice Status</CardTitle>
+                      <ChartLink to="/invoices" label="All invoices" />
+                    </CardHeader>
+                    <CardContent>
+                      {invoiceStatusData.length > 0 ? (
+                        <ChartContainer
+                          config={{
+                            count: { label: "Invoices", color: "hsl(var(--chart-1))" },
+                          }}
+                          className="h-[220px]"
+                        >
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={invoiceStatusData}
+                              barCategoryGap="25%"
+                              margin={{ left: 4, right: 4 }}
+                            >
+                              <CartesianGrid
+                                strokeDasharray="3 3"
+                                vertical={false}
+                                className="stroke-border"
+                              />
+                              <XAxis
+                                dataKey="label"
+                                tick={{ fontSize: 11 }}
+                                tickLine={false}
+                                axisLine={false}
+                              />
+                              <YAxis
+                                tick={{ fontSize: 11 }}
+                                tickLine={false}
+                                axisLine={false}
+                                allowDecimals={false}
+                              />
+                              <ChartTooltip
+                                cursor={false}
+                                content={
+                                  <InvoiceStatusTooltip
+                                    totalInvoices={totalInvoicesByStatus}
+                                    formatCurrency={formatCurrency}
+                                  />
+                                }
+                              />
+                              <Bar dataKey="count" name="Invoices" radius={[6, 6, 0, 0]}>
+                                {invoiceStatusData.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={STATUS_COLORS[entry.status] ?? "hsl(var(--chart-4))"}
+                                  />
+                                ))}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </ChartContainer>
+                      ) : (
+                        <EmptyPlaceholder text="No invoice data yet" />
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* ── Payment Status & Top Products ──────────────────── */}
+                <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  {/* Payment Status */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium">Payment Status</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {dashboard.paymentStatusBreakdown.length > 0 ? (
+                        <div className="space-y-4">
+                          {dashboard.paymentStatusBreakdown.map((item) => {
+                            const color = STATUS_COLORS[item.status] ?? "hsl(var(--chart-4))";
+                            const total = dashboard.paymentStatusBreakdown.reduce(
+                              (s, i) => s + i.count,
+                              0,
+                            );
+                            const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
+                            return (
+                              <div key={item.status} className="space-y-1.5">
+                                <div className="flex items-center justify-between text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className="inline-block h-2.5 w-2.5 rounded-full"
+                                      style={{ backgroundColor: color }}
+                                    />
+                                    <span className="font-medium">{item.status}</span>
+                                    <span className="text-muted-foreground">({item.count})</span>
+                                  </div>
+                                  <span className="font-medium tabular-nums">
+                                    {formatCurrency(item.totalAmount)}
+                                  </span>
+                                </div>
+                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                                  <div
+                                    className="h-full rounded-full transition-all"
+                                    style={{
+                                      width: `${pct}%`,
+                                      backgroundColor: color,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <EmptyPlaceholder text="No payment data yet" />
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Top Products */}
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-3">
+                      <CardTitle className="text-sm font-medium">Top Products</CardTitle>
+                      <ChartLink to="/products" label="View all" />
+                    </CardHeader>
+                    <CardContent>
+                      {dashboard.topProducts.length > 0 ? (
+                        <div className="space-y-3">
+                          {dashboard.topProducts.slice(0, 5).map((product, idx) => {
+                            const maxRev = dashboard.topProducts[0]?.totalRevenue || 1;
+                            const pct = Math.round((product.totalRevenue / maxRev) * 100);
+                            return (
+                              <div key={product.productId} className="space-y-1">
+                                <div className="flex items-center justify-between text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <span className="flex h-5 w-5 items-center justify-center rounded bg-secondary text-xs font-medium text-secondary-foreground">
+                                      {idx + 1}
+                                    </span>
+                                    <span className="font-medium">{product.productName}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      Qty {product.totalQuantity}
+                                    </span>
+                                  </div>
+                                  <span className="font-medium tabular-nums">
+                                    {formatCurrency(product.totalRevenue)}
+                                  </span>
+                                </div>
+                                <Progress value={pct} className="h-1" />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <EmptyPlaceholder text="No product data yet" />
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* ── Top Customers & Recent Invoices ────────────────── */}
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+                  {/* Top Customers */}
+                  <Card className="lg:col-span-2">
+                    <CardHeader className="flex flex-row items-center justify-between pb-3">
+                      <CardTitle className="text-sm font-medium">Top Customers</CardTitle>
+                      <ChartLink to="/parties" label="View all" />
+                    </CardHeader>
+                    <CardContent>
+                      {dashboard.topCustomers.length > 0 ? (
+                        <div className="space-y-1">
+                          {dashboard.topCustomers.slice(0, 5).map((customer) => (
                             <div
-                              className="h-full rounded-full transition-all"
-                              style={{
-                                width: `${pct}%`,
-                                backgroundColor: color,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <EmptyPlaceholder text="No payment data yet" />
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Top Products */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-sm font-medium">Top Products</CardTitle>
-                <ChartLink to="/products" label="View all" />
-              </CardHeader>
-              <CardContent>
-                {dashboard.topProducts.length > 0 ? (
-                  <div className="space-y-3">
-                    {dashboard.topProducts.slice(0, 5).map((product, idx) => {
-                      const maxRev = dashboard.topProducts[0]?.totalRevenue || 1;
-                      const pct = Math.round((product.totalRevenue / maxRev) * 100);
-                      return (
-                        <div key={product.productId} className="space-y-1">
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                              <span className="flex h-5 w-5 items-center justify-center rounded bg-secondary text-xs font-medium text-secondary-foreground">
-                                {idx + 1}
+                              key={customer.partyId}
+                              className="flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-muted/50"
+                            >
+                              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
+                                {customer.partyName.charAt(0).toUpperCase()}
                               </span>
-                              <span className="font-medium">{product.productName}</span>
-                              <span className="text-xs text-muted-foreground">
-                                Qty {product.totalQuantity}
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium">{customer.partyName}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {customer.invoiceCount} invoice
+                                  {customer.invoiceCount !== 1 ? "s" : ""}
+                                </p>
+                              </div>
+                              <span className="text-sm font-medium tabular-nums">
+                                {formatCurrency(customer.totalRevenue)}
                               </span>
                             </div>
-                            <span className="font-medium tabular-nums">
-                              {formatCurrency(product.totalRevenue)}
-                            </span>
-                          </div>
-                          <Progress value={pct} className="h-1" />
+                          ))}
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <EmptyPlaceholder text="No product data yet" />
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                      ) : (
+                        <EmptyPlaceholder text="No customer data yet" />
+                      )}
+                    </CardContent>
+                  </Card>
 
-          {/* ── Top Customers & Recent Invoices ────────────────── */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-            {/* Top Customers */}
-            <Card className="lg:col-span-2">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-sm font-medium">Top Customers</CardTitle>
-                <ChartLink to="/parties" label="View all" />
-              </CardHeader>
-              <CardContent>
-                {dashboard.topCustomers.length > 0 ? (
-                  <div className="space-y-1">
-                    {dashboard.topCustomers.slice(0, 5).map((customer) => (
-                      <div
-                        key={customer.partyId}
-                        className="flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-muted/50"
-                      >
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
-                          {customer.partyName.charAt(0).toUpperCase()}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{customer.partyName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {customer.invoiceCount} invoice
-                            {customer.invoiceCount !== 1 ? "s" : ""}
-                          </p>
+                  {/* Recent Invoices */}
+                  <Card className="lg:col-span-3">
+                    <CardHeader className="flex flex-row items-center justify-between pb-3">
+                      <CardTitle className="text-sm font-medium">Recent Invoices</CardTitle>
+                      <ChartLink to="/invoices" label="View all" />
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      {dashboard.recentInvoices.length > 0 ? (
+                        <div className="data-table-container">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b bg-muted/30">
+                                <th
+                                  scope="col"
+                                  className="px-4 py-2 text-left font-medium text-muted-foreground"
+                                >
+                                  Invoice #
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="px-4 py-2 text-left font-medium text-muted-foreground"
+                                >
+                                  Party
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="hidden px-4 py-2 text-left font-medium text-muted-foreground sm:table-cell"
+                                >
+                                  Date
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="px-4 py-2 text-right font-medium text-muted-foreground"
+                                >
+                                  Amount
+                                </th>
+                                <th
+                                  scope="col"
+                                  className="px-4 py-2 text-center font-medium text-muted-foreground"
+                                >
+                                  Status
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {dashboard.recentInvoices.slice(0, 6).map((inv) => (
+                                <tr
+                                  key={inv.id}
+                                  className="border-b last:border-0 hover:bg-muted/20"
+                                >
+                                  <td className="px-4 py-2.5">
+                                    <Link
+                                      to={`/invoices/${inv.id}`}
+                                      className="font-medium text-accent hover:underline"
+                                    >
+                                      {inv.invoiceNumber}
+                                    </Link>
+                                  </td>
+                                  <td className="px-4 py-2.5 text-muted-foreground">
+                                    {inv.partyName}
+                                  </td>
+                                  <td className="hidden px-4 py-2.5 text-muted-foreground sm:table-cell">
+                                    {new Date(inv.invoiceDate).toLocaleDateString()}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-right font-medium tabular-nums">
+                                    {formatCurrency(inv.totalAmount)}
+                                  </td>
+                                  <td className="px-4 py-2.5 text-center">
+                                    <StatusBadge status={inv.status} />
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
-                        <span className="text-sm font-medium tabular-nums">
-                          {formatCurrency(customer.totalRevenue)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyPlaceholder text="No customer data yet" />
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Recent Invoices */}
-            <Card className="lg:col-span-3">
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <CardTitle className="text-sm font-medium">Recent Invoices</CardTitle>
-                <ChartLink to="/invoices" label="View all" />
-              </CardHeader>
-              <CardContent className="p-0">
-                {dashboard.recentInvoices.length > 0 ? (
-                  <div className="data-table-container">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b bg-muted/30">
-                          <th
-                            scope="col"
-                            className="px-4 py-2 text-left font-medium text-muted-foreground"
-                          >
-                            Invoice #
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-2 text-left font-medium text-muted-foreground"
-                          >
-                            Party
-                          </th>
-                          <th
-                            scope="col"
-                            className="hidden px-4 py-2 text-left font-medium text-muted-foreground sm:table-cell"
-                          >
-                            Date
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-2 text-right font-medium text-muted-foreground"
-                          >
-                            Amount
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-2 text-center font-medium text-muted-foreground"
-                          >
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dashboard.recentInvoices.slice(0, 6).map((inv) => (
-                          <tr key={inv.id} className="border-b last:border-0 hover:bg-muted/20">
-                            <td className="px-4 py-2.5">
-                              <Link
-                                to={`/invoices/${inv.id}`}
-                                className="font-medium text-accent hover:underline"
-                              >
-                                {inv.invoiceNumber}
-                              </Link>
-                            </td>
-                            <td className="px-4 py-2.5 text-muted-foreground">{inv.partyName}</td>
-                            <td className="hidden px-4 py-2.5 text-muted-foreground sm:table-cell">
-                              {new Date(inv.invoiceDate).toLocaleDateString()}
-                            </td>
-                            <td className="px-4 py-2.5 text-right font-medium tabular-nums">
-                              {formatCurrency(inv.totalAmount)}
-                            </td>
-                            <td className="px-4 py-2.5 text-center">
-                              <StatusBadge status={inv.status} />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <EmptyPlaceholder text="No invoices yet" />
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                      ) : (
+                        <EmptyPlaceholder text="No invoices yet" />
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            );
+          })()}
         </>
       )}
+    </div>
+  );
+}
+
+function InvoiceStatusTooltip({
+  active,
+  payload,
+  totalInvoices,
+  formatCurrency,
+}: {
+  active?: boolean;
+  payload?: Array<{
+    value?: number;
+    payload?: { label?: string; status?: string; count?: number; totalAmount?: number };
+    color?: string;
+  }>;
+  totalInvoices: number;
+  formatCurrency: (value: number | string) => string;
+}) {
+  if (!active || !payload?.length) return null;
+
+  const row = payload[0]?.payload;
+  if (!row) return null;
+
+  const count = row.count ?? 0;
+  const pct = totalInvoices > 0 ? Math.round((count / totalInvoices) * 100) : 0;
+  const dotColor = STATUS_COLORS[row.status ?? ""] ?? payload[0]?.color ?? "hsl(var(--chart-4))";
+
+  return (
+    <div className="grid min-w-[12rem] gap-2 rounded-lg border border-border/50 bg-background px-3 py-2 text-xs shadow-xl">
+      <div className="flex items-center gap-2">
+        <span
+          className="inline-block h-2.5 w-2.5 rounded-[3px]"
+          style={{ backgroundColor: dotColor }}
+        />
+        <span className="font-medium text-foreground">{row.label ?? row.status ?? "Status"}</span>
+      </div>
+      <div className="grid gap-1">
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">Invoices</span>
+          <span className="font-mono font-medium tabular-nums text-foreground">
+            {count.toLocaleString()} {pct ? `(${pct}%)` : ""}
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">Amount</span>
+          <span className="font-mono font-medium tabular-nums text-foreground">
+            {formatCurrency(row.totalAmount ?? 0)}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

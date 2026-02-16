@@ -2,8 +2,6 @@ import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Plus, Filter, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -19,6 +17,7 @@ import SearchInput from "@/components/SearchInput";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import InvoiceDialog from "@/components/dialogs/InvoiceDialog";
+import DateRangePicker from "@/components/DateRangePicker";
 import { useInvoices } from "@/hooks/use-invoices";
 import { useDebounce } from "@/hooks/use-debounce";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -58,13 +57,13 @@ export default function Invoices() {
     setPage(1);
   }, []);
 
-  const handleStartDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setStartDate(e.target.value);
+  const handleStartDateChange = useCallback((date: string) => {
+    setStartDate(date);
     setPage(1);
   }, []);
 
-  const handleEndDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEndDate(e.target.value);
+  const handleEndDateChange = useCallback((date: string) => {
+    setEndDate(date);
     setPage(1);
   }, []);
 
@@ -86,45 +85,34 @@ export default function Invoices() {
       />
 
       {/* Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+      <div className="mb-4 grid grid-cols-[minmax(0,1fr)_minmax(0,160px)] items-end gap-3 lg:grid-cols-[minmax(0,1fr)_160px_auto]">
         <SearchInput
           value={search}
           onChange={setSearch}
           placeholder="Search invoices..."
-          className="flex-1"
+          className="col-span-1 w-full"
         />
-        <Select value={statusFilter} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-[160px]">
-            <Filter className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">All</SelectItem>
-            <SelectItem value="DRAFT">Draft</SelectItem>
-            <SelectItem value="FINAL">Final</SelectItem>
-            <SelectItem value="CANCELLED">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex items-end gap-2">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">From</Label>
-            <Input
-              type="date"
-              className="h-9 w-[140px]"
-              value={startDate}
-              onChange={handleStartDateChange}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">To</Label>
-            <Input
-              type="date"
-              className="h-9 w-[140px]"
-              value={endDate}
-              onChange={handleEndDateChange}
-            />
-          </div>
+        <div className="col-span-1 w-full">
+          <Select value={statusFilter} onValueChange={handleStatusChange}>
+            <SelectTrigger className="w-full sm:w-[160px]">
+              <Filter className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All</SelectItem>
+              <SelectItem value="DRAFT">Draft</SelectItem>
+              <SelectItem value="FINAL">Final</SelectItem>
+              <SelectItem value="CANCELLED">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+        <DateRangePicker
+          className="col-span-2 lg:col-span-1"
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={handleStartDateChange}
+          onEndDateChange={handleEndDateChange}
+        />
       </div>
 
       <ErrorBanner error={error} fallbackMessage="Failed to load invoices" />
@@ -149,16 +137,25 @@ export default function Invoices() {
             <table className="w-full text-sm" role="table" aria-label="Invoices list">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th scope="col" className="px-6 py-3 text-left font-medium text-muted-foreground">
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left font-medium text-muted-foreground sm:px-6"
+                  >
                     Invoice #
                   </th>
                   <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
                     Party
                   </th>
-                  <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
+                  <th
+                    scope="col"
+                    className="hidden px-3 py-3 text-left font-medium text-muted-foreground sm:table-cell"
+                  >
                     Date
                   </th>
-                  <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
+                  <th
+                    scope="col"
+                    className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell"
+                  >
                     Due Date
                   </th>
                   <th
@@ -169,7 +166,7 @@ export default function Invoices() {
                   </th>
                   <th
                     scope="col"
-                    className="px-3 py-3 text-right font-medium text-muted-foreground"
+                    className="hidden px-3 py-3 text-right font-medium text-muted-foreground md:table-cell"
                   >
                     Balance Due
                   </th>
@@ -187,7 +184,7 @@ export default function Invoices() {
                     key={inv.id}
                     className="cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/20"
                   >
-                    <td className="px-6 py-3">
+                    <td className="px-4 py-3 sm:px-6">
                       <Link
                         to={`/invoices/${inv.id}`}
                         className="font-medium text-accent hover:underline"
@@ -196,14 +193,16 @@ export default function Invoices() {
                       </Link>
                     </td>
                     <td className="px-3 py-3">{inv.partyName ?? "—"}</td>
-                    <td className="px-3 py-3 text-muted-foreground">
+                    <td className="hidden px-3 py-3 text-muted-foreground sm:table-cell">
                       {formatDate(inv.invoiceDate)}
                     </td>
-                    <td className="px-3 py-3 text-muted-foreground">{formatDate(inv.dueDate)}</td>
+                    <td className="hidden px-3 py-3 text-muted-foreground md:table-cell">
+                      {formatDate(inv.dueDate)}
+                    </td>
                     <td className="px-3 py-3 text-right font-medium">
                       {formatCurrency(inv.totalAmount ?? "0")}
                     </td>
-                    <td className="px-3 py-3 text-right font-medium">
+                    <td className="hidden px-3 py-3 text-right font-medium md:table-cell">
                       {formatCurrency(
                         parseFloat((inv.totalAmount ?? "0").replace(/,/g, "")) -
                           parseFloat((inv.paidAmount ?? "0").replace(/,/g, "")),
