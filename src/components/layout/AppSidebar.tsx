@@ -1,4 +1,4 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard,
@@ -53,7 +53,17 @@ export default function AppSidebar({
   showCollapseToggle = true,
 }: AppSidebarProps) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    // Close mobile sheet (if any) and navigate to the public landing first.
+    // We pass state to prevent Landing from redirecting back to /dashboard while
+    // logout is still in-flight.
+    onNavigate?.();
+    navigate("/", { replace: true, state: { loggedOut: true } });
+    await logout();
+  };
 
   const isActive = (path: string) => {
     if (path === "/dashboard") return pathname === "/dashboard";
@@ -113,7 +123,7 @@ export default function AppSidebar({
           variant="ghost"
           size="sm"
           className="w-full justify-start text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-          onClick={logout}
+          onClick={handleLogout}
           title="Logout"
         >
           <LogOut className="h-4 w-4 shrink-0" />
