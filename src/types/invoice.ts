@@ -20,6 +20,9 @@ export interface Invoice {
   totalTax: string | null;
   totalAmount: string;
   paidAmount: string | null;
+  isOverdue?: boolean;
+  overdueDays?: number;
+  dueAmount?: string;
   notes: string | null;
   storagePath: string | null;
   finalizedAt: string | null;
@@ -53,6 +56,46 @@ export interface InvoiceItem {
 export interface InvoiceDetail extends Invoice {
   items: InvoiceItem[];
   payments: Payment[];
+}
+
+export type InvoiceCommunicationChannel = "EMAIL" | "WHATSAPP" | "SMS" | "OTHER";
+
+export interface InvoiceCommunicationRequest {
+  channel?: InvoiceCommunicationChannel;
+  metadata?: Record<string, unknown>;
+}
+
+export interface InvoiceCommunicationResponse {
+  id: number;
+  invoiceId: number;
+  action: "SENT" | "REMINDER";
+  channel: InvoiceCommunicationChannel | null;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+/** GET /invoices/:invoiceId/communications (summary payload) */
+export interface InvoiceCommunicationLatest {
+  id: number;
+  business_id: number;
+  invoice_id: number;
+  channel: InvoiceCommunicationChannel | null;
+  action: "SENT" | "REMINDER";
+  metadata: Record<string, unknown> | null;
+  action_date: string;
+  created_at: string;
+}
+
+export interface InvoiceCommunicationsSummary {
+  invoiceId: number;
+  sent: {
+    today: boolean;
+    latest: InvoiceCommunicationLatest | null;
+  };
+  reminder: {
+    today: boolean;
+    latest: InvoiceCommunicationLatest | null;
+  };
 }
 
 export interface InvoiceItemInput {

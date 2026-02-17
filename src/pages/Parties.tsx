@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Plus, Users, Trash2, Pencil } from "lucide-react";
+import { Plus, Users, Trash2, Pencil, History } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import EmptyState from "@/components/EmptyState";
@@ -17,6 +18,7 @@ import type { Party } from "@/types/party";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
 export default function Parties() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [tab, setTab] = useState("CUSTOMER");
@@ -162,32 +164,39 @@ export default function Parties() {
                   <td className="px-3 py-3 text-right font-medium">
                     {formatCurrency(p.openingBalance ?? "0")}
                   </td>
-                  <td className="px-3 py-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
+                  <div className="flex items-center justify-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEdit(p)}
+                      title="Edit"
+                      aria-label={`Edit ${p.name}`}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => navigate(`/parties/${p.id}/ledger`)}
+                      title="Ledger"
+                      aria-label={`View ledger for ${p.name}`}
+                    >
+                      <History className="h-3.5 w-3.5" />
+                    </Button>
+                    {isOwner && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => openEdit(p)}
-                        title="Edit"
-                        aria-label={`Edit ${p.name}`}
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(p)}
+                        disabled={deleteParty.isPending}
+                        title="Delete"
+                        aria-label={`Delete ${p.name}`}
                       >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
-                      {isOwner && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleDelete(p)}
-                          disabled={deleteParty.isPending}
-                          title="Delete"
-                          aria-label={`Delete ${p.name}`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                    </div>
-                  </td>
+                    )}
+                  </div>
                 </tr>
               ))}
             </tbody>

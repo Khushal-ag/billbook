@@ -197,15 +197,23 @@ export default function Invoices() {
                       {formatDate(inv.invoiceDate)}
                     </td>
                     <td className="hidden px-3 py-3 text-muted-foreground md:table-cell">
-                      {formatDate(inv.dueDate)}
+                      <div className="flex flex-col">
+                        <span>{formatDate(inv.dueDate)}</span>
+                        {inv.isOverdue && inv.overdueDays !== undefined && inv.overdueDays > 0 && (
+                          <span className="text-xs text-destructive">
+                            Overdue {inv.overdueDays}d
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-3 py-3 text-right font-medium">
                       {formatCurrency(inv.totalAmount ?? "0")}
                     </td>
                     <td className="hidden px-3 py-3 text-right font-medium md:table-cell">
                       {formatCurrency(
-                        parseFloat((inv.totalAmount ?? "0").replace(/,/g, "")) -
-                          parseFloat((inv.paidAmount ?? "0").replace(/,/g, "")),
+                        inv.dueAmount ??
+                          parseFloat((inv.totalAmount ?? "0").replace(/,/g, "")) -
+                            parseFloat((inv.paidAmount ?? "0").replace(/,/g, "")),
                       )}
                     </td>
                     <td className="px-3 py-3 text-center">

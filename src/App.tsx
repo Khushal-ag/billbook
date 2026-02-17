@@ -14,6 +14,7 @@ const Invoices = lazy(() => import("./pages/Invoices"));
 const InvoiceDetail = lazy(() => import("./pages/InvoiceDetail"));
 const Products = lazy(() => import("./pages/Products"));
 const Parties = lazy(() => import("./pages/Parties"));
+const PartyLedger = lazy(() => import("./pages/PartyLedger"));
 const CreditNotes = lazy(() => import("./pages/CreditNotes"));
 const Reports = lazy(() => import("./pages/Reports"));
 const Tax = lazy(() => import("./pages/Tax"));
@@ -62,6 +63,7 @@ const App = () => (
                   <Route path="/invoices/:id" element={<InvoiceDetail />} />
                   <Route path="/products" element={<Products />} />
                   <Route path="/parties" element={<Parties />} />
+                  <Route path="/parties/:partyId/ledger" element={<PartyLedger />} />
                   <Route path="/credit-notes" element={<CreditNotes />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/tax" element={<Tax />} />

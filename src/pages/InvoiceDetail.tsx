@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, Loader2, Pencil, CreditCard, History } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Loader2,
+  Pencil,
+  CreditCard,
+  Send,
+  Bell,
+  History,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +25,15 @@ import {
   useFinalizeInvoice,
   useCancelInvoice,
   useInvoicePdf,
+  useMarkInvoiceSent,
+  useMarkInvoiceReminder,
+  useInvoiceCommunications,
 } from "@/hooks/use-invoices";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useResourceAuditLogs } from "@/hooks/use-audit-logs";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
+import { ApiClientError } from "@/api/error";
 
 export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
@@ -35,8 +48,14 @@ export default function InvoiceDetail() {
   const { data: invoice, isPending, error } = useInvoice(invoiceId);
   const { data: pdfData } = useInvoicePdf(invoice?.status === "FINAL" ? invoiceId : undefined);
   const { data: auditData } = useResourceAuditLogs("INVOICE", invoiceId);
+  const communicationsQuery = useInvoiceCommunications(invoiceId);
   const finalizeMutation = useFinalizeInvoice();
   const cancelMutation = useCancelInvoice();
+  const markSentMutation = useMarkInvoiceSent(invoiceId ?? 0);
+  const markReminderMutation = useMarkInvoiceReminder(invoiceId ?? 0);
+
+  const sentToday = communicationsQuery.data?.sent.today ?? false;
+  const reminderToday = communicationsQuery.data?.reminder.today ?? false;
 
   const handleFinalize = async () => {
     if (!invoiceId) return;
@@ -50,6 +69,36 @@ export default function InvoiceDetail() {
 
   const handleCancel = () => {
     setCancelConfirm(true);
+  };
+
+  const handleMarkSent = async () => {
+    if (!invoiceId) return;
+    if (markSentMutation.isPending) return;
+    try {
+      await markSentMutation.mutateAsync({ channel: "WHATSAPP" });
+      showSuccessToast("Invoice marked as sent");
+    } catch (err) {
+      if (err instanceof ApiClientError && (err.status === 409 || err.status === 400)) {
+        showSuccessToast("Invoice already marked as sent");
+        return;
+      }
+      showErrorToast(err, "Failed to mark as sent");
+    }
+  };
+
+  const handleMarkReminder = async () => {
+    if (!invoiceId) return;
+    if (markReminderMutation.isPending) return;
+    try {
+      await markReminderMutation.mutateAsync({ channel: "EMAIL" });
+      showSuccessToast("Reminder recorded");
+    } catch (err) {
+      if (err instanceof ApiClientError && (err.status === 409 || err.status === 400)) {
+        showSuccessToast("Reminder already recorded");
+        return;
+      }
+      showErrorToast(err, "Failed to mark reminder");
+    }
   };
 
   const confirmCancel = async () => {
@@ -71,9 +120,13 @@ export default function InvoiceDetail() {
 
   // Calculate balance due
   const balanceDue = invoice
-    ? parseFloat((invoice.totalAmount ?? "0").replace(/,/g, "")) -
-      parseFloat((invoice.paidAmount ?? "0").replace(/,/g, ""))
-    : 0;
+    ? (invoice.dueAmount ??
+      String(
+        parseFloat((invoice.totalAmount ?? "0").replace(/,/g, "")) -
+          parseFloat((invoice.paidAmount ?? "0").replace(/,/g, "")),
+      ))
+    : "0";
+  const balanceDueValue = parseFloat(balanceDue.replace(/,/g, "")) || 0;
 
   return (
     <div className="page-container animate-fade-in">
@@ -129,10 +182,10 @@ export default function InvoiceDetail() {
                     variant="outline"
                     size="sm"
                     onClick={() => setPaymentOpen(true)}
-                    disabled={balanceDue <= 0}
-                    className={balanceDue <= 0 ? "cursor-not-allowed opacity-50" : ""}
+                    disabled={balanceDueValue <= 0}
+                    className={balanceDueValue <= 0 ? "cursor-not-allowed opacity-50" : ""}
                     title={
-                      balanceDue <= 0
+                      balanceDueValue <= 0
                         ? "Invoice is fully paid. No balance due to record."
                         : `Record payment (Balance due: ${formatCurrency(balanceDue)})`
                     }
@@ -140,6 +193,48 @@ export default function InvoiceDetail() {
                     <CreditCard className="mr-2 h-3.5 w-3.5" />
                     Record Payment
                   </Button>
+                )}
+                {invoice.status === "FINAL" && (
+                  <>
+                    <div className="flex flex-col">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleMarkSent}
+                        disabled={markSentMutation.isPending}
+                      >
+                        {markSentMutation.isPending ? (
+                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Send className="mr-2 h-3.5 w-3.5" />
+                        )}
+                        Mark Sent
+                      </Button>
+                      {sentToday && (
+                        <span className="mt-1 text-[11px] text-muted-foreground">Sent today</span>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleMarkReminder}
+                        disabled={markReminderMutation.isPending}
+                      >
+                        {markReminderMutation.isPending ? (
+                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Bell className="mr-2 h-3.5 w-3.5" />
+                        )}
+                        Reminder
+                      </Button>
+                      {reminderToday && (
+                        <span className="mt-1 text-[11px] text-muted-foreground">
+                          Reminder today
+                        </span>
+                      )}
+                    </div>
+                  </>
                 )}
                 {pdfData?.downloadUrl && (
                   <Button variant="outline" size="sm" asChild>
@@ -180,12 +275,12 @@ export default function InvoiceDetail() {
             <Card>
               <CardContent className="pt-4">
                 <p className="text-xs text-muted-foreground">Balance Due</p>
-                <p className="mt-1 text-lg font-semibold">
-                  {formatCurrency(
-                    parseFloat((invoice.totalAmount ?? "0").replace(/,/g, "")) -
-                      parseFloat((invoice.paidAmount ?? "0").replace(/,/g, "")),
-                  )}
-                </p>
+                <p className="mt-1 text-lg font-semibold">{formatCurrency(balanceDue)}</p>
+                {invoice.isOverdue && invoice.overdueDays && invoice.overdueDays > 0 && (
+                  <p className="mt-1 text-xs text-destructive">
+                    Overdue by {invoice.overdueDays} days
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -419,10 +514,7 @@ export default function InvoiceDetail() {
               open={paymentOpen}
               onOpenChange={setPaymentOpen}
               invoiceId={invoiceId}
-              balanceDue={String(
-                parseFloat((invoice.totalAmount ?? "0").replace(/,/g, "")) -
-                  parseFloat((invoice.paidAmount ?? "0").replace(/,/g, "")),
-              )}
+              balanceDue={invoice.dueAmount ?? balanceDue}
             />
           )}
 

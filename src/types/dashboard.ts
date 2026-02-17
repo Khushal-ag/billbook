@@ -2,8 +2,16 @@ export interface DashboardData {
   business: DashboardBusiness;
   totalInvoices: number;
   totalRevenue: number;
+  totalInvoicedGross?: number;
+  totalCredited?: number;
+  totalRevenueNet?: number;
   totalPaid: number;
+  totalPaidFromLedger?: number;
+  totalPaidFromInvoiceField?: number;
   totalOutstanding: number;
+  totalReceivables?: string;
+  totalAdvanceBalance?: string;
+  netOutstanding?: string;
   totalProducts: number;
   totalParties: number;
   revenueByMonth: RevenueByMonth[];

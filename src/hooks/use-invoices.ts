@@ -11,6 +11,9 @@ import type {
   InvoicePdfResponse,
   FinalizeInvoiceResponse,
   Payment,
+  InvoiceCommunicationRequest,
+  InvoiceCommunicationResponse,
+  InvoiceCommunicationsSummary,
 } from "@/types/invoice";
 
 export function useInvoices(params: {
@@ -124,5 +127,55 @@ export function useInvoicePdf(id: number | undefined) {
       return res.data;
     },
     enabled: !!id,
+  });
+}
+
+export function useInvoiceCommunications(invoiceId: number | undefined) {
+  return useQuery({
+    queryKey: ["invoice-communications", invoiceId],
+    queryFn: async () => {
+      const res = await api.get<InvoiceCommunicationsSummary>(
+        `/invoices/${invoiceId}/communications`,
+      );
+      return res.data;
+    },
+    enabled: !!invoiceId,
+    retry: false,
+  });
+}
+
+export function useMarkInvoiceSent(invoiceId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data?: InvoiceCommunicationRequest) => {
+      const res = await api.post<InvoiceCommunicationResponse>(
+        `/invoices/${invoiceId}/mark-sent`,
+        data,
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["invoice", invoiceId] });
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["invoice-communications", invoiceId] });
+    },
+  });
+}
+
+export function useMarkInvoiceReminder(invoiceId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data?: InvoiceCommunicationRequest) => {
+      const res = await api.post<InvoiceCommunicationResponse>(
+        `/invoices/${invoiceId}/mark-reminder`,
+        data,
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["invoice", invoiceId] });
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["invoice-communications", invoiceId] });
+    },
   });
 }
