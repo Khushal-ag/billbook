@@ -1,5 +1,6 @@
 import { History, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useUIMode } from "@/contexts/UIModeContext";
 import { formatCurrency } from "@/lib/utils";
 import type { Party } from "@/types/party";
 
@@ -20,6 +21,9 @@ export function PartiesTable({
   onLedger,
   onDelete,
 }: PartiesTableProps) {
+  const { mode } = useUIMode();
+  const isSimpleMode = mode === "simple";
+
   return (
     <div className="data-table-container">
       <table className="w-full text-sm" role="table" aria-label="Parties list">
@@ -83,15 +87,17 @@ export function PartiesTable({
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onLedger(party.id)}
-                  title="Ledger"
-                  aria-label={`View ledger for ${party.name}`}
-                >
-                  <History className="h-3.5 w-3.5" />
-                </Button>
+                {!isSimpleMode && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onLedger(party.id)}
+                    title="Account History"
+                    aria-label={`View account history for ${party.name}`}
+                  >
+                    <History className="h-3.5 w-3.5" />
+                  </Button>
+                )}
                 {isOwner && (
                   <Button
                     variant="ghost"

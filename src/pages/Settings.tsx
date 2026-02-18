@@ -5,6 +5,7 @@ import SettingsSkeleton from "@/components/skeletons/SettingsSkeleton";
 import PageHeader from "@/components/PageHeader";
 import { useBusinessProfile, useUpdateBusinessProfile } from "@/hooks/use-business";
 import { BusinessProfileForm, BusinessUsersCard } from "@/components/settings/SettingsSections";
+import { InterfaceModeCard } from "@/components/settings/InterfaceModeCard";
 import { profileSchema, type ProfileForm } from "@/components/settings/profileSchema";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
@@ -75,6 +76,7 @@ export default function Settings() {
           isDirty={isDirty}
           isSaving={updateProfile.isPending}
         />
+        <InterfaceModeCard />
         <BusinessUsersCard />
       </div>
     </div>

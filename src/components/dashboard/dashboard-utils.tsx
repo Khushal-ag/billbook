@@ -49,7 +49,7 @@ export function HeroCard({
   href,
 }: HeroCardProps) {
   const content = (
-    <Card className="group rounded-3xl border-muted/80 bg-background/70 shadow-sm ring-1 ring-muted/40 transition hover:-translate-y-0.5 hover:shadow-md">
+    <Card className="group rounded-3xl border bg-background/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <CardContent className="flex items-start justify-between gap-4 p-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -143,7 +143,7 @@ const QUICK_STAT_VARIANT_STYLES: Record<QuickStatVariant, string> = {
 
 export function QuickStat({ label, value, href, variant = "default", children }: QuickStatProps) {
   const content = (
-    <Card className="group rounded-2xl border-muted/80 bg-background/70 shadow-sm ring-1 ring-muted/40 transition hover:-translate-y-0.5 hover:shadow-md">
+    <Card className="group rounded-2xl border bg-background/70 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">

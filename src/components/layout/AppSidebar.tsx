@@ -1,5 +1,6 @@
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUIMode } from "@/contexts/UIModeContext";
 import {
   LayoutDashboard,
   FileText,
@@ -22,6 +23,8 @@ interface NavItem {
   path: string;
   icon: React.ElementType;
   ownerOnly?: boolean;
+  simpleMode?: boolean; // Show in simple mode only
+  advancedOnly?: boolean; // Hide in simple mode
 }
 
 interface NavSection {
@@ -35,7 +38,7 @@ const navSections: NavSection[] = [
     items: [
       { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
       { label: "Invoices", path: "/invoices", icon: FileText },
-      { label: "Credit Notes", path: "/credit-notes", icon: FileMinus },
+      { label: "Credit Notes", path: "/credit-notes", icon: FileMinus, advancedOnly: true },
     ],
   },
   {
@@ -48,15 +51,21 @@ const navSections: NavSection[] = [
   {
     title: "Reports",
     items: [
-      { label: "Reports", path: "/reports", icon: BarChart3 },
-      { label: "Tax / GST", path: "/tax", icon: Receipt },
+      { label: "Reports", path: "/reports", icon: BarChart3, advancedOnly: true },
+      { label: "Tax / GST", path: "/tax", icon: Receipt, advancedOnly: true },
     ],
   },
   {
     title: "Account",
     items: [
       { label: "Subscription", path: "/subscription", icon: CreditCard },
-      { label: "Audit Logs", path: "/audit-logs", icon: BarChart3, ownerOnly: true },
+      {
+        label: "Audit Logs",
+        path: "/audit-logs",
+        icon: BarChart3,
+        ownerOnly: true,
+        advancedOnly: true,
+      },
     ],
   },
 ];
@@ -69,7 +78,8 @@ interface AppSidebarProps {
 export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { logout, user } = useAuth();
+  const { mode } = useUIMode();
 
   const handleLogout = async () => {
     // Close mobile sheet (if any) and navigate to the public landing first.
@@ -86,10 +96,18 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
   };
 
   const getVisibleSections = (): NavSection[] => {
-    return navSections.map((section) => ({
-      ...section,
-      items: section.items.filter((item) => !item.ownerOnly || user?.role === "OWNER"),
-    }));
+    return navSections
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => {
+          // Hide if owner-only and user is not owner
+          if (item.ownerOnly && user?.role !== "OWNER") return false;
+          // Hide if advanced-only and in simple mode
+          if (item.advancedOnly && mode === "simple") return false;
+          return true;
+        }),
+      }))
+      .filter((section) => section.items.length > 0); // Hide empty sections
   };
 
   return (

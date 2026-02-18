@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { UIModeProvider } from "@/contexts/UIModeContext";
 import AppLayout from "@/components/layout/AppLayout";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
@@ -45,38 +46,43 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster position="top-right" richColors closeButton />
-          <BrowserRouter>
-            <Suspense fallback={<PageFallback />}>
-              <Routes>
-                {/* Public routes */}
-                <Route path="/" element={<Landing />} />
-                <Route path="/login" element={<Navigate to="/?auth=login" replace />} />
-                <Route path="/signup" element={<Navigate to="/?auth=signup" replace />} />
-                <Route path="/forgot-password" element={<Navigate to="/?auth=forgot" replace />} />
+        <UIModeProvider>
+          <TooltipProvider>
+            <Toaster position="top-right" richColors closeButton />
+            <BrowserRouter>
+              <Suspense fallback={<PageFallback />}>
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/" element={<Landing />} />
+                  <Route path="/login" element={<Navigate to="/?auth=login" replace />} />
+                  <Route path="/signup" element={<Navigate to="/?auth=signup" replace />} />
+                  <Route
+                    path="/forgot-password"
+                    element={<Navigate to="/?auth=forgot" replace />}
+                  />
 
-                {/* Authenticated routes */}
-                <Route element={<AppLayout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/invoices" element={<Invoices />} />
-                  <Route path="/invoices/:id" element={<InvoiceDetail />} />
-                  <Route path="/products" element={<Products />} />
-                  <Route path="/parties" element={<Parties />} />
-                  <Route path="/parties/:partyId/ledger" element={<PartyLedger />} />
-                  <Route path="/credit-notes" element={<CreditNotes />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/tax" element={<Tax />} />
-                  <Route path="/subscription" element={<Subscription />} />
-                  <Route path="/audit-logs" element={<AuditLogs />} />
-                  <Route path="/settings" element={<Settings />} />
-                </Route>
+                  {/* Authenticated routes */}
+                  <Route element={<AppLayout />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/invoices" element={<Invoices />} />
+                    <Route path="/invoices/:id" element={<InvoiceDetail />} />
+                    <Route path="/products" element={<Products />} />
+                    <Route path="/parties" element={<Parties />} />
+                    <Route path="/parties/:partyId/ledger" element={<PartyLedger />} />
+                    <Route path="/credit-notes" element={<CreditNotes />} />
+                    <Route path="/reports" element={<Reports />} />
+                    <Route path="/tax" element={<Tax />} />
+                    <Route path="/subscription" element={<Subscription />} />
+                    <Route path="/audit-logs" element={<AuditLogs />} />
+                    <Route path="/settings" element={<Settings />} />
+                  </Route>
 
-                <Route path="*" element={<NotFound />} />
-              </Routes>{" "}
-            </Suspense>{" "}
-          </BrowserRouter>
-        </TooltipProvider>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </TooltipProvider>
+        </UIModeProvider>
       </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>

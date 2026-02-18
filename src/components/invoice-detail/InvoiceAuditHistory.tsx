@@ -1,6 +1,7 @@
 import { History } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useUIMode } from "@/contexts/UIModeContext";
 import { formatDate } from "@/lib/utils";
 import type { AuditLog } from "@/types/audit-log";
 
@@ -9,6 +10,11 @@ interface InvoiceAuditHistoryProps {
 }
 
 export function InvoiceAuditHistory({ logs }: InvoiceAuditHistoryProps) {
+  const { mode } = useUIMode();
+
+  // Hide in simple mode
+  if (mode === "simple") return null;
+
   if (!logs.length) return null;
   return (
     <Card>

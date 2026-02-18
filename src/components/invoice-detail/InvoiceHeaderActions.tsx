@@ -1,5 +1,6 @@
 import { Download, Loader2, Pencil, CreditCard, Send, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useUIMode } from "@/contexts/UIModeContext";
 import { formatCurrency } from "@/lib/utils";
 import type { InvoiceDetail } from "@/types/invoice";
 
@@ -42,6 +43,9 @@ export function InvoiceHeaderActions({
   onMarkSent,
   onMarkReminder,
 }: InvoiceHeaderActionsProps) {
+  const { mode } = useUIMode();
+  const isSimpleMode = mode === "simple";
+
   return (
     <div className="flex gap-2">
       {invoice.status === "DRAFT" && isOwner && (
@@ -50,12 +54,14 @@ export function InvoiceHeaderActions({
             <Pencil className="mr-2 h-3.5 w-3.5" />
             Edit
           </Button>
-          <Button variant="outline" size="sm" onClick={onCancel} disabled={isCancelPending}>
-            Cancel Invoice
-          </Button>
+          {!isSimpleMode && (
+            <Button variant="outline" size="sm" onClick={onCancel} disabled={isCancelPending}>
+              Cancel Invoice
+            </Button>
+          )}
           <Button size="sm" onClick={onFinalize} disabled={isFinalizePending}>
             {isFinalizePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Finalize
+            {isSimpleMode ? "Confirm Invoice" : "Finalize"}
           </Button>
         </>
       )}
@@ -78,7 +84,7 @@ export function InvoiceHeaderActions({
         </Button>
       )}
 
-      {invoice.status === "FINAL" && (
+      {invoice.status === "FINAL" && !isSimpleMode && (
         <>
           <div className="flex flex-col">
             <Button variant="outline" size="sm" onClick={onMarkSent} disabled={isMarkSentPending}>

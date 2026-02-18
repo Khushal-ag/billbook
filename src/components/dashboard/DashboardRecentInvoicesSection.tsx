@@ -14,7 +14,7 @@ export function DashboardRecentInvoicesSection({
 }: DashboardRecentInvoicesSectionProps) {
   return (
     <section className="space-y-4">
-      <Card className="rounded-3xl border-muted/80 bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-md ring-1 ring-muted/50">
+      <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-semibold">Recent Invoices</CardTitle>

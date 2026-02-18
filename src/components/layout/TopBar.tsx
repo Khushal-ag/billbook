@@ -1,6 +1,9 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { useUIMode } from "@/contexts/UIModeContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Menu, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +19,7 @@ export default function TopBar({
   sidebarCollapsed = false,
 }: TopBarProps) {
   const { user } = useAuth();
+  const { mode, setMode } = useUIMode();
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "";
 
@@ -52,7 +56,18 @@ export default function TopBar({
         <h2 className="truncate text-sm font-semibold">{user?.businessName}</h2>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
+        <div className="hidden items-center gap-2 pr-4 sm:flex">
+          <Label htmlFor="mode-toggle" className="cursor-pointer text-xs text-muted-foreground">
+            {mode === "simple" ? "Simple" : "Advanced"}
+          </Label>
+          <Switch
+            id="mode-toggle"
+            checked={mode === "advanced"}
+            onCheckedChange={(checked) => setMode(checked ? "advanced" : "simple")}
+            title={mode === "simple" ? "Switch to Advanced Mode" : "Switch to Simple Mode"}
+          />
+        </div>
         <div className="hidden text-right sm:block">
           <p className="text-sm font-medium leading-none">{displayName}</p>
           <Badge variant="secondary" className="mt-0.5 px-1.5 py-0 text-[10px]">

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useUIMode } from "@/contexts/UIModeContext";
 import { formatCurrency } from "@/lib/utils";
 import { EmptyChart } from "./dashboard-utils";
 import type { TopProduct, TopCustomer } from "@/types/dashboard";
@@ -13,10 +14,15 @@ export function DashboardHighlightsSection({
   topProducts,
   topCustomers,
 }: DashboardHighlightsSectionProps) {
+  const { mode } = useUIMode();
+
+  // Hide in simple mode completely
+  if (mode === "simple") return null;
+
   return (
     <section className="space-y-4">
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="rounded-3xl border-muted/80 bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-md ring-1 ring-muted/50">
+        <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold">Top Products</CardTitle>
@@ -52,7 +58,7 @@ export function DashboardHighlightsSection({
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border-muted/80 bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-md ring-1 ring-muted/50">
+        <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold">Top Customers</CardTitle>
