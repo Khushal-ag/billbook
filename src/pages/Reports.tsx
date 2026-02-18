@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import DateRangePicker from "@/components/DateRangePicker";
 import PageHeader from "@/components/PageHeader";
+import {
+  OutstandingReportTable,
+  ProductSalesTable,
+  SalesReportCard,
+} from "@/components/reports/ReportSections";
 import {
   useSalesReport,
   usePartyOutstandingReport,
@@ -13,7 +17,7 @@ import {
   useSalesExport,
 } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
-import { generateSalesReportHTML, downloadHTML, formatDate } from "@/lib/utils";
+import { generateSalesReportHTML, downloadHTML } from "@/lib/utils";
 
 export default function Reports() {
   const {
@@ -97,73 +101,7 @@ export default function Reports() {
           {salesPending ? (
             <ReportTabSkeleton height="h-80" />
           ) : salesData ? (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Sales Report — ₹{salesData.summary?.totalAmount ?? "0"} total,{" "}
-                  {salesData.summary?.totalInvoices ?? 0} invoices
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {(salesData.sales ?? []).length > 0 ? (
-                  <div className="data-table-container">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b bg-muted/30">
-                          <th className="px-4 py-3 text-left font-medium text-muted-foreground sm:px-6">
-                            Invoice
-                          </th>
-                          <th className="px-3 py-3 text-left font-medium text-muted-foreground">
-                            Party
-                          </th>
-                          <th className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell">
-                            Date
-                          </th>
-                          <th className="hidden px-3 py-3 text-right font-medium text-muted-foreground lg:table-cell">
-                            Sub Total
-                          </th>
-                          <th className="hidden px-3 py-3 text-right font-medium text-muted-foreground lg:table-cell">
-                            Tax
-                          </th>
-                          <th className="px-3 py-3 text-right font-medium text-muted-foreground sm:px-6">
-                            Total
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(salesData.sales ?? []).map((row) => (
-                          <tr
-                            key={row.invoiceNumber}
-                            className="border-b last:border-0 hover:bg-muted/20"
-                          >
-                            <td className="px-4 py-3 font-medium text-accent sm:px-6">
-                              {row.invoiceNumber}
-                            </td>
-                            <td className="px-3 py-3">{row.partyName}</td>
-                            <td className="hidden px-3 py-3 text-muted-foreground md:table-cell">
-                              {formatDate(row.date)}
-                            </td>
-                            <td className="hidden px-3 py-3 text-right lg:table-cell">
-                              ₹{parseFloat(row.totalAmount) - parseFloat(row.totalTax)}
-                            </td>
-                            <td className="hidden px-3 py-3 text-right lg:table-cell">
-                              ₹{row.totalTax}
-                            </td>
-                            <td className="px-3 py-3 text-right font-medium sm:px-6">
-                              ₹{row.totalAmount}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="py-8 text-center text-sm text-muted-foreground">
-                    No sales data for this period.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+            <SalesReportCard summary={salesData.summary} rows={salesData.sales ?? []} />
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Select a valid date range to view sales data.
@@ -175,32 +113,7 @@ export default function Reports() {
           {outstandingPending ? (
             <ReportTabSkeleton height="h-60" />
           ) : outstandingData && (outstandingData.parties ?? []).length > 0 ? (
-            <div className="data-table-container">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="px-6 py-3 text-left font-medium text-muted-foreground">Party</th>
-                    <th className="px-3 py-3 text-right font-medium text-muted-foreground">
-                      Invoiced
-                    </th>
-                    <th className="px-3 py-3 text-right font-medium text-muted-foreground">Paid</th>
-                    <th className="px-6 py-3 text-right font-medium text-muted-foreground">
-                      Outstanding
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(outstandingData.parties ?? []).map((p) => (
-                    <tr key={p.partyId} className="border-b last:border-0 hover:bg-muted/20">
-                      <td className="px-6 py-3 font-medium">{p.partyName}</td>
-                      <td className="px-3 py-3 text-right">₹{p.totalInvoiced}</td>
-                      <td className="px-3 py-3 text-right">₹{p.totalPaid}</td>
-                      <td className="px-6 py-3 text-right font-medium">₹{p.outstanding}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <OutstandingReportTable rows={outstandingData.parties ?? []} />
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">No outstanding data.</p>
           )}
@@ -210,32 +123,7 @@ export default function Reports() {
           {productSalesPending ? (
             <ReportTabSkeleton height="h-60" />
           ) : productSalesData && (productSalesData.products ?? []).length > 0 ? (
-            <div className="data-table-container">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="px-6 py-3 text-left font-medium text-muted-foreground">
-                      Product
-                    </th>
-                    <th className="px-3 py-3 text-right font-medium text-muted-foreground">
-                      Qty Sold
-                    </th>
-                    <th className="px-6 py-3 text-right font-medium text-muted-foreground">
-                      Total Amount
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(productSalesData.products ?? []).map((row) => (
-                    <tr key={row.productId} className="border-b last:border-0 hover:bg-muted/20">
-                      <td className="px-6 py-3 font-medium">{row.productName}</td>
-                      <td className="px-3 py-3 text-right">{row.totalQuantity}</td>
-                      <td className="px-6 py-3 text-right font-medium">₹{row.totalAmount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ProductSalesTable rows={productSalesData.products ?? []} />
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No product sales data for this period.

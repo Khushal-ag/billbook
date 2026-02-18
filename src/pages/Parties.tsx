@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Users, Trash2, Pencil, History } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,10 +10,10 @@ import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import PartyDialog from "@/components/dialogs/PartyDialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { PartiesTable } from "@/components/parties/PartySections";
 import { useParties, useDeleteParty } from "@/hooks/use-parties";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useDebounce } from "@/hooks/use-debounce";
-import { formatCurrency } from "@/lib/utils";
 import type { Party } from "@/types/party";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
@@ -112,96 +112,14 @@ export default function Parties() {
           }
         />
       ) : (
-        <div className="data-table-container">
-          <table className="w-full text-sm" role="table" aria-label="Parties list">
-            <thead>
-              <tr className="border-b bg-muted/30">
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left font-medium text-muted-foreground sm:px-6"
-                >
-                  Name
-                </th>
-                <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
-                  Phone
-                </th>
-                <th
-                  scope="col"
-                  className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell"
-                >
-                  GSTIN
-                </th>
-                <th
-                  scope="col"
-                  className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell"
-                >
-                  State
-                </th>
-                <th scope="col" className="px-3 py-3 text-right font-medium text-muted-foreground">
-                  Opening Balance
-                </th>
-                <th scope="col" className="px-3 py-3 text-center font-medium text-muted-foreground">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p) => (
-                <tr
-                  key={p.id}
-                  className="border-b transition-colors last:border-0 hover:bg-muted/20"
-                >
-                  <td className="max-w-[200px] truncate px-4 py-3 font-medium sm:max-w-none sm:px-6">
-                    {p.name}
-                  </td>
-                  <td className="px-3 py-3 text-muted-foreground">{p.phone || "—"}</td>
-                  <td className="hidden px-3 py-3 font-mono text-xs text-muted-foreground md:table-cell">
-                    {p.gstin || "—"}
-                  </td>
-                  <td className="hidden px-3 py-3 text-muted-foreground md:table-cell">
-                    {p.state || "—"}
-                  </td>
-                  <td className="px-3 py-3 text-right font-medium">
-                    {formatCurrency(p.openingBalance ?? "0")}
-                  </td>
-                  <div className="flex items-center justify-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEdit(p)}
-                      title="Edit"
-                      aria-label={`Edit ${p.name}`}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/parties/${p.id}/ledger`)}
-                      title="Ledger"
-                      aria-label={`View ledger for ${p.name}`}
-                    >
-                      <History className="h-3.5 w-3.5" />
-                    </Button>
-                    {isOwner && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(p)}
-                        disabled={deleteParty.isPending}
-                        title="Delete"
-                        aria-label={`Delete ${p.name}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <PartiesTable
+          parties={filtered}
+          isOwner={isOwner}
+          deletePending={deleteParty.isPending}
+          onEdit={openEdit}
+          onLedger={(partyId) => navigate(`/parties/${partyId}/ledger`)}
+          onDelete={handleDelete}
+        />
       )}
 
       <PartyDialog

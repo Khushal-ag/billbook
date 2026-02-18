@@ -5,9 +5,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import PageHeader from "@/components/PageHeader";
 import DateRangePicker from "@/components/DateRangePicker";
+import { TaxItemizedTable, TaxSummaryTable } from "@/components/tax/TaxSections";
 import { useGSTSummary, useGSTItemized, useGSTExport } from "@/hooks/use-tax";
 import { useDateRange } from "@/hooks/use-date-range";
-import { generateGSTReportHTML, downloadHTML, formatMonthYear, formatDate } from "@/lib/utils";
+import { generateGSTReportHTML, downloadHTML } from "@/lib/utils";
 
 export default function Tax() {
   const {
@@ -107,73 +108,15 @@ export default function Tax() {
           {summaryPending ? (
             <ReportTabSkeleton height="h-60" />
           ) : gstSummary && (gstSummary.monthlyBreakdown ?? []).length > 0 ? (
-            <>
-              <div className="data-table-container">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b bg-muted/30">
-                      <th className="px-4 py-3 text-left font-medium text-muted-foreground sm:px-6">
-                        Month
-                      </th>
-                      <th className="hidden px-3 py-3 text-right font-medium text-muted-foreground md:table-cell">
-                        CGST
-                      </th>
-                      <th className="hidden px-3 py-3 text-right font-medium text-muted-foreground md:table-cell">
-                        SGST
-                      </th>
-                      <th className="hidden px-3 py-3 text-right font-medium text-muted-foreground md:table-cell">
-                        IGST
-                      </th>
-                      <th className="px-3 py-3 text-right font-medium text-muted-foreground">
-                        Total Tax
-                      </th>
-                      <th className="px-3 py-3 text-right font-medium text-muted-foreground">
-                        Total Amount
-                      </th>
-                      <th className="px-3 py-3 text-right font-medium text-muted-foreground sm:px-6">
-                        Invoices
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(gstSummary.monthlyBreakdown ?? []).map((row) => (
-                      <tr key={row.month} className="border-b last:border-0 hover:bg-muted/20">
-                        <td className="px-4 py-3 font-medium sm:px-6">
-                          {formatMonthYear(row.month)}
-                        </td>
-                        <td className="hidden px-3 py-3 text-right md:table-cell">₹{row.cgst}</td>
-                        <td className="hidden px-3 py-3 text-right md:table-cell">₹{row.sgst}</td>
-                        <td className="hidden px-3 py-3 text-right md:table-cell">₹{row.igst}</td>
-                        <td className="px-3 py-3 text-right font-medium">₹{row.totalTax}</td>
-                        <td className="px-3 py-3 text-right">₹{row.totalAmount}</td>
-                        <td className="px-3 py-3 text-right sm:px-6">{row.invoiceCount}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="bg-muted/30 font-medium">
-                      <td className="px-4 py-3 sm:px-6">Total</td>
-                      <td className="hidden px-3 py-3 text-right md:table-cell">
-                        ₹{gstSummary.totalCgst ?? "0"}
-                      </td>
-                      <td className="hidden px-3 py-3 text-right md:table-cell">
-                        ₹{gstSummary.totalSgst ?? "0"}
-                      </td>
-                      <td className="hidden px-3 py-3 text-right md:table-cell">
-                        ₹{gstSummary.totalIgst ?? "0"}
-                      </td>
-                      <td className="px-3 py-3 text-right">
-                        ₹{formatINRAmount(totalTaxAllMonths)}
-                      </td>
-                      <td className="px-3 py-3 text-right">
-                        ₹{formatINRAmount(totalAmountAllMonths)}
-                      </td>
-                      <td className="px-3 py-3 text-right sm:px-6">{invoiceCountAllMonths}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </>
+            <TaxSummaryTable
+              rows={gstSummary.monthlyBreakdown ?? []}
+              totalCgst={gstSummary.totalCgst ?? "0"}
+              totalSgst={gstSummary.totalSgst ?? "0"}
+              totalIgst={gstSummary.totalIgst ?? "0"}
+              totalTax={formatINRAmount(totalTaxAllMonths)}
+              totalAmount={formatINRAmount(totalAmountAllMonths)}
+              invoiceCount={invoiceCountAllMonths}
+            />
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No GST data for this period.
@@ -185,54 +128,7 @@ export default function Tax() {
           {itemizedPending ? (
             <ReportTabSkeleton height="h-60" />
           ) : gstItemized && (gstItemized.data ?? []).length > 0 ? (
-            <div className="data-table-container">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground sm:px-6">
-                      Invoice
-                    </th>
-                    <th className="px-3 py-3 text-left font-medium text-muted-foreground">Party</th>
-                    <th className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell">
-                      Date
-                    </th>
-                    <th className="px-3 py-3 text-right font-medium text-muted-foreground">
-                      Taxable
-                    </th>
-                    <th className="hidden px-3 py-3 text-right font-medium text-muted-foreground lg:table-cell">
-                      CGST
-                    </th>
-                    <th className="hidden px-3 py-3 text-right font-medium text-muted-foreground lg:table-cell">
-                      SGST
-                    </th>
-                    <th className="hidden px-3 py-3 text-right font-medium text-muted-foreground lg:table-cell">
-                      IGST
-                    </th>
-                    <th className="px-3 py-3 text-right font-medium text-muted-foreground sm:px-6">
-                      Total Tax
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(gstItemized.data ?? []).map((row) => (
-                    <tr key={row.invoiceId} className="border-b last:border-0 hover:bg-muted/20">
-                      <td className="px-4 py-3 font-medium text-accent sm:px-6">
-                        {row.invoiceNumber}
-                      </td>
-                      <td className="px-3 py-3">{row.partyName}</td>
-                      <td className="hidden px-3 py-3 text-muted-foreground md:table-cell">
-                        {formatDate(row.invoiceDate)}
-                      </td>
-                      <td className="px-3 py-3 text-right">₹{row.taxableAmount}</td>
-                      <td className="hidden px-3 py-3 text-right lg:table-cell">₹{row.cgst}</td>
-                      <td className="hidden px-3 py-3 text-right lg:table-cell">₹{row.sgst}</td>
-                      <td className="hidden px-3 py-3 text-right lg:table-cell">₹{row.igst}</td>
-                      <td className="px-3 py-3 text-right font-medium sm:px-6">₹{row.totalTax}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <TaxItemizedTable rows={gstItemized.data ?? []} />
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No itemized tax data for this period.

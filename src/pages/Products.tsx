@@ -1,9 +1,7 @@
 import { useState, useCallback } from "react";
-import { Plus, Package, Pencil, Trash2, ArrowLeftRight, ArrowLeft, History } from "lucide-react";
+import { Plus, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EmptyState from "@/components/EmptyState";
 import ErrorBanner from "@/components/ErrorBanner";
 import SearchInput from "@/components/SearchInput";
@@ -13,16 +11,13 @@ import ProductDialog from "@/components/dialogs/ProductDialog";
 import StockAdjustmentDialog from "@/components/dialogs/StockAdjustmentDialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import {
-  useProducts,
-  useProduct,
-  useDeleteProduct,
-  useStockLedger,
-  useStockReport,
-} from "@/hooks/use-products";
+  ProductsTable,
+  StockReportTab,
+  ProductDetailView,
+} from "@/components/products/ProductSections";
+import { useProducts, useDeleteProduct } from "@/hooks/use-products";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useResourceAuditLogs } from "@/hooks/use-audit-logs";
 import { useDebounce } from "@/hooks/use-debounce";
-import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Product } from "@/types/product";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
@@ -132,130 +127,15 @@ export default function Products() {
               }
             />
           ) : (
-            <div className="data-table-container">
-              <table
-                className="w-full text-sm"
-                role="table"
-                aria-label="Products and services list"
-              >
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th
-                      scope="col"
-                      className="px-4 py-3 text-left font-medium text-muted-foreground sm:px-6"
-                    >
-                      Name
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3 text-left font-medium text-muted-foreground"
-                    >
-                      Type
-                    </th>
-                    <th
-                      scope="col"
-                      className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell"
-                    >
-                      HSN/SAC
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3 text-right font-medium text-muted-foreground"
-                    >
-                      Selling Price
-                    </th>
-                    <th
-                      scope="col"
-                      className="hidden px-3 py-3 text-right font-medium text-muted-foreground lg:table-cell"
-                    >
-                      Stock
-                    </th>
-                    <th
-                      scope="col"
-                      className="hidden px-3 py-3 text-right font-medium text-muted-foreground md:table-cell"
-                    >
-                      GST
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3 text-center font-medium text-muted-foreground"
-                    >
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((p) => (
-                    <tr
-                      key={p.id}
-                      className="cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/20"
-                      onClick={() => setDetailId(p.id)}
-                    >
-                      <td className="max-w-[200px] truncate px-4 py-3 font-medium sm:max-w-none sm:px-6">
-                        {p.name}
-                      </td>
-                      <td className="px-3 py-3">
-                        <Badge variant="secondary" className="text-xs">
-                          {p.type}
-                        </Badge>
-                      </td>
-                      <td className="hidden px-3 py-3 text-muted-foreground md:table-cell">
-                        {p.hsnCode || p.sacCode || "—"}
-                      </td>
-                      <td className="px-3 py-3 text-right">
-                        {formatCurrency(p.sellingPrice ?? "0")}
-                      </td>
-                      <td className="hidden px-3 py-3 text-right lg:table-cell">
-                        {p.type === "SERVICE" ? "N/A" : "—"}
-                      </td>
-                      <td className="hidden px-3 py-3 text-right md:table-cell">
-                        {p.igstRate ?? "0"}%
-                      </td>
-                      <td className="px-3 py-3 text-center">
-                        <div
-                          className="flex items-center justify-center gap-1"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEdit(p)}
-                            title="Edit"
-                            aria-label={`Edit ${p.name}`}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          {p.type === "STOCK" && isOwner && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openStockAdjust(p)}
-                              title="Adjust Stock"
-                              aria-label={`Adjust stock for ${p.name}`}
-                            >
-                              <ArrowLeftRight className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                          {isOwner && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => handleDelete(p)}
-                              disabled={deleteMutation.isPending}
-                              title="Delete"
-                              aria-label={`Delete ${p.name}`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <ProductsTable
+              products={filtered}
+              isOwner={isOwner}
+              deletePending={deleteMutation.isPending}
+              onEdit={openEdit}
+              onStockAdjust={openStockAdjust}
+              onDelete={handleDelete}
+              onSelectDetail={setDetailId}
+            />
           )}
         </TabsContent>
 
@@ -284,207 +164,6 @@ export default function Products() {
         confirmText="Delete"
         variant="destructive"
       />
-    </div>
-  );
-}
-
-/* ─── Stock Report Tab ─── */
-function StockReportTab() {
-  const { data, isPending, error } = useStockReport();
-
-  if (isPending) return <TableSkeleton rows={4} />;
-  if (error) return <ErrorBanner error={error} fallbackMessage="Failed to load stock report" />;
-
-  const items = (Array.isArray(data) ? data : []) as Array<{
-    productId: number;
-    productName: string;
-    currentStock: number;
-  }>;
-
-  if (items.length === 0) {
-    return (
-      <p className="py-8 text-center text-sm text-muted-foreground">
-        No stock report data available.
-      </p>
-    );
-  }
-
-  return (
-    <div className="data-table-container">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/30">
-            <th className="px-6 py-3 text-left font-medium text-muted-foreground">Product</th>
-            <th className="px-6 py-3 text-right font-medium text-muted-foreground">
-              Current Stock
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr key={item.productId} className="border-b last:border-0 hover:bg-muted/20">
-              <td className="px-6 py-3 font-medium">{item.productName}</td>
-              <td className="px-6 py-3 text-right">{item.currentStock}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-/* ─── Product Detail (Stock Ledger) ─── */
-function ProductDetailView({ id, onBack }: { id: number; onBack: () => void }) {
-  const { data: product, isPending: productPending } = useProduct(id);
-  const { data: ledger, isPending: ledgerPending } = useStockLedger(id);
-  const { data: auditData } = useResourceAuditLogs("PRODUCT", id);
-  const isPending = productPending || ledgerPending;
-
-  return (
-    <div className="page-container animate-fade-in">
-      <div className="mb-4">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back to Products
-        </button>
-      </div>
-
-      {isPending ? (
-        <TableSkeleton rows={4} />
-      ) : !product ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">Product not found.</p>
-      ) : (
-        <>
-          <PageHeader
-            title={product.name}
-            description={`${product.type} — Unit: ${product.unit || "—"}`}
-          />
-
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground">Current Stock</p>
-                <p className="mt-1 text-lg font-semibold">{product.currentStock}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground">Selling Price</p>
-                <p className="mt-1 text-lg font-semibold">
-                  {formatCurrency(product.sellingPrice ?? "0")}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground">Purchase Price</p>
-                <p className="mt-1 text-lg font-semibold">
-                  {formatCurrency(product.purchasePrice ?? "0")}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4">
-                <p className="text-xs text-muted-foreground">HSN/SAC</p>
-                <p className="mt-1 text-lg font-semibold">
-                  {product.hsnCode || product.sacCode || "—"}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Stock Ledger
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {!ledger || ledger.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">
-                  No stock movements yet.
-                </p>
-              ) : (
-                <div className="data-table-container">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b bg-muted/30">
-                        <th className="px-4 py-2 text-left font-medium text-muted-foreground">
-                          Date
-                        </th>
-                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">
-                          Type
-                        </th>
-                        <th className="px-3 py-2 text-right font-medium text-muted-foreground">
-                          Qty
-                        </th>
-                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">
-                          Notes
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {ledger.map((m) => (
-                        <tr key={m.id} className="border-b last:border-0 hover:bg-muted/20">
-                          <td className="px-4 py-2 text-muted-foreground">
-                            {new Date(m.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-3 py-2">
-                            <Badge variant="secondary" className="text-xs">
-                              {m.movementType}
-                            </Badge>
-                          </td>
-                          <td className="px-3 py-2 text-right font-medium">{m.quantity}</td>
-                          <td className="px-3 py-2 text-muted-foreground">{m.notes ?? "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Audit History */}
-          {auditData?.logs && auditData.logs.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <History className="h-4 w-4" />
-                  Audit History
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {auditData.logs.map((log) => (
-                    <div key={log.id} className="flex justify-between border-b pb-3 last:border-0">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={log.action === "DELETE" ? "destructive" : "default"}
-                            className="text-xs"
-                          >
-                            {log.action}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(log.createdAt)}
-                          </span>
-                        </div>
-                        {log.actorRole && (
-                          <p className="text-xs text-muted-foreground">By {log.actorRole}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </>
-      )}
     </div>
   );
 }
