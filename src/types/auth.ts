@@ -14,6 +14,7 @@ export interface User {
 export interface AuthBusiness {
   id: number;
   name: string;
+  organizationCode?: string;
 }
 
 /** Full business profile returned by GET /business/profile */
@@ -87,12 +88,34 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface LoginOtpRequest {
+  email: string;
+  organizationCode: string;
+}
+
+export interface LoginOtpVerifyRequest {
+  email: string;
+  otp: string;
+  organizationCode: string;
+}
+
 export interface SignupRequest {
   email: string;
   password: string;
   businessName: string;
   firstName?: string;
   lastName?: string;
+}
+
+export interface SignupOtpVerifyRequest extends SignupRequest {
+  otp: string;
+}
+
+export interface OtpRequestResponse {
+  success: boolean;
+  message: string;
+  email: string;
+  expiresIn: number;
 }
 
 export interface SessionUser {
@@ -103,4 +126,5 @@ export interface SessionUser {
   role: Role;
   businessId: number;
   businessName: string;
+  organizationCode?: string;
 }

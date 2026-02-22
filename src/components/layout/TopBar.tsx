@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Menu, ChevronLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface TopBarProps {
@@ -20,8 +21,11 @@ export default function TopBar({
 }: TopBarProps) {
   const { user } = useAuth();
   const { mode, setMode } = useUIMode();
+  const navigate = useNavigate();
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "";
+  const organizationCode = user?.organizationCode?.trim();
+  const handleOpenProfile = () => navigate("/profile");
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/70 bg-card px-2 sm:px-3">
@@ -53,7 +57,14 @@ export default function TopBar({
             />
           </Button>
         )}
-        <h2 className="truncate text-sm font-semibold">{user?.businessName}</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="truncate text-sm font-semibold">{user?.businessName}</h2>
+          {organizationCode && (
+            <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
+              {organizationCode}
+            </Badge>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
@@ -68,15 +79,22 @@ export default function TopBar({
             title={mode === "simple" ? "Switch to Advanced Mode" : "Switch to Simple Mode"}
           />
         </div>
-        <div className="hidden text-right sm:block">
-          <p className="text-sm font-medium leading-none">{displayName}</p>
-          <Badge variant="secondary" className="mt-0.5 px-1.5 py-0 text-[10px]">
-            {user?.role}
-          </Badge>
-        </div>
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
-          {user?.firstName?.charAt(0) || "U"}
-        </div>
+        <button
+          type="button"
+          onClick={handleOpenProfile}
+          className="flex items-center gap-3 rounded-md px-2 py-1 text-left transition-colors hover:bg-muted"
+          aria-label="Open profile"
+        >
+          <div className="hidden text-right sm:block">
+            <p className="text-sm font-medium leading-none">{displayName}</p>
+            <Badge variant="secondary" className="mt-0.5 px-1.5 py-0 text-[10px]">
+              {user?.role}
+            </Badge>
+          </div>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+            {user?.firstName?.charAt(0) || "U"}
+          </div>
+        </button>
       </div>
     </header>
   );

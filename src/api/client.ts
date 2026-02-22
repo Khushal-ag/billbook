@@ -4,6 +4,14 @@ import { env } from "@/lib/env";
 import { getAccessToken, setAccessToken, getRefreshToken, setRefreshToken } from "./token";
 import { ApiClientError } from "./error";
 
+const AUTH_EXPIRED_EVENT = "auth:expired";
+
+function notifyAuthExpired() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+  }
+}
+
 // ── Axios instance ──────────────────────────────────────
 
 const axiosInstance = axios.create({
@@ -36,8 +44,11 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<{ error?: string; details?: unknown }>) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const isUnauthorized = error.response?.status === 401;
+    const isRefreshRequest = originalRequest?.url?.includes("/auth/refresh-token") ?? false;
+    const hasRefreshToken = Boolean(getRefreshToken());
 
-    if (error.response?.status === 401 && getAccessToken() && !originalRequest._retry) {
+    if (isUnauthorized && !isRefreshRequest && !originalRequest._retry && hasRefreshToken) {
       originalRequest._retry = true;
 
       try {
@@ -45,11 +56,19 @@ axiosInstance.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return axiosInstance(originalRequest);
       } catch {
-        // Refresh failed — clear tokens so the app redirects to login
+        // Refresh failed — clear tokens and force logout
         setAccessToken(null);
         setRefreshToken(null);
+        notifyAuthExpired();
         throw new ApiClientError("Session expired. Please log in again.", 401);
       }
+    }
+
+    if (isUnauthorized && !isRefreshRequest && !hasRefreshToken) {
+      setAccessToken(null);
+      setRefreshToken(null);
+      notifyAuthExpired();
+      throw new ApiClientError("Session expired. Please log in again.", 401);
     }
 
     const status = error.response?.status ?? 500;
@@ -83,6 +102,7 @@ async function refreshAccessToken(): Promise<string> {
     .catch((err) => {
       setAccessToken(null);
       setRefreshToken(null);
+      notifyAuthExpired();
       throw err;
     })
     .finally(() => {

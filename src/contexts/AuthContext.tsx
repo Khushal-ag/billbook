@@ -1,8 +1,11 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import type {
   SessionUser,
-  LoginRequest,
+  LoginOtpRequest,
+  LoginOtpVerifyRequest,
   SignupRequest,
+  SignupOtpVerifyRequest,
+  OtpRequestResponse,
   AuthResponse,
   CurrentUser,
 } from "@/types/auth";
@@ -15,14 +18,54 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  login: (data: LoginRequest) => Promise<void>;
-  signup: (data: SignupRequest) => Promise<void>;
+  requestLoginOtp: (data: LoginOtpRequest) => Promise<OtpRequestResponse>;
+  verifyLoginOtp: (data: LoginOtpVerifyRequest) => Promise<void>;
+  requestSignupOtp: (data: SignupRequest) => Promise<OtpRequestResponse>;
+  verifySignupOtp: (data: SignupOtpVerifyRequest) => Promise<void>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const SESSION_KEY = "billbook_session";
+const AUTH_EXPIRED_EVENT = "auth:expired";
+
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  INVALID_OTP: "Invalid or expired OTP. Please request a new OTP and try again.",
+  INVALID_CREDENTIALS: "Invalid email or password.",
+  CONFLICT: "Account already exists with this email.",
+  FORBIDDEN: "You do not have access to this organization.",
+  NOT_FOUND: "Organization not found. Check your organization code.",
+};
+
+function getAuthErrorCode(error: ApiClientError): string | null {
+  const normalizedMessage = error.message.trim().toUpperCase();
+  if (AUTH_ERROR_MESSAGES[normalizedMessage]) return normalizedMessage;
+
+  if (error.details && typeof error.details === "object") {
+    const maybeCode = (error.details as { code?: unknown }).code;
+    if (typeof maybeCode === "string") {
+      const normalizedCode = maybeCode.trim().toUpperCase();
+      if (AUTH_ERROR_MESSAGES[normalizedCode]) return normalizedCode;
+    }
+  }
+
+  return null;
+}
+
+function toAuthError(error: unknown, fallbackMessage: string): Error {
+  if (error instanceof ApiClientError) {
+    const code = getAuthErrorCode(error);
+    if (code) return new Error(AUTH_ERROR_MESSAGES[code]);
+    return new Error(error.message || fallbackMessage);
+  }
+
+  if (error instanceof Error && error.message) {
+    return new Error(error.message);
+  }
+
+  return new Error(fallbackMessage);
+}
 
 function toSessionUser(auth: AuthResponse, role: "OWNER" | "STAFF" = "OWNER"): SessionUser {
   return {
@@ -33,6 +76,7 @@ function toSessionUser(auth: AuthResponse, role: "OWNER" | "STAFF" = "OWNER"): S
     role,
     businessId: auth.business.id,
     businessName: auth.business.name,
+    organizationCode: auth.business.organizationCode,
   };
 }
 
@@ -51,6 +95,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = user !== null;
+
+  useEffect(() => {
+    function onAuthExpired() {
+      clearSession();
+      setUser(null);
+      setIsLoading(false);
+    }
+
+    window.addEventListener(AUTH_EXPIRED_EVENT, onAuthExpired);
+    return () => {
+      window.removeEventListener(AUTH_EXPIRED_EVENT, onAuthExpired);
+    };
+  }, []);
 
   // Restore session on mount: read cached user then validate token via /auth/me
   useEffect(() => {
@@ -117,27 +174,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = useCallback(
-    async (data: LoginRequest) => {
+  const requestLoginOtp = useCallback(
+    async (data: LoginOtpRequest): Promise<OtpRequestResponse> => {
       try {
-        const res = await api.post<AuthResponse>("/auth/login", data);
+        const res = await api.post<OtpRequestResponse>("/auth/login/request-otp", data);
+        return res.data;
+      } catch (error) {
+        throw toAuthError(error, "Failed to send OTP. Please try again.");
+      }
+    },
+    [],
+  );
+
+  const verifyLoginOtp = useCallback(
+    async (data: LoginOtpVerifyRequest) => {
+      try {
+        const res = await api.post<AuthResponse>("/auth/login/verify-otp", data);
         handleAuthSuccess(res.data);
       } catch (error) {
-        if (error instanceof ApiClientError) throw error;
-        throw new Error("Login failed. Please try again.");
+        throw toAuthError(error, "Login verification failed. Please try again.");
       }
     },
     [handleAuthSuccess],
   );
 
-  const signup = useCallback(
-    async (data: SignupRequest) => {
+  const requestSignupOtp = useCallback(async (data: SignupRequest): Promise<OtpRequestResponse> => {
+    try {
+      const res = await api.post<OtpRequestResponse>("/auth/signup/request-otp", data);
+      return res.data;
+    } catch (error) {
+      throw toAuthError(error, "Failed to send OTP. Please try again.");
+    }
+  }, []);
+
+  const verifySignupOtp = useCallback(
+    async (data: SignupOtpVerifyRequest) => {
       try {
-        const res = await api.post<AuthResponse>("/auth/signup", data);
+        const res = await api.post<AuthResponse>("/auth/signup/verify-otp", data);
         handleAuthSuccess(res.data);
       } catch (error) {
-        if (error instanceof ApiClientError) throw error;
-        throw new Error("Signup failed. Please try again.");
+        throw toAuthError(error, "Signup verification failed. Please try again.");
       }
     },
     [handleAuthSuccess],
@@ -156,7 +232,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated, login, signup, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        isAuthenticated,
+        requestLoginOtp,
+        verifyLoginOtp,
+        requestSignupOtp,
+        verifySignupOtp,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

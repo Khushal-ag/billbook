@@ -22,6 +22,7 @@ const Tax = lazy(() => import("./pages/Tax"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const AuditLogs = lazy(() => import("./pages/AuditLogs"));
 const Settings = lazy(() => import("./pages/Settings"));
+const Profile = lazy(() => import("./pages/Profile"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -74,6 +75,7 @@ const App = () => (
                     <Route path="/tax" element={<Tax />} />
                     <Route path="/subscription" element={<Subscription />} />
                     <Route path="/audit-logs" element={<AuditLogs />} />
+                    <Route path="/profile" element={<Profile />} />
                     <Route path="/settings" element={<Settings />} />
                   </Route>
 

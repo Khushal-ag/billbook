@@ -13,7 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const loginSchema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
-  password: z.string().min(1, "Password is required").max(128),
+  organizationCode: z.string().trim().min(1, "Organization code is required").max(64),
+  otp: z.string().trim().length(6, "OTP must be 6 digits").optional().or(z.literal("")),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -32,13 +33,15 @@ export default function LoginCard({
   onRequestSignup,
   onRequestForgot,
 }: LoginCardProps) {
-  const { login } = useAuth();
+  const { requestLoginOtp, verifyLoginOtp } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const [otpRequested, setOtpRequested] = useState(false);
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -47,7 +50,25 @@ export default function LoginCard({
   const onSubmit = async (data: LoginForm) => {
     setError(null);
     try {
-      await login(data);
+      if (!otpRequested) {
+        await requestLoginOtp({
+          email: data.email,
+          organizationCode: data.organizationCode,
+        });
+        setOtpRequested(true);
+        return;
+      }
+
+      if (!data.otp) {
+        setError("OTP is required");
+        return;
+      }
+
+      await verifyLoginOtp({
+        email: data.email,
+        organizationCode: data.organizationCode,
+        otp: data.otp,
+      });
       navigate(redirectTo || "/dashboard", { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -65,7 +86,11 @@ export default function LoginCard({
     <Card className="border-border/50 shadow-lg backdrop-blur-sm">
       <CardHeader className="pb-4 text-center">
         <CardTitle className="text-xl">Welcome back</CardTitle>
-        <CardDescription>Sign in to your account to continue</CardDescription>
+        <CardDescription>
+          {otpRequested
+            ? "Enter the 6-digit OTP sent to your email"
+            : "Enter your email and organization code to receive OTP"}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="space-y-4">
@@ -77,21 +102,57 @@ export default function LoginCard({
 
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="you@company.com" {...register("email")} />
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@company.com"
+              disabled={otpRequested}
+              {...register("email")}
+            />
             {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" placeholder="••••••••" {...register("password")} />
-            {errors.password && (
-              <p className="text-xs text-destructive">{errors.password.message}</p>
+            <Label htmlFor="organizationCode">Organization code</Label>
+            <Input
+              id="organizationCode"
+              placeholder="ABC123"
+              disabled={otpRequested}
+              {...register("organizationCode")}
+            />
+            {errors.organizationCode && (
+              <p className="text-xs text-destructive">{errors.organizationCode.message}</p>
             )}
           </div>
 
+          {otpRequested && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="otp">OTP</Label>
+                <Input id="otp" placeholder="123456" maxLength={6} {...register("otp")} />
+                {errors.otp && <p className="text-xs text-destructive">{errors.otp.message}</p>}
+              </div>
+
+              <p className="text-xs text-muted-foreground">OTP expires in 10 minutes.</p>
+
+              <div className="text-center text-sm text-muted-foreground">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOtpRequested(false);
+                    setValue("otp", "");
+                  }}
+                  className="transition-colors hover:text-foreground"
+                >
+                  Use different email or organization code
+                </button>
+              </div>
+            </>
+          )}
+
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign in
+            {otpRequested ? "Verify OTP & Sign in" : "Send OTP"}
           </Button>
 
           <div className="text-center text-sm text-muted-foreground">
