@@ -27,6 +27,15 @@ export default function TopBar({
   const organizationCode = user?.organizationCode?.trim();
   const handleOpenProfile = () => navigate("/profile");
 
+  // Avatar/logo for business: use logo if available, else initials from business name
+  const businessInitials = (() => {
+    const name = user?.businessName?.trim() || "";
+    if (!name) return "B";
+    const words = name.split(/\s+/).filter(Boolean);
+    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  })();
+
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/70 bg-card px-2 sm:px-3">
       <div className="flex items-center gap-3">
@@ -58,6 +67,20 @@ export default function TopBar({
           </Button>
         )}
         <div className="flex items-center gap-2">
+          {user?.businessLogoUrl ? (
+            <img
+              src={user.businessLogoUrl}
+              alt=""
+              className="h-8 w-8 shrink-0 rounded-md bg-muted object-contain"
+            />
+          ) : (
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-medium text-primary-foreground"
+              aria-hidden
+            >
+              {businessInitials}
+            </div>
+          )}
           <h2 className="truncate text-sm font-semibold">{user?.businessName}</h2>
           {organizationCode && (
             <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">

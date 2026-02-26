@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const loginSchema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
-  organizationCode: z.string().trim().min(1, "Organization code is required").max(64),
+  organizationCode: z.string().trim().length(6, "Organization code must be 6 characters"),
+  password: z.string().optional().or(z.literal("")),
   otp: z.string().trim().length(6, "OTP must be 6 digits").optional().or(z.literal("")),
 });
 
@@ -37,6 +38,7 @@ export default function LoginCard({
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [otpRequested, setOtpRequested] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -51,9 +53,15 @@ export default function LoginCard({
     setError(null);
     try {
       if (!otpRequested) {
+        const pwd = data.password?.trim();
+        if (!pwd) {
+          setError("Password is required to receive an OTP.");
+          return;
+        }
         await requestLoginOtp({
           email: data.email,
           organizationCode: data.organizationCode,
+          password: pwd,
         });
         setOtpRequested(true);
         return;
@@ -89,7 +97,7 @@ export default function LoginCard({
         <CardDescription>
           {otpRequested
             ? "Enter the 6-digit OTP sent to your email"
-            : "Enter your email and organization code to receive OTP"}
+            : "Enter your email, password, and organization code to receive an OTP"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -118,12 +126,46 @@ export default function LoginCard({
               id="organizationCode"
               placeholder="ABC123"
               disabled={otpRequested}
+              maxLength={6}
               {...register("organizationCode")}
             />
             {errors.organizationCode && (
               <p className="text-xs text-destructive">{errors.organizationCode.message}</p>
             )}
           </div>
+
+          {!otpRequested && (
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Required to receive OTP"
+                  autoComplete="current-password"
+                  className="pr-9"
+                  {...register("password")}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword((p) => !p)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
+              {errors.password && (
+                <p className="text-xs text-destructive">{errors.password.message}</p>
+              )}
+            </div>
+          )}
 
           {otpRequested && (
             <>

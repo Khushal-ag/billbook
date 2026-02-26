@@ -1,12 +1,24 @@
 import { toast } from "sonner";
 
 /**
- * Show a standardized error toast with error message extraction
+ * Show a standardized error toast.
+ * - showErrorToast(error, title): title as heading, error message as description
+ * - showErrorToast(message): message only (single-arg call)
  */
-export function showErrorToast(error: unknown, title: string) {
-  toast.error(title, {
-    description: error instanceof Error ? error.message : "Please try again.",
-  });
+export function showErrorToast(errorOrMessage: unknown, title?: string) {
+  if (title !== undefined) {
+    toast.error(title, {
+      description: errorOrMessage instanceof Error ? errorOrMessage.message : "Please try again.",
+    });
+  } else {
+    const message =
+      typeof errorOrMessage === "string"
+        ? errorOrMessage
+        : errorOrMessage instanceof Error
+          ? errorOrMessage.message
+          : "Something went wrong.";
+    toast.error(message);
+  }
 }
 
 /**

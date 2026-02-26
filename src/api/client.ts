@@ -133,6 +133,15 @@ export const api = {
     axiosInstance.patch<ApiResponse<T>>(path, body).then((r) => r.data),
 
   delete: <T>(path: string) => axiosInstance.delete<ApiResponse<T>>(path).then((r) => r.data),
+
+  /** POST with FormData (e.g. file upload). Omits Content-Type so axios sets multipart/form-data with boundary. */
+  postForm: <T>(path: string, formData: FormData) => {
+    const headers = { ...axiosInstance.defaults.headers } as Record<string, unknown>;
+    delete headers["Content-Type"];
+    return axiosInstance
+      .post<ApiResponse<T>>(path, formData, { headers: headers as Record<string, string> })
+      .then((r) => r.data);
+  },
 };
 
 // ── Idempotency key generator ───────────────────────────

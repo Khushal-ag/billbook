@@ -7,7 +7,7 @@ import type {
   SignupOtpVerifyRequest,
   OtpRequestResponse,
   AuthResponse,
-  CurrentUser,
+  AuthMeResponse,
 } from "@/types/auth";
 import { api, setAccessToken, getAccessToken, setRefreshToken, ApiClientError } from "@/api";
 
@@ -134,18 +134,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Validate token by calling /auth/me
+      // Validate token and get current user + business from /auth/me
       try {
-        const res = await api.get<CurrentUser>("/auth/me");
-        const me = res.data;
+        const res = await api.get<AuthMeResponse>("/auth/me");
+        const { user: meUser, business: meBusiness } = res.data;
         if (!cancelled) {
-          // Update session with latest data from server
           const updated: SessionUser = {
-            ...JSON.parse(stored),
-            id: me.userId,
-            email: me.email,
-            role: me.role,
-            businessId: me.businessId,
+            id: meUser.id,
+            email: meUser.email,
+            firstName: meUser.firstName,
+            lastName: meUser.lastName,
+            role: meUser.role,
+            businessId: meBusiness.id,
+            businessName: meBusiness.name,
+            organizationCode: meBusiness.organizationCode,
+            businessLogoUrl: meBusiness.logoUrl ?? null,
           };
           persistSession(updated);
           setUser(updated);
@@ -177,7 +180,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const requestLoginOtp = useCallback(
     async (data: LoginOtpRequest): Promise<OtpRequestResponse> => {
       try {
-        const res = await api.post<OtpRequestResponse>("/auth/login/request-otp", data);
+        const res = await api.post<OtpRequestResponse>("/auth/login/request-otp", {
+          email: data.email,
+          organizationCode: data.organizationCode,
+          password: data.password,
+        });
         return res.data;
       } catch (error) {
         throw toAuthError(error, "Failed to send OTP. Please try again.");
@@ -189,7 +196,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyLoginOtp = useCallback(
     async (data: LoginOtpVerifyRequest) => {
       try {
-        const res = await api.post<AuthResponse>("/auth/login/verify-otp", data);
+        const res = await api.post<AuthResponse>("/auth/login/verify-otp", {
+          email: data.email,
+          otp: data.otp,
+          organizationCode: data.organizationCode,
+        });
         handleAuthSuccess(res.data);
       } catch (error) {
         throw toAuthError(error, "Login verification failed. Please try again.");

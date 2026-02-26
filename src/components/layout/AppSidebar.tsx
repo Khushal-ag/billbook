@@ -113,7 +113,7 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
   return (
     <aside
       className={cn(
-        "flex h-full shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-200",
+        "flex h-full min-h-0 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-200",
         collapsed ? "w-16" : "w-64",
       )}
     >
@@ -133,7 +133,7 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
       <Separator className="bg-sidebar-border" />
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-4 overflow-y-auto px-2 py-3">
+      <nav className="min-h-0 flex-1 space-y-4 overflow-y-auto px-2 py-3">
         {getVisibleSections().map((section) => (
           <div key={section.title}>
             {/* Section Title */}

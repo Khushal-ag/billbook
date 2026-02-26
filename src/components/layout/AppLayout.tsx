@@ -6,6 +6,7 @@ import TopBar from "./TopBar";
 import { Loader2 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 export default function AppLayout() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -36,7 +37,7 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex h-svh w-full overflow-hidden bg-background">
+    <div className="fixed inset-0 flex w-full overflow-hidden bg-background">
       {/* Mobile sidebar */}
       {isMobile && (
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
@@ -49,18 +50,29 @@ export default function AppLayout() {
         </Sheet>
       )}
 
-      {/* Desktop sidebar */}
-      <div className="hidden h-full md:block" key="sidebar">
-        <AppSidebar collapsed={collapsed} />
+      {/* Desktop sidebar: fixed so it doesn't scroll with main content; wrapper reserves space */}
+      <div
+        className={cn(
+          "hidden shrink-0 transition-[width] duration-200 md:block",
+          collapsed ? "w-16" : "w-64",
+        )}
+        key="sidebar"
+        aria-hidden
+      >
+        <div className="fixed left-0 top-0 z-30 h-svh overflow-hidden">
+          <AppSidebar collapsed={collapsed} />
+        </div>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar
-          onMenuClick={isMobile ? () => setMobileNavOpen(true) : undefined}
-          onSidebarToggle={() => setCollapsed((c) => !c)}
-          sidebarCollapsed={collapsed}
-        />
-        <main ref={mainRef} className="scrollbar-gutter-stable min-w-0 flex-1 overflow-auto">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="shrink-0">
+          <TopBar
+            onMenuClick={isMobile ? () => setMobileNavOpen(true) : undefined}
+            onSidebarToggle={() => setCollapsed((c) => !c)}
+            sidebarCollapsed={collapsed}
+          />
+        </div>
+        <main ref={mainRef} className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
           <Suspense
             fallback={
               <div className="flex min-h-full items-center justify-center">

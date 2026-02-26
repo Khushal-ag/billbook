@@ -3,23 +3,23 @@ import type { FieldValues, Path, UseFormGetValues, UseFormSetValue } from "react
 import { fetchPostalOffice } from "@/lib/pincode";
 
 type AddressFields = {
-  address?: string | null;
+  street?: string | null;
   city?: string | null;
   state?: string | null;
 };
 
 export function usePincodeAutofill<T extends FieldValues & AddressFields>(
-  postalCode: string | number | undefined,
+  pincode: string | number | undefined,
   countryCode: string | undefined,
   getValues: UseFormGetValues<T>,
   setValue: UseFormSetValue<T>,
 ) {
   const stateKey = "state" as Path<T>;
   const cityKey = "city" as Path<T>;
-  const addressKey = "address" as Path<T>;
+  const streetKey = "street" as Path<T>;
 
   useEffect(() => {
-    const rawCode = (postalCode ?? "").toString().trim();
+    const rawCode = (pincode ?? "").toString().trim();
     const numericCode = rawCode.replace(/\D/g, "");
 
     if (numericCode.length !== 6) return;
@@ -33,7 +33,7 @@ export function usePincodeAutofill<T extends FieldValues & AddressFields>(
 
         const currentState = getValues(stateKey);
         const currentCity = getValues(cityKey);
-        const currentAddress = getValues(addressKey);
+        const currentStreet = getValues(streetKey);
 
         if (!currentState && office.state) {
           setValue(stateKey, office.state as T[Path<T>], { shouldDirty: true });
@@ -41,12 +41,12 @@ export function usePincodeAutofill<T extends FieldValues & AddressFields>(
         if (!currentCity && office.district) {
           setValue(cityKey, office.district as T[Path<T>], { shouldDirty: true });
         }
-        if (!currentAddress) {
-          const addressValue = [office.name, office.block || office.district]
+        if (!currentStreet) {
+          const streetValue = [office.name, office.block || office.district]
             .filter(Boolean)
             .join(", ");
-          if (addressValue) {
-            setValue(addressKey, addressValue as T[Path<T>], { shouldDirty: true });
+          if (streetValue) {
+            setValue(streetKey, streetValue as T[Path<T>], { shouldDirty: true });
           }
         }
       } catch (error) {
@@ -56,5 +56,5 @@ export function usePincodeAutofill<T extends FieldValues & AddressFields>(
 
     fetchAddress();
     return () => controller.abort();
-  }, [postalCode, countryCode, getValues, setValue]);
+  }, [pincode, countryCode, getValues, setValue]);
 }

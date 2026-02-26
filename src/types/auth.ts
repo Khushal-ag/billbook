@@ -17,20 +17,34 @@ export interface AuthBusiness {
   organizationCode?: string;
 }
 
+/** Extra detail key-value for business profile */
+export interface ExtraDetail {
+  key: string;
+  value: string;
+}
+
 /** Full business profile returned by GET /business/profile */
 export interface BusinessProfile {
   id: number;
   name: string;
-  gstin: string | null;
-  pan: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  postalCode: string | null;
+  country: string | null;
   phone: string | null;
   email: string | null;
-  taxType: TaxType;
+  businessType: string | null;
+  industryType: string | null;
+  registrationType: string | null;
+  street: string | null;
+  area: string | null;
+  city: string | null;
+  state: string | null;
+  pincode: string | null;
+  gstin: string | null;
+  pan: string | null;
   financialYearStart: number;
+  extraDetails: ExtraDetail[] | null;
+  signatureUrl: string | null;
+  logoUrl: string | null;
+  taxType: TaxType;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -39,16 +53,30 @@ export interface BusinessProfile {
 /** Payload for PUT /business/profile */
 export interface UpdateBusinessProfile {
   name: string;
+  country?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  businessType?: string | null;
+  industryType?: string | null;
+  registrationType?: string | null;
+  street?: string | null;
+  area?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
   gstin?: string | null;
   pan?: string | null;
-  address?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
-  phone?: string;
-  email?: string;
-  taxType?: TaxType;
   financialYearStart?: number;
+  extraDetails?: ExtraDetail[] | null;
+  signatureUrl?: string | null;
+  logoUrl?: string | null;
+  taxType?: TaxType;
+}
+
+/** Response from POST /business/profile/upload */
+export interface BusinessProfileUploadResponse {
+  logoUrl?: string | null;
+  signatureUrl?: string | null;
 }
 
 /** Business user returned by GET /business/users */
@@ -75,12 +103,29 @@ export interface AuthResponse {
   tokens: AuthTokens;
 }
 
-/** Returned by GET /auth/me */
-export interface CurrentUser {
-  userId: number;
+/** User object in GET /auth/me response */
+export interface AuthMeUser {
+  id: number;
   email: string;
-  businessId: number;
+  firstName: string | null;
+  lastName: string | null;
   role: Role;
+}
+
+/** Business object in GET /auth/me response */
+export interface AuthMeBusiness {
+  id: number;
+  name: string;
+  organizationCode?: string;
+  signatureUrl?: string | null;
+  logoUrl?: string | null;
+  email?: string | null;
+}
+
+/** Returned by GET /auth/me (API response data) */
+export interface AuthMeResponse {
+  user: AuthMeUser;
+  business: AuthMeBusiness;
 }
 
 export interface LoginRequest {
@@ -88,11 +133,14 @@ export interface LoginRequest {
   password: string;
 }
 
+/** POST /auth/login/request-otp – password required (backend validates before sending OTP) */
 export interface LoginOtpRequest {
   email: string;
   organizationCode: string;
+  password: string;
 }
 
+/** POST /auth/login/verify-otp – no password in body */
 export interface LoginOtpVerifyRequest {
   email: string;
   otp: string;
@@ -127,4 +175,6 @@ export interface SessionUser {
   businessId: number;
   businessName: string;
   organizationCode?: string;
+  /** Business logo URL from /auth/me; used in header when available */
+  businessLogoUrl?: string | null;
 }
