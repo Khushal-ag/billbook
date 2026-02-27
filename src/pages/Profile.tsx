@@ -155,7 +155,11 @@ export default function Profile() {
               type="submit"
               size="sm"
               form="profile-form"
-              disabled={isSubmitting || updateProfile.isPending}
+              disabled={
+                isSubmitting ||
+                updateProfile.isPending ||
+                (!isDirty && !pendingLogoFile && !pendingSignatureFile)
+              }
             >
               Save Changes
             </Button>
@@ -163,7 +167,7 @@ export default function Profile() {
         }
       />
 
-      <div className="w-full max-w-5xl space-y-6">
+      <div className="w-full space-y-6">
         <BusinessProfileForm
           form={form}
           onSubmit={onSubmit}

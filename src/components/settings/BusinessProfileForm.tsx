@@ -23,6 +23,7 @@ import {
 } from "@/lib/profile-options";
 import { usePincodeAutofill } from "@/hooks/use-pincode-autofill";
 import { showErrorToast } from "@/lib/toast-helpers";
+import { countryCodeToFlagEmoji } from "@/lib/country-flags";
 
 const LOGO_MAX_SIZE_MB = 5;
 const SIGNATURE_MAX_SIZE_MB = 2;
@@ -77,6 +78,23 @@ export function BusinessProfileForm({
   const logoUrl = watch("logoUrl");
   const signatureUrl = watch("signatureUrl");
   const pincode = watch("pincode");
+  const countryName = watch("country");
+  const city = watch("city");
+  const state = watch("state");
+
+  const pincodeDigits = (pincode ?? "").toString().replace(/\D/g, "");
+  const lockCityState = pincodeDigits.length === 6 && Boolean(city || state);
+  const selectedPhoneCountry = COUNTRIES.find((c) => c.code === phoneCountryCode) ??
+    COUNTRIES[0] ?? { code: "IN", dialCode: "+91", label: "India" };
+
+  const normalizedCountryName = (countryName ?? "").toString().trim().toLowerCase();
+  const countryFromName =
+    COUNTRIES.find((c) => c.label.toLowerCase() === normalizedCountryName)?.code ?? null;
+  const pincodeCountryCode =
+    countryFromName ??
+    (normalizedCountryName === "india" || !normalizedCountryName
+      ? "IN"
+      : selectedPhoneCountry.code);
 
   const displayLogoUrl = pendingLogoFile ? logoPreviewUrl : logoUrl || null;
   const displaySignatureUrl = pendingSignatureFile ? signaturePreviewUrl : signatureUrl || null;
@@ -142,7 +160,7 @@ export function BusinessProfileForm({
     setValue("signatureUrl", null, { shouldDirty: true });
   };
 
-  usePincodeAutofill(pincode, phoneCountryCode, getValues, setValue);
+  usePincodeAutofill(pincode, pincodeCountryCode, getValues, setValue);
 
   return (
     <Card className="w-full">
@@ -152,7 +170,7 @@ export function BusinessProfileForm({
       </CardHeader>
       <CardContent className="pt-0">
         <form id="profile-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-[220px_minmax(300px,1fr)_300px]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
             <div className="space-y-4">
               <div className="rounded-lg border-2 border-dashed border-border/60 p-4 text-center">
                 {displayLogoUrl ? (
@@ -200,239 +218,7 @@ export function BusinessProfileForm({
               <div className="rounded-lg border border-border/70 bg-muted/30 p-3 text-xs text-muted-foreground">
                 Your logo appears on invoices, reports, and client-facing documents.
               </div>
-            </div>
 
-            <div className="space-y-4">
-              <div className="space-y-4 rounded-lg border border-border/60 p-4">
-                <p className="text-sm font-semibold">Primary details</p>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">
-                      Business Name <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="name"
-                      {...register("name")}
-                      aria-required="true"
-                      aria-invalid={!!errors.name}
-                      aria-describedby={errors.name ? "name-error" : undefined}
-                    />
-                    {errors.name && (
-                      <p id="name-error" className="text-xs text-destructive" role="alert">
-                        {errors.name.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="country">Country</Label>
-                    <Input
-                      id="country"
-                      {...register("country")}
-                      placeholder="e.g. India"
-                      aria-invalid={!!errors.country}
-                    />
-                  </div>
-                  <div className="space-y-2 sm:col-span-2">
-                    <Label htmlFor="email">Company Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      {...register("email")}
-                      placeholder="billing@acme.com"
-                      aria-invalid={!!errors.email}
-                      aria-describedby={errors.email ? "email-error" : undefined}
-                    />
-                    {errors.email && (
-                      <p id="email-error" className="text-xs text-destructive" role="alert">
-                        {errors.email.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="businessType">Business Type</Label>
-                    <Controller
-                      name="businessType"
-                      control={control}
-                      render={({ field }) => (
-                        <Select value={field.value || ""} onValueChange={field.onChange}>
-                          <SelectTrigger id="businessType">
-                            <SelectValue placeholder="Select" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {BUSINESS_TYPES.map((item) => (
-                              <SelectItem key={item.value} value={item.value}>
-                                {item.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="industryType">Industry Type</Label>
-                    <Controller
-                      name="industryType"
-                      control={control}
-                      render={({ field }) => (
-                        <Select value={field.value || ""} onValueChange={field.onChange}>
-                          <SelectTrigger id="industryType">
-                            <SelectValue placeholder="Select industry" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {INDUSTRY_TYPES.map((item) => (
-                              <SelectItem key={item.value} value={item.value}>
-                                {item.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone number</Label>
-                    <div className="grid grid-cols-[115px_1fr] gap-2">
-                      <Select value={phoneCountryCode} onValueChange={handlePhoneCountryChange}>
-                        <SelectTrigger
-                          id="phoneCountry"
-                          aria-label="Phone country"
-                          className="h-10"
-                        >
-                          <SelectValue placeholder="Code" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {COUNTRIES.map((item) => (
-                            <SelectItem key={item.code} value={item.code}>
-                              {item.label} ({item.dialCode})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        id="phone"
-                        placeholder="9876543210"
-                        inputMode="tel"
-                        {...register("phone")}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="street">Street address</Label>
-                    <Textarea
-                      id="street"
-                      placeholder="123 Main Street"
-                      className="min-h-[88px]"
-                      {...register("street")}
-                      maxLength={500}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="area">Area / Locality</Label>
-                    <Input id="area" {...register("area")} placeholder="Koramangala" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="city">City</Label>
-                    <Input id="city" {...register("city")} placeholder="Bangalore" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="state">State / Province</Label>
-                    <Input id="state" {...register("state")} placeholder="Karnataka" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="pincode">Pincode</Label>
-                    <Input
-                      id="pincode"
-                      placeholder="560034"
-                      {...register("pincode")}
-                      maxLength={10}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4 rounded-lg border border-border/60 p-4">
-                <p className="text-sm font-semibold">Tax and compliance</p>
-                <div className="space-y-2">
-                  <Label htmlFor="gstin">GSTIN (optional)</Label>
-                  <Input
-                    id="gstin"
-                    placeholder="GSTIN"
-                    {...register("gstin")}
-                    maxLength={15}
-                    aria-invalid={!!errors.gstin}
-                    aria-describedby={errors.gstin ? "gstin-error" : "gstin-hint"}
-                  />
-                  {errors.gstin ? (
-                    <p id="gstin-error" className="text-xs text-destructive" role="alert">
-                      {errors.gstin.message}
-                    </p>
-                  ) : (
-                    <p id="gstin-hint" className="text-xs text-muted-foreground">
-                      Leave blank if GST does not apply
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="pan">PAN Number</Label>
-                    <Input
-                      id="pan"
-                      placeholder="Enter PAN number"
-                      {...register("pan")}
-                      maxLength={10}
-                      aria-invalid={!!errors.pan}
-                      aria-describedby={errors.pan ? "pan-error" : "pan-hint"}
-                    />
-                    {errors.pan ? (
-                      <p id="pan-error" className="text-xs text-destructive" role="alert">
-                        {errors.pan.message}
-                      </p>
-                    ) : (
-                      <p id="pan-hint" className="text-xs text-muted-foreground">
-                        10-character permanent account number
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="financialYearStart">Financial Year Start</Label>
-                    <Controller
-                      name="financialYearStart"
-                      control={control}
-                      render={({ field }) => (
-                        <Select
-                          value={String(field.value)}
-                          onValueChange={(v) => field.onChange(Number(v))}
-                        >
-                          <SelectTrigger id="financialYearStart">
-                            <SelectValue placeholder="Select month" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {MONTHS.map((month, i) => (
-                              <SelectItem key={month} value={String(i + 1)}>
-                                {month}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4 lg:col-span-2 xl:col-span-1">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm">Registration and Signature</CardTitle>
@@ -542,6 +328,334 @@ export function BusinessProfileForm({
                       <Plus className="mr-2 h-4 w-4" />
                       Add detail
                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="space-y-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">Business & contact</CardTitle>
+                  <CardDescription>
+                    Key details used across invoices and reports. Classification is optional.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">
+                        Business Name <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="name"
+                        {...register("name")}
+                        aria-required="true"
+                        aria-invalid={!!errors.name}
+                        aria-describedby={errors.name ? "name-error" : undefined}
+                      />
+                      {errors.name && (
+                        <p id="name-error" className="text-xs text-destructive" role="alert">
+                          {errors.name.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="country">Country</Label>
+                      <Controller
+                        name="country"
+                        control={control}
+                        render={({ field }) => {
+                          const selected =
+                            COUNTRIES.find((c) => c.label === field.value) ?? selectedPhoneCountry;
+                          return (
+                            <Select
+                              value={selected.code}
+                              onValueChange={(code) => {
+                                const country = COUNTRIES.find((c) => c.code === code);
+                                field.onChange(country?.label ?? "");
+                                setPhoneCountryCode(code);
+                              }}
+                            >
+                              <SelectTrigger id="country">
+                                <SelectValue placeholder="Select country" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {COUNTRIES.map((item) => (
+                                  <SelectItem key={item.code} value={item.code}>
+                                    <span className="flex items-center gap-2">
+                                      <span aria-hidden className="text-base leading-none">
+                                        {countryCodeToFlagEmoji(item.code)}
+                                      </span>
+                                      <span className="truncate">{item.label}</span>
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          );
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="email">Company Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        {...register("email")}
+                        placeholder="billing@acme.com"
+                        aria-invalid={!!errors.email}
+                        aria-describedby={errors.email ? "email-error" : undefined}
+                      />
+                      {errors.email && (
+                        <p id="email-error" className="text-xs text-destructive" role="alert">
+                          {errors.email.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="businessType">
+                        Business Type{" "}
+                        <span className="text-xs text-muted-foreground">(optional)</span>
+                      </Label>
+                      <Controller
+                        name="businessType"
+                        control={control}
+                        render={({ field }) => (
+                          <Select value={field.value || ""} onValueChange={field.onChange}>
+                            <SelectTrigger id="businessType">
+                              <SelectValue placeholder="Select" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {BUSINESS_TYPES.map((item) => (
+                                <SelectItem key={item.value} value={item.value}>
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="industryType">
+                        Industry Type{" "}
+                        <span className="text-xs text-muted-foreground">(optional)</span>
+                      </Label>
+                      <Controller
+                        name="industryType"
+                        control={control}
+                        render={({ field }) => (
+                          <Select value={field.value || ""} onValueChange={field.onChange}>
+                            <SelectTrigger id="industryType">
+                              <SelectValue placeholder="Select industry" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {INDUSTRY_TYPES.map((item) => (
+                                <SelectItem key={item.value} value={item.value}>
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone number</Label>
+                    <div className="grid grid-cols-[120px_1fr] gap-2 sm:grid-cols-[140px_1fr]">
+                      <Select value={phoneCountryCode} onValueChange={handlePhoneCountryChange}>
+                        <SelectTrigger
+                          id="phoneCountry"
+                          aria-label="Phone country code"
+                          className="h-10"
+                        >
+                          <span className="flex items-center gap-1">
+                            <span aria-hidden className="text-base leading-none">
+                              {countryCodeToFlagEmoji(selectedPhoneCountry.code)}
+                            </span>{" "}
+                            <span className="pl-1 tabular-nums">
+                              {selectedPhoneCountry.dialCode}
+                            </span>
+                          </span>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COUNTRIES.map((item) => (
+                            <SelectItem key={item.code} value={item.code}>
+                              <span className="flex items-center gap-3">
+                                <span aria-hidden className="text-base leading-none">
+                                  {countryCodeToFlagEmoji(item.code)}
+                                </span>
+                                <span className="truncate">{item.label}</span>
+                                <span className="ml-auto tabular-nums">{item.dialCode}</span>
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        id="phone"
+                        placeholder="9876543210"
+                        inputMode="tel"
+                        {...register("phone")}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">Address</CardTitle>
+                  <CardDescription>Used for compliance and document headers</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="street">Address line 1</Label>
+                    <Textarea
+                      id="street"
+                      placeholder="123 Main Street"
+                      className="min-h-[88px]"
+                      {...register("street")}
+                      maxLength={500}
+                    />
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="pincode">Pincode</Label>
+                      <Input
+                        id="pincode"
+                        placeholder="560034"
+                        {...register("pincode")}
+                        maxLength={10}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Enter pincode to auto-fill city, state, and area
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="area">Area / Locality</Label>
+                      <Input id="area" {...register("area")} placeholder="Koramangala" />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        {...register("city")}
+                        placeholder="Bangalore"
+                        disabled={lockCityState}
+                      />
+                      {lockCityState && (
+                        <p className="text-xs text-muted-foreground">Auto-filled from pincode</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State / Province</Label>
+                      <Input
+                        id="state"
+                        {...register("state")}
+                        placeholder="Karnataka"
+                        disabled={lockCityState}
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">Tax & compliance</CardTitle>
+                  <CardDescription>Optional, but recommended for invoices</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="taxType">Tax type</Label>
+                      <Controller
+                        name="taxType"
+                        control={control}
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger id="taxType">
+                              <SelectValue placeholder="Select tax type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="GST">GST</SelectItem>
+                              <SelectItem value="NON_GST">Non-GST</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="financialYearStart">Financial Year Start</Label>
+                      <Controller
+                        name="financialYearStart"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            value={String(field.value)}
+                            onValueChange={(v) => field.onChange(Number(v))}
+                          >
+                            <SelectTrigger id="financialYearStart">
+                              <SelectValue placeholder="Select month" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {MONTHS.map((month, i) => (
+                                <SelectItem key={month} value={String(i + 1)}>
+                                  {month}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="gstin">GSTIN (optional)</Label>
+                      <Input
+                        id="gstin"
+                        placeholder="29ABCDE1234F1Z5"
+                        {...register("gstin")}
+                        maxLength={15}
+                        aria-invalid={!!errors.gstin}
+                        aria-describedby={errors.gstin ? "gstin-error" : undefined}
+                      />
+                      {errors.gstin && (
+                        <p id="gstin-error" className="text-xs text-destructive" role="alert">
+                          {errors.gstin.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="pan">PAN (optional)</Label>
+                      <Input
+                        id="pan"
+                        placeholder="ABCDE1234F"
+                        {...register("pan")}
+                        maxLength={10}
+                        aria-invalid={!!errors.pan}
+                        aria-describedby={errors.pan ? "pan-error" : undefined}
+                      />
+                      {errors.pan && (
+                        <p id="pan-error" className="text-xs text-destructive" role="alert">
+                          {errors.pan.message}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

@@ -13,7 +13,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const loginSchema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
-  organizationCode: z.string().trim().length(6, "Organization code must be 6 characters"),
+  organizationCode: z
+    .string()
+    .trim()
+    .length(6, "Organization code must be 6 characters")
+    .transform((v) => v.toUpperCase()),
   password: z.string().optional().or(z.literal("")),
   otp: z.string().trim().length(6, "OTP must be 6 digits").optional().or(z.literal("")),
 });
@@ -127,6 +131,7 @@ export default function LoginCard({
               placeholder="ABC123"
               disabled={otpRequested}
               maxLength={6}
+              className="uppercase"
               {...register("organizationCode")}
             />
             {errors.organizationCode && (

@@ -3,6 +3,7 @@ export type PincodeOffice = {
   district?: string;
   state?: string;
   block?: string;
+  country?: string;
 };
 
 type PincodeResponse = {
@@ -12,6 +13,8 @@ type PincodeResponse = {
     District?: string;
     State?: string;
     Block?: string;
+    Country?: string;
+    DeliveryStatus?: string;
   }>;
 };
 
@@ -23,7 +26,9 @@ export async function fetchPostalOffice(code: string, countryCode?: string, sign
     const data = (await res.json()) as PincodeResponse[];
     const entry = data?.[0];
     if (!entry || entry.Status !== "Success") return null;
-    const office = entry.PostOffice?.[0];
+    const offices = entry.PostOffice ?? [];
+    const office =
+      offices.find((o) => (o.DeliveryStatus ?? "").toLowerCase() === "delivery") ?? offices[0];
     if (!office) return null;
 
     return {
@@ -31,6 +36,7 @@ export async function fetchPostalOffice(code: string, countryCode?: string, sign
       district: office.District,
       state: office.State,
       block: office.Block,
+      country: office.Country ?? "India",
     } satisfies PincodeOffice;
   }
 
@@ -50,5 +56,6 @@ export async function fetchPostalOffice(code: string, countryCode?: string, sign
     name: place["place name"],
     district: place.county ?? place["place name"],
     state: place.state,
+    country: normalizedCountry,
   } satisfies PincodeOffice;
 }
