@@ -7,13 +7,13 @@ import DateRangePicker from "@/components/DateRangePicker";
 import PageHeader from "@/components/PageHeader";
 import {
   OutstandingReportTable,
-  ProductSalesTable,
+  ItemSalesTable,
   SalesReportCard,
 } from "@/components/reports/ReportSections";
 import {
   useSalesReport,
   usePartyOutstandingReport,
-  useProductSalesReport,
+  useItemSalesReport,
   useSalesExport,
 } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
@@ -34,7 +34,7 @@ export default function Reports() {
 
   const { data: salesData, isPending: salesPending } = useSalesReport(validStartDate, validEndDate);
   const { data: outstandingData, isPending: outstandingPending } = usePartyOutstandingReport();
-  const { data: productSalesData, isPending: productSalesPending } = useProductSalesReport(
+  const { data: itemSalesData, isPending: itemSalesPending } = useItemSalesReport(
     validStartDate,
     validEndDate,
   );
@@ -62,7 +62,7 @@ export default function Reports() {
     <div className="page-container animate-fade-in">
       <PageHeader
         title="Reports"
-        description="Sales, outstanding, and product reports"
+        description="Sales, outstanding, and item reports"
         action={
           <Button
             variant="outline"
@@ -94,7 +94,7 @@ export default function Reports() {
         <TabsList className="mb-4 w-full justify-start overflow-x-auto whitespace-nowrap sm:w-auto">
           <TabsTrigger value="sales">Sales</TabsTrigger>
           <TabsTrigger value="outstanding">Party Outstanding</TabsTrigger>
-          <TabsTrigger value="product-sales">Product Sales</TabsTrigger>
+          <TabsTrigger value="item-sales">Item Sales</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sales">
@@ -119,14 +119,14 @@ export default function Reports() {
           )}
         </TabsContent>
 
-        <TabsContent value="product-sales">
-          {productSalesPending ? (
+        <TabsContent value="item-sales">
+          {itemSalesPending ? (
             <ReportTabSkeleton height="h-60" />
-          ) : productSalesData && (productSalesData.products ?? []).length > 0 ? (
-            <ProductSalesTable rows={productSalesData.products ?? []} />
+          ) : itemSalesData && (itemSalesData.items ?? []).length > 0 ? (
+            <ItemSalesTable rows={itemSalesData.items ?? []} />
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No product sales data for this period.
+              No item sales data for this period.
             </p>
           )}
         </TabsContent>

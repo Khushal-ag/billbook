@@ -42,19 +42,19 @@ export interface PartyOutstandingRow {
   outstanding: string;
 }
 
-export interface ProductSalesData {
+export interface ItemSalesData {
   period: { startDate: string; endDate: string };
-  products: ProductSalesRow[];
+  items: ItemSalesRow[];
   summary: {
-    totalProducts: number;
+    totalItems: number;
     totalQuantity: string;
     totalAmount: string;
   };
 }
 
-export interface ProductSalesRow {
-  productId: number;
-  productName: string;
+export interface ItemSalesRow {
+  itemId: number;
+  itemName: string;
   unit: string;
   totalQuantity: string;
   totalAmount: string;

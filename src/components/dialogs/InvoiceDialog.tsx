@@ -23,8 +23,8 @@ import {
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useCreateInvoice } from "@/hooks/use-invoices";
 import { useParties } from "@/hooks/use-parties";
-import { useProducts } from "@/hooks/use-products";
-import ProductDialog from "./ProductDialog";
+import { useItems } from "@/hooks/use-items";
+import ItemDialog from "@/components/items/ItemDialog";
 import {
   quantityString,
   priceString,
@@ -36,7 +36,7 @@ import {
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 
 const itemSchema = z.object({
-  productId: z.coerce.number().min(1, "Select a product"),
+  itemId: z.coerce.number().min(1, "Select an item"),
   quantity: quantityString(),
   unitPrice: requiredPriceString,
   discountPercent: percentString,
@@ -60,13 +60,13 @@ interface Props {
 }
 
 export default function InvoiceDialog({ open, onOpenChange }: Props) {
-  const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const createMutation = useCreateInvoice();
   const { data: partiesData } = useParties();
-  const { data: productsData } = useProducts();
+  const { data: itemsData } = useItems({ limit: 500 });
 
   const parties = (partiesData?.parties ?? []).filter((p) => !p.deletedAt);
-  const products = (productsData?.products ?? []).filter((p) => !p.deletedAt);
+  const items = (itemsData?.items ?? []).filter((i) => !i.deletedAt);
 
   const {
     register,
@@ -85,7 +85,7 @@ export default function InvoiceDialog({ open, onOpenChange }: Props) {
       notes: "",
       discountAmount: "",
       discountPercent: "",
-      items: [{ productId: 0, quantity: "1.00", unitPrice: "", discountPercent: "" }],
+      items: [{ itemId: 0, quantity: "1.00", unitPrice: "", discountPercent: "" }],
     },
   });
 
@@ -100,15 +100,13 @@ export default function InvoiceDialog({ open, onOpenChange }: Props) {
         notes: "",
         discountAmount: "",
         discountPercent: "",
-        items: [{ productId: 0, quantity: "1.00", unitPrice: "", discountPercent: "" }],
+        items: [{ itemId: 0, quantity: "1.00", unitPrice: "", discountPercent: "" }],
       });
     }
   }, [open, reset]);
 
-  const onProductChange = (index: number, productId: number) => {
-    setValue(`items.${index}.productId`, productId);
-    const prod = products.find((p) => p.id === productId);
-    if (prod?.sellingPrice) setValue(`items.${index}.unitPrice`, prod.sellingPrice);
+  const onItemChange = (index: number, itemId: number) => {
+    setValue(`items.${index}.itemId`, itemId);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -120,7 +118,7 @@ export default function InvoiceDialog({ open, onOpenChange }: Props) {
       discountAmount: data.discountAmount || undefined,
       discountPercent: data.discountPercent || undefined,
       items: data.items.map((it) => ({
-        productId: it.productId,
+        itemId: it.itemId,
         quantity: it.quantity,
         unitPrice: it.unitPrice,
         discountPercent: it.discountPercent || undefined,
@@ -203,7 +201,7 @@ export default function InvoiceDialog({ open, onOpenChange }: Props) {
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    append({ productId: 0, quantity: "1.00", unitPrice: "", discountPercent: "" })
+                    append({ itemId: 0, quantity: "1.00", unitPrice: "", discountPercent: "" })
                   }
                 >
                   <Plus className="mr-1 h-3.5 w-3.5" />
@@ -217,34 +215,32 @@ export default function InvoiceDialog({ open, onOpenChange }: Props) {
                 <div key={field.id} className="flex items-start gap-2 rounded-md border p-2">
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs">Product</Label>
+                      <Label className="text-xs">Item</Label>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         className="h-5 px-1 text-xs"
-                        onClick={() => setProductDialogOpen(true)}
+                        onClick={() => setItemDialogOpen(true)}
                       >
                         <Plus className="mr-0.5 h-3 w-3" />
                         Add
                       </Button>
                     </div>
                     <Select
-                      value={String(watch(`items.${idx}.productId`))}
-                      onValueChange={(v) => onProductChange(idx, Number(v))}
+                      value={String(watch(`items.${idx}.itemId`))}
+                      onValueChange={(v) => onItemChange(idx, Number(v))}
                     >
-                      <SelectTrigger className="h-8 text-xs" disabled={products.length === 0}>
-                        <SelectValue
-                          placeholder={products.length === 0 ? "No products" : "Select"}
-                        />
+                      <SelectTrigger className="h-8 text-xs" disabled={items.length === 0}>
+                        <SelectValue placeholder={items.length === 0 ? "No items" : "Select"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {products.length === 0 ? (
+                        {items.length === 0 ? (
                           <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                            No products available. Create a product first.
+                            No items available. Add items in Master → Items first.
                           </div>
                         ) : (
-                          products.map((p) => (
+                          items.map((p) => (
                             <SelectItem key={p.id} value={String(p.id)}>
                               {p.name}
                             </SelectItem>
@@ -252,9 +248,9 @@ export default function InvoiceDialog({ open, onOpenChange }: Props) {
                         )}
                       </SelectContent>
                     </Select>
-                    {errors.items?.[idx]?.productId && (
+                    {errors.items?.[idx]?.itemId && (
                       <p className="text-xs text-destructive">
-                        {errors.items[idx].productId?.message}
+                        {errors.items[idx].itemId?.message}
                       </p>
                     )}
                   </div>
@@ -301,7 +297,7 @@ export default function InvoiceDialog({ open, onOpenChange }: Props) {
           </form>
         </DialogContent>
       </Dialog>
-      <ProductDialog open={productDialogOpen} onOpenChange={setProductDialogOpen} />
+      <ItemDialog open={itemDialogOpen} onOpenChange={setItemDialogOpen} />
     </>
   );
 }

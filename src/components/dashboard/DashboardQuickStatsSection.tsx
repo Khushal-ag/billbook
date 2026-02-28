@@ -18,7 +18,7 @@ export function DashboardQuickStatsSection({ dashboard }: DashboardQuickStatsSec
         </Link>
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <QuickStat label="Products" value={dashboard.totalProducts} href="/products">
+        <QuickStat label="Items" value={dashboard.totalItems} href="/items">
           <Package className="h-4 w-4 text-muted-foreground" />
         </QuickStat>
         <QuickStat label="Parties" value={dashboard.totalParties} href="/parties">

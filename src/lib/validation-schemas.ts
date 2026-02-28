@@ -44,6 +44,9 @@ export const hsnCode = z.string().max(8, "HSN code max 8 digits").optional().or(
 // SAC Code (max 6 digits)
 export const sacCode = z.string().max(6, "SAC code max 6 digits").optional().or(z.literal(""));
 
+// Other tax name (max 100 chars, for taxType "OTHER")
+export const otherTaxName = z.string().max(100, "Max 100 characters").optional().or(z.literal(""));
+
 // GSTIN validation (15 characters)
 export const gstinString = z
   .string()

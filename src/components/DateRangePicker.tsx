@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { parseISODateString, toISODateString, formatISODateDisplay } from "@/lib/date";
 
 interface DateRangePickerProps {
   startDate: string;
@@ -13,27 +14,6 @@ interface DateRangePickerProps {
   onEndDateChange: (date: string) => void;
   error?: string | null;
   className?: string;
-}
-
-function parseISODateString(value: string): Date | undefined {
-  if (!value) return undefined;
-  const [y, m, d] = value.split("-").map((p) => parseInt(p, 10));
-  if (!y || !m || !d) return undefined;
-  const dt = new Date(y, m - 1, d);
-  return Number.isNaN(dt.getTime()) ? undefined : dt;
-}
-
-function toISODateString(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function formatDisplayDate(value: string): string {
-  const dt = parseISODateString(value);
-  if (!dt) return "";
-  return dt.toLocaleDateString("en-GB");
 }
 
 export default function DateRangePicker({
@@ -62,7 +42,9 @@ export default function DateRangePicker({
                 )}
               >
                 <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                <span>{startDate ? formatDisplayDate(startDate) : "dd/mm/yyyy"}</span>
+                <span>
+                  {startDate ? formatISODateDisplay(startDate, "en-GB", {}) : "dd/mm/yyyy"}
+                </span>
               </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-auto p-0">
@@ -92,7 +74,7 @@ export default function DateRangePicker({
                 )}
               >
                 <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                <span>{endDate ? formatDisplayDate(endDate) : "dd/mm/yyyy"}</span>
+                <span>{endDate ? formatISODateDisplay(endDate, "en-GB", {}) : "dd/mm/yyyy"}</span>
               </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-auto p-0">

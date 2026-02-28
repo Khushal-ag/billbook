@@ -20,7 +20,7 @@ export function InvoiceLineItemsTable({ items }: InvoiceLineItemsTableProps) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Product</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Item</th>
                   <th className="px-3 py-3 text-right font-medium text-muted-foreground">Qty</th>
                   <th className="px-3 py-3 text-right font-medium text-muted-foreground">
                     Unit Price
@@ -43,7 +43,7 @@ export function InvoiceLineItemsTable({ items }: InvoiceLineItemsTableProps) {
                   return (
                     <tr key={item.id} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="px-4 py-3 font-medium">
-                        {item.productName ?? `Product #${item.productId}`}
+                        {item.itemName ?? `Item #${item.itemId}`}
                       </td>
                       <td className="px-3 py-3 text-right">{item.quantity}</td>
                       <td className="px-3 py-3 text-right">{formatCurrency(item.unitPrice)}</td>

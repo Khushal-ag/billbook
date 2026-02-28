@@ -1,25 +1,20 @@
-interface ProductSalesRow {
-  productId: number;
-  productName: string;
-  totalQuantity: string | number;
-  totalAmount: string;
-}
+import type { ItemSalesRow } from "@/types/report";
 
-export function ProductSalesTable({ rows }: { rows: ProductSalesRow[] }) {
+export function ItemSalesTable({ rows }: { rows: ItemSalesRow[] }) {
   return (
     <div className="data-table-container">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/30">
-            <th className="px-6 py-3 text-left font-medium text-muted-foreground">Product</th>
+            <th className="px-6 py-3 text-left font-medium text-muted-foreground">Item</th>
             <th className="px-3 py-3 text-right font-medium text-muted-foreground">Qty Sold</th>
             <th className="px-6 py-3 text-right font-medium text-muted-foreground">Total Amount</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.productId} className="border-b last:border-0 hover:bg-muted/20">
-              <td className="px-6 py-3 font-medium">{row.productName}</td>
+            <tr key={row.itemId} className="border-b last:border-0 hover:bg-muted/20">
+              <td className="px-6 py-3 font-medium">{row.itemName}</td>
               <td className="px-3 py-3 text-right">{row.totalQuantity}</td>
               <td className="px-6 py-3 text-right font-medium">₹{row.totalAmount}</td>
             </tr>

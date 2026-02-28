@@ -44,15 +44,15 @@ export default function Dashboard() {
           <DashboardHeroSection greeting={greeting} totalPaid={totalPaid} dashboard={dashboard} />
           <DashboardQuickStatsSection dashboard={dashboard} />
           <DashboardInsightsSection
-            revenueByMonth={dashboard.revenueByMonth}
+            revenueByMonth={dashboard.revenueByMonth ?? []}
             paymentStatusData={paymentStatusData}
             totalPaymentAmount={totalPaymentAmount}
           />
           <DashboardHighlightsSection
-            topProducts={dashboard.topProducts}
-            topCustomers={dashboard.topCustomers}
+            topItems={dashboard.topItems ?? []}
+            topCustomers={dashboard.topCustomers ?? []}
           />
-          <DashboardRecentInvoicesSection recentInvoices={dashboard.recentInvoices} />
+          <DashboardRecentInvoicesSection recentInvoices={dashboard.recentInvoices ?? []} />
         </div>
       )}
     </div>

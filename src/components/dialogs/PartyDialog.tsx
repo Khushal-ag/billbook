@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +24,7 @@ import { useCreateParty, useUpdateParty } from "@/hooks/use-parties";
 import type { Party } from "@/types/party";
 import { gstinString, optionalEmail, priceString, optionalString } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { fetchPostalOffice } from "@/lib/pincode";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -45,6 +46,10 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   party?: Party | null;
   defaultType?: "CUSTOMER" | "SUPPLIER";
+  /** When true, type is fixed to defaultType and the Type field is hidden (e.g. when opening from Customer or Vendor page) */
+  typeLocked?: boolean;
+  /** Called with the created party after successful create (edit not used) */
+  onSuccess?: (party: Party) => void;
 }
 
 export default function PartyDialog({
@@ -52,6 +57,8 @@ export default function PartyDialog({
   onOpenChange,
   party,
   defaultType = "CUSTOMER",
+  typeLocked = false,
+  onSuccess,
 }: Props) {
   const isEdit = !!party;
   const createMutation = useCreateParty();
@@ -70,13 +77,46 @@ export default function PartyDialog({
   });
 
   const partyType = watch("type");
+  const postalCode = watch("postalCode");
+  const pincodeInitialMountRef = useRef(true);
+
+  // Fetch address from postal code (same API as business profile)
+  useEffect(() => {
+    const raw = (postalCode ?? "").toString().trim();
+    const digits = raw.replace(/\D/g, "");
+    if (digits.length !== 6) {
+      pincodeInitialMountRef.current = false;
+      return;
+    }
+    // Skip first run when dialog opens with existing 6-digit pincode (edit mode) so we don't overwrite
+    if (pincodeInitialMountRef.current) {
+      pincodeInitialMountRef.current = false;
+      return;
+    }
+
+    const controller = new AbortController();
+    const fetchAddress = async () => {
+      try {
+        const office = await fetchPostalOffice(digits, "IN", controller.signal);
+        if (!office) return;
+        if (office.name) setValue("address", office.name, { shouldDirty: true });
+        if (office.district) setValue("city", office.district, { shouldDirty: true });
+        if (office.state) setValue("state", office.state, { shouldDirty: true });
+      } catch (e) {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+      }
+    };
+    fetchAddress();
+    return () => controller.abort();
+  }, [postalCode, setValue]);
 
   useEffect(() => {
     if (open) {
+      pincodeInitialMountRef.current = true;
       if (party) {
         reset({
           name: party.name,
-          type: party.type,
+          type: typeLocked ? defaultType : party.type,
           gstin: party.gstin ?? "",
           email: party.email ?? "",
           phone: party.phone ?? "",
@@ -101,12 +141,12 @@ export default function PartyDialog({
         });
       }
     }
-  }, [open, party, reset, defaultType]);
+  }, [open, party, reset, defaultType, typeLocked]);
 
   const onSubmit = async (data: FormData) => {
     const payload = {
       name: data.name,
-      type: data.type,
+      type: typeLocked ? defaultType : data.type,
       gstin: data.gstin || undefined,
       email: data.email || undefined,
       phone: data.phone || undefined,
@@ -121,8 +161,9 @@ export default function PartyDialog({
         await updateMutation.mutateAsync(payload);
         showSuccessToast("Party updated");
       } else {
-        await createMutation.mutateAsync(payload);
+        const created = await createMutation.mutateAsync(payload);
         showSuccessToast("Party created");
+        onSuccess?.(created);
       }
       onOpenChange(false);
     } catch (err) {
@@ -136,30 +177,40 @@ export default function PartyDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Party" : "New Party"}</DialogTitle>
+          <DialogTitle>
+            {typeLocked
+              ? isEdit
+                ? `Edit ${defaultType === "CUSTOMER" ? "Customer" : "Vendor"}`
+                : `New ${defaultType === "CUSTOMER" ? "Customer" : "Vendor"}`
+              : isEdit
+                ? "Edit Party"
+                : "New Party"}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className={typeLocked ? "space-y-2" : "grid grid-cols-2 gap-4"}>
             <div className="space-y-2">
               <Label>Name *</Label>
               <Input {...register("name")} />
               {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
             </div>
-            <div className="space-y-2">
-              <Label>Type</Label>
-              <Select
-                value={partyType}
-                onValueChange={(v) => setValue("type", v as "CUSTOMER" | "SUPPLIER")}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CUSTOMER">Customer</SelectItem>
-                  <SelectItem value="SUPPLIER">Supplier</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {!typeLocked && (
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select
+                  value={partyType}
+                  onValueChange={(v) => setValue("type", v as "CUSTOMER" | "SUPPLIER")}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CUSTOMER">Customer</SelectItem>
+                    <SelectItem value="SUPPLIER">Vendor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -190,11 +241,19 @@ export default function PartyDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Address</Label>
-            <Input {...register("address")} />
+            <Label>Postal Code</Label>
+            <Input {...register("postalCode")} placeholder="e.g. 560034" maxLength={10} />
+            <p className="text-xs text-muted-foreground">
+              Enter 6-digit pincode to auto-fill address, city and state
+            </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>Address</Label>
+            <Input {...register("address")} placeholder="Area / locality" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>City</Label>
               <Input {...register("city")} />
@@ -202,10 +261,6 @@ export default function PartyDialog({
             <div className="space-y-2">
               <Label>State</Label>
               <Input {...register("state")} />
-            </div>
-            <div className="space-y-2">
-              <Label>Postal Code</Label>
-              <Input {...register("postalCode")} />
             </div>
           </div>
 

@@ -4,7 +4,6 @@
 export * from "./api";
 export * from "./auth";
 export * from "./invoice";
-export * from "./product";
 export * from "./party";
 export * from "./credit-note";
 export * from "./report";

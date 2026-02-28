@@ -13,6 +13,8 @@ function notifyAuthExpired() {
 }
 
 // ── Axios instance ──────────────────────────────────────
+// Swagger paths are under /api (e.g. /api/items, /api/invoices). Set VITE_API_BASE_URL to the
+// full base including /api (e.g. https://billbook-api.vercel.app/api) so paths like /items work.
 
 const axiosInstance = axios.create({
   baseURL: env.VITE_API_BASE_URL,

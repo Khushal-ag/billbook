@@ -35,7 +35,7 @@ export interface Invoice {
 
 export interface InvoiceItem {
   id: number;
-  productId: number;
+  itemId: number;
   quantity: string;
   unitPrice: string;
   discountPercent: string | null;
@@ -48,8 +48,7 @@ export interface InvoiceItem {
   sgstAmount: string | null;
   igstAmount: string | null;
   createdAt: string;
-  /** Convenience — joined by backend */
-  productName?: string;
+  itemName?: string;
 }
 
 /** GET /invoices/:id */
@@ -99,7 +98,7 @@ export interface InvoiceCommunicationsSummary {
 }
 
 export interface InvoiceItemInput {
-  productId: number;
+  itemId: number;
   quantity: string;
   unitPrice: string;
   discountPercent?: string;
@@ -153,8 +152,8 @@ export interface FinalizeInvoiceResponse {
 
 export interface StockCheckError {
   code: string;
-  productId: number;
-  productName: string;
+  itemId: number;
+  itemName: string;
   required: string;
   available: string;
 }

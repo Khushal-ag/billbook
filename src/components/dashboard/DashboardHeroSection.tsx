@@ -37,7 +37,7 @@ export function DashboardHeroSection({
           value={formatCurrency(dashboard.totalInvoicedGross ?? dashboard.totalRevenue)}
           subtitle={`Net: ${formatCurrency(dashboard.totalRevenueNet ?? dashboard.totalRevenue)}`}
           icon={<IndianRupee className="h-5 w-5" />}
-          trend={dashboard.revenueByMonth.length > 1 ? "up" : undefined}
+          trend={(dashboard.revenueByMonth ?? []).length > 1 ? "up" : undefined}
           href="/reports"
         />
         <HeroCard
@@ -59,7 +59,7 @@ export function DashboardHeroSection({
         <HeroCard
           title="Invoices"
           value={String(dashboard.totalInvoices)}
-          subtitle={`${dashboard.totalProducts} products · ${dashboard.totalParties} parties`}
+          subtitle={`${dashboard.totalItems ?? 0} items · ${dashboard.totalParties ?? 0} parties`}
           icon={<FileText className="h-5 w-5" />}
           href="/invoices"
         />

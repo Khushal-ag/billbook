@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
-import { useAdjustStock } from "@/hooks/use-products";
+import { useAdjustStock } from "@/hooks/use-items";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 
 const schema = z.object({
@@ -27,17 +27,12 @@ type FormData = z.infer<typeof schema>;
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  productId: number;
-  productName: string;
+  itemId: number;
+  itemName: string;
 }
 
-export default function StockAdjustmentDialog({
-  open,
-  onOpenChange,
-  productId,
-  productName,
-}: Props) {
-  const mutation = useAdjustStock(productId);
+export default function AdjustStockDialog({ open, onOpenChange, itemId, itemName }: Props) {
+  const mutation = useAdjustStock(itemId);
 
   const {
     register,
@@ -67,7 +62,7 @@ export default function StockAdjustmentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Adjust Stock — {productName}</DialogTitle>
+          <DialogTitle>Adjust Stock — {itemName}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">

@@ -1,14 +1,45 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
 import type { BusinessProfile, UpdateBusinessProfile, BusinessUser } from "@/types/auth";
-import type { DashboardData } from "@/types/dashboard";
+import type { DashboardData, TopItem } from "@/types/dashboard";
+
+/** API may return totalItems/topItems; normalize and ensure arrays. */
+function normalizeDashboard(raw: Record<string, unknown>): DashboardData {
+  const d = raw as DashboardData & {
+    totalItems?: number;
+    totalProducts?: number;
+    topItems?: Array<{
+      itemId?: number;
+      itemName?: string;
+      totalRevenue?: number;
+      totalQuantity?: number;
+    }>;
+  };
+  const rawTopItems = Array.isArray(d.topItems) ? d.topItems : [];
+  const topItems: TopItem[] = rawTopItems.map((i) => ({
+    itemId: i.itemId ?? 0,
+    itemName: i.itemName ?? "",
+    totalRevenue: i.totalRevenue ?? 0,
+    totalQuantity: i.totalQuantity ?? 0,
+  }));
+  return {
+    ...d,
+    totalItems: d.totalItems ?? d.totalProducts ?? 0,
+    topItems,
+    revenueByMonth: Array.isArray(d.revenueByMonth) ? d.revenueByMonth : [],
+    topCustomers: Array.isArray(d.topCustomers) ? d.topCustomers : [],
+    invoiceStatusBreakdown: Array.isArray(d.invoiceStatusBreakdown) ? d.invoiceStatusBreakdown : [],
+    paymentStatusBreakdown: Array.isArray(d.paymentStatusBreakdown) ? d.paymentStatusBreakdown : [],
+    recentInvoices: Array.isArray(d.recentInvoices) ? d.recentInvoices : [],
+  } as DashboardData;
+}
 
 export function useDashboard() {
   return useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
       const res = await api.get<DashboardData>("/business/dashboard");
-      return res.data;
+      return normalizeDashboard(res.data as unknown as Record<string, unknown>);
     },
   });
 }

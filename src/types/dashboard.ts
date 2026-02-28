@@ -12,10 +12,10 @@ export interface DashboardData {
   totalReceivables?: string;
   totalAdvanceBalance?: string;
   netOutstanding?: string;
-  totalProducts: number;
+  totalItems: number;
   totalParties: number;
   revenueByMonth: RevenueByMonth[];
-  topProducts: TopProduct[];
+  topItems: TopItem[];
   topCustomers: TopCustomer[];
   invoiceStatusBreakdown: InvoiceStatusBreakdown[];
   paymentStatusBreakdown: PaymentStatusBreakdown[];
@@ -35,9 +35,9 @@ export interface RevenueByMonth {
   invoiceCount: number;
 }
 
-export interface TopProduct {
-  productId: number;
-  productName: string;
+export interface TopItem {
+  itemId: number;
+  itemName: string;
   totalRevenue: number;
   totalQuantity: number;
 }

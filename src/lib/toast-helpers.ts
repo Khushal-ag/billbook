@@ -27,11 +27,3 @@ export function showErrorToast(errorOrMessage: unknown, title?: string) {
 export function showSuccessToast(message: string) {
   toast.success(message);
 }
-
-/**
- * Show a confirmation dialog using native confirm
- * Returns true if confirmed, false otherwise
- */
-export function confirmAction(message: string): boolean {
-  return confirm(message);
-}

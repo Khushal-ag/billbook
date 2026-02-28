@@ -13,8 +13,10 @@ const Landing = lazy(() => import("./pages/Landing"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Invoices = lazy(() => import("./pages/Invoices"));
 const InvoiceDetail = lazy(() => import("./pages/InvoiceDetail"));
-const Products = lazy(() => import("./pages/Products"));
+const Items = lazy(() => import("./pages/Items"));
+const Stock = lazy(() => import("./pages/Stock"));
 const Parties = lazy(() => import("./pages/Parties"));
+const Vendors = lazy(() => import("./pages/Vendors"));
 const PartyLedger = lazy(() => import("./pages/PartyLedger"));
 const CreditNotes = lazy(() => import("./pages/CreditNotes"));
 const Reports = lazy(() => import("./pages/Reports"));
@@ -67,8 +69,11 @@ const App = () => (
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/invoices" element={<Invoices />} />
                     <Route path="/invoices/:id" element={<InvoiceDetail />} />
-                    <Route path="/products" element={<Products />} />
+                    <Route path="/items" element={<Items />} />
+                    <Route path="/items/:itemId" element={<Items />} />
+                    <Route path="/stock" element={<Stock />} />
                     <Route path="/parties" element={<Parties />} />
+                    <Route path="/vendors" element={<Vendors />} />
                     <Route path="/parties/:partyId/ledger" element={<PartyLedger />} />
                     <Route path="/credit-notes" element={<CreditNotes />} />
                     <Route path="/reports" element={<Reports />} />

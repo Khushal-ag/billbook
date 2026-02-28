@@ -6,12 +6,14 @@ import {
   FileText,
   Package,
   Users,
+  Truck,
   BarChart3,
   Receipt,
   FileMinus,
   CreditCard,
   Settings,
   LogOut,
+  PackageCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -42,10 +44,17 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    title: "Master",
+    items: [
+      { label: "Items", path: "/items", icon: Package },
+      { label: "Vendor", path: "/vendors", icon: Truck },
+    ],
+  },
+  {
     title: "Manage",
     items: [
-      { label: "Parties", path: "/parties", icon: Users },
-      { label: "Products", path: "/products", icon: Package },
+      { label: "Stock", path: "/stock", icon: PackageCheck },
+      { label: "Customer", path: "/parties", icon: Users },
     ],
   },
   {

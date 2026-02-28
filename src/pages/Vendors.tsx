@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Users } from "lucide-react";
+import { Plus, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/EmptyState";
@@ -16,9 +16,9 @@ import { useDebounce } from "@/hooks/use-debounce";
 import type { Party } from "@/types/party";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
-const PARTY_TYPE = "CUSTOMER" as const;
+const PARTY_TYPE = "SUPPLIER" as const;
 
-export default function Parties() {
+export default function Vendors() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
@@ -58,7 +58,7 @@ export default function Parties() {
     if (!deleteConfirm.party) return;
     deleteParty.mutate(deleteConfirm.party.id, {
       onSuccess: () => {
-        showSuccessToast("Customer deleted");
+        showSuccessToast("Vendor deleted");
         setDeleteConfirm({ open: false, party: null });
       },
       onError: (err) => {
@@ -71,12 +71,12 @@ export default function Parties() {
   return (
     <div className="page-container animate-fade-in">
       <PageHeader
-        title="Customer"
-        description="Manage customers for invoicing"
+        title="Vendor"
+        description="Manage vendors and suppliers for stock"
         action={
           <Button onClick={openCreate}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Customer
+            Add Vendor
           </Button>
         }
       />
@@ -84,23 +84,23 @@ export default function Parties() {
       <SearchInput
         value={search}
         onChange={setSearch}
-        placeholder="Search customers..."
+        placeholder="Search vendors..."
         className="mb-4 w-full sm:max-w-sm"
       />
 
-      <ErrorBanner error={error} fallbackMessage="Failed to load customers" />
+      <ErrorBanner error={error} fallbackMessage="Failed to load vendors" />
 
       {isPending ? (
         <TableSkeleton rows={3} />
       ) : filtered.length === 0 ? (
         <EmptyState
-          icon={<Users className="h-5 w-5" />}
-          title="No customers found"
-          description="Add your first customer to get started."
+          icon={<Truck className="h-5 w-5" />}
+          title="No vendors found"
+          description="Add your first vendor to get started."
           action={
             <Button size="sm" onClick={openCreate}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Customer
+              Add Vendor
             </Button>
           }
         />
@@ -119,7 +119,7 @@ export default function Parties() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         party={editParty}
-        defaultType="CUSTOMER"
+        defaultType="SUPPLIER"
         typeLocked
       />
 
@@ -127,7 +127,7 @@ export default function Parties() {
         open={deleteConfirm.open}
         onOpenChange={(open) => setDeleteConfirm({ open, party: deleteConfirm.party })}
         onConfirm={confirmDelete}
-        title="Delete Customer"
+        title="Delete Vendor"
         description={`Are you sure you want to delete "${deleteConfirm.party?.name}"? This action cannot be undone.`}
         confirmText="Delete"
         variant="destructive"
