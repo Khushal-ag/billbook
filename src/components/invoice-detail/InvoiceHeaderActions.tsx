@@ -1,6 +1,6 @@
 import { Download, Loader2, Pencil, CreditCard, Send, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useUIMode } from "@/contexts/UIModeContext";
+import { useIsSimpleMode } from "@/hooks/use-simple-mode";
 import { formatCurrency } from "@/lib/utils";
 import type { InvoiceDetail } from "@/types/invoice";
 
@@ -43,8 +43,7 @@ export function InvoiceHeaderActions({
   onMarkSent,
   onMarkReminder,
 }: InvoiceHeaderActionsProps) {
-  const { mode } = useUIMode();
-  const isSimpleMode = mode === "simple";
+  const isSimpleMode = useIsSimpleMode();
 
   return (
     <div className="flex gap-2">

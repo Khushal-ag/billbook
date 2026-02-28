@@ -23,6 +23,34 @@ export interface ExtraDetail {
   value: string;
 }
 
+/** Profile completion breakdown for "other details" (email, signature, taxId, businessClassification) */
+export interface ProfileCompletionOtherBreakdown {
+  email: number;
+  signatureUrl: number;
+  taxId: number;
+  businessClassification: number;
+}
+
+/** Single section in profile completion breakdown */
+export interface ProfileCompletionSection {
+  complete: boolean;
+  percentage: number;
+  breakdown?: ProfileCompletionOtherBreakdown;
+}
+
+/** Full profile completion from GET /business/profile */
+export interface ProfileCompletion {
+  percentage: number;
+  breakdown: {
+    registration?: ProfileCompletionSection;
+    address?: ProfileCompletionSection;
+    phone?: ProfileCompletionSection;
+    logo?: ProfileCompletionSection;
+    otherDetails?: ProfileCompletionSection;
+  };
+  canCreateInvoice: boolean;
+}
+
 /** Full business profile returned by GET /business/profile */
 export interface BusinessProfile {
   id: number;
@@ -48,6 +76,8 @@ export interface BusinessProfile {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Profile completion; present when API returns it */
+  profileCompletion?: ProfileCompletion;
 }
 
 /** Payload for PUT /business/profile */

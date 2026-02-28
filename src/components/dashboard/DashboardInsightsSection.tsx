@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useUIMode } from "@/contexts/UIModeContext";
+import { useIsSimpleMode } from "@/hooks/use-simple-mode";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { EmptyChart } from "./dashboard-utils";
@@ -52,10 +52,10 @@ export function DashboardInsightsSection({
   paymentStatusData,
   totalPaymentAmount,
 }: DashboardInsightsSectionProps) {
-  const { mode } = useUIMode();
+  const isSimpleMode = useIsSimpleMode();
 
   // In simple mode, only show the essential payment status chart
-  if (mode === "simple") {
+  if (isSimpleMode) {
     return (
       <section className="space-y-4">
         <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">

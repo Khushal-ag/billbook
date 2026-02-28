@@ -1,11 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
-import type {
-  BusinessProfile,
-  UpdateBusinessProfile,
-  BusinessUser,
-  BusinessProfileUploadResponse,
-} from "@/types/auth";
+import type { BusinessProfile, UpdateBusinessProfile, BusinessUser } from "@/types/auth";
 import type { DashboardData } from "@/types/dashboard";
 
 export function useDashboard() {
@@ -32,6 +27,7 @@ function normalizeBusinessProfile(raw: Record<string, unknown>): BusinessProfile
     registrationType: r.registrationType ?? null,
     extraDetails: Array.isArray(r.extraDetails) ? r.extraDetails : null,
     financialYearStart: typeof r.financialYearStart === "number" ? r.financialYearStart : 4,
+    profileCompletion: r.profileCompletion ?? undefined,
   } as BusinessProfile;
 }
 
@@ -50,27 +46,10 @@ export function useUpdateBusinessProfile() {
   return useMutation({
     mutationFn: async (data: UpdateBusinessProfile) => {
       const res = await api.put<BusinessProfile>("/business/profile", data);
-      return res.data;
+      return normalizeBusinessProfile(res.data as unknown as Record<string, unknown>);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["business-profile"] }),
   });
-}
-
-/** Upload logo and/or signature; returns URLs to use in profile update. */
-export async function uploadBusinessProfileAssets(files: {
-  logo?: File | null;
-  signature?: File | null;
-}): Promise<BusinessProfileUploadResponse> {
-  const { logo, signature } = files;
-  if (!logo && !signature) return {};
-  const formData = new FormData();
-  if (logo) formData.append("logo", logo);
-  if (signature) formData.append("signature", signature);
-  const res = await api.postForm<BusinessProfileUploadResponse>(
-    "/business/profile/upload",
-    formData,
-  );
-  return res.data;
 }
 
 export function useBusinessUsers() {

@@ -1,6 +1,6 @@
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useUIMode } from "@/contexts/UIModeContext";
+import { useIsSimpleMode } from "@/hooks/use-simple-mode";
 import {
   LayoutDashboard,
   FileText,
@@ -79,7 +79,7 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const { mode } = useUIMode();
+  const isSimpleMode = useIsSimpleMode();
 
   const handleLogout = async () => {
     // Close mobile sheet (if any) and navigate to the public landing first.
@@ -103,7 +103,7 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
           // Hide if owner-only and user is not owner
           if (item.ownerOnly && user?.role !== "OWNER") return false;
           // Hide if advanced-only and in simple mode
-          if (item.advancedOnly && mode === "simple") return false;
+          if (item.advancedOnly && isSimpleMode) return false;
           return true;
         }),
       }))

@@ -1,14 +1,11 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import PageHeader from "@/components/PageHeader";
 import SettingsSkeleton from "@/components/skeletons/SettingsSkeleton";
-import { BusinessProfileForm } from "@/components/settings/SettingsSections";
-import {
-  useBusinessProfile,
-  useUpdateBusinessProfile,
-  uploadBusinessProfileAssets,
-} from "@/hooks/use-business";
+import { BusinessProfileForm, ProfileCompletionCard } from "@/components/settings/SettingsSections";
+import { useBusinessProfile, useUpdateBusinessProfile } from "@/hooks/use-business";
+import { fileToDataUrl } from "@/lib/file-to-url";
 import { profileSchema, type ProfileForm } from "@/components/settings/profileSchema";
 import { Button } from "@/components/ui/button";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
@@ -16,8 +13,6 @@ import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 export default function Profile() {
   const { data: business, isPending } = useBusinessProfile();
   const updateProfile = useUpdateBusinessProfile();
-  const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null);
-  const [pendingSignatureFile, setPendingSignatureFile] = useState<File | null>(null);
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -65,20 +60,6 @@ export default function Profile() {
 
   const onSubmit = async (data: ProfileForm) => {
     try {
-      let logoUrl: string | null | undefined = data.logoUrl ?? undefined;
-      let signatureUrl: string | null | undefined = data.signatureUrl ?? undefined;
-
-      if (pendingLogoFile || pendingSignatureFile) {
-        const uploaded = await uploadBusinessProfileAssets({
-          logo: pendingLogoFile ?? undefined,
-          signature: pendingSignatureFile ?? undefined,
-        });
-        if (uploaded.logoUrl !== undefined) logoUrl = uploaded.logoUrl;
-        if (uploaded.signatureUrl !== undefined) signatureUrl = uploaded.signatureUrl;
-        setPendingLogoFile(null);
-        setPendingSignatureFile(null);
-      }
-
       const extraDetails = data.extraDetails?.filter((d) => d.key.trim() !== "") ?? [];
       await updateProfile.mutateAsync({
         name: data.name,
@@ -98,8 +79,8 @@ export default function Profile() {
         financialYearStart: data.financialYearStart,
         extraDetails: extraDetails.length ? extraDetails : undefined,
         taxType: data.taxType,
-        logoUrl: logoUrl === "" ? null : logoUrl,
-        signatureUrl: signatureUrl === "" ? null : signatureUrl,
+        logoUrl: data.logoUrl === "" ? null : (data.logoUrl ?? undefined),
+        signatureUrl: data.signatureUrl === "" ? null : (data.signatureUrl ?? undefined),
       });
       showSuccessToast("Business profile updated");
     } catch (err) {
@@ -107,9 +88,15 @@ export default function Profile() {
     }
   };
 
+  const handleLogoUpload = async (file: File): Promise<string | null> => {
+    return fileToDataUrl(file);
+  };
+
+  const handleSignatureUpload = async (file: File): Promise<string | null> => {
+    return fileToDataUrl(file);
+  };
+
   const handleCancel = () => {
-    setPendingLogoFile(null);
-    setPendingSignatureFile(null);
     if (business) {
       reset({
         name: business.name || "",
@@ -155,11 +142,7 @@ export default function Profile() {
               type="submit"
               size="sm"
               form="profile-form"
-              disabled={
-                isSubmitting ||
-                updateProfile.isPending ||
-                (!isDirty && !pendingLogoFile && !pendingSignatureFile)
-              }
+              disabled={isSubmitting || updateProfile.isPending || !isDirty}
             >
               Save Changes
             </Button>
@@ -168,15 +151,16 @@ export default function Profile() {
       />
 
       <div className="w-full space-y-6">
+        {business?.profileCompletion && (
+          <ProfileCompletionCard profileCompletion={business.profileCompletion} />
+        )}
         <BusinessProfileForm
           form={form}
           onSubmit={onSubmit}
           isDirty={isDirty}
           isSaving={updateProfile.isPending}
-          pendingLogoFile={pendingLogoFile}
-          pendingSignatureFile={pendingSignatureFile}
-          onLogoFileChange={setPendingLogoFile}
-          onSignatureFileChange={setPendingSignatureFile}
+          onLogoUpload={handleLogoUpload}
+          onSignatureUpload={handleSignatureUpload}
         />
       </div>
     </div>

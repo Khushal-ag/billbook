@@ -1,6 +1,6 @@
 import { History, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useUIMode } from "@/contexts/UIModeContext";
+import { useIsSimpleMode } from "@/hooks/use-simple-mode";
 import { formatCurrency } from "@/lib/utils";
 import type { Party } from "@/types/party";
 
@@ -21,8 +21,7 @@ export function PartiesTable({
   onLedger,
   onDelete,
 }: PartiesTableProps) {
-  const { mode } = useUIMode();
-  const isSimpleMode = mode === "simple";
+  const isSimpleMode = useIsSimpleMode();
 
   return (
     <div className="data-table-container">

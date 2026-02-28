@@ -8,7 +8,7 @@ import DateRangePicker from "@/components/DateRangePicker";
 import { TaxItemizedTable, TaxSummaryTable } from "@/components/tax/TaxSections";
 import { useGSTSummary, useGSTItemized, useGSTExport } from "@/hooks/use-tax";
 import { useDateRange } from "@/hooks/use-date-range";
-import { generateGSTReportHTML, downloadHTML } from "@/lib/utils";
+import { generateGSTReportHTML, downloadHTML, formatNumber } from "@/lib/utils";
 
 export default function Tax() {
   const {
@@ -59,9 +59,6 @@ export default function Tax() {
     const n = parseFloat(cleaned);
     return Number.isFinite(n) ? n : 0;
   };
-  const formatINRAmount = (n: number): string =>
-    n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
   const totalTaxAllMonths = monthlyRows.reduce((sum, r) => sum + parseAmount(r.totalTax), 0);
   const totalAmountAllMonths = monthlyRows.reduce((sum, r) => sum + parseAmount(r.totalAmount), 0);
   const invoiceCountAllMonths = monthlyRows.reduce((sum, r) => sum + (r.invoiceCount ?? 0), 0);
@@ -113,8 +110,8 @@ export default function Tax() {
               totalCgst={gstSummary.totalCgst ?? "0"}
               totalSgst={gstSummary.totalSgst ?? "0"}
               totalIgst={gstSummary.totalIgst ?? "0"}
-              totalTax={formatINRAmount(totalTaxAllMonths)}
-              totalAmount={formatINRAmount(totalAmountAllMonths)}
+              totalTax={formatNumber(totalTaxAllMonths)}
+              totalAmount={formatNumber(totalAmountAllMonths)}
               invoiceCount={invoiceCountAllMonths}
             />
           ) : (

@@ -1,5 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useUIMode } from "@/contexts/UIModeContext";
+import { useSimpleLabel } from "@/hooks/use-simple-mode";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -21,6 +22,8 @@ export default function TopBar({
 }: TopBarProps) {
   const { user } = useAuth();
   const { mode, setMode } = useUIMode();
+  const modeLabel = useSimpleLabel("Advanced", "Simple");
+  const modeToggleTitle = useSimpleLabel("Switch to Simple Mode", "Switch to Advanced Mode");
   const navigate = useNavigate();
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "";
@@ -93,13 +96,13 @@ export default function TopBar({
       <div className="flex items-center gap-4">
         <div className="hidden items-center gap-2 pr-4 sm:flex">
           <Label htmlFor="mode-toggle" className="cursor-pointer text-xs text-muted-foreground">
-            {mode === "simple" ? "Simple" : "Advanced"}
+            {modeLabel}
           </Label>
           <Switch
             id="mode-toggle"
             checked={mode === "advanced"}
             onCheckedChange={(checked) => setMode(checked ? "advanced" : "simple")}
-            title={mode === "simple" ? "Switch to Advanced Mode" : "Switch to Simple Mode"}
+            title={modeToggleTitle}
           />
         </div>
         <button

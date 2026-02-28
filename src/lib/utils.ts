@@ -6,13 +6,21 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Format a number or numeric string (en-IN locale, 2 decimal places). No currency symbol.
+ * Handles comma-separated strings from the API.
+ */
+export function formatNumber(value: string | number): string {
+  const num = typeof value === "string" ? parseFloat(value.replace(/,/g, "")) : value;
+  if (isNaN(num)) return "0.00";
+  return num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/**
  * Format a numeric string or number as Indian Rupee currency.
  * Handles comma-separated strings from the API.
  */
 export function formatCurrency(value: string | number): string {
-  const num = typeof value === "string" ? parseFloat(value.replace(/,/g, "")) : value;
-  if (isNaN(num)) return "₹0.00";
-  return `₹${num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `₹${formatNumber(value)}`;
 }
 
 /**

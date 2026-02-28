@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, X, Plus, Trash2 } from "lucide-react";
+import { Upload, Pencil, Plus, Trash2, X } from "lucide-react";
 import type { ProfileForm } from "@/components/settings/profileSchema";
 import {
   MONTHS,
@@ -33,12 +33,10 @@ interface BusinessProfileFormProps {
   onSubmit: (data: ProfileForm) => void | Promise<void>;
   isDirty: boolean;
   isSaving: boolean;
-  /** Pending logo file (selected but not yet saved); parent uploads on submit */
-  pendingLogoFile?: File | null;
-  /** Pending signature file (selected but not yet saved) */
-  pendingSignatureFile?: File | null;
-  onLogoFileChange?: (file: File | null) => void;
-  onSignatureFileChange?: (file: File | null) => void;
+  /** Upload logo file; returns URL to store. Backend receives only this link on profile save. */
+  onLogoUpload?: (file: File) => Promise<string | null>;
+  /** Upload signature file; returns URL to store. Backend receives only this link on profile save. */
+  onSignatureUpload?: (file: File) => Promise<string | null>;
 }
 
 export function BusinessProfileForm({
@@ -46,10 +44,8 @@ export function BusinessProfileForm({
   onSubmit,
   isDirty,
   isSaving,
-  pendingLogoFile = null,
-  pendingSignatureFile = null,
-  onLogoFileChange,
-  onSignatureFileChange,
+  onLogoUpload,
+  onSignatureUpload,
 }: BusinessProfileFormProps) {
   const {
     register,
@@ -70,8 +66,12 @@ export function BusinessProfileForm({
     name: "extraDetails",
   });
   const [phoneCountryCode, setPhoneCountryCode] = useState("IN");
+  const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null);
+  const [pendingSignatureFile, setPendingSignatureFile] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const signatureInputRef = useRef<HTMLInputElement>(null);
 
@@ -126,37 +126,59 @@ export function BusinessProfileForm({
   const handleLogoClick = () => logoInputRef.current?.click();
   const handleSignatureClick = () => signatureInputRef.current?.click();
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     e.target.value = "";
-    if (file) {
-      if (file.size > LOGO_MAX_SIZE_MB * 1024 * 1024) {
-        showErrorToast(`Logo must be under ${LOGO_MAX_SIZE_MB} MB`);
-        return;
-      }
-      onLogoFileChange?.(file);
+    if (!file) return;
+    if (file.size > LOGO_MAX_SIZE_MB * 1024 * 1024) {
+      showErrorToast(`Logo must be under ${LOGO_MAX_SIZE_MB} MB`);
+      return;
+    }
+    if (!onLogoUpload) return;
+    setPendingLogoFile(file);
+    setIsUploadingLogo(true);
+    try {
+      const url = await onLogoUpload(file);
+      if (url) setValue("logoUrl", url, { shouldDirty: true });
+      setPendingLogoFile(null);
+    } catch {
+      showErrorToast("Logo upload failed");
+      setPendingLogoFile(null);
+    } finally {
+      setIsUploadingLogo(false);
     }
   };
 
-  const handleSignatureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSignatureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     e.target.value = "";
-    if (file) {
-      if (file.size > SIGNATURE_MAX_SIZE_MB * 1024 * 1024) {
-        showErrorToast(`Signature image must be under ${SIGNATURE_MAX_SIZE_MB} MB`);
-        return;
-      }
-      onSignatureFileChange?.(file);
+    if (!file) return;
+    if (file.size > SIGNATURE_MAX_SIZE_MB * 1024 * 1024) {
+      showErrorToast(`Signature image must be under ${SIGNATURE_MAX_SIZE_MB} MB`);
+      return;
+    }
+    if (!onSignatureUpload) return;
+    setPendingSignatureFile(file);
+    setIsUploadingSignature(true);
+    try {
+      const url = await onSignatureUpload(file);
+      if (url) setValue("signatureUrl", url, { shouldDirty: true });
+      setPendingSignatureFile(null);
+    } catch {
+      showErrorToast("Signature upload failed");
+      setPendingSignatureFile(null);
+    } finally {
+      setIsUploadingSignature(false);
     }
   };
 
   const handleRemoveLogo = () => {
-    onLogoFileChange?.(null);
+    setPendingLogoFile(null);
     setValue("logoUrl", null, { shouldDirty: true });
   };
 
   const handleRemoveSignature = () => {
-    onSignatureFileChange?.(null);
+    setPendingSignatureFile(null);
     setValue("signatureUrl", null, { shouldDirty: true });
   };
 
@@ -174,7 +196,7 @@ export function BusinessProfileForm({
             <div className="space-y-4">
               <div className="rounded-lg border-2 border-dashed border-border/60 p-4 text-center">
                 {displayLogoUrl ? (
-                  <div className="relative mx-auto mb-3 inline-block">
+                  <div className="relative mx-auto inline-block">
                     <img
                       src={displayLogoUrl}
                       alt="Business logo"
@@ -182,22 +204,48 @@ export function BusinessProfileForm({
                     />
                     <Button
                       type="button"
-                      variant="destructive"
+                      variant="secondary"
                       size="icon"
-                      className="absolute -right-2 -top-2 h-6 w-6 rounded-full"
-                      onClick={handleRemoveLogo}
-                      aria-label="Remove logo"
+                      className="absolute bottom-0 right-0 h-6 w-6 rounded-full shadow-sm"
+                      onClick={handleLogoClick}
+                      disabled={isUploadingLogo}
+                      aria-label="Edit logo"
                     >
-                      <X className="h-3 w-3" />
+                      <Pencil className="h-3 w-3" />
                     </Button>
                   </div>
                 ) : (
-                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                    <Upload className="h-5 w-5" />
-                  </div>
+                  <>
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <Upload className="h-5 w-5" />
+                    </div>
+                    <p className="text-sm font-medium">Upload Logo</p>
+                    <p className="text-xs text-muted-foreground">
+                      PNG/JPG, max {LOGO_MAX_SIZE_MB} MB
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      onClick={handleLogoClick}
+                      disabled={isUploadingLogo}
+                    >
+                      {isUploadingLogo ? "Uploading…" : "Choose file"}
+                    </Button>
+                  </>
                 )}
-                <p className="text-sm font-medium">Upload Logo</p>
-                <p className="text-xs text-muted-foreground">PNG/JPG, max {LOGO_MAX_SIZE_MB} MB</p>
+                {displayLogoUrl && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    <button
+                      type="button"
+                      className="underline hover:no-underline"
+                      onClick={handleRemoveLogo}
+                    >
+                      Remove logo
+                    </button>
+                  </p>
+                )}
                 <input
                   ref={logoInputRef}
                   type="file"
@@ -205,15 +253,6 @@ export function BusinessProfileForm({
                   className="hidden"
                   onChange={handleLogoChange}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-3"
-                  onClick={handleLogoClick}
-                >
-                  {displayLogoUrl ? "Change file" : "Choose file"}
-                </Button>
               </div>
               <div className="rounded-lg border border-border/70 bg-muted/30 p-3 text-xs text-muted-foreground">
                 Your logo appears on invoices, reports, and client-facing documents.
@@ -279,8 +318,13 @@ export function BusinessProfileForm({
                       size="sm"
                       className="mt-3"
                       onClick={handleSignatureClick}
+                      disabled={isUploadingSignature}
                     >
-                      {displaySignatureUrl ? "Change signature" : "Add Signature"}
+                      {isUploadingSignature
+                        ? "Uploading…"
+                        : displaySignatureUrl
+                          ? "Change signature"
+                          : "Add Signature"}
                     </Button>
                   </div>
                 </CardContent>

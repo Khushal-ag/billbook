@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useUIMode } from "@/contexts/UIModeContext";
+import { useIsSimpleMode } from "@/hooks/use-simple-mode";
 import { formatCurrency } from "@/lib/utils";
 import { EmptyChart } from "./dashboard-utils";
 import type { TopProduct, TopCustomer } from "@/types/dashboard";
@@ -14,10 +14,10 @@ export function DashboardHighlightsSection({
   topProducts,
   topCustomers,
 }: DashboardHighlightsSectionProps) {
-  const { mode } = useUIMode();
+  const isSimpleMode = useIsSimpleMode();
 
   // Hide in simple mode completely
-  if (mode === "simple") return null;
+  if (isSimpleMode) return null;
 
   return (
     <section className="space-y-4">

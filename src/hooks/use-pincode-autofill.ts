@@ -24,6 +24,7 @@ export function usePincodeAutofill<T extends FieldValues & AddressFields>(
     area?: string | null;
     country?: string | null;
   }>({ pincode: null });
+  const isInitialMountRef = useRef(true);
 
   useEffect(() => {
     const normalizedCountry = (countryCode ?? "IN").toUpperCase();
@@ -31,6 +32,7 @@ export function usePincodeAutofill<T extends FieldValues & AddressFields>(
 
     if (!rawCode) {
       lastAutofillRef.current = { pincode: null };
+      isInitialMountRef.current = false;
       return;
     }
 
@@ -40,6 +42,7 @@ export function usePincodeAutofill<T extends FieldValues & AddressFields>(
       const numericCode = rawCode.replace(/\D/g, "");
       if (numericCode.length !== 6) {
         lastAutofillRef.current = { pincode: null };
+        isInitialMountRef.current = false;
         return;
       }
       lookupCode = numericCode;
@@ -47,9 +50,17 @@ export function usePincodeAutofill<T extends FieldValues & AddressFields>(
       // For non-Indian postcodes, allow alphanumeric and trigger after a few characters
       if (rawCode.length < 4) {
         lastAutofillRef.current = { pincode: null };
+        isInitialMountRef.current = false;
         return;
       }
       lookupCode = rawCode;
+    }
+
+    // Fetch only when pincode (or country) is changed by the user, not on initial page load
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      lastAutofillRef.current = { pincode: lookupCode };
+      return;
     }
 
     const controller = new AbortController();
