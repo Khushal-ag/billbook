@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import { useItem, useItemLedger } from "@/hooks/use-items";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatQuantity } from "@/lib/utils";
 import { getItemCategoryDisplay, getItemTaxDisplay } from "@/types/item";
 
 export function ItemDetailView({ id, onBack }: { id: number; onBack: () => void }) {
@@ -153,7 +153,7 @@ export function ItemDetailView({ id, onBack }: { id: number; onBack: () => void 
                             </Badge>
                           </td>
                           <td className="px-3 py-3 text-right font-medium tabular-nums">
-                            {m.quantity}
+                            {formatQuantity(m.quantity)}
                           </td>
                           <td className="px-3 py-3 text-muted-foreground">{m.notes ?? "—"}</td>
                         </tr>

@@ -45,6 +45,14 @@ export interface Category {
   updatedAt?: string;
 }
 
+/** Unit from API: predefined or custom (for item unit dropdown). */
+export interface Unit {
+  id: number;
+  value: string;
+  label: string;
+  type: ItemType;
+}
+
 export interface Item {
   id: number;
   businessId: number;
@@ -137,9 +145,25 @@ export interface StockListItem {
   quantitySold: string;
   actualQuantity: string;
   stockValue: string | null;
+  /** Balance × latest purchase price */
+  purchasedValue?: string | null;
   isLowStock: boolean;
   /** Number of purchase batches for this item */
   stockEntriesCount?: number;
+}
+
+/** GET /api/items/stock summary – stock value totals */
+export interface StockValueSummary {
+  totalItems: number;
+  totalQuantity: string;
+  totalAmount: string;
+  totalPurchasedValue: string;
+}
+
+/** GET /api/items/stock summary – low stock totals */
+export interface LowStockSummary {
+  totalItems: number;
+  totalQuantity: string;
 }
 
 export interface StockListResponse {
@@ -147,8 +171,8 @@ export interface StockListResponse {
   count: number;
   total: number;
   summary: {
-    totalStockValue: string;
-    lowStockCount: number;
+    stockValue: StockValueSummary;
+    lowStock: LowStockSummary;
   };
 }
 

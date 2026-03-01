@@ -7,12 +7,25 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Format a number or numeric string (en-IN locale, 2 decimal places). No currency symbol.
- * Handles comma-separated strings from the API.
+ * Handles comma-separated strings from the API. Use for currency/cost (with formatCurrency).
  */
 export function formatNumber(value: string | number): string {
   const num = typeof value === "string" ? parseFloat(value.replace(/,/g, "")) : value;
   if (isNaN(num)) return "0.00";
   return num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/**
+ * Format a number with decimals only when the value has a decimal part (e.g. 100 → "100", 99.5 → "99.5").
+ * Use for quantities, counts, and non-currency numbers. For cost/money use formatCurrency.
+ */
+export function formatQuantity(value: string | number): string {
+  const num = typeof value === "string" ? parseFloat(value.replace(/,/g, "")) : value;
+  if (isNaN(num)) return "0";
+  if (Number.isInteger(num)) {
+    return num.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+  }
+  return num.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
 /**

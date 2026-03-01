@@ -1,6 +1,6 @@
 import { useCallback, useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package, Layers } from "lucide-react";
+import { Package, Layers } from "lucide-react";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
@@ -56,7 +56,13 @@ export default function Stock() {
     [stockEntriesData],
   );
 
-  const summary = stockData?.summary ?? { totalStockValue: "0", lowStockCount: 0 };
+  const summary = stockData?.summary;
+  const totalPurchasedValue = summary?.stockValue?.totalPurchasedValue ?? "0";
+  const totalItems = summary?.stockValue?.totalItems ?? 0;
+  const totalQuantity = summary?.stockValue?.totalQuantity ?? "0";
+  const lowStockCount = summary?.lowStock?.totalItems ?? 0;
+  const lowStockQuantity = summary?.lowStock?.totalQuantity;
+  const totalSellingValue = summary?.stockValue?.totalAmount ?? "0";
   const stockList = stockData?.stock ?? [];
   const unreadAlerts = alertsData?.alerts ?? [];
 
@@ -116,13 +122,27 @@ export default function Stock() {
       <PageHeader
         title="Stock"
         description="View stock by item or by stock entry, add purchases, and adjust quantities"
-        action={
-          <Button onClick={() => setActiveTab("add")}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Stock
-          </Button>
-        }
       />
+
+      {/* Cards visible on all tabs */}
+      <div className="mb-6">
+        {stockPending && !stockData ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="h-[88px] animate-pulse rounded-2xl border bg-muted/50" />
+            <div className="h-[88px] animate-pulse rounded-2xl border bg-muted/50" />
+            <div className="h-[88px] animate-pulse rounded-2xl border bg-muted/50" />
+          </div>
+        ) : (
+          <StockOverviewCards
+            totalPurchasedValue={totalPurchasedValue}
+            totalItems={totalItems}
+            totalQuantity={totalQuantity}
+            lowStockCount={lowStockCount}
+            lowStockQuantity={lowStockQuantity}
+            totalSellingValue={totalSellingValue}
+          />
+        )}
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="w-full justify-start overflow-x-auto whitespace-nowrap sm:w-auto">
@@ -136,11 +156,6 @@ export default function Stock() {
             <TableSkeleton rows={4} />
           ) : (
             <>
-              <StockOverviewCards
-                totalStockValue={summary.totalStockValue}
-                lowStockCount={summary.lowStockCount}
-                totalItems={stockData?.total ?? 0}
-              />
               {unreadAlerts.length > 0 && (
                 <StockAlertsBanner
                   alerts={unreadAlerts}
@@ -219,8 +234,8 @@ export default function Stock() {
 
         <TabsContent value="add">
           <p className="mb-4 text-sm text-muted-foreground">
-            Add stock entries for STOCK items. Type in the item cell to search and select. Add
-            multiple rows to enter several batches at once.
+            Enter item, quantity, and date; then click &quot;Add stock&quot; to save. Each entry is
+            saved immediately. The table below lists what you&apos;ve added in this session.
           </p>
           <ErrorBanner error={itemsError} fallbackMessage="Failed to load items" />
           {itemsPending ? (

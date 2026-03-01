@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,7 +23,15 @@ import {
 import { Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { CategoryCombobox } from "@/components/items/CategoryCombobox";
-import { useCreateItem, useUpdateItem, useCategories, useCreateCategory } from "@/hooks/use-items";
+import { UnitCombobox } from "@/components/items/UnitCombobox";
+import {
+  useCreateItem,
+  useUpdateItem,
+  useCategories,
+  useCreateCategory,
+  useUnits,
+  useCreateUnit,
+} from "@/hooks/use-items";
 import {
   hsnCode,
   sacCode,
@@ -32,8 +40,7 @@ import {
   otherTaxName,
 } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { UNIT_OPTIONS } from "@/constants";
-import type { Item, Category, CreateItemRequest } from "@/types/item";
+import type { Item, Category, CreateItemRequest, Unit } from "@/types/item";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -77,6 +84,7 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
     reset,
     setValue,
     watch,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -94,59 +102,85 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
     },
   });
 
+  const productType = watch("type");
+  const { data: unitsData, isLoading: unitsLoading } = useUnits(productType);
+  const units = useMemo(() => (Array.isArray(unitsData) ? unitsData : []), [unitsData]);
+  const createUnitMutation = useCreateUnit();
   const [category, setCategory] = useState<Category | null>(null);
 
+  // Only reset form when dialog opens or edited item changes — not when categories refetch
+  // (e.g. after adding a category), so user's filled data and selected category are preserved.
+  // Intentionally omit `categories` from deps to avoid resetting the form on category refetch.
   useEffect(() => {
-    if (open) {
-      if (item) {
-        reset({
-          name: item.name,
-          type: item.type,
-          hsnCode: item.hsnCode ?? "",
-          sacCode: item.sacCode ?? "",
-          unit: item.unit ?? "nos",
-          description: item.description ?? "",
-          minStockThreshold: item.minStockThreshold ?? "",
-          isTaxable: item.isTaxable ?? true,
-          taxType: (item.taxType ?? "GST") as "GST" | "OTHER",
-          cgstRate: item.cgstRate ?? "",
-          sgstRate: item.sgstRate ?? "",
-          igstRate: item.igstRate ?? "",
-          otherTaxName: item.otherTaxName ?? "",
-          otherTaxRate: item.otherTaxRate ?? "",
-        });
-        const cat =
-          item.categoryId && categories.length
-            ? (categories.find((c) => c.id === item.categoryId) ?? null)
-            : item.categoryName
-              ? { id: item.categoryId ?? 0, name: item.categoryName, businessId: item.businessId }
-              : typeof item.category === "string"
-                ? { id: 0, name: item.category, businessId: item.businessId }
-                : item.category && typeof item.category === "object"
-                  ? { id: item.category.id, name: item.category.name, businessId: item.businessId }
-                  : null;
-        setCategory(cat);
-      } else {
-        reset({
-          name: "",
-          type: "STOCK",
-          unit: "nos",
-          hsnCode: "",
-          sacCode: "",
-          description: "",
-          minStockThreshold: "",
-          isTaxable: true,
-          taxType: "GST",
-          cgstRate: "",
-          sgstRate: "",
-          igstRate: "",
-          otherTaxName: "",
-          otherTaxRate: "",
-        });
-        setCategory(null);
-      }
+    if (!open) return;
+    if (item) {
+      reset({
+        name: item.name,
+        type: item.type,
+        hsnCode: item.hsnCode ?? "",
+        sacCode: item.sacCode ?? "",
+        unit: item.unit ?? "nos",
+        description: item.description ?? "",
+        minStockThreshold: item.minStockThreshold ?? "",
+        isTaxable: item.isTaxable ?? true,
+        taxType: (item.taxType ?? "GST") as "GST" | "OTHER",
+        cgstRate: item.cgstRate ?? "",
+        sgstRate: item.sgstRate ?? "",
+        igstRate: item.igstRate ?? "",
+        otherTaxName: item.otherTaxName ?? "",
+        otherTaxRate: item.otherTaxRate ?? "",
+      });
+      const cat =
+        item.categoryId && categories.length
+          ? (categories.find((c) => c.id === item.categoryId) ?? null)
+          : item.categoryName
+            ? { id: item.categoryId ?? 0, name: item.categoryName, businessId: item.businessId }
+            : typeof item.category === "string"
+              ? { id: 0, name: item.category, businessId: item.businessId }
+              : item.category && typeof item.category === "object"
+                ? { id: item.category.id, name: item.category.name, businessId: item.businessId }
+                : null;
+      setCategory(cat);
+    } else {
+      reset({
+        name: "",
+        type: "STOCK",
+        unit: "nos",
+        hsnCode: "",
+        sacCode: "",
+        description: "",
+        minStockThreshold: "",
+        isTaxable: true,
+        taxType: "GST",
+        cgstRate: "",
+        sgstRate: "",
+        igstRate: "",
+        otherTaxName: "",
+        otherTaxRate: "",
+      });
+      setCategory(null);
     }
-  }, [open, item, reset, categories]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- categories omitted so refetch after add doesn't reset form
+  }, [open, item, reset]);
+
+  // When type changes, if current unit is not in the new type's list, set default unit for that type.
+  const defaultUnitForType = useCallback(
+    (t: "STOCK" | "SERVICE"): string => {
+      const preferred = t === "STOCK" ? "nos" : "hr";
+      const found = units.find((u) => u.value === preferred);
+      return found ? found.value : (units[0]?.value ?? preferred);
+    },
+    [units],
+  );
+
+  useEffect(() => {
+    if (!open || units.length === 0) return;
+    const currentUnit = getValues("unit") || "nos";
+    const inList = units.some((u) => u.value === currentUnit);
+    if (!inList) {
+      setValue("unit", defaultUnitForType(productType));
+    }
+  }, [open, productType, units, getValues, setValue, defaultUnitForType]);
 
   const handleCreateCategory = async (name: string): Promise<Category | null> => {
     try {
@@ -191,7 +225,20 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
     }
   };
 
-  const productType = watch("type");
+  const handleCreateUnit = async (
+    value: string,
+    label: string,
+    type: "STOCK" | "SERVICE",
+  ): Promise<Unit | null> => {
+    try {
+      const created = await createUnitMutation.mutateAsync({ value, label, type });
+      return created;
+    } catch {
+      showErrorToast(null, "Failed to create unit");
+      return null;
+    }
+  };
+
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
@@ -218,7 +265,12 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
                     <Label>Type *</Label>
                     <Select
                       value={productType}
-                      onValueChange={(v) => setValue("type", v as "STOCK" | "SERVICE")}
+                      onValueChange={(v) => {
+                        const newType = v as "STOCK" | "SERVICE";
+                        setValue("type", newType);
+                        // Clear unit when switching type: set default for new type (nos for STOCK, hr for SERVICE).
+                        setValue("unit", newType === "SERVICE" ? "hr" : "nos");
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -244,31 +296,23 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Unit</Label>
-                    <Select
+                    <UnitCombobox
                       value={watch("unit") || "nos"}
                       onValueChange={(v) => setValue("unit", v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select unit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {UNIT_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                        {item?.unit && !UNIT_OPTIONS.some((o) => o.value === item.unit) && (
-                          <SelectItem value={item.unit}>{item.unit}</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                      units={units}
+                      unitsLoading={unitsLoading}
+                      type={productType}
+                      onCreateUnit={handleCreateUnit}
+                      placeholder="Search or add unit..."
+                    />
                   </div>
                   {productType === "STOCK" && (
                     <div className="space-y-2">
                       <Label>Min stock alert</Label>
                       <Input {...register("minStockThreshold")} placeholder="e.g. 10" />
                       <p className="text-xs text-muted-foreground">
-                        Alert when below this. Empty = no alert.
+                        You’ll be notified when quantity drops below this value. Leave empty for no
+                        alerts.
                       </p>
                     </div>
                   )}

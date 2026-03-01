@@ -1,7 +1,7 @@
-import { Eye, SlidersHorizontal } from "lucide-react";
+import { Eye, SlidersHorizontal, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils";
-import { formatDate } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { formatCurrency, formatQuantity, formatDate, cn } from "@/lib/utils";
 import type { StockEntry } from "@/types/item";
 import type { Party } from "@/types/party";
 import type { Item } from "@/types/item";
@@ -27,6 +27,11 @@ function getSupplierName(entry: StockEntry, suppliers: Party[]): string {
   return party?.name ?? `#${entry.supplierId}`;
 }
 
+const thClass = "px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
+const thRight = thClass + " text-right";
+const tdClass = "px-4 py-3 align-middle";
+const tdRight = tdClass + " text-right tabular-nums";
+
 export function StockEntriesTable({
   entries,
   items,
@@ -36,160 +41,143 @@ export function StockEntriesTable({
 }: StockEntriesTableProps) {
   if (entries.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-muted/60 bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
-        No stock entries yet. Add stock from the &quot;Add Stock&quot; tab.
-      </p>
+      <Card className="border-dashed">
+        <CardContent className="flex flex-col items-center justify-center py-16">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <Layers className="h-6 w-6" />
+          </div>
+          <p className="mt-4 text-sm font-medium text-foreground">No stock entries yet</p>
+          <p className="mt-1 max-w-sm text-center text-sm text-muted-foreground">
+            Add stock from the Add Stock tab. Each batch will appear here.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
-  function formatQty(value: string | number | null | undefined, unit?: string | null): string {
-    if (value == null) return "—";
-    const s = typeof value === "string" ? value : String(value);
-    return unit ? `${s} ${unit}` : s;
-  }
-
   return (
-    <div className="data-table-container overflow-x-auto">
-      <table className="w-full text-sm" role="table" aria-label="Stock entries list">
-        <thead>
-          <tr className="border-b bg-muted/30">
-            <th
-              scope="col"
-              className="px-4 py-3 text-left font-medium text-muted-foreground sm:px-6"
-            >
-              Item
-            </th>
-            <th
-              scope="col"
-              className="hidden px-3 py-3 text-left font-medium text-muted-foreground lg:table-cell"
-            >
-              Category
-            </th>
-            <th scope="col" className="px-3 py-3 text-left font-medium text-muted-foreground">
-              Date
-            </th>
-            <th scope="col" className="px-3 py-3 text-right font-medium text-muted-foreground">
-              Purchased
-            </th>
-            <th scope="col" className="px-3 py-3 text-right font-medium text-muted-foreground">
-              Adjusted
-            </th>
-            <th scope="col" className="px-3 py-3 text-right font-medium text-muted-foreground">
-              Sold
-            </th>
-            <th scope="col" className="px-3 py-3 text-right font-medium text-muted-foreground">
-              Actual
-            </th>
-            <th scope="col" className="px-3 py-3 text-right font-medium text-muted-foreground">
-              Selling price
-            </th>
-            <th scope="col" className="px-3 py-3 text-right font-medium text-muted-foreground">
-              Purchase price
-            </th>
-            <th
-              scope="col"
-              className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell"
-            >
-              Supplier
-            </th>
-            <th
-              scope="col"
-              className="w-24 px-3 py-3 text-center font-medium text-muted-foreground"
-            >
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((entry) => {
-            const itemName = getItemName(entry, items);
-            const unit = entry.unit ?? null;
-            const purchased =
-              entry.quantityPurchased ??
-              (typeof entry.quantity === "string" ? entry.quantity : String(entry.quantity));
-            const adjusted = entry.quantityAdjusted ?? "0";
-            const sold = entry.quantitySold ?? "0";
-            const actual = entry.actualQuantity ?? entry.quantity;
-            const actualStr = typeof actual === "string" ? actual : String(actual);
-            return (
-              <tr
-                key={entry.id}
-                className="border-b transition-colors last:border-0 hover:bg-muted/20"
-                role="button"
-                tabIndex={0}
-                onClick={() => onView(entry.id)}
-                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onView(entry.id)}
-              >
-                <td className="px-4 py-3 font-medium sm:px-6">
-                  {itemName}
-                  {unit && <span className="ml-1 font-normal text-muted-foreground">({unit})</span>}
-                </td>
-                <td className="hidden px-3 py-3 text-muted-foreground lg:table-cell">
-                  {entry.categoryName ?? "—"}
-                </td>
-                <td className="px-3 py-3 text-muted-foreground">
-                  {formatDate(entry.purchaseDate)}
-                </td>
-                <td className="px-3 py-3 text-right font-mono tabular-nums text-muted-foreground">
-                  {formatQty(purchased, unit)}
-                </td>
-                <td className="px-3 py-3 text-right font-mono tabular-nums text-muted-foreground">
-                  {formatQty(adjusted, unit)}
-                </td>
-                <td className="px-3 py-3 text-right font-mono tabular-nums text-muted-foreground">
-                  {formatQty(sold, unit)}
-                </td>
-                <td className="px-3 py-3 text-right font-mono font-medium tabular-nums">
-                  {formatQty(actualStr, unit)}
-                </td>
-                <td className="px-3 py-3 text-right">
-                  {entry.sellingPrice != null && entry.sellingPrice !== ""
-                    ? formatCurrency(entry.sellingPrice)
-                    : "—"}
-                </td>
-                <td className="px-3 py-3 text-right">
-                  {entry.purchasePrice != null && entry.purchasePrice !== ""
-                    ? formatCurrency(entry.purchasePrice)
-                    : "—"}
-                </td>
-                <td className="hidden px-3 py-3 text-muted-foreground md:table-cell">
-                  {getSupplierName(entry, suppliers)}
-                </td>
-                <td className="px-3 py-3 text-center">
-                  <div className="flex items-center justify-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onView(entry.id);
-                      }}
-                      title="View details"
-                      aria-label={`View stock entry ${entry.id}`}
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                    </Button>
-                    {onAdjust && (
+    <Card>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm" role="table" aria-label="Stock by batch">
+          <thead>
+            <tr className="border-b border-border bg-muted/50">
+              <th className={cn(thClass, "min-w-[160px] text-left")}>Item</th>
+              <th className={cn(thClass, "hidden min-w-[100px] text-left lg:table-cell")}>
+                Category
+              </th>
+              <th className={cn(thClass, "min-w-[100px] text-left")}>Date</th>
+              <th className={cn(thRight, "min-w-[72px]")}>Purchased</th>
+              <th className={cn(thRight, "min-w-[72px]")}>Adjusted</th>
+              <th className={cn(thRight, "min-w-[72px]")}>Sold</th>
+              <th className={cn(thRight, "min-w-[80px]")}>Actual</th>
+              <th className={cn(thRight, "min-w-[88px]")}>Selling</th>
+              <th className={cn(thRight, "min-w-[88px]")}>Purchase</th>
+              <th className={cn(thClass, "hidden min-w-[120px] text-left md:table-cell")}>
+                Supplier
+              </th>
+              <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((entry, i) => {
+              const itemName = getItemName(entry, items);
+              const unit = entry.unit ?? null;
+              const purchased =
+                entry.quantityPurchased ??
+                (typeof entry.quantity === "string" ? entry.quantity : String(entry.quantity));
+              const adjusted = entry.quantityAdjusted ?? "0";
+              const sold = entry.quantitySold ?? "0";
+              const actual = entry.actualQuantity ?? entry.quantity;
+              const actualStr = typeof actual === "string" ? actual : String(actual);
+              return (
+                <tr
+                  key={entry.id}
+                  className={cn(
+                    "cursor-pointer border-b border-border/80 transition-colors hover:bg-muted/30",
+                    i % 2 === 1 && "bg-muted/10",
+                  )}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onView(entry.id)}
+                  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onView(entry.id)}
+                >
+                  <td className={cn(tdClass, "text-left font-medium")}>
+                    {itemName}
+                    {unit && (
+                      <span className="ml-1.5 font-normal text-muted-foreground">({unit})</span>
+                    )}
+                  </td>
+                  <td
+                    className={cn(tdClass, "hidden text-left text-muted-foreground lg:table-cell")}
+                  >
+                    {entry.categoryName ?? "—"}
+                  </td>
+                  <td className={cn(tdClass, "text-left text-muted-foreground")}>
+                    {formatDate(entry.purchaseDate)}
+                  </td>
+                  <td className={cn(tdRight, "text-muted-foreground")}>
+                    {formatQuantity(purchased)}
+                  </td>
+                  <td className={cn(tdRight, "text-muted-foreground")}>
+                    {formatQuantity(adjusted)}
+                  </td>
+                  <td className={cn(tdRight, "text-muted-foreground")}>{formatQuantity(sold)}</td>
+                  <td className={cn(tdRight, "font-semibold")}>{formatQuantity(actualStr)}</td>
+                  <td className={tdRight}>
+                    {entry.sellingPrice != null && entry.sellingPrice !== ""
+                      ? formatCurrency(entry.sellingPrice)
+                      : "—"}
+                  </td>
+                  <td className={tdRight}>
+                    {entry.purchasePrice != null && entry.purchasePrice !== ""
+                      ? formatCurrency(entry.purchasePrice)
+                      : "—"}
+                  </td>
+                  <td
+                    className={cn(tdClass, "hidden text-left text-muted-foreground md:table-cell")}
+                  >
+                    {getSupplierName(entry, suppliers)}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="flex items-center justify-center gap-0.5">
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="h-8 w-8 p-0"
                         onClick={(e) => {
                           e.stopPropagation();
-                          onAdjust(entry.itemId, itemName, entry.id);
+                          onView(entry.id);
                         }}
-                        title="Adjust stock for this batch"
-                        aria-label={`Adjust stock for ${itemName}`}
+                        title="View details"
+                        aria-label={`View entry ${entry.id}`}
                       >
-                        <SlidersHorizontal className="h-3.5 w-3.5" />
+                        <Eye className="h-4 w-4" />
                       </Button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                      {onAdjust && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAdjust(entry.itemId, itemName, entry.id);
+                          }}
+                          title="Adjust this batch"
+                          aria-label={`Adjust ${itemName}`}
+                        >
+                          <SlidersHorizontal className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }
