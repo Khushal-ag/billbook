@@ -149,6 +149,7 @@ export function useUpdateItem(id: number) {
   });
 }
 
+/** GET /items/stock-entries (and GET /items/:itemId/stock-entries) include SERVICE entries. */
 export function useStockEntries(params?: {
   itemId?: number;
   categoryId?: number;
@@ -204,6 +205,7 @@ export function useCreateStockEntry() {
   });
 }
 
+/** GET /items/stock: list includes SERVICE items (0 quantity, entry count). Summary in response may aggregate both. */
 export function useStockList(params?: {
   categoryId?: number;
   search?: string;

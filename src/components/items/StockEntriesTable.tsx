@@ -84,6 +84,8 @@ export function StockEntriesTable({
             {entries.map((entry, i) => {
               const itemName = getItemName(entry, items);
               const unit = entry.unit ?? null;
+              const item = items.find((it) => it.id === entry.itemId);
+              const isService = item?.type === "SERVICE";
               const purchased =
                 entry.quantityPurchased ??
                 (typeof entry.quantity === "string" ? entry.quantity : String(entry.quantity));
@@ -115,25 +117,31 @@ export function StockEntriesTable({
                     {entry.categoryName ?? "—"}
                   </td>
                   <td className={cn(tdClass, "text-left text-muted-foreground")}>
-                    {formatDate(entry.purchaseDate)}
+                    {isService ? "—" : formatDate(entry.purchaseDate)}
                   </td>
                   <td className={cn(tdRight, "text-muted-foreground")}>
-                    {formatQuantity(purchased)}
+                    {isService ? "—" : formatQuantity(purchased)}
                   </td>
                   <td className={cn(tdRight, "text-muted-foreground")}>
-                    {formatQuantity(adjusted)}
+                    {isService ? "—" : formatQuantity(adjusted)}
                   </td>
-                  <td className={cn(tdRight, "text-muted-foreground")}>{formatQuantity(sold)}</td>
-                  <td className={cn(tdRight, "font-semibold")}>{formatQuantity(actualStr)}</td>
+                  <td className={cn(tdRight, "text-muted-foreground")}>
+                    {isService ? "—" : formatQuantity(sold)}
+                  </td>
+                  <td className={cn(tdRight, "font-semibold")}>
+                    {isService ? "—" : formatQuantity(actualStr)}
+                  </td>
                   <td className={tdRight}>
                     {entry.sellingPrice != null && entry.sellingPrice !== ""
                       ? formatCurrency(entry.sellingPrice)
                       : "—"}
                   </td>
                   <td className={tdRight}>
-                    {entry.purchasePrice != null && entry.purchasePrice !== ""
-                      ? formatCurrency(entry.purchasePrice)
-                      : "—"}
+                    {isService
+                      ? "—"
+                      : entry.purchasePrice != null && entry.purchasePrice !== ""
+                        ? formatCurrency(entry.purchasePrice)
+                        : "—"}
                   </td>
                   <td
                     className={cn(tdClass, "hidden text-left text-muted-foreground md:table-cell")}
@@ -155,7 +163,7 @@ export function StockEntriesTable({
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      {onAdjust && (
+                      {onAdjust && !isService && (
                         <Button
                           variant="ghost"
                           size="sm"

@@ -91,6 +91,7 @@ export default function Stock() {
         showSuccessToast(entries.length === 1 ? "Stock entry saved" : "Stock entries saved");
       } catch (err) {
         showErrorToast(err, "Failed to save stock entries");
+        throw err;
       }
     },
     [createStockEntry],
@@ -230,7 +231,7 @@ export default function Stock() {
               {listPending ? (
                 <TableSkeleton rows={5} />
               ) : listViewMode === "item" ? (
-                <StockReportTable rows={stockList} onAdjust={openAdjustStock} />
+                <StockReportTable rows={stockList} items={items} onAdjust={openAdjustStock} />
               ) : (
                 <StockEntriesTable
                   entries={stockEntries}
@@ -271,6 +272,7 @@ export default function Stock() {
           if (!open) setSelectedEntryId(null);
         }}
         supplierName={selectedSupplierName}
+        items={items}
       />
 
       {adjustItemId != null && (

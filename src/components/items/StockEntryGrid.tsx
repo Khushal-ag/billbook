@@ -37,6 +37,7 @@ interface SessionEntry {
   sellingPrice: string;
   purchasePrice: string;
   supplierName: string | null;
+  isService?: boolean;
 }
 
 const defaultRow = (): StockEntryRow => ({
@@ -66,18 +67,32 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
     setRow((prev) => ({ ...prev, ...patch }));
   }, []);
 
+  const isService = row.item?.type === "SERVICE";
+
   const handleAddStock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!row.item || !row.quantity.trim() || !row.purchaseDate) return;
-    const payload: CreateStockEntryRequest = {
-      itemId: row.item.id,
-      purchaseDate: row.purchaseDate,
-      quantity: String(Number(row.quantity)),
-      sellingPrice: String(row.sellingPrice || "0"),
-      purchasePrice: String(row.purchasePrice || "0"),
-      supplierId: row.supplierId ?? undefined,
-    };
-    await onSubmit([payload]);
+    if (!row.item || !row.quantity.trim()) return;
+    if (!isService && !row.purchaseDate) return;
+    const payload: CreateStockEntryRequest = isService
+      ? {
+          itemId: row.item.id,
+          quantity: String(Number(row.quantity)),
+          sellingPrice: String(row.sellingPrice || "0"),
+          supplierId: row.supplierId ?? undefined,
+        }
+      : {
+          itemId: row.item.id,
+          purchaseDate: row.purchaseDate,
+          quantity: String(Number(row.quantity)),
+          sellingPrice: String(row.sellingPrice || "0"),
+          purchasePrice: String(row.purchasePrice || "0"),
+          supplierId: row.supplierId ?? undefined,
+        };
+    try {
+      await onSubmit([payload]);
+    } catch {
+      return;
+    }
     const supplier = row.supplierId != null ? suppliers.find((s) => s.id === row.supplierId) : null;
     setSessionEntries((prev) => [
       ...prev,
@@ -86,16 +101,17 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
         itemName: row.item!.name,
         unit: row.item!.unit ?? "—",
         quantity: row.quantity,
-        purchaseDate: row.purchaseDate,
+        purchaseDate: isService ? new Date().toISOString().slice(0, 10) : row.purchaseDate,
         sellingPrice: row.sellingPrice || "0",
-        purchasePrice: row.purchasePrice || "0",
+        purchasePrice: isService ? "0" : row.purchasePrice || "0",
         supplierName: supplier?.name ?? null,
+        isService,
       },
     ]);
     setRow(defaultRow());
   };
 
-  const canAdd = !!(row.item && row.quantity.trim() && row.purchaseDate);
+  const canAdd = !!(row.item && row.quantity.trim() && (isService || row.purchaseDate));
   const inputClass = "h-9 text-sm";
 
   return (
@@ -140,7 +156,7 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                       value={row.item}
                       onValueChange={(item) => updateRow({ item })}
                       items={items}
-                      stockOnly
+                      stockOnly={false}
                       compact
                       placeholder="Type to search item..."
                     />
@@ -163,34 +179,37 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                     />
                   </td>
                   <td className="px-3 py-2.5 align-middle">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className={cn(
-                            "h-9 w-full justify-start gap-2 border-input bg-background px-3 text-left font-normal shadow-none hover:bg-muted hover:text-foreground",
-                            !row.purchaseDate && "text-muted-foreground",
-                          )}
-                        >
-                          <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                          <span className="truncate">
-                            {formatISODateDisplay(row.purchaseDate) || "Select date"}
-                          </span>
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent align="start" className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={parseISODateString(row.purchaseDate) ?? undefined}
-                          onSelect={(date) => {
-                            if (date) updateRow({ purchaseDate: toISODateString(date) });
-                          }}
-                          initialFocus
-                          defaultMonth={parseISODateString(row.purchaseDate) ?? new Date()}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    {!isService && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className={cn(
+                              "h-9 w-full justify-start gap-2 border-input bg-background px-3 text-left font-normal shadow-none hover:bg-muted hover:text-foreground",
+                              !row.purchaseDate && "text-muted-foreground",
+                            )}
+                          >
+                            <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            <span className="truncate">
+                              {formatISODateDisplay(row.purchaseDate) || "Select date"}
+                            </span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={parseISODateString(row.purchaseDate) ?? undefined}
+                            onSelect={(date) => {
+                              if (date) updateRow({ purchaseDate: toISODateString(date) });
+                            }}
+                            initialFocus
+                            defaultMonth={parseISODateString(row.purchaseDate) ?? new Date()}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                    {isService && <span className="text-xs text-muted-foreground">—</span>}
                   </td>
                   <td className="px-3 py-2.5 text-right align-middle">
                     <div className="flex items-center justify-end gap-2">
@@ -222,15 +241,18 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                     />
                   </td>
                   <td className="px-3 py-2.5 text-right align-middle">
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0"
-                      value={row.purchasePrice}
-                      onChange={(e) => updateRow({ purchasePrice: e.target.value })}
-                      className={`${inputClass} text-right tabular-nums`}
-                    />
+                    {!isService && (
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0"
+                        value={row.purchasePrice}
+                        onChange={(e) => updateRow({ purchasePrice: e.target.value })}
+                        className={`${inputClass} text-right tabular-nums`}
+                      />
+                    )}
+                    {isService && <span className="text-xs text-muted-foreground">—</span>}
                   </td>
                 </tr>
               </tbody>
@@ -279,7 +301,7 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                     <td className="px-4 py-3 font-medium">{entry.itemName}</td>
                     <td className="px-3 py-3 text-muted-foreground">{entry.supplierName ?? "—"}</td>
                     <td className="px-3 py-3 text-muted-foreground">
-                      {formatISODateDisplay(entry.purchaseDate)}
+                      {entry.isService ? "—" : formatISODateDisplay(entry.purchaseDate)}
                     </td>
                     <td className="px-3 py-3 text-right font-mono tabular-nums">
                       {formatQuantity(entry.quantity)} {entry.unit}
@@ -288,7 +310,7 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                       {formatCurrency(entry.sellingPrice)}
                     </td>
                     <td className="px-3 py-3 text-right tabular-nums">
-                      {formatCurrency(entry.purchasePrice)}
+                      {entry.isService ? "—" : formatCurrency(entry.purchasePrice)}
                     </td>
                   </tr>
                 ))}

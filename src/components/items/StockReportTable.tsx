@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SlidersHorizontal, Package } from "lucide-react";
 import type { StockListItem } from "@/types/item";
+import type { Item } from "@/types/item";
 import { formatQuantity, formatCurrency, cn } from "@/lib/utils";
 
 interface StockReportTableProps {
   rows: StockListItem[];
+  /** Used to detect SERVICE items so cost/stock columns show "—" and adjust is hidden */
+  items?: Item[];
   onAdjust?: (itemId: number, itemName: string) => void;
 }
 
@@ -16,7 +19,8 @@ const thRight = thClass + " text-right";
 const tdClass = "px-4 py-3 align-middle";
 const tdRight = tdClass + " text-right tabular-nums";
 
-export function StockReportTable({ rows, onAdjust }: StockReportTableProps) {
+export function StockReportTable({ rows, items, onAdjust }: StockReportTableProps) {
+  const isService = (itemId: number) => items?.find((i) => i.id === itemId)?.type === "SERVICE";
   if (rows.length === 0) {
     return (
       <Card className="border-dashed">
@@ -56,72 +60,84 @@ export function StockReportTable({ rows, onAdjust }: StockReportTableProps) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, i) => (
-              <tr
-                key={row.itemId}
-                className={cn(
-                  "border-b border-border/80 transition-colors hover:bg-muted/30",
-                  i % 2 === 1 && "bg-muted/10",
-                )}
-              >
-                <td className={cn(tdClass, "text-left")}>
-                  <Link
-                    to={`/items/${row.itemId}`}
-                    className="font-medium text-foreground hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {row.itemName}
-                  </Link>
-                </td>
-                <td className={cn(tdClass, "text-left text-muted-foreground")}>
-                  {row.unit || "—"}
-                </td>
-                <td className={cn(tdRight, "text-muted-foreground")}>
-                  {formatQuantity(row.quantityPurchased)}
-                </td>
-                <td className={cn(tdRight, "text-muted-foreground")}>
-                  {formatQuantity(row.quantityAdjusted)}
-                </td>
-                <td className={cn(tdRight, "text-muted-foreground")}>
-                  {formatQuantity(row.quantitySold)}
-                </td>
-                <td className={cn(tdRight, "font-semibold")}>
-                  {formatQuantity(row.actualQuantity)}
-                </td>
-                <td className={cn(tdRight, "text-muted-foreground")}>
-                  {row.stockValue != null ? formatCurrency(row.stockValue) : "—"}
-                </td>
-                <td className={cn(tdRight, "text-muted-foreground")}>
-                  {row.purchasedValue != null ? formatCurrency(row.purchasedValue) : "—"}
-                </td>
-                <td className={cn(tdClass, "text-center")}>
-                  {row.isLowStock ? (
-                    <Badge variant="destructive" className="text-xs font-medium">
-                      Low stock
-                    </Badge>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">OK</span>
+            {rows.map((row, i) => {
+              const service = isService(row.itemId);
+              return (
+                <tr
+                  key={row.itemId}
+                  className={cn(
+                    "border-b border-border/80 transition-colors hover:bg-muted/30",
+                    i % 2 === 1 && "bg-muted/10",
                   )}
-                </td>
-                {onAdjust && (
-                  <td className="px-4 py-3 text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAdjust(row.itemId, row.itemName);
-                      }}
-                      title="Adjust stock"
-                      aria-label={`Adjust stock for ${row.itemName}`}
+                >
+                  <td className={cn(tdClass, "text-left")}>
+                    <Link
+                      to={`/items/${row.itemId}`}
+                      className="font-medium text-foreground hover:underline"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <SlidersHorizontal className="h-4 w-4" />
-                    </Button>
+                      {row.itemName}
+                    </Link>
                   </td>
-                )}
-              </tr>
-            ))}
+                  <td className={cn(tdClass, "text-left text-muted-foreground")}>
+                    {row.unit || "—"}
+                  </td>
+                  <td className={cn(tdRight, "text-muted-foreground")}>
+                    {formatQuantity(row.quantityPurchased)}
+                  </td>
+                  <td className={cn(tdRight, "text-muted-foreground")}>
+                    {formatQuantity(row.quantityAdjusted)}
+                  </td>
+                  <td className={cn(tdRight, "text-muted-foreground")}>
+                    {formatQuantity(row.quantitySold)}
+                  </td>
+                  <td className={cn(tdRight, "font-semibold")}>
+                    {formatQuantity(row.actualQuantity)}
+                  </td>
+                  <td className={cn(tdRight, "text-muted-foreground")}>
+                    {/* Value (sell): show when API returns stockValue; for SERVICE, backend should return total at selling rate */}
+                    {row.stockValue != null ? formatCurrency(row.stockValue) : "—"}
+                  </td>
+                  <td className={cn(tdRight, "text-muted-foreground")}>
+                    {service
+                      ? "—"
+                      : row.purchasedValue != null
+                        ? formatCurrency(row.purchasedValue)
+                        : "—"}
+                  </td>
+                  <td className={cn(tdClass, "text-center")}>
+                    {service ? (
+                      <span className="text-xs text-muted-foreground">Service</span>
+                    ) : row.isLowStock ? (
+                      <Badge variant="destructive" className="text-xs font-medium">
+                        Low stock
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">OK</span>
+                    )}
+                  </td>
+                  {onAdjust && (
+                    <td className="px-4 py-3 text-center">
+                      {!service && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAdjust(row.itemId, row.itemName);
+                          }}
+                          title="Adjust stock"
+                          aria-label={`Adjust stock for ${row.itemName}`}
+                        >
+                          <SlidersHorizontal className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

@@ -107,7 +107,8 @@ export interface StockEntry {
   purchaseDate: string;
   quantity: string | number;
   sellingPrice: string;
-  purchasePrice: string;
+  /** null for SERVICE entries */
+  purchasePrice: string | null;
   supplierId: number | null;
   createdAt: string;
   updatedAt: string;
@@ -126,9 +127,10 @@ export interface StockEntry {
 
 export interface CreateStockEntryRequest {
   itemId: number;
-  purchaseDate: string;
   quantity: string;
   sellingPrice?: string;
+  /** Omit for SERVICE items */
+  purchaseDate?: string;
   purchasePrice?: string;
   supplierId?: number | null;
 }
@@ -166,6 +168,7 @@ export interface LowStockSummary {
   totalQuantity: string;
 }
 
+/** GET /items/stock response. Stock list includes SERVICE items (0 quantity, entry count). */
 export interface StockListResponse {
   stock: StockListItem[];
   count: number;
