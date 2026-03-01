@@ -61,8 +61,30 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if all rows with any data are complete
+    const hasIncompleteRow = rows.some((r) => {
+      const hasAnyData = r.item || r.quantity || r.supplierId || r.sellingPrice || r.purchasePrice;
+      const isComplete =
+        r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice && r.purchasePrice;
+      return hasAnyData && !isComplete;
+    });
+
+    if (hasIncompleteRow) {
+      alert("Please complete all fields in every row before saving.");
+      return;
+    }
+
     const payloads: CreateStockEntryRequest[] = rows
-      .filter((r) => r.item && r.quantity && r.purchaseDate)
+      .filter(
+        (r) =>
+          r.item &&
+          r.quantity &&
+          r.purchaseDate &&
+          r.supplierId &&
+          r.sellingPrice &&
+          r.purchasePrice,
+      )
       .map((r) => ({
         itemId: r.item!.id,
         purchaseDate: r.purchaseDate,
@@ -76,7 +98,20 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
     setRows([defaultRow()]);
   };
 
-  const canSubmit = rows.some((r) => r.item && r.quantity);
+  // At least one row has data, and all rows with data are complete
+  const canSubmit =
+    rows.some((r) => {
+      const hasAnyData = r.item || r.quantity || r.supplierId || r.sellingPrice || r.purchasePrice;
+      const isComplete =
+        r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice && r.purchasePrice;
+      return hasAnyData && isComplete;
+    }) &&
+    !rows.some((r) => {
+      const hasAnyData = r.item || r.quantity || r.supplierId || r.sellingPrice || r.purchasePrice;
+      const isComplete =
+        r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice && r.purchasePrice;
+      return hasAnyData && !isComplete;
+    });
 
   const inputClass = "h-9 text-sm";
 
@@ -90,19 +125,19 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                 Item *
               </th>
               <th className="min-w-[200px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Vendor
+                Vendor *
               </th>
               <th className="min-w-[130px] px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Date *
+                Purchase Date *
               </th>
               <th className="min-w-[120px] px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Qty *
               </th>
               <th className="min-w-[100px] px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Selling price
+                Selling price *
               </th>
               <th className="min-w-[100px] px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Purchase price
+                Purchase price *
               </th>
               <th className="w-12 min-w-[48px] px-2 py-3" aria-label="Remove row" />
             </tr>
@@ -196,7 +231,7 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                   <Input
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="0.25"
                     placeholder="0"
                     value={row.sellingPrice}
                     onChange={(e) => updateRow(row.id, { sellingPrice: e.target.value })}
@@ -207,7 +242,7 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                   <Input
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="0.25"
                     placeholder="0"
                     value={row.purchasePrice}
                     onChange={(e) => updateRow(row.id, { purchasePrice: e.target.value })}
