@@ -248,13 +248,13 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
       {sessionEntries.length > 0 && (
         <div className="rounded-lg border border-border bg-muted/10">
           <p className="border-b border-border px-4 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Added this session
+            Added in this session
           </p>
           <div className="data-table-container">
             <table
               className="w-full text-sm"
               role="table"
-              aria-label="Stock entries added this session"
+              aria-label="Stock entries added in this session"
             >
               <thead>
                 <tr className="border-b bg-muted/30">

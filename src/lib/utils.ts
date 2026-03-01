@@ -6,6 +6,18 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Capitalise the first letter of each word. Use for category, vendor, unit, and item names.
+ */
+export function capitaliseWords(value: string): string {
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+/**
  * Format a number or numeric string (en-IN locale, 2 decimal places). No currency symbol.
  * Handles comma-separated strings from the API. Use for currency/cost (with formatCurrency).
  */

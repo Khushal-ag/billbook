@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
+import { FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { EmptyChart } from "./dashboard-utils";
 import type { RecentInvoice } from "@/types/dashboard";
 
 interface DashboardRecentInvoicesSectionProps {
@@ -29,21 +29,21 @@ export function DashboardRecentInvoicesSection({
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          {recentInvoices.length > 0 ? (
-            <div className="overflow-x-auto rounded-2xl border border-muted/50 bg-background/70">
-              <table className="w-full text-sm" role="table" aria-label="Recent invoices">
-                <thead>
-                  <tr className="border-b text-muted-foreground">
-                    <th className="px-4 py-3 text-left font-medium">Invoice</th>
-                    <th className="px-4 py-3 text-left font-medium">Customer</th>
-                    <th className="px-4 py-3 text-left font-medium">Date</th>
-                    <th className="px-4 py-3 text-right font-medium">Amount</th>
-                    <th className="px-4 py-3 text-right font-medium">Paid</th>
-                    <th className="px-4 py-3 text-right font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentInvoices.slice(0, 5).map((inv) => (
+          <div className="overflow-x-auto rounded-2xl border border-muted/50 bg-background/70">
+            <table className="w-full text-sm" role="table" aria-label="Recent invoices">
+              <thead>
+                <tr className="border-b text-muted-foreground">
+                  <th className="px-4 py-3 text-left font-medium">Invoice</th>
+                  <th className="px-4 py-3 text-left font-medium">Customer</th>
+                  <th className="px-4 py-3 text-left font-medium">Date</th>
+                  <th className="px-4 py-3 text-right font-medium">Amount</th>
+                  <th className="px-4 py-3 text-right font-medium">Paid</th>
+                  <th className="px-4 py-3 text-right font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentInvoices.length > 0 ? (
+                  recentInvoices.slice(0, 5).map((inv) => (
                     <tr key={inv.id} className="border-b last:border-0 hover:bg-muted/30">
                       <td className="px-4 py-3">
                         <Link
@@ -74,13 +74,35 @@ export function DashboardRecentInvoicesSection({
                         <StatusBadge status={inv.status} />
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <EmptyChart text="No invoices yet" height={150} />
-          )}
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-10">
+                      <div className="flex flex-col items-center justify-center gap-3 text-center">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-muted/60">
+                          <FileText className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-muted-foreground">
+                            No invoices yet
+                          </p>
+                          <p className="text-xs text-muted-foreground/90">
+                            Create your first invoice to see it here.
+                          </p>
+                        </div>
+                        <Link
+                          to="/invoices?action=new"
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          Create invoice →
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
     </section>

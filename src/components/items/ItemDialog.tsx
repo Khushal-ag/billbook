@@ -40,6 +40,7 @@ import {
   otherTaxName,
 } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { capitaliseWords } from "@/lib/utils";
 import type { Item, Category, CreateItemRequest, Unit } from "@/types/item";
 
 const schema = z.object({
@@ -184,7 +185,9 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
 
   const handleCreateCategory = async (name: string): Promise<Category | null> => {
     try {
-      const created = await createCategoryMutation.mutateAsync({ name });
+      const created = await createCategoryMutation.mutateAsync({
+        name: capitaliseWords(name),
+      });
       return created;
     } catch {
       showErrorToast(null, "Failed to create category");
@@ -194,7 +197,7 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
 
   const onSubmit = async (data: FormData) => {
     const payload: CreateItemRequest = {
-      name: data.name,
+      name: capitaliseWords(data.name),
       type: data.type,
       hsnCode: data.hsnCode || null,
       sacCode: data.sacCode || null,
@@ -231,7 +234,11 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
     type: "STOCK" | "SERVICE",
   ): Promise<Unit | null> => {
     try {
-      const created = await createUnitMutation.mutateAsync({ value, label, type });
+      const created = await createUnitMutation.mutateAsync({
+        value,
+        label: capitaliseWords(label),
+        type,
+      });
       return created;
     } catch {
       showErrorToast(null, "Failed to create unit");

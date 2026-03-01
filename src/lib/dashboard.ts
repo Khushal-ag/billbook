@@ -1,5 +1,25 @@
 import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
-import type { PaymentStatusBreakdown } from "@/types/dashboard";
+import type { PaymentStatusBreakdown, DashboardData, DashboardBusiness } from "@/types/dashboard";
+
+/** Default dashboard shape when API returns no data — keeps dashboard UI visible with empty state. */
+export const EMPTY_DASHBOARD: DashboardData = {
+  business: { id: 0, name: "", gstin: null, taxType: "GST" } as DashboardBusiness,
+  totalInvoices: 0,
+  totalRevenue: 0,
+  totalPaid: 0,
+  totalOutstanding: 0,
+  totalItems: 0,
+  totalParties: 0,
+  revenueByMonth: [],
+  topItems: [],
+  topCustomers: [],
+  invoiceStatusBreakdown: [],
+  paymentStatusBreakdown: [],
+  recentInvoices: [],
+  totalInvoicedGross: 0,
+  totalRevenueNet: 0,
+  netOutstanding: 0,
+};
 
 export const CHART_COLORS = {
   primary: "hsl(var(--chart-1))",
