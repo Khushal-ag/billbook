@@ -32,6 +32,7 @@ import {
   otherTaxName,
 } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { UNIT_OPTIONS } from "@/constants";
 import type { Item, Category, CreateItemRequest } from "@/types/item";
 
 const schema = z.object({
@@ -52,22 +53,6 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
-
-const UNIT_OPTIONS: { value: string; label: string }[] = [
-  { value: "nos", label: "Numbers (nos)" },
-  { value: "pcs", label: "Pieces (pcs)" },
-  { value: "kg", label: "Kilograms (kg)" },
-  { value: "g", label: "Grams (g)" },
-  { value: "l", label: "Litres (l)" },
-  { value: "ml", label: "Millilitres (ml)" },
-  { value: "m", label: "Metres (m)" },
-  { value: "box", label: "Box" },
-  { value: "pack", label: "Pack" },
-  { value: "set", label: "Set" },
-  { value: "doz", label: "Dozen (doz)" },
-  { value: "hr", label: "Hours (hr)" },
-  { value: "sqft", label: "Square feet (sqft)" },
-];
 
 interface ItemDialogProps {
   open: boolean;

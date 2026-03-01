@@ -5,8 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const AUDIT_ACTIONS = ["CREATE", "UPDATE", "DELETE", "FINALIZE", "CANCEL"] as const;
+import { AUDIT_ACTIONS } from "@/constants";
 
 interface AuditLogFiltersProps {
   actionFilter: string;
