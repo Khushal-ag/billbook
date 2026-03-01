@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
+import { Package, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsSimpleMode } from "@/hooks/use-simple-mode";
 import { formatCurrency } from "@/lib/utils";
-import { EmptyChart } from "./dashboard-utils";
 import type { TopItem, TopCustomer } from "@/types/dashboard";
 
 interface DashboardHighlightsSectionProps {
@@ -34,9 +34,9 @@ export function DashboardHighlightsSection({
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            {items.length > 0 ? (
-              <div className="divide-y divide-border/60">
-                {items.slice(0, 5).map((item, idx) => (
+            <div className="divide-y divide-border/60">
+              {items.length > 0 ? (
+                items.slice(0, 5).map((item, idx) => (
                   <div
                     key={item.itemId}
                     className="flex items-center gap-3 rounded-xl px-2 py-3 transition-colors hover:bg-background/70"
@@ -52,11 +52,24 @@ export function DashboardHighlightsSection({
                       {formatCurrency(item.totalRevenue)}
                     </p>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyChart text="No item data yet" height={150} />
-            )}
+                ))
+              ) : (
+                <div className="flex flex-col items-center gap-3 rounded-xl px-2 py-8 text-center">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/60">
+                    <Package className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">No items yet</p>
+                    <p className="text-xs text-muted-foreground/90">
+                      Add items and sell them to see top performers here.
+                    </p>
+                  </div>
+                  <Link to="/items" className="text-xs font-medium text-primary hover:underline">
+                    Add items →
+                  </Link>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -70,9 +83,9 @@ export function DashboardHighlightsSection({
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            {customers.length > 0 ? (
-              <div className="divide-y divide-border/60">
-                {customers.slice(0, 5).map((customer) => (
+            <div className="divide-y divide-border/60">
+              {customers.length > 0 ? (
+                customers.slice(0, 5).map((customer) => (
                   <div
                     key={customer.partyId}
                     className="flex items-center gap-3 rounded-xl px-2 py-3 transition-colors hover:bg-background/70"
@@ -90,11 +103,24 @@ export function DashboardHighlightsSection({
                       {formatCurrency(customer.totalRevenue)}
                     </p>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyChart text="No customer data yet" height={150} />
-            )}
+                ))
+              ) : (
+                <div className="flex flex-col items-center gap-3 rounded-xl px-2 py-8 text-center">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/60">
+                    <Users className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">No customers yet</p>
+                    <p className="text-xs text-muted-foreground/90">
+                      Create parties and invoices to see top customers here.
+                    </p>
+                  </div>
+                  <Link to="/parties" className="text-xs font-medium text-primary hover:underline">
+                    Add parties →
+                  </Link>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -3,10 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsSimpleMode } from "@/hooks/use-simple-mode";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
-import { EmptyChart } from "./dashboard-utils";
 import { CHART_COLORS, type PaymentStatusItem } from "@/lib/dashboard";
 import { formatCurrency } from "@/lib/utils";
 import type { RevenueByMonth } from "@/types/dashboard";
+
+/** Placeholder so bar chart always shows axes and frame with no data */
+const EMPTY_REVENUE_PLACEHOLDER: RevenueByMonth[] = [{ month: "—", revenue: 0, invoiceCount: 0 }];
+
+/** Placeholder so pie chart always shows donut with no data */
+const EMPTY_PIE_PLACEHOLDER: PaymentStatusItem[] = [
+  { name: "PAID", value: 0, count: 0, fill: "hsl(var(--muted) / 0.4)" },
+];
 
 interface DashboardInsightsSectionProps {
   revenueByMonth: RevenueByMonth[];
@@ -24,6 +31,15 @@ const CustomPaymentTooltip = ({
   if (!active || !payload || !payload[0]) return null;
 
   const data = payload[0].payload;
+  const isPlaceholder = data.value === 0 && data.count === 0;
+
+  if (isPlaceholder) {
+    return (
+      <div className="rounded-xl border border-border/50 bg-background/95 px-3 py-2 text-xs text-muted-foreground shadow-lg backdrop-blur-sm">
+        No payment data yet
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl border border-border/50 bg-background/95 shadow-lg backdrop-blur-sm">
@@ -63,28 +79,35 @@ export function DashboardInsightsSection({
             <CardTitle className="text-base font-semibold">Payment Overview</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            {paymentStatusData.length > 0 ? (
-              <div className="flex flex-col items-center gap-6">
-                <ChartContainer config={{}} className="h-[220px] w-full max-w-[280px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={paymentStatusData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={85}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {paymentStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <ChartTooltip content={<CustomPaymentTooltip />} cursor={false} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+            <div className="flex flex-col items-center gap-6">
+              <ChartContainer config={{}} className="h-[220px] w-full max-w-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={
+                        paymentStatusData.length > 0
+                          ? paymentStatusData
+                          : [{ ...EMPTY_PIE_PLACEHOLDER[0], value: 1 }]
+                      }
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={85}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {(paymentStatusData.length > 0
+                        ? paymentStatusData
+                        : [{ ...EMPTY_PIE_PLACEHOLDER[0], value: 1 }]
+                      ).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<CustomPaymentTooltip />} cursor={false} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+              {paymentStatusData.length > 0 ? (
                 <div className="flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-2">
                   {paymentStatusData.map((item) => {
                     const share = totalPaymentAmount
@@ -105,10 +128,15 @@ export function DashboardInsightsSection({
                     );
                   })}
                 </div>
-              </div>
-            ) : (
-              <EmptyChart text="No payment data yet" />
-            )}
+              ) : (
+                <div className="flex flex-col items-center gap-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">No payment data yet</p>
+                  <p className="text-[11px] text-muted-foreground/80">
+                    Payment breakdown will appear once you have invoices.
+                  </p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </section>
@@ -129,40 +157,44 @@ export function DashboardInsightsSection({
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            {revenueByMonth.length > 0 ? (
-              <ChartContainer
-                config={{ revenue: { label: "Revenue", color: CHART_COLORS.primary } }}
-                className="h-[260px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={revenueByMonth} maxBarSize={60}>
-                    <XAxis
-                      dataKey="month"
-                      tick={{ fontSize: 11 }}
-                      tickLine={false}
-                      axisLine={false}
-                      tickMargin={8}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11 }}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}
-                      width={50}
-                      domain={[0, "dataMax + dataMax * 0.2"]}
-                    />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />
-                      }
-                      cursor={false}
-                    />
-                    <Bar dataKey="revenue" fill={CHART_COLORS.primary} radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            ) : (
-              <EmptyChart text="No revenue data yet" />
+            <ChartContainer
+              config={{ revenue: { label: "Revenue", color: CHART_COLORS.primary } }}
+              className="h-[260px]"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={revenueByMonth.length > 0 ? revenueByMonth : EMPTY_REVENUE_PLACEHOLDER}
+                  maxBarSize={60}
+                >
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}
+                    width={50}
+                    domain={[0, "auto"]}
+                  />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />
+                    }
+                    cursor={false}
+                  />
+                  <Bar dataKey="revenue" fill={CHART_COLORS.primary} radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+            {revenueByMonth.length === 0 && (
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                No revenue data this period. Create invoices to see trends here.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -172,28 +204,35 @@ export function DashboardInsightsSection({
             <CardTitle className="text-base font-semibold">Payment Status</CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            {paymentStatusData.length > 0 ? (
-              <div className="flex flex-col items-center gap-4">
-                <ChartContainer config={{}} className="h-[160px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={paymentStatusData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={35}
-                        outerRadius={55}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        {paymentStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <ChartTooltip content={<CustomPaymentTooltip />} cursor={false} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
+            <div className="flex flex-col items-center gap-4">
+              <ChartContainer config={{}} className="h-[160px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={
+                        paymentStatusData.length > 0
+                          ? paymentStatusData
+                          : [{ ...EMPTY_PIE_PLACEHOLDER[0], value: 1 }]
+                      }
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={35}
+                      outerRadius={55}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {(paymentStatusData.length > 0
+                        ? paymentStatusData
+                        : [{ ...EMPTY_PIE_PLACEHOLDER[0], value: 1 }]
+                      ).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<CustomPaymentTooltip />} cursor={false} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+              {paymentStatusData.length > 0 ? (
                 <div className="w-full space-y-2">
                   {paymentStatusData.map((item) => {
                     const share = totalPaymentAmount
@@ -218,10 +257,15 @@ export function DashboardInsightsSection({
                     );
                   })}
                 </div>
-              </div>
-            ) : (
-              <EmptyChart text="No payment data yet" />
-            )}
+              ) : (
+                <div className="w-full space-y-1 text-center">
+                  <p className="text-xs font-medium text-muted-foreground">No payment data yet</p>
+                  <p className="text-[11px] text-muted-foreground/80">
+                    Payment breakdown will appear once you have invoices.
+                  </p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

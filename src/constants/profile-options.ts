@@ -1,3 +1,4 @@
+/** Business type options for profile. */
 export const BUSINESS_TYPES = [
   { value: "retail", label: "Retail" },
   { value: "services", label: "Services" },
@@ -5,6 +6,7 @@ export const BUSINESS_TYPES = [
   { value: "wholesale", label: "Wholesale" },
 ];
 
+/** Industry type options for profile. */
 export const INDUSTRY_TYPES = [
   { value: "agriculture", label: "Agriculture" },
   { value: "apparel", label: "Apparel" },
@@ -25,6 +27,7 @@ export const INDUSTRY_TYPES = [
   { value: "wholesale", label: "Wholesale" },
 ];
 
+/** Registration type options for profile. */
 export const REGISTRATION_TYPES = [
   { value: "private", label: "Private Limited Company" },
   { value: "llp", label: "LLP" },
@@ -32,6 +35,7 @@ export const REGISTRATION_TYPES = [
   { value: "proprietor", label: "Sole Proprietor" },
 ];
 
+/** Country options (code, label, dialCode) for profile. */
 export const COUNTRIES = [
   { code: "IN", label: "India", dialCode: "+91" },
   { code: "US", label: "United States", dialCode: "+1" },
@@ -55,6 +59,7 @@ export const COUNTRIES = [
   { code: "CN", label: "China", dialCode: "+86" },
 ];
 
+/** Month names (1-indexed: January = 1). Used e.g. for financial year start. */
 export const MONTHS = [
   "January",
   "February",

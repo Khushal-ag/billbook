@@ -1,10 +1,12 @@
 import { useCallback, useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Package, Layers } from "lucide-react";
+import { Package, Layers } from "lucide-react";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
+import SearchInput from "@/components/SearchInput";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import { Button } from "@/components/ui/button";
+import { useDebounce } from "@/hooks/use-debounce";
 import { StockOverviewCards } from "@/components/items/StockOverviewCards";
 import { StockAlertsBanner } from "@/components/items/StockAlertsBanner";
 import { StockEntryGrid } from "@/components/items/StockEntryGrid";
@@ -30,20 +32,24 @@ export default function Stock() {
   const [adjustItemName, setAdjustItemName] = useState<string>("");
   const [adjustStockEntryId, setAdjustStockEntryId] = useState<number | undefined>(undefined);
   const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
 
   const { data: itemsData, isPending: itemsPending, error: itemsError } = useItems({ limit: 500 });
+  // Unfiltered fetch for overview cards so they always show overall totals
+  const { data: stockDataForCards, isPending: stockCardsPending } = useStockList({ limit: 1 });
   const {
     data: stockData,
     isPending: stockPending,
     error: stockError,
-  } = useStockList({ limit: 200 });
+  } = useStockList({ limit: 200, search: debouncedSearch || undefined });
   const { data: alertsData } = useAlerts(true);
   const markAlertRead = useMarkAlertRead();
   const {
     data: stockEntriesData,
     isPending: entriesPending,
     error: entriesError,
-  } = useStockEntries({ limit: 200 });
+  } = useStockEntries({ limit: 200, search: debouncedSearch || undefined });
   const { data: partiesData } = useParties();
   const createStockEntry = useCreateStockEntry();
 
@@ -56,7 +62,14 @@ export default function Stock() {
     [stockEntriesData],
   );
 
-  const summary = stockData?.summary ?? { totalStockValue: "0", lowStockCount: 0 };
+  // Cards always use overall (unfiltered) summary; list uses filtered data
+  const summary = stockDataForCards?.summary ?? stockData?.summary;
+  const totalPurchasedValue = summary?.stockValue?.totalPurchasedValue ?? "0";
+  const totalItems = summary?.stockValue?.totalItems ?? 0;
+  const totalQuantity = summary?.stockValue?.totalQuantity ?? "0";
+  const lowStockCount = summary?.lowStock?.totalItems ?? 0;
+  const lowStockQuantity = summary?.lowStock?.totalQuantity;
+  const totalSellingValue = summary?.stockValue?.totalAmount ?? "0";
   const stockList = stockData?.stock ?? [];
   const unreadAlerts = alertsData?.alerts ?? [];
 
@@ -78,6 +91,7 @@ export default function Stock() {
         showSuccessToast(entries.length === 1 ? "Stock entry saved" : "Stock entries saved");
       } catch (err) {
         showErrorToast(err, "Failed to save stock entries");
+        throw err;
       }
     },
     [createStockEntry],
@@ -116,13 +130,27 @@ export default function Stock() {
       <PageHeader
         title="Stock"
         description="View stock by item or by stock entry, add purchases, and adjust quantities"
-        action={
-          <Button onClick={() => setActiveTab("add")}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Stock
-          </Button>
-        }
       />
+
+      {/* Cards visible on all tabs — always show overall (unfiltered) data */}
+      <div className="mb-6">
+        {stockCardsPending && !stockDataForCards ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="h-[88px] animate-pulse rounded-2xl border bg-muted/50" />
+            <div className="h-[88px] animate-pulse rounded-2xl border bg-muted/50" />
+            <div className="h-[88px] animate-pulse rounded-2xl border bg-muted/50" />
+          </div>
+        ) : (
+          <StockOverviewCards
+            totalPurchasedValue={totalPurchasedValue}
+            totalItems={totalItems}
+            totalQuantity={totalQuantity}
+            lowStockCount={lowStockCount}
+            lowStockQuantity={lowStockQuantity}
+            totalSellingValue={totalSellingValue}
+          />
+        )}
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="w-full justify-start overflow-x-auto whitespace-nowrap sm:w-auto">
@@ -132,32 +160,32 @@ export default function Stock() {
 
         <TabsContent value="overview" className="space-y-6">
           <ErrorBanner error={stockError} fallbackMessage="Failed to load stock" />
-          {stockPending ? (
-            <TableSkeleton rows={4} />
-          ) : (
-            <>
-              <StockOverviewCards
-                totalStockValue={summary.totalStockValue}
-                lowStockCount={summary.lowStockCount}
-                totalItems={stockData?.total ?? 0}
+          {/* Keep search and toolbar mounted so focus is not lost when list refetches */}
+          <>
+            {unreadAlerts.length > 0 && (
+              <StockAlertsBanner
+                alerts={unreadAlerts}
+                onMarkRead={handleMarkAlertRead}
+                markReadPending={markAlertRead.isPending}
               />
-              {unreadAlerts.length > 0 && (
-                <StockAlertsBanner
-                  alerts={unreadAlerts}
-                  onMarkRead={handleMarkAlertRead}
-                  markReadPending={markAlertRead.isPending}
-                />
-              )}
-              <div>
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-base font-semibold">Stock list</h2>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {listViewMode === "item"
-                        ? "One row per item (total quantity and value)."
-                        : "One row per stock entry. Click a row to see details."}
-                    </p>
-                  </div>
+            )}
+            <div>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-semibold">Stock list</h2>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {listViewMode === "item"
+                      ? "One row per item (total quantity and value)."
+                      : "One row per stock entry. Click a row to see details."}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <SearchInput
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Search stock..."
+                    className="min-w-[180px]"
+                  />
                   <div
                     className="flex rounded-lg border border-border bg-muted/30 p-0.5"
                     role="tablist"
@@ -195,32 +223,32 @@ export default function Stock() {
                     </Button>
                   </div>
                 </div>
-                <ErrorBanner
-                  error={listViewMode === "stock" ? entriesError : undefined}
-                  fallbackMessage="Failed to load stock entries"
-                />
-                {listPending ? (
-                  <TableSkeleton rows={5} />
-                ) : listViewMode === "item" ? (
-                  <StockReportTable rows={stockList} onAdjust={openAdjustStock} />
-                ) : (
-                  <StockEntriesTable
-                    entries={stockEntries}
-                    items={items}
-                    suppliers={suppliers}
-                    onView={handleViewEntry}
-                    onAdjust={openAdjustStock}
-                  />
-                )}
               </div>
-            </>
-          )}
+              <ErrorBanner
+                error={listViewMode === "stock" ? entriesError : undefined}
+                fallbackMessage="Failed to load stock entries"
+              />
+              {listPending ? (
+                <TableSkeleton rows={5} />
+              ) : listViewMode === "item" ? (
+                <StockReportTable rows={stockList} items={items} onAdjust={openAdjustStock} />
+              ) : (
+                <StockEntriesTable
+                  entries={stockEntries}
+                  items={items}
+                  suppliers={suppliers}
+                  onView={handleViewEntry}
+                  onAdjust={openAdjustStock}
+                />
+              )}
+            </div>
+          </>
         </TabsContent>
 
         <TabsContent value="add">
           <p className="mb-4 text-sm text-muted-foreground">
-            Add stock entries for STOCK items. Type in the item cell to search and select. Add
-            multiple rows to enter several batches at once.
+            Enter item, quantity, and date; then click &quot;Add stock&quot; to save. Each entry is
+            saved immediately. The table below lists what you&apos;ve added in this session.
           </p>
           <ErrorBanner error={itemsError} fallbackMessage="Failed to load items" />
           {itemsPending ? (
@@ -244,6 +272,7 @@ export default function Stock() {
           if (!open) setSelectedEntryId(null);
         }}
         supplierName={selectedSupplierName}
+        items={items}
       />
 
       {adjustItemId != null && (

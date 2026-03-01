@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -41,6 +41,14 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
   const [error, setError] = useState<string | null>(null);
   const [otpRequested, setOtpRequested] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const otpInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (otpRequested) {
+      const id = requestAnimationFrame(() => otpInputRef.current?.focus());
+      return () => cancelAnimationFrame(id);
+    }
+  }, [otpRequested]);
 
   const {
     register,
@@ -50,6 +58,8 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
   } = useForm<SignupForm>({
     resolver: zodResolver(signupSchema),
   });
+
+  const { ref: otpFormRef, ...otpRegisterRest } = register("otp");
 
   const onSubmit = async (data: SignupForm) => {
     setError(null);
@@ -192,7 +202,16 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
             <>
               <div className="space-y-2">
                 <Label htmlFor="otp">OTP</Label>
-                <Input id="otp" placeholder="123456" maxLength={6} {...register("otp")} />
+                <Input
+                  id="otp"
+                  placeholder="123456"
+                  maxLength={6}
+                  ref={(el) => {
+                    otpFormRef(el);
+                    otpInputRef.current = el;
+                  }}
+                  {...otpRegisterRest}
+                />
                 {errors.otp && <p className="text-xs text-destructive">{errors.otp.message}</p>}
               </div>
 

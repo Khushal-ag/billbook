@@ -25,8 +25,8 @@ interface NavItem {
   path: string;
   icon: React.ElementType;
   ownerOnly?: boolean;
-  simpleMode?: boolean; // Show in simple mode only
-  advancedOnly?: boolean; // Hide in simple mode
+  simpleMode?: boolean;
+  advancedOnly?: boolean;
 }
 
 interface NavSection {

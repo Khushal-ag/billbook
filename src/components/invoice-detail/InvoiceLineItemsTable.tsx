@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatQuantity } from "@/lib/utils";
 import type { InvoiceItem } from "@/types/invoice";
 
 interface InvoiceLineItemsTableProps {
@@ -45,7 +45,7 @@ export function InvoiceLineItemsTable({ items }: InvoiceLineItemsTableProps) {
                       <td className="px-4 py-3 font-medium">
                         {item.itemName ?? `Item #${item.itemId}`}
                       </td>
-                      <td className="px-3 py-3 text-right">{item.quantity}</td>
+                      <td className="px-3 py-3 text-right">{formatQuantity(item.quantity)}</td>
                       <td className="px-3 py-3 text-right">{formatCurrency(item.unitPrice)}</td>
                       <td className="px-3 py-3 text-right">
                         {item.discountPercent && item.discountPercent !== "0"

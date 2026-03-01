@@ -21,7 +21,7 @@ import { LedgerEntriesTable } from "@/components/party-ledger/LedgerEntriesTable
 import { StatementPanel } from "@/components/party-ledger/StatementPanel";
 import { AdvancePaymentForm } from "@/components/party-ledger/AdvancePaymentForm";
 import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
-import type { PaymentMethod } from "@/types/invoice";
+import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 
 const advanceSchema = z.object({
@@ -32,14 +32,6 @@ const advanceSchema = z.object({
 });
 
 type AdvanceFormData = z.infer<typeof advanceSchema>;
-
-const paymentMethods: { value: PaymentMethod; label: string }[] = [
-  { value: "CASH", label: "Cash" },
-  { value: "CHEQUE", label: "Cheque" },
-  { value: "UPI", label: "UPI" },
-  { value: "BANK_TRANSFER", label: "Bank Transfer" },
-  { value: "CARD", label: "Card" },
-];
 
 export default function PartyLedger() {
   const navigate = useNavigate();
@@ -212,7 +204,7 @@ export default function PartyLedger() {
         <TabsContent value="advance" className="mt-4">
           <AdvancePaymentForm
             form={form}
-            paymentMethods={paymentMethods}
+            paymentMethods={PAYMENT_METHOD_OPTIONS}
             isSubmitting={isSubmitting}
             isSaving={advanceMutation.isPending}
             onSubmit={onAdvanceSubmit}

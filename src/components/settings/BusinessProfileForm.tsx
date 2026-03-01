@@ -14,13 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Upload, Pencil, Plus, Trash2, X } from "lucide-react";
 import type { ProfileForm } from "@/components/settings/profileSchema";
-import {
-  MONTHS,
-  BUSINESS_TYPES,
-  INDUSTRY_TYPES,
-  REGISTRATION_TYPES,
-  COUNTRIES,
-} from "@/lib/profile-options";
+import { MONTHS, BUSINESS_TYPES, INDUSTRY_TYPES, REGISTRATION_TYPES, COUNTRIES } from "@/constants";
 import { usePincodeAutofill } from "@/hooks/use-pincode-autofill";
 import { showErrorToast } from "@/lib/toast-helpers";
 import { countryCodeToFlagEmoji } from "@/lib/country-flags";
