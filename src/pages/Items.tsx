@@ -17,12 +17,9 @@ import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import ItemDialog from "@/components/items/ItemDialog";
 import { ItemsTable } from "@/components/items/ItemsTable";
 import { ItemDetailView } from "@/components/items/ItemDetailView";
-import ConfirmDialog from "@/components/ConfirmDialog";
-import { useItems, useCategories, useDeleteItem } from "@/hooks/use-items";
-import { usePermissions } from "@/hooks/use-permissions";
+import { useItems, useCategories } from "@/hooks/use-items";
 import { useDebounce } from "@/hooks/use-debounce";
 import type { Item } from "@/types/item";
-import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
 export default function Items() {
   const { itemId } = useParams();
@@ -32,12 +29,7 @@ export default function Items() {
   const debouncedSearch = useDebounce(search, 300);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Item | undefined>();
-  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; item: Item | null }>({
-    open: false,
-    item: null,
-  });
 
-  const { isOwner } = usePermissions();
   const {
     data: itemsData,
     isPending: itemsPending,
@@ -49,7 +41,6 @@ export default function Items() {
   });
   const { data: categoriesData } = useCategories();
   const categories = Array.isArray(categoriesData) ? categoriesData : [];
-  const deleteItemMutation = useDeleteItem();
 
   const items = itemsData?.items ?? [];
   const filteredItems = items.filter((i) => !i.deletedAt);
@@ -63,24 +54,6 @@ export default function Items() {
     setEditItem(item);
     setDialogOpen(true);
   }, []);
-
-  const handleDelete = useCallback((item: Item) => {
-    setDeleteConfirm({ open: true, item });
-  }, []);
-
-  const confirmDelete = useCallback(() => {
-    if (!deleteConfirm.item) return;
-    deleteItemMutation.mutate(deleteConfirm.item.id, {
-      onSuccess: () => {
-        showSuccessToast("Item deleted");
-        setDeleteConfirm({ open: false, item: null });
-      },
-      onError: (err) => {
-        showErrorToast(err, "Failed to delete");
-        setDeleteConfirm({ open: false, item: null });
-      },
-    });
-  }, [deleteConfirm.item, deleteItemMutation]);
 
   // Detail view when itemId in URL (ledger, current stock)
   if (itemId) {
@@ -144,25 +117,12 @@ export default function Items() {
       ) : (
         <ItemsTable
           items={filteredItems}
-          isOwner={isOwner}
-          deletePending={deleteItemMutation.isPending}
           onEdit={openEdit}
-          onDelete={handleDelete}
           onViewLedger={(id) => navigate(`/items/${id}`)}
         />
       )}
 
       <ItemDialog open={dialogOpen} onOpenChange={setDialogOpen} item={editItem} />
-
-      <ConfirmDialog
-        open={deleteConfirm.open}
-        onOpenChange={(open) => setDeleteConfirm((prev) => ({ ...prev, open }))}
-        onConfirm={confirmDelete}
-        title="Delete Item"
-        description={`Are you sure you want to delete "${deleteConfirm.item?.name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        variant="destructive"
-      />
     </div>
   );
 }

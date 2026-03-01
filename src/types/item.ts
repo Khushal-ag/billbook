@@ -64,6 +64,7 @@ export interface Item {
   igstRate: string | null;
   otherTaxName?: string | null;
   otherTaxRate?: string | null;
+  minStockThreshold?: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -88,6 +89,7 @@ export interface CreateItemRequest {
   igstRate?: string | null;
   otherTaxName?: string | null;
   otherTaxRate?: string | null;
+  minStockThreshold?: string | null;
 }
 
 export interface StockEntry {
@@ -113,19 +115,29 @@ export interface CreateStockEntryRequest {
   supplierId?: number | null;
 }
 
-export interface StockReportRow {
+export interface StockListItem {
   itemId: number;
   itemName: string;
   unit: string;
-  quantityPurchased: number | string;
-  quantityAdjusted: number | string;
-  quantitySold: number | string;
-  actualQuantity: number | string;
+  categoryId: number | null;
+  categoryName: string | null;
+  minStockThreshold: string | null;
+  quantityPurchased: string;
+  quantityAdjusted: string;
+  quantitySold: string;
+  actualQuantity: string;
+  stockValue: string | null;
+  isLowStock: boolean;
 }
 
-export interface StockReportResponse {
-  stock?: StockReportRow[];
-  items?: StockReportRow[];
+export interface StockListResponse {
+  stock: StockListItem[];
+  count: number;
+  total: number;
+  summary: {
+    totalStockValue: string;
+    lowStockCount: number;
+  };
 }
 
 export type LedgerMovementType = "PURCHASE" | "ADJUSTMENT" | "SALE";

@@ -9,7 +9,7 @@ import type {
   StockEntry,
   StockEntryListResponse,
   CreateStockEntryRequest,
-  StockReportResponse,
+  StockListResponse,
   ItemLedgerResponse,
   AdjustStockRequest,
 } from "@/types/item";
@@ -37,44 +37,12 @@ export function useCategories() {
   });
 }
 
-export function useCategory(id: number | undefined) {
-  return useQuery({
-    queryKey: ["items", "categories", id],
-    queryFn: async () => {
-      const res = await api.get<Category>(`${ITEMS_BASE}/categories/${id}`);
-      return res.data;
-    },
-    enabled: !!id,
-  });
-}
-
 export function useCreateCategory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: { name: string }) => {
       const res = await api.post<Category>(`${ITEMS_BASE}/categories`, data);
       return res.data;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["items", "categories"] }),
-  });
-}
-
-export function useUpdateCategory(id: number) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: { name: string }) => {
-      const res = await api.put<Category>(`${ITEMS_BASE}/categories/${id}`, data);
-      return res.data;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["items", "categories"] }),
-  });
-}
-
-export function useDeleteCategory(id: number) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async () => {
-      await api.delete(`${ITEMS_BASE}/categories/${id}`);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["items", "categories"] }),
   });
@@ -140,16 +108,6 @@ export function useUpdateItem(id: number) {
   });
 }
 
-export function useDeleteItem() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`${ITEMS_BASE}/${id}`);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["items"] }),
-  });
-}
-
 export function useStockEntries(itemId?: number | undefined) {
   const path = itemId ? `${ITEMS_BASE}/${itemId}/stock-entries` : `${ITEMS_BASE}/stock-entries`;
   return useQuery({
@@ -183,20 +141,31 @@ export function useCreateStockEntry() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["items", "stock-entries"] });
-      qc.invalidateQueries({ queryKey: ["items", "stock-report"] });
+      qc.invalidateQueries({ queryKey: ["items", "stock"] });
       qc.invalidateQueries({ queryKey: ["items"] });
     },
   });
 }
 
-export function useStockReport() {
+export function useStockList(params?: {
+  categoryId?: number;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const qs = new URLSearchParams();
+  if (params?.categoryId != null) qs.set("categoryId", String(params.categoryId));
+  if (params?.search) qs.set("search", params.search ?? "");
+  if (params?.limit != null) qs.set("limit", String(params.limit));
+  if (params?.offset != null) qs.set("offset", String(params.offset));
+  const query = qs.toString();
   return useQuery({
-    queryKey: ["items", "stock-report"],
+    queryKey: ["items", "stock", params],
     queryFn: async () => {
-      const res = await api.get<StockReportResponse>(`${ITEMS_BASE}/stock/report`);
-      const data = res.data;
-      if (Array.isArray(data)) return data;
-      return data.stock ?? data.items ?? [];
+      const res = await api.get<StockListResponse>(
+        `${ITEMS_BASE}/stock${query ? `?${query}` : ""}`,
+      );
+      return res.data;
     },
   });
 }
@@ -210,7 +179,7 @@ export function useAdjustStock(itemId: number) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["items"] });
       qc.invalidateQueries({ queryKey: ["items", "item", itemId] });
-      qc.invalidateQueries({ queryKey: ["items", "stock-report"] });
+      qc.invalidateQueries({ queryKey: ["items", "stock"] });
       qc.invalidateQueries({ queryKey: ["items", "ledger", itemId] });
     },
   });

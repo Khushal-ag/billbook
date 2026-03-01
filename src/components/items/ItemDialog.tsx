@@ -41,6 +41,7 @@ const schema = z.object({
   sacCode,
   unit: optionalString,
   description: optionalString,
+  minStockThreshold: optionalString,
   isTaxable: z.boolean(),
   taxType: z.enum(["GST", "OTHER"]),
   cgstRate: percentString,
@@ -97,6 +98,7 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
     defaultValues: {
       type: "STOCK",
       unit: "nos",
+      minStockThreshold: "",
       isTaxable: true,
       taxType: "GST",
       cgstRate: "",
@@ -119,6 +121,7 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
           sacCode: item.sacCode ?? "",
           unit: item.unit ?? "nos",
           description: item.description ?? "",
+          minStockThreshold: item.minStockThreshold ?? "",
           isTaxable: item.isTaxable ?? true,
           taxType: (item.taxType ?? "GST") as "GST" | "OTHER",
           cgstRate: item.cgstRate ?? "",
@@ -146,6 +149,7 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
           hsnCode: "",
           sacCode: "",
           description: "",
+          minStockThreshold: "",
           isTaxable: true,
           taxType: "GST",
           cgstRate: "",
@@ -178,6 +182,8 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
       categoryId: category?.id && category.id > 0 ? category.id : null,
       unit: data.unit || "nos",
       description: data.description || null,
+      minStockThreshold:
+        data.type === "STOCK" && data.minStockThreshold ? data.minStockThreshold : null,
       isTaxable: data.isTaxable,
       taxType: data.taxType,
       cgstRate: data.cgstRate || "0",
@@ -279,6 +285,19 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
             <Label>Description</Label>
             <Textarea rows={2} {...register("description")} placeholder="Optional" />
           </div>
+
+          {watch("type") === "STOCK" && (
+            <div className="space-y-2">
+              <Label>Min stock alert</Label>
+              <Input
+                {...register("minStockThreshold")}
+                placeholder="e.g. 10 — alert when stock falls below this"
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave empty to disable low-stock alerts for this item.
+              </p>
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <Switch

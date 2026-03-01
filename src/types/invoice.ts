@@ -146,14 +146,6 @@ export interface FinalizeInvoiceResponse {
   finalizedAt: string;
 }
 
-export interface StockCheckError {
-  code: string;
-  itemId: number;
-  itemName: string;
-  required: string;
-  available: string;
-}
-
 export interface InvoicePdfResponse {
   invoiceId: number;
   invoiceNumber: string;

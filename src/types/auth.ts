@@ -103,12 +103,6 @@ export interface UpdateBusinessProfile {
   taxType?: TaxType;
 }
 
-/** Response from POST /business/profile/upload */
-export interface BusinessProfileUploadResponse {
-  logoUrl?: string | null;
-  signatureUrl?: string | null;
-}
-
 /** Business user returned by GET /business/users */
 export interface BusinessUser {
   id: number;

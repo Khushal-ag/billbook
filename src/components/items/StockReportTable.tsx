@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
-import type { StockReportRow } from "@/types/item";
-import { formatNumber } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import type { StockListItem } from "@/types/item";
+import { formatNumber, formatCurrency } from "@/lib/utils";
 
 interface StockReportTableProps {
-  rows: StockReportRow[];
+  rows: StockListItem[];
 }
 
 export function StockReportTable({ rows }: StockReportTableProps) {
@@ -41,6 +42,12 @@ export function StockReportTable({ rows }: StockReportTableProps) {
             <th className="min-w-[88px] px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Current
             </th>
+            <th className="min-w-[90px] px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Value
+            </th>
+            <th className="min-w-[80px] px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Status
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -67,6 +74,18 @@ export function StockReportTable({ rows }: StockReportTableProps) {
               </td>
               <td className="px-4 py-3.5 text-right align-middle font-semibold tabular-nums">
                 {formatNumber(row.actualQuantity)}
+              </td>
+              <td className="px-3 py-3.5 text-right align-middle tabular-nums text-muted-foreground">
+                {row.stockValue != null ? formatCurrency(row.stockValue) : "—"}
+              </td>
+              <td className="px-3 py-3.5 text-center">
+                {row.isLowStock ? (
+                  <Badge variant="destructive" className="text-xs">
+                    Low stock
+                  </Badge>
+                ) : (
+                  <span className="text-xs text-muted-foreground">OK</span>
+                )}
               </td>
             </tr>
           ))}

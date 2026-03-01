@@ -1,4 +1,4 @@
-import { Pencil, Trash2, History } from "lucide-react";
+import { Pencil, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Item } from "@/types/item";
@@ -6,21 +6,11 @@ import { getItemCategoryDisplay, getItemTaxDisplay } from "@/types/item";
 
 interface ItemsTableProps {
   items: Item[];
-  isOwner: boolean;
-  deletePending: boolean;
   onEdit: (item: Item) => void;
-  onDelete: (item: Item) => void;
   onViewLedger: (id: number) => void;
 }
 
-export function ItemsTable({
-  items,
-  isOwner,
-  deletePending,
-  onEdit,
-  onDelete,
-  onViewLedger,
-}: ItemsTableProps) {
+export function ItemsTable({ items, onEdit, onViewLedger }: ItemsTableProps) {
   return (
     <div className="data-table-container">
       <table className="w-full text-sm" role="table" aria-label="Items list">
@@ -111,19 +101,6 @@ export function ItemsTable({
                   >
                     <History className="h-3.5 w-3.5" />
                   </Button>
-                  {isOwner && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => onDelete(item)}
-                      disabled={deletePending}
-                      title="Delete"
-                      aria-label={`Delete ${item.name}`}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
                 </div>
               </td>
             </tr>

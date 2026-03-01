@@ -1,23 +1,35 @@
 import { useCallback, useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, List } from "lucide-react";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
+import { Button } from "@/components/ui/button";
+import { StockOverviewCards } from "@/components/items/StockOverviewCards";
+import { StockAlertsBanner } from "@/components/items/StockAlertsBanner";
 import { StockEntryGrid } from "@/components/items/StockEntryGrid";
 import { StockReportTable } from "@/components/items/StockReportTable";
 import { StockEntriesTable } from "@/components/items/StockEntriesTable";
 import { StockEntryDetailSheet } from "@/components/items/StockEntryDetailSheet";
-import { useItems, useStockReport, useStockEntries, useCreateStockEntry } from "@/hooks/use-items";
+import { useItems, useStockList, useStockEntries, useCreateStockEntry } from "@/hooks/use-items";
+import { useAlerts, useMarkAlertRead } from "@/hooks/use-alerts";
 import { useParties } from "@/hooks/use-parties";
 import type { CreateStockEntryRequest, StockEntry } from "@/types/item";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
 export default function Stock() {
+  const [activeTab, setActiveTab] = useState("overview");
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null);
 
   const { data: itemsData, isPending: itemsPending, error: itemsError } = useItems({ limit: 500 });
-  const { data: stockReport = [], isPending: reportPending, error: reportError } = useStockReport();
+  const {
+    data: stockData,
+    isPending: stockPending,
+    error: stockError,
+  } = useStockList({ limit: 200 });
+  const { data: alertsData } = useAlerts(true);
+  const markAlertRead = useMarkAlertRead();
   const {
     data: stockEntriesRaw,
     isPending: entriesPending,
@@ -42,6 +54,10 @@ export default function Stock() {
     }
     return [];
   }, [stockEntriesRaw]);
+
+  const summary = stockData?.summary ?? { totalStockValue: "0", lowStockCount: 0 };
+  const stockList = stockData?.stock ?? [];
+  const unreadAlerts = alertsData?.alerts ?? [];
 
   const selectedEntry = useMemo(
     () => stockEntries.find((e) => e.id === selectedEntryId),
@@ -71,16 +87,64 @@ export default function Stock() {
     setDetailSheetOpen(true);
   }, []);
 
+  const handleMarkAlertRead = useCallback(
+    (id: number) => {
+      markAlertRead.mutate(id);
+    },
+    [markAlertRead],
+  );
+
   return (
     <div className="page-container animate-fade-in">
-      <PageHeader title="Stock" description="Add stock entries and view stock report" />
+      <PageHeader
+        title="Stock"
+        description="View stock overview, add purchases, and manage entries"
+        action={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setActiveTab("add")}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Stock
+            </Button>
+            <Button variant="outline" onClick={() => setActiveTab("entries")}>
+              <List className="mr-2 h-4 w-4" />
+              Entries
+            </Button>
+          </div>
+        }
+      />
 
-      <Tabs defaultValue="add">
-        <TabsList className="mb-4 w-full justify-start overflow-x-auto whitespace-nowrap sm:w-auto">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="w-full justify-start overflow-x-auto whitespace-nowrap sm:w-auto">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="add">Add Stock</TabsTrigger>
           <TabsTrigger value="entries">Entries</TabsTrigger>
-          <TabsTrigger value="report">Stock Report</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <ErrorBanner error={stockError} fallbackMessage="Failed to load stock" />
+          {stockPending ? (
+            <TableSkeleton rows={4} />
+          ) : (
+            <>
+              <StockOverviewCards
+                totalStockValue={summary.totalStockValue}
+                lowStockCount={summary.lowStockCount}
+                totalItems={stockData?.total ?? 0}
+              />
+              {unreadAlerts.length > 0 && (
+                <StockAlertsBanner
+                  alerts={unreadAlerts}
+                  onMarkRead={handleMarkAlertRead}
+                  markReadPending={markAlertRead.isPending}
+                />
+              )}
+              <div>
+                <h2 className="mb-3 text-base font-semibold">Stock list</h2>
+                <StockReportTable rows={stockList} />
+              </div>
+            </>
+          )}
+        </TabsContent>
 
         <TabsContent value="add">
           <p className="mb-4 text-sm text-muted-foreground">
@@ -115,11 +179,6 @@ export default function Stock() {
               onView={handleViewEntry}
             />
           )}
-        </TabsContent>
-
-        <TabsContent value="report">
-          <ErrorBanner error={reportError} fallbackMessage="Failed to load stock report" />
-          {reportPending ? <TableSkeleton rows={4} /> : <StockReportTable rows={stockReport} />}
         </TabsContent>
       </Tabs>
 
