@@ -42,7 +42,7 @@ const schema = z
     sacCode,
     unit: z.string().min(1, "Unit is required"),
     description: optionalString,
-    minStockThreshold: z.string().min(1, "Min stock alert is required"),
+    minStockThreshold: optionalString,
     isTaxable: z.boolean(),
     taxType: z.enum(["GST", "OTHER"]),
     cgstRate: percentString,
@@ -52,6 +52,15 @@ const schema = z
     otherTaxRate: percentString,
   })
   .superRefine((data, ctx) => {
+    // For STOCK items, min stock threshold is required
+    if (data.type === "STOCK" && !data.minStockThreshold) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["minStockThreshold"],
+        message: "Min stock alert is required for stock items",
+      });
+    }
+
     // If taxable is true, validate tax fields
     if (data.isTaxable) {
       if (!data.taxType) {
