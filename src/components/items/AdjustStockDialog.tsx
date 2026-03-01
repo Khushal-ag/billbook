@@ -29,9 +29,17 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   itemId: number;
   itemName: string;
+  /** When provided, adjustment is attributed to this batch (from By stock view) */
+  stockEntryId?: number;
 }
 
-export default function AdjustStockDialog({ open, onOpenChange, itemId, itemName }: Props) {
+export default function AdjustStockDialog({
+  open,
+  onOpenChange,
+  itemId,
+  itemName,
+  stockEntryId,
+}: Props) {
   const mutation = useAdjustStock(itemId);
 
   const {
@@ -50,7 +58,11 @@ export default function AdjustStockDialog({ open, onOpenChange, itemId, itemName
 
   const onSubmit = async (data: FormData) => {
     try {
-      await mutation.mutateAsync({ quantity: data.quantity, reason: data.reason });
+      await mutation.mutateAsync({
+        quantity: data.quantity,
+        reason: data.reason,
+        ...(stockEntryId != null && { stockEntryId }),
+      });
       showSuccessToast("Stock adjusted");
       onOpenChange(false);
     } catch (err) {

@@ -1,7 +1,8 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import type { ApiResponse } from "@/types/api";
+import type { AuthTokens } from "@/types/auth";
 import { env } from "@/lib/env";
-import { getAccessToken, setAccessToken, getRefreshToken, setRefreshToken } from "./token";
+import { getAccessToken, getRefreshToken, setAccessToken, setRefreshToken } from "./token";
 import { ApiClientError } from "./error";
 
 const AUTH_EXPIRED_EVENT = "auth:expired";
@@ -12,17 +13,17 @@ function notifyAuthExpired() {
   }
 }
 
-/** Set VITE_API_BASE_URL to base including /api (e.g. https://billbook-api.vercel.app/api). */
 const axiosInstance = axios.create({
   baseURL: env.VITE_API_BASE_URL,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
 
-/** Used for refresh-token only; avoids 401 interceptor loop. */
-const plainAxios = axios.create({
+/** Refresh only: sends refreshToken cookie (no Authorization), no body. */
+const refreshAxios = axios.create({
   baseURL: env.VITE_API_BASE_URL,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
 let refreshPromise: Promise<string> | null = null;
@@ -45,7 +46,6 @@ axiosInstance.interceptors.response.use(
 
     if (isUnauthorized && !isRefreshRequest && !originalRequest._retry && hasRefreshToken) {
       originalRequest._retry = true;
-
       try {
         const newToken = await refreshAccessToken();
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
@@ -58,11 +58,10 @@ axiosInstance.interceptors.response.use(
       }
     }
 
-    if (isUnauthorized && !isRefreshRequest && !hasRefreshToken) {
+    if (isUnauthorized && !isRefreshRequest) {
       setAccessToken(null);
       setRefreshToken(null);
       notifyAuthExpired();
-      throw new ApiClientError("Session expired. Please log in again.", 401);
     }
 
     const status = error.response?.status ?? 500;
@@ -77,14 +76,9 @@ axiosInstance.interceptors.response.use(
 
 async function refreshAccessToken(): Promise<string> {
   if (refreshPromise) return refreshPromise;
-  const currentRefreshToken = getRefreshToken();
-  if (!currentRefreshToken) throw new Error("No refresh token");
 
-  refreshPromise = plainAxios
-    .post<ApiResponse<{ tokens: { accessToken: string; refreshToken: string } }>>(
-      "/auth/refresh-token",
-      { refreshToken: currentRefreshToken },
-    )
+  refreshPromise = refreshAxios
+    .post<ApiResponse<{ tokens: AuthTokens }>>("/auth/refresh-token", {})
     .then((res) => {
       const { accessToken, refreshToken } = res.data.data.tokens;
       setAccessToken(accessToken);

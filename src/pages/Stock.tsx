@@ -1,6 +1,6 @@
 import { useCallback, useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, List } from "lucide-react";
+import { Plus, Package, Layers } from "lucide-react";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
@@ -11,16 +11,25 @@ import { StockEntryGrid } from "@/components/items/StockEntryGrid";
 import { StockReportTable } from "@/components/items/StockReportTable";
 import { StockEntriesTable } from "@/components/items/StockEntriesTable";
 import { StockEntryDetailSheet } from "@/components/items/StockEntryDetailSheet";
+import AdjustStockDialog from "@/components/items/AdjustStockDialog";
 import { useItems, useStockList, useStockEntries, useCreateStockEntry } from "@/hooks/use-items";
 import { useAlerts, useMarkAlertRead } from "@/hooks/use-alerts";
 import { useParties } from "@/hooks/use-parties";
 import type { CreateStockEntryRequest, StockEntry } from "@/types/item";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
+import { cn } from "@/lib/utils";
+
+type ListViewMode = "item" | "stock";
 
 export default function Stock() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [listViewMode, setListViewMode] = useState<ListViewMode>("item");
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null);
+  const [adjustItemId, setAdjustItemId] = useState<number | null>(null);
+  const [adjustItemName, setAdjustItemName] = useState<string>("");
+  const [adjustStockEntryId, setAdjustStockEntryId] = useState<number | undefined>(undefined);
+  const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
 
   const { data: itemsData, isPending: itemsPending, error: itemsError } = useItems({ limit: 500 });
   const {
@@ -31,10 +40,10 @@ export default function Stock() {
   const { data: alertsData } = useAlerts(true);
   const markAlertRead = useMarkAlertRead();
   const {
-    data: stockEntriesRaw,
+    data: stockEntriesData,
     isPending: entriesPending,
     error: entriesError,
-  } = useStockEntries();
+  } = useStockEntries({ limit: 200 });
   const { data: partiesData } = useParties();
   const createStockEntry = useCreateStockEntry();
 
@@ -42,18 +51,10 @@ export default function Stock() {
   const suppliers = (partiesData?.parties ?? []).filter(
     (p) => !p.deletedAt && p.type === "SUPPLIER",
   );
-  const stockEntries = useMemo((): StockEntry[] => {
-    if (Array.isArray(stockEntriesRaw)) return stockEntriesRaw;
-    if (
-      stockEntriesRaw &&
-      typeof stockEntriesRaw === "object" &&
-      "entries" in stockEntriesRaw &&
-      Array.isArray((stockEntriesRaw as { entries?: StockEntry[] }).entries)
-    ) {
-      return (stockEntriesRaw as { entries: StockEntry[] }).entries;
-    }
-    return [];
-  }, [stockEntriesRaw]);
+  const stockEntries = useMemo(
+    (): StockEntry[] => stockEntriesData?.entries ?? [],
+    [stockEntriesData],
+  );
 
   const summary = stockData?.summary ?? { totalStockValue: "0", lowStockCount: 0 };
   const stockList = stockData?.stock ?? [];
@@ -94,22 +95,32 @@ export default function Stock() {
     [markAlertRead],
   );
 
+  const openAdjustStock = useCallback((itemId: number, itemName: string, stockEntryId?: number) => {
+    setAdjustItemId(itemId);
+    setAdjustItemName(itemName);
+    setAdjustStockEntryId(stockEntryId);
+    setAdjustDialogOpen(true);
+  }, []);
+
+  const closeAdjustDialog = useCallback(() => {
+    setAdjustDialogOpen(false);
+    setAdjustItemId(null);
+    setAdjustItemName("");
+    setAdjustStockEntryId(undefined);
+  }, []);
+
+  const listPending = listViewMode === "item" ? stockPending : entriesPending;
+
   return (
     <div className="page-container animate-fade-in">
       <PageHeader
         title="Stock"
-        description="View stock overview, add purchases, and manage entries"
+        description="View stock by item or by stock entry, add purchases, and adjust quantities"
         action={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setActiveTab("add")}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Stock
-            </Button>
-            <Button variant="outline" onClick={() => setActiveTab("entries")}>
-              <List className="mr-2 h-4 w-4" />
-              Entries
-            </Button>
-          </div>
+          <Button onClick={() => setActiveTab("add")}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Stock
+          </Button>
         }
       />
 
@@ -117,7 +128,6 @@ export default function Stock() {
         <TabsList className="w-full justify-start overflow-x-auto whitespace-nowrap sm:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="add">Add Stock</TabsTrigger>
-          <TabsTrigger value="entries">Entries</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -139,8 +149,69 @@ export default function Stock() {
                 />
               )}
               <div>
-                <h2 className="mb-3 text-base font-semibold">Stock list</h2>
-                <StockReportTable rows={stockList} />
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-semibold">Stock list</h2>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {listViewMode === "item"
+                        ? "One row per item (total quantity and value)."
+                        : "One row per stock entry. Click a row to see details."}
+                    </p>
+                  </div>
+                  <div
+                    className="flex rounded-lg border border-border bg-muted/30 p-0.5"
+                    role="tablist"
+                    aria-label="List view"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium",
+                        listViewMode === "item"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                      onClick={() => setListViewMode("item")}
+                      aria-pressed={listViewMode === "item"}
+                    >
+                      <Package className="h-3.5 w-3.5" />
+                      By item
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium",
+                        listViewMode === "stock"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                      onClick={() => setListViewMode("stock")}
+                      aria-pressed={listViewMode === "stock"}
+                    >
+                      <Layers className="h-3.5 w-3.5" />
+                      By stock
+                    </Button>
+                  </div>
+                </div>
+                <ErrorBanner
+                  error={listViewMode === "stock" ? entriesError : undefined}
+                  fallbackMessage="Failed to load stock entries"
+                />
+                {listPending ? (
+                  <TableSkeleton rows={5} />
+                ) : listViewMode === "item" ? (
+                  <StockReportTable rows={stockList} onAdjust={openAdjustStock} />
+                ) : (
+                  <StockEntriesTable
+                    entries={stockEntries}
+                    items={items}
+                    suppliers={suppliers}
+                    onView={handleViewEntry}
+                    onAdjust={openAdjustStock}
+                  />
+                )}
               </div>
             </>
           )}
@@ -163,23 +234,6 @@ export default function Stock() {
             />
           )}
         </TabsContent>
-
-        <TabsContent value="entries">
-          <p className="mb-4 text-sm text-muted-foreground">
-            All stock entries (purchases/batches). Click a row or View to see details.
-          </p>
-          <ErrorBanner error={entriesError} fallbackMessage="Failed to load stock entries" />
-          {entriesPending ? (
-            <TableSkeleton rows={5} />
-          ) : (
-            <StockEntriesTable
-              entries={stockEntries}
-              items={items}
-              suppliers={suppliers}
-              onView={handleViewEntry}
-            />
-          )}
-        </TabsContent>
       </Tabs>
 
       <StockEntryDetailSheet
@@ -191,6 +245,19 @@ export default function Stock() {
         }}
         supplierName={selectedSupplierName}
       />
+
+      {adjustItemId != null && (
+        <AdjustStockDialog
+          open={adjustDialogOpen}
+          onOpenChange={(open) => {
+            setAdjustDialogOpen(open);
+            if (!open) closeAdjustDialog();
+          }}
+          itemId={adjustItemId}
+          itemName={adjustItemName}
+          stockEntryId={adjustStockEntryId}
+        />
+      )}
     </div>
   );
 }

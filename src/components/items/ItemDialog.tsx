@@ -211,168 +211,190 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] flex-col p-0 sm:max-w-2xl">
+        <DialogHeader className="shrink-0 border-b px-6 py-4">
           <DialogTitle>{isEdit ? "Edit Item" : "New Item"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Name *</Label>
-              <Input {...register("name")} placeholder="Item or service name" />
-              {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label>Type *</Label>
-              <Select
-                value={productType}
-                onValueChange={(v) => setValue("type", v as "STOCK" | "SERVICE")}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="STOCK">Stock</SelectItem>
-                  <SelectItem value="SERVICE">Service</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+            <div className="space-y-6">
+              {/* Details */}
+              <section className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Details</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Name *</Label>
+                    <Input {...register("name")} placeholder="Item or service name" />
+                    {errors.name && (
+                      <p className="text-xs text-destructive">{errors.name.message}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Type *</Label>
+                    <Select
+                      value={productType}
+                      onValueChange={(v) => setValue("type", v as "STOCK" | "SERVICE")}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="STOCK">Stock</SelectItem>
+                        <SelectItem value="SERVICE">Service</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Category</Label>
+                  <CategoryCombobox
+                    value={category}
+                    onValueChange={setCategory}
+                    categories={categories}
+                    categoriesLoading={categoriesLoading}
+                    onCreateCategory={handleCreateCategory}
+                    placeholder="Search or add category..."
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Unit</Label>
+                    <Select
+                      value={watch("unit") || "nos"}
+                      onValueChange={(v) => setValue("unit", v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {UNIT_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                        {item?.unit && !UNIT_OPTIONS.some((o) => o.value === item.unit) && (
+                          <SelectItem value={item.unit}>{item.unit}</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {productType === "STOCK" && (
+                    <div className="space-y-2">
+                      <Label>Min stock alert</Label>
+                      <Input {...register("minStockThreshold")} placeholder="e.g. 10" />
+                      <p className="text-xs text-muted-foreground">
+                        Alert when below this. Empty = no alert.
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea rows={2} {...register("description")} placeholder="Optional" />
+                </div>
+              </section>
 
-          <div className="space-y-2">
-            <Label>Category</Label>
-            <CategoryCombobox
-              value={category}
-              onValueChange={setCategory}
-              categories={categories}
-              categoriesLoading={categoriesLoading}
-              onCreateCategory={handleCreateCategory}
-              placeholder="Search or add category..."
-            />
-          </div>
+              {/* Classification */}
+              <section className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Classification</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>HSN Code</Label>
+                    <Input maxLength={8} {...register("hsnCode")} placeholder="e.g. 998314" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>SAC Code</Label>
+                    <Input maxLength={6} {...register("sacCode")} placeholder="e.g. 998313" />
+                  </div>
+                </div>
+              </section>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>HSN Code</Label>
-              <Input maxLength={8} {...register("hsnCode")} placeholder="e.g. 998314" />
-            </div>
-            <div className="space-y-2">
-              <Label>SAC Code</Label>
-              <Input maxLength={6} {...register("sacCode")} placeholder="e.g. 998313" />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Unit</Label>
-            <Select value={watch("unit") || "nos"} onValueChange={(v) => setValue("unit", v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {UNIT_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-                {item?.unit && !UNIT_OPTIONS.some((o) => o.value === item.unit) && (
-                  <SelectItem value={item.unit}>{item.unit}</SelectItem>
+              {/* Tax */}
+              <section className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Tax</h3>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="isTaxable"
+                    checked={watch("isTaxable")}
+                    onCheckedChange={(v) => setValue("isTaxable", !!v)}
+                  />
+                  <Label htmlFor="isTaxable" className="cursor-pointer font-normal">
+                    Taxable
+                  </Label>
+                </div>
+                {watch("isTaxable") && (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Tax type</Label>
+                      <Select
+                        value={watch("taxType")}
+                        onValueChange={(v) => setValue("taxType", v as "GST" | "OTHER")}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="GST">GST</SelectItem>
+                          <SelectItem value="OTHER">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {watch("taxType") === "GST" ? (
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-xs">CGST %</Label>
+                          <Input placeholder="9" {...register("cgstRate")} />
+                          {errors.cgstRate && (
+                            <p className="text-xs text-destructive">{errors.cgstRate.message}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">SGST %</Label>
+                          <Input placeholder="9" {...register("sgstRate")} />
+                          {errors.sgstRate && (
+                            <p className="text-xs text-destructive">{errors.sgstRate.message}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">IGST %</Label>
+                          <Input placeholder="18" {...register("igstRate")} />
+                          {errors.igstRate && (
+                            <p className="text-xs text-destructive">{errors.igstRate.message}</p>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-xs">Other tax name</Label>
+                          <Input
+                            maxLength={100}
+                            placeholder="e.g. VAT"
+                            {...register("otherTaxName")}
+                          />
+                          {errors.otherTaxName && (
+                            <p className="text-xs text-destructive">
+                              {errors.otherTaxName.message}
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs">Rate %</Label>
+                          <Input placeholder="0" {...register("otherTaxRate")} />
+                          {errors.otherTaxRate && (
+                            <p className="text-xs text-destructive">
+                              {errors.otherTaxRate.message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Description</Label>
-            <Textarea rows={2} {...register("description")} placeholder="Optional" />
-          </div>
-
-          {watch("type") === "STOCK" && (
-            <div className="space-y-2">
-              <Label>Min stock alert</Label>
-              <Input
-                {...register("minStockThreshold")}
-                placeholder="e.g. 10 — alert when stock falls below this"
-              />
-              <p className="text-xs text-muted-foreground">
-                Leave empty to disable low-stock alerts for this item.
-              </p>
+              </section>
             </div>
-          )}
-
-          <div className="flex items-center gap-2">
-            <Switch
-              id="isTaxable"
-              checked={watch("isTaxable")}
-              onCheckedChange={(v) => setValue("isTaxable", !!v)}
-            />
-            <Label htmlFor="isTaxable" className="cursor-pointer font-normal">
-              Taxable
-            </Label>
           </div>
-
-          {watch("isTaxable") && (
-            <>
-              <div className="space-y-2">
-                <Label>Tax type</Label>
-                <Select
-                  value={watch("taxType")}
-                  onValueChange={(v) => setValue("taxType", v as "GST" | "OTHER")}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GST">GST</SelectItem>
-                    <SelectItem value="OTHER">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {watch("taxType") === "GST" ? (
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>CGST %</Label>
-                    <Input placeholder="9" {...register("cgstRate")} />
-                    {errors.cgstRate && (
-                      <p className="text-xs text-destructive">{errors.cgstRate.message}</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label>SGST %</Label>
-                    <Input placeholder="9" {...register("sgstRate")} />
-                    {errors.sgstRate && (
-                      <p className="text-xs text-destructive">{errors.sgstRate.message}</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label>IGST %</Label>
-                    <Input placeholder="18" {...register("igstRate")} />
-                    {errors.igstRate && (
-                      <p className="text-xs text-destructive">{errors.igstRate.message}</p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Other tax name</Label>
-                    <Input maxLength={100} placeholder="e.g. VAT" {...register("otherTaxName")} />
-                    {errors.otherTaxName && (
-                      <p className="text-xs text-destructive">{errors.otherTaxName.message}</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Other tax rate %</Label>
-                    <Input placeholder="0" {...register("otherTaxRate")} />
-                    {errors.otherTaxRate && (
-                      <p className="text-xs text-destructive">{errors.otherTaxRate.message}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          <DialogFooter>
+          <DialogFooter className="shrink-0 border-t px-6 py-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>

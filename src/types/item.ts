@@ -104,6 +104,16 @@ export interface StockEntry {
   createdAt: string;
   updatedAt: string;
   item?: { id: number; name: string };
+  /** From GET /items/stock-entries list only */
+  itemName?: string;
+  unit?: string;
+  categoryId?: number | null;
+  categoryName?: string | null;
+  /** Per-batch quantity breakdown (when API returns it) */
+  quantityPurchased?: string;
+  quantityAdjusted?: string;
+  quantitySold?: string;
+  actualQuantity?: string;
 }
 
 export interface CreateStockEntryRequest {
@@ -128,6 +138,8 @@ export interface StockListItem {
   actualQuantity: string;
   stockValue: string | null;
   isLowStock: boolean;
+  /** Number of purchase batches for this item */
+  stockEntriesCount?: number;
 }
 
 export interface StockListResponse {
@@ -163,6 +175,8 @@ export interface ItemLedgerResponse {
 export interface AdjustStockRequest {
   quantity: string;
   reason: string;
+  /** Optional: attribute adjustment to this stock entry (batch) */
+  stockEntryId?: number;
 }
 
 export interface ItemListResponse {
@@ -172,6 +186,7 @@ export interface ItemListResponse {
 }
 
 export interface StockEntryListResponse {
-  entries?: StockEntry[];
-  count?: number;
+  entries: StockEntry[];
+  count: number;
+  total?: number;
 }

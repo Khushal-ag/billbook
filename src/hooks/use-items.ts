@@ -108,15 +108,31 @@ export function useUpdateItem(id: number) {
   });
 }
 
-export function useStockEntries(itemId?: number | undefined) {
-  const path = itemId ? `${ITEMS_BASE}/${itemId}/stock-entries` : `${ITEMS_BASE}/stock-entries`;
+export function useStockEntries(params?: {
+  itemId?: number;
+  categoryId?: number;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const itemId = params?.itemId;
+  const path =
+    itemId != null ? `${ITEMS_BASE}/${itemId}/stock-entries` : `${ITEMS_BASE}/stock-entries`;
+  const qs = itemId == null && params ? new URLSearchParams() : null;
+  if (qs) {
+    if (params?.categoryId != null) qs.set("categoryId", String(params.categoryId));
+    if (params?.search) qs.set("search", params.search);
+    if (params?.limit != null) qs.set("limit", String(params.limit));
+    if (params?.offset != null) qs.set("offset", String(params.offset));
+  }
+  const query = qs?.toString();
+  const url = query ? `${path}?${query}` : path;
+
   return useQuery({
-    queryKey: ["items", "stock-entries", itemId],
+    queryKey: ["items", "stock-entries", itemId ?? params],
     queryFn: async () => {
-      const res = await api.get<StockEntry[] | StockEntryListResponse>(path);
-      const data = res.data;
-      if (Array.isArray(data)) return data;
-      return (data as StockEntryListResponse).entries ?? [];
+      const res = await api.get<StockEntryListResponse>(url);
+      return res.data;
     },
   });
 }
@@ -180,6 +196,7 @@ export function useAdjustStock(itemId: number) {
       qc.invalidateQueries({ queryKey: ["items"] });
       qc.invalidateQueries({ queryKey: ["items", "item", itemId] });
       qc.invalidateQueries({ queryKey: ["items", "stock"] });
+      qc.invalidateQueries({ queryKey: ["items", "stock-entries"] });
       qc.invalidateQueries({ queryKey: ["items", "ledger", itemId] });
     },
   });

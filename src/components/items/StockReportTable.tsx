@@ -1,13 +1,16 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { SlidersHorizontal } from "lucide-react";
 import type { StockListItem } from "@/types/item";
 import { formatNumber, formatCurrency } from "@/lib/utils";
 
 interface StockReportTableProps {
   rows: StockListItem[];
+  onAdjust?: (itemId: number, itemName: string) => void;
 }
 
-export function StockReportTable({ rows }: StockReportTableProps) {
+export function StockReportTable({ rows, onAdjust }: StockReportTableProps) {
   if (rows.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 py-16">
@@ -48,6 +51,11 @@ export function StockReportTable({ rows }: StockReportTableProps) {
             <th className="min-w-[80px] px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Status
             </th>
+            {onAdjust && (
+              <th className="w-20 px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Actions
+              </th>
+            )}
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -87,6 +95,22 @@ export function StockReportTable({ rows }: StockReportTableProps) {
                   <span className="text-xs text-muted-foreground">OK</span>
                 )}
               </td>
+              {onAdjust && (
+                <td className="px-3 py-3.5 text-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAdjust(row.itemId, row.itemName);
+                    }}
+                    title="Adjust stock"
+                    aria-label={`Adjust stock for ${row.itemName}`}
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                  </Button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

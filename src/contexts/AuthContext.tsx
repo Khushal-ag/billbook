@@ -9,7 +9,7 @@ import type {
   AuthResponse,
   AuthMeResponse,
 } from "@/types/auth";
-import { api, setAccessToken, getAccessToken, setRefreshToken, ApiClientError } from "@/api";
+import { api, setAccessToken, setRefreshToken, ApiClientError } from "@/api";
 
 interface AuthState {
   user: SessionUser | null;
@@ -109,32 +109,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Restore session on mount: read cached user then validate token via /auth/me
+  // Session check on every app load: GET /auth/me with credentials (cookie token sent).
   useEffect(() => {
     let cancelled = false;
 
     async function restore() {
-      const token = getAccessToken();
-      const stored = localStorage.getItem(SESSION_KEY);
-
-      if (!token || !stored) {
-        clearSession();
-        setIsLoading(false);
-        return;
-      }
-
-      // Optimistically restore from cache
-      try {
-        const cached = JSON.parse(stored) as SessionUser;
-        if (!cancelled) setUser(cached);
-      } catch {
-        // corrupted cache — clear everything
-        clearSession();
-        if (!cancelled) setIsLoading(false);
-        return;
-      }
-
-      // Validate token and get current user + business from /auth/me
       try {
         const res = await api.get<AuthMeResponse>("/auth/me");
         const { user: meUser, business: meBusiness } = res.data;
@@ -154,9 +133,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(updated);
         }
       } catch {
-        // Token invalid — clear session
-        clearSession();
-        if (!cancelled) setUser(null);
+        if (!cancelled) {
+          clearSession();
+          setUser(null);
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }

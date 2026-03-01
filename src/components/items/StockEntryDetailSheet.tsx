@@ -81,7 +81,25 @@ export function StockEntryDetailSheet({
                   Quantity
                 </dt>
                 <dd className="mt-1 font-mono tabular-nums">
-                  {typeof entry.quantity === "string" ? entry.quantity : entry.quantity}
+                  {entry.actualQuantity != null
+                    ? entry.actualQuantity
+                    : typeof entry.quantity === "string"
+                      ? entry.quantity
+                      : entry.quantity}
+                  {entry.actualQuantity != null &&
+                    (entry.quantityAdjusted != null ||
+                      entry.quantitySold != null ||
+                      entry.quantityPurchased != null) && (
+                      <span className="ml-2 block text-xs font-normal text-muted-foreground">
+                        Purchased {entry.quantityPurchased ?? entry.quantity}
+                        {entry.quantityAdjusted != null && entry.quantityAdjusted !== "0.00" && (
+                          <> · Adjusted {entry.quantityAdjusted}</>
+                        )}
+                        {entry.quantitySold != null && entry.quantitySold !== "0.00" && (
+                          <> · Sold {entry.quantitySold}</>
+                        )}
+                      </span>
+                    )}
                 </dd>
               </div>
               <div>
