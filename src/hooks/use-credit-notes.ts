@@ -20,6 +20,17 @@ export function useCreditNotes(params: { invoiceId?: number } = {}) {
   });
 }
 
+export function useCreditNote(creditNoteId: number | undefined) {
+  return useQuery({
+    queryKey: ["credit-notes", "detail", creditNoteId],
+    queryFn: async () => {
+      const res = await api.get<CreditNote>(`/credit-notes/${creditNoteId}`);
+      return res.data;
+    },
+    enabled: !!creditNoteId,
+  });
+}
+
 export function useCreateCreditNote() {
   const qc = useQueryClient();
   return useMutation({

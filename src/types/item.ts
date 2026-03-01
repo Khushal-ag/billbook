@@ -1,11 +1,5 @@
-/**
- * Types for Items & Stock API (/api/items)
- * Item master: no selling/purchase price. Stock entries hold prices per batch.
- */
-
 export type ItemType = "STOCK" | "SERVICE";
 
-/** Display label for item category (API returns categoryName; fallback to legacy category). */
 export function getItemCategoryDisplay(item: Item): string {
   if (item.categoryName) return item.categoryName;
   if (typeof item.category === "string") return item.category;
@@ -13,14 +7,12 @@ export function getItemCategoryDisplay(item: Item): string {
   return "—";
 }
 
-/** Format rate string for display (e.g. "9.00" → "9", "12.5" → "12.5") */
 function formatTaxRate(r: string | null | undefined): string {
   if (r == null || r === "") return "0";
   const n = parseFloat(r);
   return Number.isNaN(n) ? r : n % 1 === 0 ? String(Math.round(n)) : r;
 }
 
-/** Display label for item tax (GST, other, or —). */
 export function getItemTaxDisplay(item: Item): string {
   if (item.isTaxable === false) return "—";
   if (item.taxType === "OTHER" && item.otherTaxName) {
@@ -61,7 +53,6 @@ export interface Item {
   hsnCode: string | null;
   sacCode: string | null;
   categoryId: number | null;
-  /** API returns categoryName in list/get. Kept for backward compat. */
   categoryName?: string | null;
   category?: string | { id: number; name: string } | null;
   unit: string;
@@ -78,12 +69,10 @@ export interface Item {
   deletedAt: string | null;
 }
 
-/** GET /items/:itemId — includes currentStock from ledger */
 export interface ItemDetail extends Item {
   currentStock: number;
 }
 
-/** Matches API: POST /api/items and PUT /api/items/:itemId body. */
 export interface CreateItemRequest {
   name: string;
   type: ItemType;
@@ -115,7 +104,6 @@ export interface StockEntry {
   item?: { id: number; name: string };
 }
 
-/** Swagger: quantity is string (pattern ^\\d+(\\.\\d{1,2})?$). */
 export interface CreateStockEntryRequest {
   itemId: number;
   purchaseDate: string;
@@ -129,7 +117,6 @@ export interface StockReportRow {
   itemId: number;
   itemName: string;
   unit: string;
-  /** API returns decimal strings */
   quantityPurchased: number | string;
   quantityAdjusted: number | string;
   quantitySold: number | string;
@@ -156,13 +143,11 @@ export interface StockLedgerRow {
   createdAt: string;
 }
 
-/** GET /items/:itemId/ledger response: { ledger, count } */
 export interface ItemLedgerResponse {
   ledger: StockLedgerRow[];
   count: number;
 }
 
-/** Swagger: quantity is string (pattern ^-?\\d+(\\.\\d{1,2})?$). */
 export interface AdjustStockRequest {
   quantity: string;
   reason: string;

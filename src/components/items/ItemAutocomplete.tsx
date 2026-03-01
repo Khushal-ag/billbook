@@ -58,21 +58,17 @@ export function ItemAutocomplete({
     })
     .slice(0, 50);
 
-  // When open: show what user is typing (inputValue). When closed: show selected item name.
   const displayValue = open ? inputValue : value ? value.name : inputValue;
 
-  // On close: keep inputValue in sync for next open.
   useEffect(() => {
     if (!open && value) setInputValue(value.name);
     if (!open && !value) setInputValue("");
   }, [open, value]);
 
-  // When list opens or filter changes, reset highlight to first item.
   useEffect(() => {
     if (open) setHighlightedIndex(filtered.length > 0 ? 0 : -1);
   }, [open, filtered.length, inputValue]);
 
-  // Scroll highlighted item into view.
   useEffect(() => {
     if (!open || highlightedIndex < 0 || !listRef.current) return;
     const el = listRef.current.querySelector(`[data-highlight-index="${highlightedIndex}"]`);

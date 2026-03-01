@@ -29,7 +29,6 @@ export interface Invoice {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
-  /** Convenience — joined by backend */
   partyName?: string;
 }
 
@@ -51,7 +50,6 @@ export interface InvoiceItem {
   itemName?: string;
 }
 
-/** GET /invoices/:id */
 export interface InvoiceDetail extends Invoice {
   items: InvoiceItem[];
   payments: Payment[];
@@ -73,7 +71,6 @@ export interface InvoiceCommunicationResponse {
   createdAt: string;
 }
 
-/** GET /invoices/:invoiceId/communications (summary payload) */
 export interface InvoiceCommunicationLatest {
   id: number;
   business_id: number;
@@ -114,7 +111,6 @@ export interface CreateInvoiceRequest {
   items: InvoiceItemInput[];
 }
 
-/** Only DRAFT invoices can be updated. Cannot modify items after creation. */
 export interface UpdateInvoiceRequest {
   partyId?: number;
   invoiceDate?: string;
@@ -167,7 +163,6 @@ export interface InvoicePdfResponse {
   message?: string;
 }
 
-/** GET /invoices response */
 export interface InvoiceListResponse {
   invoices: Invoice[];
   page: number;

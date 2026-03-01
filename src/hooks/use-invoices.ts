@@ -11,6 +11,7 @@ import type {
   InvoicePdfResponse,
   FinalizeInvoiceResponse,
   Payment,
+  InvoiceCommunicationChannel,
   InvoiceCommunicationRequest,
   InvoiceCommunicationResponse,
   InvoiceCommunicationsSummary,
@@ -130,14 +131,55 @@ export function useInvoicePdf(id: number | undefined) {
   });
 }
 
+/** Normalize communications API (isToday → today, build latest). */
+function normalizeCommunicationsSummary(
+  raw: Record<string, unknown> & {
+    sent?: { action?: string; channel?: string; actionDate?: string; isToday?: boolean } | null;
+    reminder?: { action?: string; channel?: string; actionDate?: string; isToday?: boolean } | null;
+  },
+  invoiceId: number,
+): InvoiceCommunicationsSummary {
+  const toLatest = (s: typeof raw.sent): InvoiceCommunicationsSummary["sent"]["latest"] =>
+    s
+      ? {
+          id: 0,
+          business_id: 0,
+          invoice_id: invoiceId,
+          channel: (s.channel ?? null) as InvoiceCommunicationChannel | null,
+          action: (s.action as "SENT" | "REMINDER") ?? "SENT",
+          metadata: null,
+          action_date: s.actionDate ?? "",
+          created_at: "",
+        }
+      : null;
+  return {
+    invoiceId,
+    sent: {
+      today: raw.sent?.isToday ?? false,
+      latest: toLatest(raw.sent),
+    },
+    reminder: {
+      today: raw.reminder?.isToday ?? false,
+      latest: toLatest(raw.reminder),
+    },
+  };
+}
+
 export function useInvoiceCommunications(invoiceId: number | undefined) {
   return useQuery({
     queryKey: ["invoice-communications", invoiceId],
     queryFn: async () => {
-      const res = await api.get<InvoiceCommunicationsSummary>(
+      const res = await api.get<InvoiceCommunicationsSummary | Record<string, unknown>>(
         `/invoices/${invoiceId}/communications`,
       );
-      return res.data;
+      const data = res.data as Record<string, unknown>;
+      if (data?.sent && typeof data.sent === "object" && "isToday" in (data.sent as object)) {
+        return normalizeCommunicationsSummary(
+          data as Parameters<typeof normalizeCommunicationsSummary>[0],
+          invoiceId!,
+        );
+      }
+      return res.data as InvoiceCommunicationsSummary;
     },
     enabled: !!invoiceId,
     retry: false,
@@ -151,6 +193,7 @@ export function useMarkInvoiceSent(invoiceId: number) {
       const res = await api.post<InvoiceCommunicationResponse>(
         `/invoices/${invoiceId}/mark-sent`,
         data,
+        generateIdempotencyKey(),
       );
       return res.data;
     },
@@ -169,6 +212,7 @@ export function useMarkInvoiceReminder(invoiceId: number) {
       const res = await api.post<InvoiceCommunicationResponse>(
         `/invoices/${invoiceId}/mark-reminder`,
         data,
+        generateIdempotencyKey(),
       );
       return res.data;
     },

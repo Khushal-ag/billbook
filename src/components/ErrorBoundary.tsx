@@ -27,16 +27,11 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to console in development
     console.error("Error caught by boundary:", error, errorInfo);
-
-    // In production, you could send this to an error reporting service
-    // Example: Sentry.captureException(error, { extra: errorInfo });
   }
 
   handleReset = () => {
     this.setState({ hasError: false, error: null });
-    // Reload the page to reset the app state
     window.location.href = "/";
   };
 

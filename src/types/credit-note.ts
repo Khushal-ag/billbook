@@ -21,7 +21,6 @@ export interface CreateCreditNoteRequest {
   affectsInventory?: boolean;
 }
 
-/** GET /credit-notes response */
 export interface CreditNoteListResponse {
   creditNotes: CreditNote[];
   count: number;

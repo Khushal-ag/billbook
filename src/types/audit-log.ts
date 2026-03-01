@@ -14,7 +14,6 @@ export interface AuditLog {
   createdAt: string;
 }
 
-/** GET /audit response */
 export interface AuditLogListResponse {
   logs: AuditLog[];
   page: number;

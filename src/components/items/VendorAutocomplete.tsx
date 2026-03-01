@@ -27,7 +27,7 @@ interface VendorAutocompleteProps {
 }
 
 const NONE_VALUE = "__none__";
-const ADD_VENDOR_VALUE = "__add_vendor__";
+const ADD_VENDOR_VALUE = "__add_vendor__" as const;
 
 export function VendorAutocomplete({
   value,
@@ -53,7 +53,6 @@ export function VendorAutocomplete({
     })
     .slice(0, 50);
 
-  // None + filtered list + optional "Add vendor"; index 0 = None, 1..n = suppliers, n+1 = Add vendor
   const addVendorIndex = onAddVendor ? 1 + filtered.length : -1;
   const options: (Party | null | typeof ADD_VENDOR_VALUE)[] = [
     null,
@@ -187,7 +186,13 @@ export function VendorAutocomplete({
       >
         <Command
           shouldFilter={false}
-          value={highlightedOption === null ? NONE_VALUE : String(highlightedOption.id)}
+          value={
+            highlightedOption === null
+              ? NONE_VALUE
+              : highlightedOption === ADD_VENDOR_VALUE
+                ? ADD_VENDOR_VALUE
+                : String(highlightedOption.id)
+          }
         >
           <CommandList ref={listRef}>
             <CommandEmpty className="flex flex-col items-center justify-center gap-2 px-4 py-8">

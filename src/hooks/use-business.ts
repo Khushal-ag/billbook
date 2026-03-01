@@ -3,9 +3,9 @@ import { api } from "@/api";
 import type { BusinessProfile, UpdateBusinessProfile, BusinessUser } from "@/types/auth";
 import type { DashboardData, TopItem } from "@/types/dashboard";
 
-/** API may return totalItems/topItems; normalize and ensure arrays. */
+/** Normalize dashboard API response (totalItems/topItems, arrays). */
 function normalizeDashboard(raw: Record<string, unknown>): DashboardData {
-  const d = raw as DashboardData & {
+  const d = raw as unknown as DashboardData & {
     totalItems?: number;
     totalProducts?: number;
     topItems?: Array<{
@@ -26,6 +26,10 @@ function normalizeDashboard(raw: Record<string, unknown>): DashboardData {
     ...d,
     totalItems: d.totalItems ?? d.totalProducts ?? 0,
     topItems,
+    totalReceivables: typeof d.totalReceivables === "number" ? d.totalReceivables : undefined,
+    totalAdvanceBalance:
+      typeof d.totalAdvanceBalance === "number" ? d.totalAdvanceBalance : undefined,
+    netOutstanding: typeof d.netOutstanding === "number" ? d.netOutstanding : undefined,
     revenueByMonth: Array.isArray(d.revenueByMonth) ? d.revenueByMonth : [],
     topCustomers: Array.isArray(d.topCustomers) ? d.topCustomers : [],
     invoiceStatusBreakdown: Array.isArray(d.invoiceStatusBreakdown) ? d.invoiceStatusBreakdown : [],
@@ -44,7 +48,7 @@ export function useDashboard() {
   });
 }
 
-/** Normalize GET /business/profile response (legacy address/postalCode → street/pincode). */
+/** Normalize business profile (legacy address/postalCode → street/pincode). */
 function normalizeBusinessProfile(raw: Record<string, unknown>): BusinessProfile {
   const r = raw as unknown as BusinessProfile & { address?: string; postalCode?: string };
   return {
@@ -83,12 +87,15 @@ export function useUpdateBusinessProfile() {
   });
 }
 
+/** Normalize to array (API may return { users } or array). */
 export function useBusinessUsers() {
   return useQuery({
     queryKey: ["business-users"],
     queryFn: async () => {
-      const res = await api.get<BusinessUser[]>("/business/users");
-      return res.data;
+      const res = await api.get<BusinessUser[] | { users?: BusinessUser[] }>("/business/users");
+      const data = res.data;
+      if (Array.isArray(data)) return data;
+      return (data as { users?: BusinessUser[] }).users ?? [];
     },
     retry: false,
   });

@@ -12,23 +12,18 @@ function notifyAuthExpired() {
   }
 }
 
-// ── Axios instance ──────────────────────────────────────
-// Swagger paths are under /api (e.g. /api/items, /api/invoices). Set VITE_API_BASE_URL to the
-// full base including /api (e.g. https://billbook-api.vercel.app/api) so paths like /items work.
-
+/** Set VITE_API_BASE_URL to base including /api (e.g. https://billbook-api.vercel.app/api). */
 const axiosInstance = axios.create({
   baseURL: env.VITE_API_BASE_URL,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
 
-/** Plain instance for refresh calls — skips the response interceptor to avoid loops */
+/** Used for refresh-token only; avoids 401 interceptor loop. */
 const plainAxios = axios.create({
   baseURL: env.VITE_API_BASE_URL,
   headers: { "Content-Type": "application/json" },
 });
-
-// ── Request interceptor ─────────────────────────────────
 
 let refreshPromise: Promise<string> | null = null;
 
@@ -39,8 +34,6 @@ axiosInstance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   }
   return config;
 });
-
-// ── Response interceptor (auto-refresh on 401) ──────────
 
 axiosInstance.interceptors.response.use(
   (response) => response,
@@ -58,7 +51,6 @@ axiosInstance.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return axiosInstance(originalRequest);
       } catch {
-        // Refresh failed — clear tokens and force logout
         setAccessToken(null);
         setRefreshToken(null);
         notifyAuthExpired();
@@ -82,8 +74,6 @@ axiosInstance.interceptors.response.use(
     );
   },
 );
-
-// ── Token refresh (uses plainAxios to avoid interceptor loop) ──
 
 async function refreshAccessToken(): Promise<string> {
   if (refreshPromise) return refreshPromise;
@@ -114,10 +104,6 @@ async function refreshAccessToken(): Promise<string> {
   return refreshPromise;
 }
 
-// ── HTTP helpers ────────────────────────────────────────
-// All methods return the raw API response { success, data, message }.
-// Callers unwrap `.data` as needed.
-
 export const api = {
   get: <T>(path: string) => axiosInstance.get<ApiResponse<T>>(path).then((r) => r.data),
 
@@ -136,7 +122,7 @@ export const api = {
 
   delete: <T>(path: string) => axiosInstance.delete<ApiResponse<T>>(path).then((r) => r.data),
 
-  /** POST with FormData (e.g. file upload). Omits Content-Type so axios sets multipart/form-data with boundary. */
+  /** FormData upload; omits Content-Type so axios sets multipart boundary. */
   postForm: <T>(path: string, formData: FormData) => {
     const headers = { ...axiosInstance.defaults.headers } as Record<string, unknown>;
     delete headers["Content-Type"];
@@ -145,8 +131,6 @@ export const api = {
       .then((r) => r.data);
   },
 };
-
-// ── Idempotency key generator ───────────────────────────
 
 export function generateIdempotencyKey(): string {
   return `${Date.now()}-${crypto.randomUUID()}`;

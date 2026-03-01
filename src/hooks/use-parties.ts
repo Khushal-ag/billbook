@@ -10,6 +10,7 @@ import type {
   PartyStatementResponse,
   PartyStatementPdfResponse,
   PartyAdvancePaymentRequest,
+  AdvancePayment,
 } from "@/types/party";
 
 export function useParties(params: { type?: string } = {}) {
@@ -118,7 +119,7 @@ export function useRecordPartyAdvancePayment(partyId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: PartyAdvancePaymentRequest) => {
-      const res = await api.post<{ invoiceId: number | null }>(
+      const res = await api.post<AdvancePayment>(
         `/parties/${partyId}/payments`,
         data,
         generateIdempotencyKey(),

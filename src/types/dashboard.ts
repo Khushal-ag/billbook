@@ -9,9 +9,9 @@ export interface DashboardData {
   totalPaidFromLedger?: number;
   totalPaidFromInvoiceField?: number;
   totalOutstanding: number;
-  totalReceivables?: string;
-  totalAdvanceBalance?: string;
-  netOutstanding?: string;
+  totalReceivables?: number;
+  totalAdvanceBalance?: number;
+  netOutstanding?: number;
   totalItems: number;
   totalParties: number;
   revenueByMonth: RevenueByMonth[];

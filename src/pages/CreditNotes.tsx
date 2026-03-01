@@ -7,7 +7,10 @@ import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import CreditNoteDialog from "@/components/dialogs/CreditNoteDialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { CreditNotesTable } from "@/components/credit-notes/CreditNoteSections";
+import {
+  CreditNotesTable,
+  CreditNoteDetailSheet,
+} from "@/components/credit-notes/CreditNoteSections";
 import {
   useCreditNotes,
   useFinalizeCreditNote,
@@ -18,6 +21,8 @@ import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
 export default function CreditNotes() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
+  const [selectedCreditNoteId, setSelectedCreditNoteId] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null }>({
     open: false,
     id: null,
@@ -48,10 +53,17 @@ export default function CreditNotes() {
       await deleteMutation.mutateAsync(deleteConfirm.id);
       showSuccessToast("Credit note deleted");
       setDeleteConfirm({ open: false, id: null });
+      setDetailSheetOpen(false);
+      setSelectedCreditNoteId(null);
     } catch (err) {
       showErrorToast(err, "Failed to delete");
       setDeleteConfirm({ open: false, id: null });
     }
+  };
+
+  const handleView = (id: number) => {
+    setSelectedCreditNoteId(id);
+    setDetailSheetOpen(true);
   };
 
   return (
@@ -89,12 +101,22 @@ export default function CreditNotes() {
           isOwner={isOwner}
           finalizePending={finalizeMutation.isPending}
           deletePending={deleteMutation.isPending}
+          onView={handleView}
           onFinalize={handleFinalize}
           onDelete={handleDelete}
         />
       )}
 
       <CreditNoteDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+
+      <CreditNoteDetailSheet
+        creditNoteId={selectedCreditNoteId}
+        open={detailSheetOpen}
+        onOpenChange={(open) => {
+          setDetailSheetOpen(open);
+          if (!open) setSelectedCreditNoteId(null);
+        }}
+      />
 
       <ConfirmDialog
         open={deleteConfirm.open}

@@ -16,7 +16,6 @@ import type {
 
 const ITEMS_BASE = "/items";
 
-// —— Categories ——
 export function useCategories() {
   return useQuery({
     queryKey: ["items", "categories"],
@@ -81,7 +80,6 @@ export function useDeleteCategory(id: number) {
   });
 }
 
-// —— Items ——
 export function useItems(params?: {
   categoryId?: number;
   search?: string;
@@ -152,7 +150,6 @@ export function useDeleteItem() {
   });
 }
 
-// —— Stock entries ——
 export function useStockEntries(itemId?: number | undefined) {
   const path = itemId ? `${ITEMS_BASE}/${itemId}/stock-entries` : `${ITEMS_BASE}/stock-entries`;
   return useQuery({
@@ -163,6 +160,17 @@ export function useStockEntries(itemId?: number | undefined) {
       if (Array.isArray(data)) return data;
       return (data as StockEntryListResponse).entries ?? [];
     },
+  });
+}
+
+export function useStockEntry(entryId: number | undefined) {
+  return useQuery({
+    queryKey: ["items", "stock-entry", entryId],
+    queryFn: async () => {
+      const res = await api.get<StockEntry>(`${ITEMS_BASE}/stock-entries/${entryId}`);
+      return res.data;
+    },
+    enabled: !!entryId,
   });
 }
 
@@ -181,7 +189,6 @@ export function useCreateStockEntry() {
   });
 }
 
-// —— Stock report & adjustments ——
 export function useStockReport() {
   return useQuery({
     queryKey: ["items", "stock-report"],

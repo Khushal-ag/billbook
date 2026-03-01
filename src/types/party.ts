@@ -91,7 +91,17 @@ export interface PartyAdvancePaymentRequest {
   notes?: string;
 }
 
-/** GET /parties response */
+export interface AdvancePayment {
+  id: number;
+  partyId: number;
+  invoiceId: number | null;
+  amount: string;
+  paymentMethod: string;
+  referenceNumber: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
 export interface PartyListResponse {
   parties: Party[];
   count: number;
