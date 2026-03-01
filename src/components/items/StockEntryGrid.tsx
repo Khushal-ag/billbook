@@ -23,6 +23,8 @@ export interface StockEntryRow {
   quantity: string;
   sellingPrice: string;
   purchasePrice: string;
+  sellingPriceDecimal: boolean;
+  purchasePriceDecimal: boolean;
 }
 
 const defaultRow = (): StockEntryRow => ({
@@ -33,6 +35,8 @@ const defaultRow = (): StockEntryRow => ({
   quantity: "",
   sellingPrice: "",
   purchasePrice: "",
+  sellingPriceDecimal: false,
+  purchasePriceDecimal: false,
 });
 
 interface StockEntryGridProps {
@@ -65,26 +69,16 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
     // Check if all rows with any data are complete
     const hasIncompleteRow = rows.some((r) => {
       const hasAnyData = r.item || r.quantity || r.supplierId || r.sellingPrice || r.purchasePrice;
-      const isComplete =
-        r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice && r.purchasePrice;
+      const isComplete = r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice;
       return hasAnyData && !isComplete;
     });
 
     if (hasIncompleteRow) {
-      alert("Please complete all fields in every row before saving.");
       return;
     }
 
     const payloads: CreateStockEntryRequest[] = rows
-      .filter(
-        (r) =>
-          r.item &&
-          r.quantity &&
-          r.purchaseDate &&
-          r.supplierId &&
-          r.sellingPrice &&
-          r.purchasePrice,
-      )
+      .filter((r) => r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice)
       .map((r) => ({
         itemId: r.item!.id,
         purchaseDate: r.purchaseDate,
@@ -102,14 +96,12 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
   const canSubmit =
     rows.some((r) => {
       const hasAnyData = r.item || r.quantity || r.supplierId || r.sellingPrice || r.purchasePrice;
-      const isComplete =
-        r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice && r.purchasePrice;
+      const isComplete = r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice;
       return hasAnyData && isComplete;
     }) &&
     !rows.some((r) => {
       const hasAnyData = r.item || r.quantity || r.supplierId || r.sellingPrice || r.purchasePrice;
-      const isComplete =
-        r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice && r.purchasePrice;
+      const isComplete = r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice;
       return hasAnyData && !isComplete;
     });
 
@@ -137,7 +129,7 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                 Selling price *
               </th>
               <th className="min-w-[100px] px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Purchase price *
+                Purchase price
               </th>
               <th className="w-12 min-w-[48px] px-2 py-3" aria-label="Remove row" />
             </tr>
@@ -231,10 +223,18 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                   <Input
                     type="number"
                     min="0"
-                    step="0.25"
+                    step={row.sellingPriceDecimal ? "0.25" : "1"}
                     placeholder="0"
                     value={row.sellingPrice}
-                    onChange={(e) => updateRow(row.id, { sellingPrice: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const hasDecimal = val.includes(".");
+                      updateRow(row.id, {
+                        sellingPrice: val,
+                        sellingPriceDecimal:
+                          val === "" ? false : hasDecimal || row.sellingPriceDecimal,
+                      });
+                    }}
                     className={`${inputClass} text-right tabular-nums`}
                   />
                 </td>
@@ -242,10 +242,18 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                   <Input
                     type="number"
                     min="0"
-                    step="0.25"
+                    step={row.purchasePriceDecimal ? "0.25" : "1"}
                     placeholder="0"
                     value={row.purchasePrice}
-                    onChange={(e) => updateRow(row.id, { purchasePrice: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const hasDecimal = val.includes(".");
+                      updateRow(row.id, {
+                        purchasePrice: val,
+                        purchasePriceDecimal:
+                          val === "" ? false : hasDecimal || row.purchasePriceDecimal,
+                      });
+                    }}
                     className={`${inputClass} text-right tabular-nums`}
                   />
                 </td>

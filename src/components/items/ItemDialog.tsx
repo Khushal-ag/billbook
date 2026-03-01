@@ -150,6 +150,7 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
   });
 
   const [category, setCategory] = useState<Category | null>(null);
+  const [showCategoryError, setShowCategoryError] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -181,6 +182,7 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
                   ? { id: item.category.id, name: item.category.name, businessId: item.businessId }
                   : null;
         setCategory(cat);
+        setShowCategoryError(false);
       } else {
         reset({
           name: "",
@@ -199,6 +201,7 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
           otherTaxRate: "",
         });
         setCategory(null);
+        setShowCategoryError(false);
       }
     }
   }, [open, item, reset, categories]);
@@ -216,9 +219,12 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
   const onSubmit = async (data: FormData) => {
     // Validate category is selected
     if (!category || !category.id || category.id <= 0) {
+      setShowCategoryError(true);
       showErrorToast(null, "Category is required");
       return;
     }
+
+    setShowCategoryError(false);
 
     const payload: CreateItemRequest = {
       name: data.name,
@@ -254,13 +260,19 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
   const productType = watch("type");
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  const onInvalidSubmit = () => {
+    if (!category?.id || category.id <= 0) {
+      setShowCategoryError(true);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] flex-col p-0 sm:max-w-2xl">
         <DialogHeader className="shrink-0 border-b px-6 py-4">
           <DialogTitle>{isEdit ? "Edit Item" : "New Item"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-col">
+        <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="flex min-h-0 flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
             <div className="space-y-6">
               {/* Details */}
@@ -298,13 +310,18 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
                   <Label>Category *</Label>
                   <CategoryCombobox
                     value={category}
-                    onValueChange={setCategory}
+                    onValueChange={(nextCategory) => {
+                      setCategory(nextCategory);
+                      if (nextCategory?.id && nextCategory.id > 0) {
+                        setShowCategoryError(false);
+                      }
+                    }}
                     categories={categories}
                     categoriesLoading={categoriesLoading}
                     onCreateCategory={handleCreateCategory}
                     placeholder="Search or add category..."
                   />
-                  {!category?.id || category.id <= 0 ? (
+                  {showCategoryError && (!category?.id || category.id <= 0) ? (
                     <p className="text-xs text-destructive">Category is required</p>
                   ) : null}
                 </div>

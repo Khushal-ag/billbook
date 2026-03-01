@@ -31,7 +31,18 @@ const schema = z.object({
   type: z.enum(["CUSTOMER", "SUPPLIER"]).default("CUSTOMER"),
   gstin: gstinString,
   email: optionalEmail,
-  phone: z.string().trim().min(1, "Phone is required"),
+  phone: z
+    .string()
+    .trim()
+    .min(1, "Phone is required")
+    .regex(
+      /^[0-9+\s\-().]*$/,
+      "Phone can only contain numbers, +, spaces, hyphens, and parentheses",
+    )
+    .refine((val) => {
+      const digitsOnly = val.replace(/\D/g, "");
+      return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+    }, "Phone number must have between 10 and 15 digits"),
   address: optionalString,
   city: optionalString,
   state: optionalString,
