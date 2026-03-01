@@ -31,7 +31,18 @@ const schema = z.object({
   type: z.enum(["CUSTOMER", "SUPPLIER"]).default("CUSTOMER"),
   gstin: gstinString,
   email: optionalEmail,
-  phone: optionalString,
+  phone: z
+    .string()
+    .trim()
+    .min(1, "Phone is required")
+    .regex(
+      /^[0-9+\s\-().]*$/,
+      "Phone can only contain numbers, +, spaces, hyphens, and parentheses",
+    )
+    .refine((val) => {
+      const digitsOnly = val.replace(/\D/g, "");
+      return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+    }, "Phone number must have between 10 and 15 digits"),
   address: optionalString,
   city: optionalString,
   state: optionalString,
@@ -119,7 +130,7 @@ export default function PartyDialog({
           type: typeLocked ? defaultType : party.type,
           gstin: party.gstin ?? "",
           email: party.email ?? "",
-          phone: party.phone ?? "",
+          phone: party.phone || "",
           address: party.address ?? "",
           city: party.city ?? "",
           state: party.state ?? "",
@@ -220,8 +231,9 @@ export default function PartyDialog({
               {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Phone</Label>
+              <Label>Phone *</Label>
               <Input {...register("phone")} />
+              {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
             </div>
           </div>
 
