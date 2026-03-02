@@ -23,7 +23,15 @@ import {
 import { Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { CategoryCombobox } from "@/components/items/CategoryCombobox";
-import { useCreateItem, useUpdateItem, useCategories, useCreateCategory } from "@/hooks/use-items";
+import { UnitCombobox } from "@/components/items/UnitCombobox";
+import {
+  useCreateItem,
+  useUpdateItem,
+  useCategories,
+  useCreateCategory,
+  useUnits,
+  useCreateUnit,
+} from "@/hooks/use-items";
 import {
   hsnCode,
   sacCode,
@@ -32,7 +40,12 @@ import {
   otherTaxName,
 } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import type { Item, Category, CreateItemRequest } from "@/types/item";
+import { capitaliseWords } from "@/lib/utils";
+import type { Item, Category, CreateItemRequest, Unit } from "@/types/item";
+
+function defaultUnitForType(type: "STOCK" | "SERVICE"): string {
+  return type === "SERVICE" ? "hr" : "nos";
+}
 
 const schema = z
   .object({
@@ -102,22 +115,6 @@ const schema = z
 
 type FormData = z.infer<typeof schema>;
 
-const UNIT_OPTIONS: { value: string; label: string }[] = [
-  { value: "nos", label: "Numbers (nos)" },
-  { value: "pcs", label: "Pieces (pcs)" },
-  { value: "kg", label: "Kilograms (kg)" },
-  { value: "g", label: "Grams (g)" },
-  { value: "l", label: "Litres (l)" },
-  { value: "ml", label: "Millilitres (ml)" },
-  { value: "m", label: "Metres (m)" },
-  { value: "box", label: "Box" },
-  { value: "pack", label: "Pack" },
-  { value: "set", label: "Set" },
-  { value: "doz", label: "Dozen (doz)" },
-  { value: "hr", label: "Hours (hr)" },
-  { value: "sqft", label: "Square feet (sqft)" },
-];
-
 interface ItemDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -158,9 +155,15 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
     },
   });
 
+  const productType = watch("type");
+  const { data: unitsData, isLoading: unitsLoading } = useUnits(productType);
+  const units = useMemo(() => (Array.isArray(unitsData) ? unitsData : []), [unitsData]);
+  const createUnitMutation = useCreateUnit();
   const [category, setCategory] = useState<Category | null>(null);
   const [showCategoryError, setShowCategoryError] = useState(false);
 
+  // Reset form when dialog opens or edited item changes. Omit `categories` from deps so that
+  // adding a category (which refetches categories) does not reset the form or clear selection.
   useEffect(() => {
     if (open) {
       if (item) {
@@ -213,11 +216,14 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
         setShowCategoryError(false);
       }
     }
-  }, [open, item, reset, categories]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- omit categories so adding a category does not reset form
+  }, [open, item, reset]);
 
   const handleCreateCategory = async (name: string): Promise<Category | null> => {
     try {
-      const created = await createCategoryMutation.mutateAsync({ name });
+      const created = await createCategoryMutation.mutateAsync({
+        name: capitaliseWords(name),
+      });
       return created;
     } catch {
       showErrorToast(null, "Failed to create category");
@@ -236,7 +242,7 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
     setShowCategoryError(false);
 
     const payload: CreateItemRequest = {
-      name: data.name,
+      name: capitaliseWords(data.name),
       type: data.type,
       hsnCode: data.hsnCode || null,
       sacCode: data.sacCode || null,
@@ -267,7 +273,24 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
     }
   };
 
-  const productType = watch("type");
+  const handleCreateUnit = async (
+    value: string,
+    label: string,
+    type: "STOCK" | "SERVICE",
+  ): Promise<Unit | null> => {
+    try {
+      const created = await createUnitMutation.mutateAsync({
+        value,
+        label: capitaliseWords(label),
+        type,
+      });
+      return created;
+    } catch {
+      showErrorToast(null, "Failed to create unit");
+      return null;
+    }
+  };
+
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   const onInvalidSubmit = () => {
@@ -304,7 +327,12 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
                     <Label>Type *</Label>
                     <Select
                       value={productType}
-                      onValueChange={(v) => setValue("type", v as "STOCK" | "SERVICE")}
+                      onValueChange={(v) => {
+                        const newType = v as "STOCK" | "SERVICE";
+                        setValue("type", newType);
+                        // Clear unit when switching type: set default for new type (nos for STOCK, hr for SERVICE).
+                        setValue("unit", newType === "SERVICE" ? "hr" : "nos");
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -338,24 +366,15 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Unit *</Label>
-                    <Select
-                      value={watch("unit") || "nos"}
-                      onValueChange={(v) => setValue("unit", v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select unit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {UNIT_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                        {item?.unit && !UNIT_OPTIONS.some((o) => o.value === item.unit) && (
-                          <SelectItem value={item.unit}>{item.unit}</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <UnitCombobox
+                      type={productType}
+                      value={watch("unit") || defaultUnitForType(productType)}
+                      onValueChange={(v) => setValue("unit", v ?? defaultUnitForType(productType))}
+                      units={units}
+                      unitsLoading={unitsLoading}
+                      onCreateUnit={(value, label) => handleCreateUnit(value, label, productType)}
+                      placeholder="Select unit"
+                    />
                     {errors.unit && (
                       <p className="text-xs text-destructive">{errors.unit.message}</p>
                     )}
@@ -374,7 +393,8 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
                         </p>
                       )}
                       <p className="text-xs text-muted-foreground">
-                        Alert when below this. Required for stock items.
+                        You'll be notified when quantity drops below this value. Required for stock
+                        items.
                       </p>
                     </div>
                   )}

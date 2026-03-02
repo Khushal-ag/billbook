@@ -26,13 +26,13 @@ export function LedgerEntriesTable({ isPending, entries }: LedgerEntriesTablePro
 
   return (
     <div className="overflow-x-auto rounded-md border">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[280px] text-sm">
         <thead className="bg-muted/40 text-muted-foreground">
           <tr>
             <th className="px-3 py-2 text-left font-medium">Date</th>
             <th className="px-3 py-2 text-left font-medium">Type</th>
-            <th className="px-3 py-2 text-right font-medium">Debit</th>
-            <th className="px-3 py-2 text-right font-medium">Credit</th>
+            <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">Debit</th>
+            <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">Credit</th>
             <th className="px-3 py-2 text-right font-medium">Balance</th>
           </tr>
         </thead>
@@ -41,13 +41,13 @@ export function LedgerEntriesTable({ isPending, entries }: LedgerEntriesTablePro
             <tr key={`${entry.entryType}-${idx}`} className="border-t">
               <td className="px-3 py-2 text-muted-foreground">{formatDate(entry.entryDate)}</td>
               <td className="px-3 py-2">{entry.entryType}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="hidden px-3 py-2 text-right sm:table-cell">
                 {entry.debitAmount ? formatCurrency(entry.debitAmount) : "—"}
               </td>
-              <td className="px-3 py-2 text-right">
+              <td className="hidden px-3 py-2 text-right sm:table-cell">
                 {entry.creditAmount ? formatCurrency(entry.creditAmount) : "—"}
               </td>
-              <td className="px-3 py-2 text-right font-medium">
+              <td className="px-3 py-2 text-right font-medium tabular-nums">
                 {formatCurrency(entry.runningBalance)}
               </td>
             </tr>

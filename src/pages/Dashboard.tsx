@@ -1,6 +1,4 @@
-import { FileText } from "lucide-react";
 import ErrorBanner from "@/components/ErrorBanner";
-import EmptyState from "@/components/EmptyState";
 import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
 import {
   DashboardHeroSection,
@@ -9,7 +7,7 @@ import {
   DashboardHighlightsSection,
   DashboardRecentInvoicesSection,
 } from "@/components/dashboard/DashboardSections";
-import { buildPaymentStatusData } from "@/lib/dashboard";
+import { buildPaymentStatusData, EMPTY_DASHBOARD } from "@/lib/dashboard";
 import { useDashboard } from "@/hooks/use-business";
 
 export default function Dashboard() {
@@ -19,42 +17,36 @@ export default function Dashboard() {
     return <DashboardSkeleton />;
   }
 
-  const greeting = dashboard?.business.name
-    ? `Welcome back, ${dashboard.business.name}`
+  // Always show full dashboard layout; use empty data when API returns nothing so charts/cards stay visible.
+  const data = dashboard ?? EMPTY_DASHBOARD;
+  const greeting = data.business?.name
+    ? `Welcome back, ${data.business.name}`
     : "Business overview";
 
   const { data: paymentStatusData, total: totalPaymentAmount } = buildPaymentStatusData(
-    dashboard?.paymentStatusBreakdown,
+    data.paymentStatusBreakdown,
   );
 
-  const totalPaid = dashboard?.totalPaidFromInvoiceField ?? dashboard?.totalPaid ?? 0;
+  const totalPaid = data.totalPaidFromInvoiceField ?? data.totalPaid ?? 0;
 
   return (
     <div className="page-container animate-fade-in">
       <ErrorBanner error={error} fallbackMessage="Failed to load dashboard data." />
 
-      {!dashboard ? (
-        <EmptyState
-          icon={<FileText className="h-5 w-5" />}
-          title="No data yet"
-          description="Dashboard data will appear once you start creating invoices."
+      <div className="space-y-10">
+        <DashboardHeroSection greeting={greeting} totalPaid={totalPaid} dashboard={data} />
+        <DashboardQuickStatsSection dashboard={data} />
+        <DashboardInsightsSection
+          revenueByMonth={data.revenueByMonth ?? []}
+          paymentStatusData={paymentStatusData}
+          totalPaymentAmount={totalPaymentAmount}
         />
-      ) : (
-        <div className="space-y-10">
-          <DashboardHeroSection greeting={greeting} totalPaid={totalPaid} dashboard={dashboard} />
-          <DashboardQuickStatsSection dashboard={dashboard} />
-          <DashboardInsightsSection
-            revenueByMonth={dashboard.revenueByMonth ?? []}
-            paymentStatusData={paymentStatusData}
-            totalPaymentAmount={totalPaymentAmount}
-          />
-          <DashboardHighlightsSection
-            topItems={dashboard.topItems ?? []}
-            topCustomers={dashboard.topCustomers ?? []}
-          />
-          <DashboardRecentInvoicesSection recentInvoices={dashboard.recentInvoices ?? []} />
-        </div>
-      )}
+        <DashboardHighlightsSection
+          topItems={data.topItems ?? []}
+          topCustomers={data.topCustomers ?? []}
+        />
+        <DashboardRecentInvoicesSection recentInvoices={data.recentInvoices ?? []} />
+      </div>
     </div>
   );
 }

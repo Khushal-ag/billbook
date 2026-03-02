@@ -45,6 +45,14 @@ export interface Category {
   updatedAt?: string;
 }
 
+/** Unit from API: predefined or custom (for item unit dropdown). */
+export interface Unit {
+  id: number;
+  value: string;
+  label: string;
+  type: ItemType;
+}
+
 export interface Item {
   id: number;
   businessId: number;
@@ -99,7 +107,8 @@ export interface StockEntry {
   purchaseDate: string;
   quantity: string | number;
   sellingPrice: string;
-  purchasePrice: string;
+  /** null for SERVICE entries */
+  purchasePrice: string | null;
   supplierId: number | null;
   createdAt: string;
   updatedAt: string;
@@ -109,18 +118,21 @@ export interface StockEntry {
   unit?: string;
   categoryId?: number | null;
   categoryName?: string | null;
-  /** Per-batch quantity breakdown (when API returns it) */
-  quantityPurchased?: string;
-  quantityAdjusted?: string;
-  quantitySold?: string;
-  actualQuantity?: string;
+  /** "STOCK" | "SERVICE" – from GET /items/stock-entries list */
+  itemType?: ItemType;
+  /** Per-batch quantity breakdown; null for SERVICE entries */
+  quantityPurchased?: string | null;
+  quantityAdjusted?: string | null;
+  quantitySold?: string | null;
+  actualQuantity?: string | null;
 }
 
 export interface CreateStockEntryRequest {
   itemId: number;
-  purchaseDate: string;
   quantity: string;
   sellingPrice?: string;
+  /** Omit for SERVICE items */
+  purchaseDate?: string;
   purchasePrice?: string;
   supplierId?: number | null;
 }
@@ -128,27 +140,50 @@ export interface CreateStockEntryRequest {
 export interface StockListItem {
   itemId: number;
   itemName: string;
+  /** "STOCK" | "SERVICE" – from GET /items/stock */
+  itemType: ItemType;
   unit: string;
   categoryId: number | null;
   categoryName: string | null;
   minStockThreshold: string | null;
-  quantityPurchased: string;
-  quantityAdjusted: string;
-  quantitySold: string;
-  actualQuantity: string;
+  /** null for SERVICE (no inventory) */
+  quantityPurchased: string | null;
+  quantityAdjusted: string | null;
+  quantitySold: string | null;
+  actualQuantity: string | null;
   stockValue: string | null;
-  isLowStock: boolean;
-  /** Number of purchase batches for this item */
+  /** Balance × latest purchase price; null for SERVICE */
+  purchasedValue?: string | null;
+  /** null for SERVICE (no low-stock) */
+  isLowStock: boolean | null;
+  /** Number of stock entries for this item */
   stockEntriesCount?: number;
+  /** Selling price per unit from latest entry; null for STOCK. Used for SERVICE rate. */
+  defaultRate?: string | null;
 }
 
+/** GET /api/items/stock summary – stock value totals */
+export interface StockValueSummary {
+  totalItems: number;
+  totalQuantity: string;
+  totalAmount: string;
+  totalPurchasedValue: string;
+}
+
+/** GET /api/items/stock summary – low stock totals */
+export interface LowStockSummary {
+  totalItems: number;
+  totalQuantity: string;
+}
+
+/** GET /items/stock response. Stock list includes SERVICE items (0 quantity, entry count). */
 export interface StockListResponse {
   stock: StockListItem[];
   count: number;
   total: number;
   summary: {
-    totalStockValue: string;
-    lowStockCount: number;
+    stockValue: StockValueSummary;
+    lowStock: LowStockSummary;
   };
 }
 

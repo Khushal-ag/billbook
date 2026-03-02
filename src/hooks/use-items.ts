@@ -12,6 +12,8 @@ import type {
   StockListResponse,
   ItemLedgerResponse,
   AdjustStockRequest,
+  Unit,
+  ItemType,
 } from "@/types/item";
 
 const ITEMS_BASE = "/items";
@@ -45,6 +47,45 @@ export function useCreateCategory() {
       return res.data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["items", "categories"] }),
+  });
+}
+
+export interface UnitsResponse {
+  units: Unit[];
+  count?: number;
+}
+
+export function useUnits(type?: ItemType) {
+  const query = type ? `?type=${type}` : "";
+  return useQuery({
+    queryKey: ["items", "units", type],
+    queryFn: async () => {
+      const res = await api.get<UnitsResponse | { data?: UnitsResponse }>(
+        `${ITEMS_BASE}/units${query}`,
+      );
+      const body = res.data;
+      const data =
+        body && typeof body === "object" && "data" in body
+          ? (body as { data: UnitsResponse }).data
+          : (body as UnitsResponse);
+      return Array.isArray(data?.units) ? data.units : [];
+    },
+  });
+}
+
+export function useCreateUnit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { value: string; label: string; type: ItemType }) => {
+      const res = await api.post<{ data?: Unit } | Unit>(`${ITEMS_BASE}/units`, data);
+      const body = res.data;
+      const unit =
+        body && typeof body === "object" && body !== null && "data" in body
+          ? (body as { data: Unit }).data
+          : (body as Unit);
+      return unit;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["items", "units"] }),
   });
 }
 
@@ -108,6 +149,7 @@ export function useUpdateItem(id: number) {
   });
 }
 
+/** GET /items/stock-entries (and GET /items/:itemId/stock-entries) include SERVICE entries. */
 export function useStockEntries(params?: {
   itemId?: number;
   categoryId?: number;
@@ -163,6 +205,7 @@ export function useCreateStockEntry() {
   });
 }
 
+/** GET /items/stock: list includes SERVICE items (0 quantity, entry count). Summary in response may aggregate both. */
 export function useStockList(params?: {
   categoryId?: number;
   search?: string;

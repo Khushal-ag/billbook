@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useRecordPayment } from "@/hooks/use-invoices";
+import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 import type { PaymentMethod } from "@/types/invoice";
 import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
@@ -34,14 +35,6 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
-
-const paymentMethods: { value: PaymentMethod; label: string }[] = [
-  { value: "CASH", label: "Cash" },
-  { value: "CHEQUE", label: "Cheque" },
-  { value: "UPI", label: "UPI" },
-  { value: "BANK_TRANSFER", label: "Bank Transfer" },
-  { value: "CARD", label: "Card" },
-];
 
 interface Props {
   open: boolean;
@@ -119,7 +112,7 @@ export default function PaymentDialog({ open, onOpenChange, invoiceId, balanceDu
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {paymentMethods.map((m) => (
+                {PAYMENT_METHOD_OPTIONS.map((m) => (
                   <SelectItem key={m.value} value={m.value}>
                     {m.label}
                   </SelectItem>

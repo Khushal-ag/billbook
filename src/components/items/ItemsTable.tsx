@@ -1,6 +1,7 @@
 import { Pencil, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import type { Item } from "@/types/item";
 import { getItemCategoryDisplay, getItemTaxDisplay } from "@/types/item";
 
@@ -43,8 +44,11 @@ export function ItemsTable({ items, onEdit, onViewLedger }: ItemsTableProps) {
           {items.map((item) => (
             <tr
               key={item.id}
-              className="group cursor-pointer transition-colors hover:bg-muted/30"
-              onClick={() => onViewLedger(item.id)}
+              className={cn(
+                "group transition-colors",
+                item.type === "SERVICE" ? "cursor-default" : "cursor-pointer hover:bg-muted/30",
+              )}
+              onClick={() => item.type !== "SERVICE" && onViewLedger(item.id)}
             >
               <td className="px-4 py-3.5">
                 <span className="truncate font-medium text-foreground" title={item.name}>
@@ -91,16 +95,18 @@ export function ItemsTable({ items, onEdit, onViewLedger }: ItemsTableProps) {
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => onViewLedger(item.id)}
-                    title="View ledger"
-                    aria-label={`View ledger for ${item.name}`}
-                  >
-                    <History className="h-3.5 w-3.5" />
-                  </Button>
+                  {item.type !== "SERVICE" && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onViewLedger(item.id)}
+                      title="View ledger"
+                      aria-label={`View ledger for ${item.name}`}
+                    >
+                      <History className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </div>
               </td>
             </tr>

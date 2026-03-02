@@ -9,8 +9,8 @@ interface InvoicesTableProps {
 
 export function InvoicesTable({ invoices }: InvoicesTableProps) {
   return (
-    <div className="data-table-container">
-      <table className="w-full text-sm" role="table" aria-label="Invoices list">
+    <div className="data-table-container -mx-1 px-1 sm:mx-0 sm:px-0">
+      <table className="w-full min-w-[320px] text-sm" role="table" aria-label="Invoices list">
         <thead>
           <tr className="border-b bg-muted/30">
             <th

@@ -5,13 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import { useItem, useItemLedger } from "@/hooks/use-items";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatQuantity } from "@/lib/utils";
 import { getItemCategoryDisplay, getItemTaxDisplay } from "@/types/item";
 
 export function ItemDetailView({ id, onBack }: { id: number; onBack: () => void }) {
   const { data: item, isPending: itemPending } = useItem(id);
-  const { data: ledger, isPending: ledgerPending } = useItemLedger(id);
-  const isPending = itemPending || ledgerPending;
+  const { data: ledger, isPending: ledgerPending } = useItemLedger(
+    item == null || item.type === "SERVICE" ? undefined : id,
+  );
+  const isPending = itemPending || (item && item.type !== "SERVICE" && ledgerPending);
 
   return (
     <div className="page-container animate-fade-in">
@@ -47,13 +49,15 @@ export function ItemDetailView({ id, onBack }: { id: number; onBack: () => void 
             <p className="mb-6 text-sm text-muted-foreground">{item.description}</p>
           )}
 
-          <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
             <Card>
               <CardContent className="pb-4 pt-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Current Stock
                 </p>
-                <p className="mt-2 text-xl font-semibold tabular-nums">{item.currentStock ?? 0}</p>
+                <p className="mt-2 text-xl font-semibold tabular-nums">
+                  {formatQuantity(item.currentStock ?? 0)}
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -106,64 +110,66 @@ export function ItemDetailView({ id, onBack }: { id: number; onBack: () => void 
             </Card>
           </div>
 
-          <Card>
-            <CardHeader className="border-b border-border pb-3">
-              <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                <History className="h-4 w-4 text-muted-foreground" />
-                Stock Ledger
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {!ledger || ledger.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <History className="mb-2 h-10 w-10 text-muted-foreground/40" />
-                  <p className="text-sm font-medium text-foreground">No stock movements yet</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Add stock or adjust quantity to see ledger entries.
-                  </p>
-                </div>
-              ) : (
-                <div className="data-table-container">
-                  <table className="w-full text-sm" role="table" aria-label="Stock ledger">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/40">
-                        <th className="min-w-[100px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          Date
-                        </th>
-                        <th className="min-w-[90px] px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          Type
-                        </th>
-                        <th className="min-w-[70px] px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          Qty
-                        </th>
-                        <th className="min-w-[120px] px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                          Notes
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {ledger.map((m) => (
-                        <tr key={m.id} className="transition-colors hover:bg-muted/30">
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {formatDate(m.createdAt)}
-                          </td>
-                          <td className="px-3 py-3">
-                            <Badge variant="secondary" className="text-xs font-medium">
-                              {m.movementType}
-                            </Badge>
-                          </td>
-                          <td className="px-3 py-3 text-right font-medium tabular-nums">
-                            {m.quantity}
-                          </td>
-                          <td className="px-3 py-3 text-muted-foreground">{m.notes ?? "—"}</td>
+          {item.type !== "SERVICE" && (
+            <Card>
+              <CardHeader className="border-b border-border pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  Stock Ledger
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {!ledger || ledger.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <History className="mb-2 h-10 w-10 text-muted-foreground/40" />
+                    <p className="text-sm font-medium text-foreground">No stock movements yet</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Add stock or adjust quantity to see ledger entries.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="data-table-container">
+                    <table className="w-full text-sm" role="table" aria-label="Stock ledger">
+                      <thead>
+                        <tr className="border-b border-border bg-muted/40">
+                          <th className="min-w-[100px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            Date
+                          </th>
+                          <th className="min-w-[90px] px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            Type
+                          </th>
+                          <th className="min-w-[70px] px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            Qty
+                          </th>
+                          <th className="min-w-[120px] px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            Notes
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {ledger.map((m) => (
+                          <tr key={m.id} className="transition-colors hover:bg-muted/30">
+                            <td className="px-4 py-3 text-muted-foreground">
+                              {formatDate(m.createdAt)}
+                            </td>
+                            <td className="px-3 py-3">
+                              <Badge variant="secondary" className="text-xs font-medium">
+                                {m.movementType}
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-3 text-right font-medium tabular-nums">
+                              {formatQuantity(m.quantity)}
+                            </td>
+                            <td className="px-3 py-3 text-muted-foreground">{m.notes ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
     </div>

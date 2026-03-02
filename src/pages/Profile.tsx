@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import SettingsSkeleton from "@/components/skeletons/SettingsSkeleton";
 import { BusinessProfileForm, ProfileCompletionCard } from "@/components/settings/SettingsSections";
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 
 export default function Profile() {
-  const { data: business, isPending } = useBusinessProfile();
+  const { data: business, isPending, error } = useBusinessProfile();
   const updateProfile = useUpdateBusinessProfile();
 
   const form = useForm<ProfileForm>({
@@ -130,6 +131,7 @@ export default function Profile() {
 
   return (
     <div className="page-container animate-fade-in pb-10">
+      <ErrorBanner error={error} fallbackMessage="Failed to load profile" />
       <PageHeader
         title="My Profile"
         description="Manage your business settings and profile details"

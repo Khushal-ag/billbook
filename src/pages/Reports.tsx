@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import DateRangePicker from "@/components/DateRangePicker";
+import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import {
   OutstandingReportTable,
@@ -32,12 +33,21 @@ export default function Reports() {
 
   const [exportRequested, setExportRequested] = useState(false);
 
-  const { data: salesData, isPending: salesPending } = useSalesReport(validStartDate, validEndDate);
-  const { data: outstandingData, isPending: outstandingPending } = usePartyOutstandingReport();
-  const { data: itemSalesData, isPending: itemSalesPending } = useItemSalesReport(
-    validStartDate,
-    validEndDate,
-  );
+  const {
+    data: salesData,
+    isPending: salesPending,
+    error: salesError,
+  } = useSalesReport(validStartDate, validEndDate);
+  const {
+    data: outstandingData,
+    isPending: outstandingPending,
+    error: outstandingError,
+  } = usePartyOutstandingReport();
+  const {
+    data: itemSalesData,
+    isPending: itemSalesPending,
+    error: itemSalesError,
+  } = useItemSalesReport(validStartDate, validEndDate);
   const { data: exportData, isFetching: exportFetching } = useSalesExport(
     validStartDate,
     validEndDate,
@@ -78,6 +88,11 @@ export default function Reports() {
             Export
           </Button>
         }
+      />
+
+      <ErrorBanner
+        error={salesError ?? outstandingError ?? itemSalesError}
+        fallbackMessage="Failed to load reports"
       />
 
       <div className="mb-6">

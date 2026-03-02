@@ -240,9 +240,9 @@ export default function InvoiceDialog({ open, onOpenChange }: Props) {
                             No items available. Add items in Master → Items first.
                           </div>
                         ) : (
-                          items.map((p) => (
-                            <SelectItem key={p.id} value={String(p.id)}>
-                              {p.name}
+                          items.map((item) => (
+                            <SelectItem key={item.id} value={String(item.id)}>
+                              {item.name}
                             </SelectItem>
                           ))
                         )}

@@ -3,6 +3,7 @@ import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
+import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import DateRangePicker from "@/components/DateRangePicker";
 import { TaxItemizedTable, TaxSummaryTable } from "@/components/tax/TaxSections";
@@ -23,14 +24,16 @@ export default function Tax() {
 
   const [exportRequested, setExportRequested] = useState(false);
 
-  const { data: gstSummary, isPending: summaryPending } = useGSTSummary(
-    validStartDate,
-    validEndDate,
-  );
-  const { data: gstItemized, isPending: itemizedPending } = useGSTItemized(
-    validStartDate,
-    validEndDate,
-  );
+  const {
+    data: gstSummary,
+    isPending: summaryPending,
+    error: summaryError,
+  } = useGSTSummary(validStartDate, validEndDate);
+  const {
+    data: gstItemized,
+    isPending: itemizedPending,
+    error: itemizedError,
+  } = useGSTItemized(validStartDate, validEndDate);
   const { data: exportData, isFetching: exportFetching } = useGSTExport(
     validStartDate,
     validEndDate,
@@ -65,6 +68,10 @@ export default function Tax() {
 
   return (
     <div className="page-container animate-fade-in">
+      <ErrorBanner
+        error={summaryError ?? itemizedError}
+        fallbackMessage="Failed to load tax data"
+      />
       <PageHeader
         title="GST / Tax"
         description="Tax summaries and itemized reports"

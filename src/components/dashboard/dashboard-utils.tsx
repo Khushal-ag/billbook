@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, BarChart2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChartTooltipContent } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
@@ -8,15 +8,25 @@ import { cn } from "@/lib/utils";
 type EmptyChartProps = {
   text: string;
   height?: number;
+  /** Optional second line; default explains data will appear with usage */
+  subtitle?: string;
 };
 
-export function EmptyChart({ text, height = 200 }: EmptyChartProps) {
+export function EmptyChart({
+  text,
+  height = 200,
+  subtitle = "Data will appear here once you have activity",
+}: EmptyChartProps) {
   return (
     <div
-      className="flex items-center justify-center rounded-2xl border border-dashed border-muted/60 bg-background/70 text-xs text-muted-foreground"
-      style={{ height }}
+      className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-muted/60 bg-muted/5 py-8 text-center"
+      style={{ minHeight: height }}
     >
-      {text}
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50">
+        <BarChart2 className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <p className="text-sm font-medium text-muted-foreground">{text}</p>
+      <p className="text-xs text-muted-foreground/80">{subtitle}</p>
     </div>
   );
 }

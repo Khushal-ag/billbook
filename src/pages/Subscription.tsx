@@ -1,5 +1,6 @@
 import { Sparkles } from "lucide-react";
 import { useMemo } from "react";
+import ErrorBanner from "@/components/ErrorBanner";
 import SubscriptionSkeleton from "@/components/skeletons/SubscriptionSkeleton";
 import { CurrentPlanCard, PlansGrid } from "@/components/subscription/SubscriptionSections";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -9,8 +10,8 @@ import type { SubscriptionPlan } from "@/types/subscription";
 export default function Subscription() {
   const { isOwner } = usePermissions();
 
-  const { data: subscription, isPending: subPending } = useSubscription();
-  const { data: plansData, isPending: plansPending } = usePlans();
+  const { data: subscription, isPending: subPending, error: subscriptionError } = useSubscription();
+  const { data: plansData, isPending: plansPending, error: plansError } = usePlans();
   const subscribeMutation = useSubscribePlan();
 
   const plans = useMemo(() => plansData?.plans ?? [], [plansData?.plans]);
@@ -26,6 +27,10 @@ export default function Subscription() {
 
   return (
     <div className="page-container animate-fade-in">
+      <ErrorBanner
+        error={subscriptionError ?? plansError}
+        fallbackMessage="Failed to load subscription"
+      />
       <div className="relative overflow-hidden">
         <div className="pointer-events-none select-none blur-md">
           <div className="page-header">

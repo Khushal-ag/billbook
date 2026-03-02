@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Check, Plus, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -45,14 +45,19 @@ export function VendorAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const filtered = suppliers
-    .filter((s) => {
-      const q = inputValue.trim().toLowerCase();
-      if (!q) return true;
-      return s.name.toLowerCase().includes(q);
-    })
-    .slice(0, 50);
+  const filtered = useMemo(
+    () =>
+      suppliers
+        .filter((s) => {
+          const q = inputValue.trim().toLowerCase();
+          if (!q) return true;
+          return s.name.toLowerCase().includes(q);
+        })
+        .slice(0, 50),
+    [suppliers, inputValue],
+  );
 
+  const optionsLength = 1 + filtered.length + (onAddVendor ? 1 : 0);
   const addVendorIndex = onAddVendor ? 1 + filtered.length : -1;
   const options: (Party | null | typeof ADD_VENDOR_VALUE)[] = [
     null,
@@ -71,6 +76,12 @@ export function VendorAutocomplete({
   useEffect(() => {
     if (open) setHighlightedIndex(0);
   }, [open, inputValue]);
+
+  // Clamp highlighted index when options list shrinks (e.g. after typing)
+  useEffect(() => {
+    if (!open) return;
+    setHighlightedIndex((prev) => Math.min(prev, optionsLength - 1));
+  }, [open, optionsLength]);
 
   useEffect(() => {
     if (!open || highlightedIndex < 0 || !listRef.current) return;

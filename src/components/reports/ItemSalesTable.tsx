@@ -1,3 +1,4 @@
+import { formatQuantity } from "@/lib/utils";
 import type { ItemSalesRow } from "@/types/report";
 
 export function ItemSalesTable({ rows }: { rows: ItemSalesRow[] }) {
@@ -15,7 +16,7 @@ export function ItemSalesTable({ rows }: { rows: ItemSalesRow[] }) {
           {rows.map((row) => (
             <tr key={row.itemId} className="border-b last:border-0 hover:bg-muted/20">
               <td className="px-6 py-3 font-medium">{row.itemName}</td>
-              <td className="px-3 py-3 text-right">{row.totalQuantity}</td>
+              <td className="px-3 py-3 text-right">{formatQuantity(row.totalQuantity)}</td>
               <td className="px-6 py-3 text-right font-medium">₹{row.totalAmount}</td>
             </tr>
           ))}

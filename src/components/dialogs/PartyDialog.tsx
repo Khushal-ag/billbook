@@ -24,6 +24,7 @@ import { useCreateParty, useUpdateParty } from "@/hooks/use-parties";
 import type { Party } from "@/types/party";
 import { gstinString, optionalEmail, priceString, optionalString } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { capitaliseWords } from "@/lib/utils";
 import { fetchPostalOffice } from "@/lib/pincode";
 
 const schema = z.object({
@@ -156,7 +157,7 @@ export default function PartyDialog({
 
   const onSubmit = async (data: FormData) => {
     const payload = {
-      name: data.name,
+      name: capitaliseWords(data.name),
       type: typeLocked ? defaultType : data.type,
       gstin: data.gstin || undefined,
       email: data.email || undefined,

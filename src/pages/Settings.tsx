@@ -7,7 +7,7 @@ export default function Settings() {
     <div className="page-container animate-fade-in">
       <PageHeader title="Settings" description="Manage preferences and team access" />
 
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="mx-auto w-full max-w-2xl space-y-6">
         <InterfaceModeCard />
         <BusinessUsersCard />
       </div>

@@ -23,6 +23,7 @@ export interface StockEntryRow {
   quantity: string;
   sellingPrice: string;
   purchasePrice: string;
+  /** When true, price input uses step="0.25"; when false, step="1". Set from typing "." in value. */
   sellingPriceDecimal: boolean;
   purchasePriceDecimal: boolean;
 }
@@ -63,72 +64,109 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }, []);
 
+  const isRowComplete = useCallback((r: StockEntryRow) => {
+    if (!r.item || !r.quantity.trim()) return false;
+    const q = parseFloat(r.quantity.trim());
+    if (!Number.isFinite(q) || q <= 0) return false;
+    const selling = parseFloat(String(r.sellingPrice ?? "").trim());
+    if (!Number.isFinite(selling) || selling < 0) return false;
+    if (r.item.type === "SERVICE") {
+      return true;
+    }
+    if (!r.purchaseDate || r.supplierId == null) return false;
+    const purchase = parseFloat(String(r.purchasePrice ?? "").trim());
+    return Number.isFinite(purchase) && purchase >= 0;
+  }, []);
+
+  const hasRowAnyData = useCallback((r: StockEntryRow) => {
+    return !!(
+      r.item ||
+      r.quantity.trim() ||
+      r.supplierId != null ||
+      r.sellingPrice ||
+      r.purchasePrice
+    );
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check if all rows with any data are complete
-    const hasIncompleteRow = rows.some((r) => {
-      const hasAnyData = r.item || r.quantity || r.supplierId || r.sellingPrice || r.purchasePrice;
-      const isComplete = r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice;
-      return hasAnyData && !isComplete;
-    });
-
-    if (hasIncompleteRow) {
-      return;
-    }
+    const hasIncompleteRow = rows.some((r) => hasRowAnyData(r) && !isRowComplete(r));
+    if (hasIncompleteRow) return;
 
     const payloads: CreateStockEntryRequest[] = rows
-      .filter((r) => r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice)
-      .map((r) => ({
-        itemId: r.item!.id,
-        purchaseDate: r.purchaseDate,
-        quantity: r.quantity.trim() ? String(Number(r.quantity)) : "0",
-        sellingPrice: String(r.sellingPrice || "0"),
-        purchasePrice: String(r.purchasePrice || "0"),
-        supplierId: r.supplierId ?? null,
-      }));
+      .filter((r) => isRowComplete(r))
+      .map((r) => {
+        const isService = r.item!.type === "SERVICE";
+        const qty = parseFloat(r.quantity.trim());
+        const selling = parseFloat(String(r.sellingPrice ?? "").trim());
+        if (!Number.isFinite(qty) || qty < 0 || !Number.isFinite(selling) || selling < 0) {
+          throw new Error("Invalid quantity or selling price");
+        }
+        const quantityStr = String(qty);
+        const sellingStr = String(selling);
+        if (isService) {
+          return {
+            itemId: r.item!.id,
+            quantity: quantityStr,
+            sellingPrice: sellingStr,
+            supplierId: r.supplierId ?? undefined,
+          };
+        }
+        const purchase = parseFloat(String(r.purchasePrice ?? "").trim());
+        if (!Number.isFinite(purchase) || purchase < 0) {
+          throw new Error("Invalid purchase price");
+        }
+        return {
+          itemId: r.item!.id,
+          purchaseDate: r.purchaseDate,
+          quantity: quantityStr,
+          sellingPrice: sellingStr,
+          purchasePrice: String(purchase),
+          supplierId: r.supplierId ?? undefined,
+        };
+      });
     if (payloads.length === 0) return;
-    await onSubmit(payloads);
-    setRows([defaultRow()]);
+    try {
+      await onSubmit(payloads);
+      setRows([defaultRow()]);
+    } catch {
+      // Error already shown by parent; keep rows so user can retry
+    }
   };
 
-  // At least one row has data, and all rows with data are complete
   const canSubmit =
-    rows.some((r) => {
-      const hasAnyData = r.item || r.quantity || r.supplierId || r.sellingPrice || r.purchasePrice;
-      const isComplete = r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice;
-      return hasAnyData && isComplete;
-    }) &&
-    !rows.some((r) => {
-      const hasAnyData = r.item || r.quantity || r.supplierId || r.sellingPrice || r.purchasePrice;
-      const isComplete = r.item && r.quantity && r.purchaseDate && r.supplierId && r.sellingPrice;
-      return hasAnyData && !isComplete;
-    });
+    rows.some((r) => hasRowAnyData(r) && isRowComplete(r)) &&
+    !rows.some((r) => hasRowAnyData(r) && !isRowComplete(r));
 
   const inputClass = "h-9 text-sm";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="data-table-container">
-        <table className="w-full min-w-[840px] text-sm" role="table" aria-label="Add stock entries">
+      <div className="data-table-container -mx-1 px-1 sm:mx-0 sm:px-0">
+        <table
+          className="w-full min-w-[580px] text-sm sm:min-w-[700px] lg:min-w-[840px]"
+          role="table"
+          aria-label="Add stock entries"
+        >
           <thead>
             <tr className="border-b border-border bg-muted/40">
-              <th className="min-w-[200px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <th className="min-w-[140px] px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:min-w-[180px] sm:px-4">
                 Item *
               </th>
-              <th className="min-w-[200px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <th className="min-w-[120px] px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground lg:min-w-[200px]">
                 Vendor *
               </th>
-              <th className="min-w-[130px] px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <th className="min-w-[100px] px-2 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:min-w-[130px] sm:px-3">
                 Purchase Date *
               </th>
-              <th className="min-w-[120px] px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <th className="min-w-[72px] px-2 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:min-w-[100px] sm:px-3">
                 Qty *
               </th>
-              <th className="min-w-[100px] px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <th className="min-w-[88px] px-2 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:min-w-[100px] sm:px-3">
                 Selling price *
               </th>
-              <th className="min-w-[100px] px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <th className="hidden min-w-[88px] px-2 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground lg:table-cell lg:min-w-[100px]">
                 Purchase price
               </th>
               <th className="w-12 min-w-[48px] px-2 py-3" aria-label="Remove row" />
@@ -137,17 +175,17 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
           <tbody className="divide-y divide-border">
             {rows.map((row) => (
               <tr key={row.id} className="transition-colors hover:bg-muted/20">
-                <td className="px-4 py-2.5 align-middle">
+                <td className="px-3 py-2.5 align-middle sm:px-4">
                   <ItemAutocomplete
                     value={row.item}
                     onValueChange={(item) => updateRow(row.id, { item })}
                     items={items}
-                    stockOnly
+                    stockOnly={false}
                     compact
                     placeholder="Type to search item..."
                   />
                 </td>
-                <td className="px-4 py-2.5 align-middle">
+                <td className="px-3 py-2.5 align-middle lg:px-4">
                   <VendorAutocomplete
                     value={
                       row.supplierId != null
@@ -238,7 +276,7 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                     className={`${inputClass} text-right tabular-nums`}
                   />
                 </td>
-                <td className="px-3 py-2.5 text-right align-middle">
+                <td className="hidden px-2 py-2.5 text-right align-middle lg:table-cell lg:px-3">
                   <Input
                     type="number"
                     min="0"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Check, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -48,15 +48,21 @@ export function ItemAutocomplete({
     const d = getItemCategoryDisplay(item);
     return d === "—" ? "" : d;
   };
-  const filtered = items
-    .filter((item) => {
-      if (stockOnly && item.type !== "STOCK") return false;
-      if (item.deletedAt) return false;
-      const q = inputValue.trim().toLowerCase();
-      if (!q) return true;
-      return item.name.toLowerCase().includes(q) || categoryLabel(item).toLowerCase().includes(q);
-    })
-    .slice(0, 50);
+  const filtered = useMemo(
+    () =>
+      items
+        .filter((item) => {
+          if (stockOnly && item.type !== "STOCK") return false;
+          if (item.deletedAt) return false;
+          const q = inputValue.trim().toLowerCase();
+          if (!q) return true;
+          return (
+            item.name.toLowerCase().includes(q) || categoryLabel(item).toLowerCase().includes(q)
+          );
+        })
+        .slice(0, 50),
+    [items, stockOnly, inputValue],
+  );
 
   const displayValue = open ? inputValue : value ? value.name : inputValue;
 

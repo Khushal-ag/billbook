@@ -110,7 +110,9 @@ export default function Vendors() {
           isOwner={isOwner}
           deletePending={deleteParty.isPending}
           onEdit={openEdit}
-          onLedger={(partyId) => navigate(`/parties/${partyId}/ledger`)}
+          onLedger={(partyId) =>
+            navigate(`/parties/${partyId}/ledger`, { state: { from: "vendors" } })
+          }
           onDelete={handleDelete}
         />
       )}

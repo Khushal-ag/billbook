@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import {
   useParties,
@@ -21,7 +21,7 @@ import { LedgerEntriesTable } from "@/components/party-ledger/LedgerEntriesTable
 import { StatementPanel } from "@/components/party-ledger/StatementPanel";
 import { AdvancePaymentForm } from "@/components/party-ledger/AdvancePaymentForm";
 import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
-import type { PaymentMethod } from "@/types/invoice";
+import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 
 const advanceSchema = z.object({
@@ -33,18 +33,21 @@ const advanceSchema = z.object({
 
 type AdvanceFormData = z.infer<typeof advanceSchema>;
 
-const paymentMethods: { value: PaymentMethod; label: string }[] = [
-  { value: "CASH", label: "Cash" },
-  { value: "CHEQUE", label: "Cheque" },
-  { value: "UPI", label: "UPI" },
-  { value: "BANK_TRANSFER", label: "Bank Transfer" },
-  { value: "CARD", label: "Card" },
-];
+/** State passed when navigating to ledger from Parties or Vendors list */
+interface PartyLedgerLocationState {
+  from?: "parties" | "vendors";
+}
 
 export default function PartyLedger() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { partyId } = useParams<{ partyId: string }>();
   const numPartyId = partyId ? parseInt(partyId, 10) : undefined;
+
+  const state = location.state as PartyLedgerLocationState | null;
+  const fromVendors = state?.from === "vendors";
+  const backTo = fromVendors ? "/vendors" : "/parties";
+  const backLabel = fromVendors ? "Back to Vendors" : "Back to Parties";
 
   const [tab, setTab] = useState("ledger");
   const [startDate, setStartDate] = useState("");
@@ -168,14 +171,17 @@ export default function PartyLedger() {
         title={`Party Ledger - ${party.name}`}
         description={`Accounting details for ${party.name}`}
         action={
-          <Button variant="ghost" onClick={() => navigate("/parties")} className="mr-4">
+          <Button variant="ghost" onClick={() => navigate(backTo)} className="mr-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Parties
+            {backLabel}
           </Button>
         }
       />
 
-      <ErrorBanner error={ledgerQuery.error} fallbackMessage="Failed to load ledger" />
+      <ErrorBanner
+        error={ledgerQuery.error ?? balanceQuery.error}
+        fallbackMessage="Failed to load ledger"
+      />
 
       <BalanceSummaryCards summary={balanceSummary} />
 
@@ -212,7 +218,7 @@ export default function PartyLedger() {
         <TabsContent value="advance" className="mt-4">
           <AdvancePaymentForm
             form={form}
-            paymentMethods={paymentMethods}
+            paymentMethods={PAYMENT_METHOD_OPTIONS}
             isSubmitting={isSubmitting}
             isSaving={advanceMutation.isPending}
             onSubmit={onAdvanceSubmit}
