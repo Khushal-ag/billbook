@@ -1,1 +1,8 @@
-npx lint-staged
+if command -v npx >/dev/null 2>&1; then
+	npx lint-staged
+elif command -v bunx >/dev/null 2>&1; then
+	bunx lint-staged
+else
+	echo "Error: neither npx nor bunx is available in PATH" >&2
+	exit 127
+fi
