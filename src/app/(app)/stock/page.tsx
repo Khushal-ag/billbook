@@ -199,7 +199,7 @@ export default function Stock() {
                       className={cn(
                         "gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium",
                         listViewMode === "item"
-                          ? "bg-background text-foreground shadow-sm"
+                          ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground"
                           : "text-muted-foreground hover:text-foreground",
                       )}
                       onClick={() => setListViewMode("item")}
@@ -214,7 +214,7 @@ export default function Stock() {
                       className={cn(
                         "gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium",
                         listViewMode === "stock"
-                          ? "bg-background text-foreground shadow-sm"
+                          ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground"
                           : "text-muted-foreground hover:text-foreground",
                       )}
                       onClick={() => setListViewMode("stock")}
@@ -249,8 +249,8 @@ export default function Stock() {
 
         <TabsContent value="add">
           <p className="mb-4 text-sm text-muted-foreground">
-            Enter item, quantity, and date; then click &quot;Add stock&quot; to save. Each entry is
-            saved immediately. The table below lists what you&apos;ve added in this session.
+            Enter item details, then click &quot;Add row&quot; to save that stock entry and open a
+            fresh row. Added entries are shown in the session grid below.
           </p>
           <ErrorBanner error={itemsError} fallbackMessage="Failed to load items" />
           {itemsPending ? (

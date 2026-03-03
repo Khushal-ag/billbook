@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { Plus, Trash2, Loader2, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -9,6 +10,7 @@ import { VendorAutocomplete } from "@/components/items/VendorAutocomplete";
 import PartyDialog from "@/components/dialogs/PartyDialog";
 import { cn } from "@/lib/utils";
 import { parseISODateString, toISODateString, formatISODateDisplay } from "@/lib/date";
+import { showErrorToast } from "@/lib/toast-helpers";
 import type { Item } from "@/types/item";
 import type { CreateStockEntryRequest } from "@/types/item";
 import type { Party } from "@/types/party";
@@ -47,14 +49,29 @@ interface StockEntryGridProps {
   isSubmitting?: boolean;
 }
 
+interface AddedSessionRow {
+  id: string;
+  itemName: string;
+  itemType: Item["type"];
+  vendorName: string;
+  purchaseDate: string;
+  quantity: string;
+  sellingPrice: string;
+  purchasePrice: string;
+}
+
+function formatNumeric(value: string): string {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return value;
+  return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n);
+}
+
 export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: StockEntryGridProps) {
   const [rows, setRows] = useState<StockEntryRow[]>(() => [defaultRow()]);
+  const [addedRows, setAddedRows] = useState<AddedSessionRow[]>([]);
   const [addVendorDialogOpen, setAddVendorDialogOpen] = useState(false);
   const pendingVendorCreatedRef = useRef<((party: Party) => void) | null>(null);
-
-  const addRow = useCallback(() => {
-    setRows((prev) => [...prev, defaultRow()]);
-  }, []);
+  const pendingVendorRowIdRef = useRef<string | null>(null);
 
   const removeRow = useCallback((id: string) => {
     setRows((prev) => (prev.length <= 1 ? [defaultRow()] : prev.filter((r) => r.id !== id)));
@@ -73,71 +90,79 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
     if (r.item.type === "SERVICE") {
       return true;
     }
+
     if (!r.purchaseDate || r.supplierId == null) return false;
     const purchase = parseFloat(String(r.purchasePrice ?? "").trim());
     return Number.isFinite(purchase) && purchase >= 0;
   }, []);
 
-  const hasRowAnyData = useCallback((r: StockEntryRow) => {
-    return !!(
-      r.item ||
-      r.quantity.trim() ||
-      r.supplierId != null ||
-      r.sellingPrice ||
-      r.purchasePrice
-    );
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const hasIncompleteRow = rows.some((r) => hasRowAnyData(r) && !isRowComplete(r));
-    if (hasIncompleteRow) return;
+    const currentRow = rows[0];
+    if (!currentRow || !isRowComplete(currentRow)) {
+      showErrorToast(new Error("Please fill all required fields"), "Cannot add row");
+      return;
+    }
 
-    const payloads: CreateStockEntryRequest[] = rows
-      .filter((r) => isRowComplete(r))
-      .map((r) => {
-        const isService = r.item!.type === "SERVICE";
-        const qty = parseFloat(r.quantity.trim());
-        const selling = parseFloat(String(r.sellingPrice ?? "").trim());
-        if (!Number.isFinite(qty) || qty < 0 || !Number.isFinite(selling) || selling < 0) {
-          throw new Error("Invalid quantity or selling price");
-        }
-        const quantityStr = String(qty);
-        const sellingStr = String(selling);
-        if (isService) {
-          return {
-            itemId: r.item!.id,
+    try {
+      const isService = currentRow.item!.type === "SERVICE";
+      const qty = parseFloat(currentRow.quantity.trim());
+      const selling = parseFloat(String(currentRow.sellingPrice ?? "").trim());
+      if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(selling) || selling < 0) {
+        throw new Error("Invalid quantity or selling price");
+      }
+
+      const quantityStr = String(qty);
+
+      const sellingStr = String(selling);
+
+      const payload: CreateStockEntryRequest = isService
+        ? {
+            itemId: currentRow.item!.id,
             quantity: quantityStr,
             sellingPrice: sellingStr,
-            supplierId: r.supplierId ?? undefined,
+            supplierId: currentRow.supplierId ?? undefined,
+          }
+        : {
+            itemId: currentRow.item!.id,
+            purchaseDate: currentRow.purchaseDate,
+            quantity: quantityStr,
+            sellingPrice: sellingStr,
+            purchasePrice: String(parseFloat(String(currentRow.purchasePrice ?? "").trim())),
+            supplierId: currentRow.supplierId ?? undefined,
           };
-        }
-        const purchase = parseFloat(String(r.purchasePrice ?? "").trim());
-        if (!Number.isFinite(purchase) || purchase < 0) {
-          throw new Error("Invalid purchase price");
-        }
-        return {
-          itemId: r.item!.id,
-          purchaseDate: r.purchaseDate,
+
+      await onSubmit([payload]);
+
+      const vendorName =
+        currentRow.supplierId != null
+          ? (suppliers.find((s) => s.id === currentRow.supplierId)?.name ?? "—")
+          : "—";
+
+      setAddedRows((prev) => [
+        {
+          id: crypto.randomUUID(),
+          itemName: currentRow.item!.name,
+          itemType: currentRow.item!.type,
+          vendorName,
+          purchaseDate: isService ? "—" : currentRow.purchaseDate,
           quantity: quantityStr,
           sellingPrice: sellingStr,
-          purchasePrice: String(purchase),
-          supplierId: r.supplierId ?? undefined,
-        };
-      });
-    if (payloads.length === 0) return;
-    try {
-      await onSubmit(payloads);
+          purchasePrice: isService
+            ? "—"
+            : String(parseFloat(String(currentRow.purchasePrice ?? "").trim())),
+        },
+        ...prev,
+      ]);
+
       setRows([defaultRow()]);
     } catch {
       // Error already shown by parent; keep rows so user can retry
     }
   };
 
-  const canSubmit =
-    rows.some((r) => hasRowAnyData(r) && isRowComplete(r)) &&
-    !rows.some((r) => hasRowAnyData(r) && !isRowComplete(r));
+  const canSubmit = isRowComplete(rows[0] ?? defaultRow());
 
   const inputClass = "h-9 text-sm";
 
@@ -200,41 +225,48 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                     placeholder="Type to search vendor..."
                     onAddVendor={(onCreated) => {
                       pendingVendorCreatedRef.current = onCreated;
+                      pendingVendorRowIdRef.current = row.id;
                       setAddVendorDialogOpen(true);
                     }}
                   />
                 </td>
                 <td className="px-3 py-2.5 align-middle">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className={cn(
-                          "h-9 w-full justify-start gap-2 border-input bg-background px-3 text-left font-normal shadow-none hover:bg-muted hover:text-foreground",
-                          !row.purchaseDate && "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <span className="truncate">
-                          {formatISODateDisplay(row.purchaseDate) || "Select date"}
-                        </span>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent align="start" className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={parseISODateString(row.purchaseDate) ?? undefined}
-                        onSelect={(date) => {
-                          if (date) {
-                            updateRow(row.id, { purchaseDate: toISODateString(date) });
-                          }
-                        }}
-                        initialFocus
-                        defaultMonth={parseISODateString(row.purchaseDate) ?? new Date()}
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  {row.item?.type === "SERVICE" ? (
+                    <div className="flex h-9 items-center justify-center rounded-md border border-dashed text-muted-foreground">
+                      —
+                    </div>
+                  ) : (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={cn(
+                            "h-9 w-full justify-start gap-2 border-input bg-background px-3 text-left font-normal shadow-none hover:bg-muted hover:text-foreground",
+                            !row.purchaseDate && "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className="truncate">
+                            {formatISODateDisplay(row.purchaseDate) || "Select date"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent align="start" className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={parseISODateString(row.purchaseDate) ?? undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              updateRow(row.id, { purchaseDate: toISODateString(date) });
+                            }
+                          }}
+                          initialFocus
+                          defaultMonth={parseISODateString(row.purchaseDate) ?? new Date()}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
                 </td>
                 <td className="px-3 py-2.5 text-right align-middle">
                   <div className="flex items-center justify-end gap-2">
@@ -277,23 +309,29 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                   />
                 </td>
                 <td className="hidden px-2 py-2.5 text-right align-middle lg:table-cell lg:px-3">
-                  <Input
-                    type="number"
-                    min="0"
-                    step={row.purchasePriceDecimal ? "0.25" : "1"}
-                    placeholder="0"
-                    value={row.purchasePrice}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const hasDecimal = val.includes(".");
-                      updateRow(row.id, {
-                        purchasePrice: val,
-                        purchasePriceDecimal:
-                          val === "" ? false : hasDecimal || row.purchasePriceDecimal,
-                      });
-                    }}
-                    className={`${inputClass} text-right tabular-nums`}
-                  />
+                  {row.item?.type === "SERVICE" ? (
+                    <div className="flex h-9 items-center justify-center rounded-md border border-dashed text-muted-foreground">
+                      —
+                    </div>
+                  ) : (
+                    <Input
+                      type="number"
+                      min="0"
+                      step={row.purchasePriceDecimal ? "0.25" : "1"}
+                      placeholder="0"
+                      value={row.purchasePrice}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const hasDecimal = val.includes(".");
+                        updateRow(row.id, {
+                          purchasePrice: val,
+                          purchasePriceDecimal:
+                            val === "" ? false : hasDecimal || row.purchasePriceDecimal,
+                        });
+                      }}
+                      className={`${inputClass} text-right tabular-nums`}
+                    />
+                  )}
                 </td>
                 <td className="px-2 py-2.5 align-middle">
                   <Button
@@ -315,27 +353,103 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={addRow}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button type="submit" variant="outline" size="sm" disabled={!canSubmit || isSubmitting}>
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {!isSubmitting && <Plus className="mr-2 h-4 w-4" />}
           Add row
         </Button>
-        <Button type="submit" disabled={!canSubmit || isSubmitting}>
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save stock entries
-        </Button>
       </div>
+
+      {addedRows.length > 0 && (
+        <div className="mt-4 space-y-3 rounded-xl border bg-card p-3 sm:mt-5 sm:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="space-y-0.5">
+              <h3 className="text-sm font-semibold">Added in this session</h3>
+              <p className="text-xs text-muted-foreground">
+                These entries are shown only while you stay on this page.
+              </p>
+            </div>
+            <Badge variant="secondary">{addedRows.length} row(s)</Badge>
+          </div>
+
+          <div className="data-table-container -mx-1 px-1 sm:mx-0 sm:px-0">
+            <table className="w-full min-w-[580px] text-sm sm:min-w-[700px] lg:min-w-[840px]">
+              <thead>
+                <tr className="border-b border-border bg-muted/40">
+                  <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:px-4">
+                    Item
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Type
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground lg:px-4">
+                    Vendor
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Purchase Date
+                  </th>
+                  <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Qty
+                  </th>
+                  <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Selling
+                  </th>
+                  <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Purchase
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {addedRows.map((row) => (
+                  <tr key={row.id} className="transition-colors hover:bg-muted/20">
+                    <td className="px-3 py-2.5 font-medium sm:px-4">{row.itemName}</td>
+                    <td className="px-3 py-2.5">
+                      <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+                        {row.itemType}
+                      </Badge>
+                    </td>
+                    <td className="px-3 py-2.5 lg:px-4">{row.vendorName}</td>
+                    <td className="px-3 py-2.5">
+                      {row.itemType === "SERVICE"
+                        ? "—"
+                        : formatISODateDisplay(row.purchaseDate) || "—"}
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums">
+                      {formatNumeric(row.quantity)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums">
+                      {formatNumeric(row.sellingPrice)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums">
+                      {row.purchasePrice === "—" ? "—" : formatNumeric(row.purchasePrice)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <PartyDialog
         open={addVendorDialogOpen}
         onOpenChange={(open) => {
           setAddVendorDialogOpen(open);
-          if (!open) pendingVendorCreatedRef.current = null;
+          if (!open) {
+            pendingVendorCreatedRef.current = null;
+            pendingVendorRowIdRef.current = null;
+          }
         }}
         defaultType="SUPPLIER"
         typeLocked
         onSuccess={(party) => {
+          const rowId = pendingVendorRowIdRef.current;
+          if (rowId) {
+            updateRow(rowId, { supplierId: party.id });
+          }
           pendingVendorCreatedRef.current?.(party);
           pendingVendorCreatedRef.current = null;
+          pendingVendorRowIdRef.current = null;
         }}
       />
     </form>
