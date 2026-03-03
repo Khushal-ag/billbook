@@ -1,12 +1,12 @@
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
+import nextPlugin from "@next/eslint-plugin-next";
 import tseslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier";
 
 export default tseslint.config(
-  { ignores: ["dist"] },
+  { ignores: ["dist", ".next", "node_modules"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -16,31 +16,31 @@ export default tseslint.config(
     },
     plugins: {
       "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
+      "@next/next": nextPlugin,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      ...nextPlugin.configs["core-web-vitals"].rules,
       "@typescript-eslint/no-unused-vars": [
         "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
       "@typescript-eslint/consistent-type-imports": ["warn", { prefer: "type-imports" }],
       "no-console": ["warn", { allow: ["warn", "error"] }],
+
+      // This codebase uses plain <img> in a few places; allow it for now.
+      "@next/next/no-img-element": "off",
     },
   },
   {
     files: ["src/components/ui/**/*.{ts,tsx}"],
     rules: {
       "@typescript-eslint/no-empty-object-type": "off",
-      "react-refresh/only-export-components": "off",
     },
   },
   {
     files: ["src/contexts/**/*.{ts,tsx}", "src/hooks/**/*.{ts,tsx}"],
-    rules: {
-      "react-refresh/only-export-components": "off",
-    },
+    rules: {},
   },
   {
     files: ["tailwind.config.ts"],

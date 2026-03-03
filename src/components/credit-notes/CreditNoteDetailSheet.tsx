@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import {
   Sheet,
   SheetContent,
@@ -77,7 +77,7 @@ export function CreditNoteDetailSheet({
                 </dt>
                 <dd className="mt-1">
                   <Link
-                    to={`/invoices/${creditNote.invoiceId}`}
+                    href={`/invoices/${creditNote.invoiceId}`}
                     className="text-primary hover:underline"
                   >
                     #{creditNote.invoiceId}

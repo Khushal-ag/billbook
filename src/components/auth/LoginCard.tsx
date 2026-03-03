@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,7 +40,7 @@ export default function LoginCard({
   onRequestForgot,
 }: LoginCardProps) {
   const { requestLoginOtp, verifyLoginOtp } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [otpRequested, setOtpRequested] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -91,7 +92,7 @@ export default function LoginCard({
         organizationCode: data.organizationCode,
         otp: data.otp,
       });
-      navigate(redirectTo || "/dashboard", { replace: true });
+      router.replace(redirectTo || "/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");
     }
@@ -231,7 +232,7 @@ export default function LoginCard({
                 Forgot password?
               </button>
             ) : (
-              <Link to="/?auth=forgot" className="transition-colors hover:text-foreground">
+              <Link href="/?auth=forgot" className="transition-colors hover:text-foreground">
                 Forgot password?
               </Link>
             )}
@@ -248,7 +249,7 @@ export default function LoginCard({
                 Sign up
               </button>
             ) : (
-              <Link to="/?auth=signup" className="font-medium text-accent hover:underline">
+              <Link href="/?auth=signup" className="font-medium text-accent hover:underline">
                 Sign up
               </Link>
             )}

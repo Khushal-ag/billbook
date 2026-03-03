@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
@@ -22,7 +22,7 @@ export function DashboardRecentInvoicesSection({
               <span>
                 {recentInvoices.length} invoice{recentInvoices.length === 1 ? "" : "s"}
               </span>
-              <Link to="/invoices" className="hover:text-foreground">
+              <Link href="/invoices" className="hover:text-foreground">
                 View all →
               </Link>
             </div>
@@ -53,7 +53,7 @@ export function DashboardRecentInvoicesSection({
                     <tr key={inv.id} className="border-b last:border-0 hover:bg-muted/30">
                       <td className="px-3 py-3 sm:px-4">
                         <Link
-                          to={`/invoices/${inv.id}`}
+                          href={`/invoices/${inv.id}`}
                           className="font-medium text-primary hover:underline"
                         >
                           {inv.invoiceNumber}
@@ -97,7 +97,7 @@ export function DashboardRecentInvoicesSection({
                           </p>
                         </div>
                         <Link
-                          to="/invoices?action=new"
+                          href="/invoices?action=new"
                           className="text-xs font-medium text-primary hover:underline"
                         >
                           Create invoice →

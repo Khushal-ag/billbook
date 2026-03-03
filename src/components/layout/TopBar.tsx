@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Menu, ChevronLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 interface TopBarProps {
@@ -24,11 +24,11 @@ export default function TopBar({
   const { mode, setMode } = useUIMode();
   const modeLabel = useSimpleLabel("Advanced", "Simple");
   const modeToggleTitle = useSimpleLabel("Switch to Simple Mode", "Switch to Advanced Mode");
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "";
   const organizationCode = user?.organizationCode?.trim();
-  const handleOpenProfile = () => navigate("/profile");
+  const handleOpenProfile = () => router.push("/profile");
 
   // Avatar/logo for business: use logo if available, else initials from business name
   const businessInitials = (() => {

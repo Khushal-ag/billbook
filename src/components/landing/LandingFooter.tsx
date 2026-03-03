@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
@@ -15,10 +15,10 @@ export function LandingFooter() {
             </p>
             <div className="mt-4 flex gap-2">
               <Button asChild size="sm">
-                <Link to="/?auth=signup">Start free</Link>
+                <Link href="/?auth=signup">Start free</Link>
               </Button>
               <Button asChild variant="outline" size="sm">
-                <Link to="/?auth=login">Sign in</Link>
+                <Link href="/?auth=login">Sign in</Link>
               </Button>
             </div>
           </div>
@@ -28,17 +28,17 @@ export function LandingFooter() {
               <p className="text-sm font-semibold text-foreground">Product</p>
               <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <Link className="hover:text-foreground" to="/?auth=signup">
+                  <Link className="hover:text-foreground" href="/?auth=signup">
                     Invoicing
                   </Link>
                 </li>
                 <li>
-                  <Link className="hover:text-foreground" to="/?auth=signup">
+                  <Link className="hover:text-foreground" href="/?auth=signup">
                     Reports
                   </Link>
                 </li>
                 <li>
-                  <Link className="hover:text-foreground" to="/?auth=signup">
+                  <Link className="hover:text-foreground" href="/?auth=signup">
                     Audit logs
                   </Link>
                 </li>
@@ -48,17 +48,17 @@ export function LandingFooter() {
               <p className="text-sm font-semibold text-foreground">Company</p>
               <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <Link className="hover:text-foreground" to="/?auth=signup">
+                  <Link className="hover:text-foreground" href="/?auth=signup">
                     Pricing
                   </Link>
                 </li>
                 <li>
-                  <Link className="hover:text-foreground" to="/?auth=signup">
+                  <Link className="hover:text-foreground" href="/?auth=signup">
                     Terms
                   </Link>
                 </li>
                 <li>
-                  <Link className="hover:text-foreground" to="/?auth=signup">
+                  <Link className="hover:text-foreground" href="/?auth=signup">
                     Privacy
                   </Link>
                 </li>
@@ -68,17 +68,17 @@ export function LandingFooter() {
               <p className="text-sm font-semibold text-foreground">Support</p>
               <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <Link className="hover:text-foreground" to="/?auth=signup">
+                  <Link className="hover:text-foreground" href="/?auth=signup">
                     Help centre
                   </Link>
                 </li>
                 <li>
-                  <Link className="hover:text-foreground" to="/?auth=signup">
+                  <Link className="hover:text-foreground" href="/?auth=signup">
                     Contact
                   </Link>
                 </li>
                 <li>
-                  <Link className="hover:text-foreground" to="/?auth=signup">
+                  <Link className="hover:text-foreground" href="/?auth=signup">
                     Book a demo
                   </Link>
                 </li>

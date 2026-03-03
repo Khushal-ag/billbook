@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsSimpleMode } from "@/hooks/use-simple-mode";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -151,7 +151,7 @@ export function DashboardInsightsSection({
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold">Revenue Trend</CardTitle>
-              <Link to="/reports" className="text-xs text-muted-foreground hover:text-foreground">
+              <Link href="/reports" className="text-xs text-muted-foreground hover:text-foreground">
                 View reports →
               </Link>
             </div>

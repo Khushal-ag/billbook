@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import LoginCard from "@/components/auth/LoginCard";
 import SignupCard from "@/components/auth/SignupCard";
 import ForgotPasswordCard from "@/components/auth/ForgotPasswordCard";
@@ -15,10 +15,13 @@ type AuthModalProps = {
 const AUTH_PARAM = "auth";
 
 export default function AuthModal({ redirectTo }: AuthModalProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const safePathname = pathname ?? "/";
 
   const mode = useMemo<AuthMode | null>(() => {
-    const value = searchParams.get(AUTH_PARAM);
+    const value = searchParams?.get(AUTH_PARAM);
     if (value === "login" || value === "signup" || value === "forgot") return value;
     return null;
   }, [searchParams]);
@@ -26,13 +29,14 @@ export default function AuthModal({ redirectTo }: AuthModalProps) {
   const open = !!mode;
 
   const setMode = (next: AuthMode | null) => {
-    const nextParams = new URLSearchParams(searchParams);
+    const nextParams = new URLSearchParams(searchParams ?? undefined);
     if (!next) {
       nextParams.delete(AUTH_PARAM);
     } else {
       nextParams.set(AUTH_PARAM, next);
     }
-    setSearchParams(nextParams, { replace: true });
+    const qs = nextParams.toString();
+    router.replace(qs ? `${safePathname}?${qs}` : safePathname);
   };
 
   return (
@@ -43,6 +47,9 @@ export default function AuthModal({ redirectTo }: AuthModalProps) {
       }}
     >
       <DialogContent className="w-[calc(100%-2rem)] max-w-md p-0 sm:rounded-xl">
+        <DialogTitle className="sr-only">
+          {mode === "signup" ? "Sign up" : mode === "forgot" ? "Reset password" : "Log in"}
+        </DialogTitle>
         <div className="p-0">
           {mode === "signup" ? (
             <SignupCard redirectTo={redirectTo} onRequestLogin={() => setMode("login")} />

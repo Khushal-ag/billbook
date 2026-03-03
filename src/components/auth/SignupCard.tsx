@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,7 +38,7 @@ type SignupCardProps = {
 
 export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardProps) {
   const { requestSignupOtp, verifySignupOtp } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [otpRequested, setOtpRequested] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -89,7 +90,7 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
         businessName: data.businessName,
         otp: data.otp,
       });
-      navigate(redirectTo || "/dashboard", { replace: true });
+      router.replace(redirectTo || "/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Signup failed");
     }
@@ -248,7 +249,7 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
                 Sign in
               </button>
             ) : (
-              <Link to="/?auth=login" className="font-medium text-accent hover:underline">
+              <Link href="/?auth=login" className="font-medium text-accent hover:underline">
                 Sign in
               </Link>
             )}

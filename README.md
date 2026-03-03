@@ -1,13 +1,13 @@
-# BillBook Frontend — Billing, Invoicing & GST Reports (React + TypeScript)
+# BillBook Frontend — Billing, Invoicing & GST Reports (Next.js + TypeScript)
 
 BillBook is a modern, responsive **billing & invoicing web app frontend** built for day-to-day B2B operations.
 It helps teams manage **invoices**, **credit notes**, **parties (customers/vendors)**, **products**, and **GST / tax-ready reports** with clean workflows.
 
-Keywords: billing software UI, invoicing app, GST reports, credit notes, parties & products management, audit logs, React TypeScript dashboard.
+Keywords: billing software UI, invoicing app, GST reports, credit notes, parties & products management, audit logs, Next.js TypeScript dashboard.
 
 ## Table of Contents
 
-- [BillBook Frontend — Billing, Invoicing \& GST Reports (React + TypeScript)](#billbook-frontend--billing-invoicing--gst-reports-react--typescript)
+- [BillBook Frontend — Billing, Invoicing \& GST Reports (Next.js + TypeScript)](#billbook-frontend--billing-invoicing--gst-reports-nextjs--typescript)
   - [Table of Contents](#table-of-contents)
   - [Features](#features)
   - [Screenshots](#screenshots)
@@ -15,6 +15,7 @@ Keywords: billing software UI, invoicing app, GST reports, credit notes, parties
   - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
     - [Environment variables](#environment-variables)
+  - [Production SEO Checklist](#production-seo-checklist)
   - [Notes](#notes)
   - [Scripts](#scripts)
   - [Project Structure](#project-structure)
@@ -55,12 +56,10 @@ Screenshots from the current UI (stored in `docs/screenshots/`):
 
 ## Tech Stack
 
-- **React 18** + **TypeScript** — UI framework
-- **Vite** — build tool & dev server
+- **Next.js 16 (App Router)** + **React 19** + **TypeScript**
 - **Tailwind CSS** + **shadcn/ui** — styling & component library
-- **Axios** — HTTP client with interceptors
+- **Fetch API** — HTTP client wrapper with auth/refresh handling
 - **TanStack React Query** — server state management
-- **React Router v6** — client-side routing
 - **React Hook Form** + **Zod** — form handling & validation
 - **Recharts** — dashboard charts
 
@@ -78,7 +77,7 @@ bun install
 # Copy env file and configure
 cp .env.example .env
 
-# Start dev server (http://localhost:5173)
+# Start dev server (http://localhost:3000)
 bun dev
 ```
 
@@ -107,13 +106,13 @@ This app expects API/auth configuration via `.env`. Start from `.env.example` an
 
 ```
 src/
-├── api/            # Axios client, interceptors, token management
+├── api/            # Fetch client wrapper, auth refresh flow, token management
 ├── components/     # Shared & layout components
 │   ├── ui/         # shadcn/ui primitives
 │   └── layout/     # AppLayout, Sidebar, TopBar
 ├── contexts/       # React context providers (Auth)
 ├── hooks/          # Custom hooks (data fetching, business logic)
 ├── lib/            # Env validation, utilities
-├── pages/          # Route-level page components
+├── app/            # Next.js App Router routes/layouts
 └── types/          # Domain-specific TypeScript types
 ```

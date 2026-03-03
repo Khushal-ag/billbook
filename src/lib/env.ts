@@ -1,11 +1,13 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  VITE_API_BASE_URL: z.string().url("VITE_API_BASE_URL must be a valid URL"),
+  NEXT_PUBLIC_API_BASE_URL: z.string().url("NEXT_PUBLIC_API_BASE_URL must be a valid URL"),
 });
 
 function validateEnv() {
-  const parsed = envSchema.safeParse(import.meta.env);
+  const parsed = envSchema.safeParse({
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  });
 
   if (!parsed.success) {
     const errors = parsed.error.flatten().fieldErrors;

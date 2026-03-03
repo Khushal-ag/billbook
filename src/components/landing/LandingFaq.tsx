@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,10 +36,10 @@ export function LandingFaq() {
                 </div>
                 <div className="grid gap-2 pt-2">
                   <Button asChild size="sm">
-                    <Link to="/?auth=signup">Start free</Link>
+                    <Link href="/?auth=signup">Start free</Link>
                   </Button>
                   <Button asChild size="sm" variant="outline">
-                    <Link to="/?auth=signup">Book a demo</Link>
+                    <Link href="/?auth=signup">Book a demo</Link>
                   </Button>
                 </div>
               </CardContent>

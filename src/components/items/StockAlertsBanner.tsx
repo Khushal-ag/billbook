@@ -1,6 +1,6 @@
 import { AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import type { Alert } from "@/types/alert";
 import { formatDate } from "@/lib/utils";
 
@@ -29,7 +29,7 @@ export function StockAlertsBanner({ alerts, onMarkRead, markReadPending }: Stock
             <div className="flex items-center gap-2">
               {a.itemId != null && (
                 <Link
-                  to={`/items/${a.itemId}`}
+                  href={`/items/${a.itemId}`}
                   className="text-primary hover:underline"
                   onClick={(e) => e.stopPropagation()}
                 >

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Invoice } from "@/types/invoice";
@@ -56,7 +56,7 @@ export function InvoicesTable({ invoices }: InvoicesTableProps) {
             >
               <td className="px-4 py-3 sm:px-6">
                 <Link
-                  to={`/invoices/${inv.id}`}
+                  href={`/invoices/${inv.id}`}
                   className="font-medium text-accent hover:underline"
                 >
                   {inv.invoiceNumber}

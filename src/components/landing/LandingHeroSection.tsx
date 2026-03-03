@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,10 +28,10 @@ export function LandingHeroSection() {
 
           <div className="animation-delay-400 mt-8 flex flex-col gap-3 motion-safe:animate-fade-in sm:flex-row">
             <Button asChild size="lg" className="shadow-sm transition-shadow hover:shadow-md">
-              <Link to="/?auth=signup">Start free</Link>
+              <Link href="/?auth=signup">Start free</Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link to="/?auth=login">Sign in</Link>
+              <Link href="/?auth=login">Sign in</Link>
             </Button>
           </div>
 

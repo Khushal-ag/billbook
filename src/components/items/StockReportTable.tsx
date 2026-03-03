@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -77,7 +77,7 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
                 >
                   <td className={cn(tdClass, "pl-3 text-left sm:pl-4")}>
                     <Link
-                      to={`/items/${row.itemId}`}
+                      href={`/items/${row.itemId}`}
                       className="font-medium text-foreground hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >

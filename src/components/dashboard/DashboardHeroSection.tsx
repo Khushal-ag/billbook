@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { IndianRupee, TrendingUp, TrendingDown, FileText } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
@@ -25,7 +25,7 @@ export function DashboardHeroSection({
           <p className="text-sm text-muted-foreground">{greeting}</p>
         </div>
         <Button asChild size="lg" className="h-11 rounded-full px-6">
-          <Link to="/invoices?action=new">
+          <Link href="/invoices?action=new">
             <span className="mr-1">+</span> New Invoice
           </Link>
         </Button>

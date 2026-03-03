@@ -14,7 +14,6 @@ const DEFAULT_MODE: UIMode = "simple";
 
 export function UIModeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<UIMode>(DEFAULT_MODE);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   // Initialize from localStorage on mount
   useEffect(() => {
@@ -22,18 +21,12 @@ export function UIModeProvider({ children }: { children: ReactNode }) {
     if (stored === "advanced" || stored === "simple") {
       setModeState(stored);
     }
-    setIsInitialized(true);
   }, []);
 
   const setMode = useCallback((newMode: UIMode) => {
     setModeState(newMode);
     localStorage.setItem(UI_MODE_KEY, newMode);
   }, []);
-
-  // Don't render children until initialized to prevent hydration mismatch
-  if (!isInitialized) {
-    return null;
-  }
 
   return <UIModeContext.Provider value={{ mode, setMode }}>{children}</UIModeContext.Provider>;
 }

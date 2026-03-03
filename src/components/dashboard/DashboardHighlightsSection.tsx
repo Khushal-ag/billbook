@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { Package, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsSimpleMode } from "@/hooks/use-simple-mode";
@@ -28,7 +28,7 @@ export function DashboardHighlightsSection({
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold">Top Items</CardTitle>
-              <Link to="/items" className="text-xs text-muted-foreground hover:text-foreground">
+              <Link href="/items" className="text-xs text-muted-foreground hover:text-foreground">
                 View all →
               </Link>
             </div>
@@ -64,7 +64,7 @@ export function DashboardHighlightsSection({
                       Add items and sell them to see top performers here.
                     </p>
                   </div>
-                  <Link to="/items" className="text-xs font-medium text-primary hover:underline">
+                  <Link href="/items" className="text-xs font-medium text-primary hover:underline">
                     Add items →
                   </Link>
                 </div>
@@ -77,7 +77,7 @@ export function DashboardHighlightsSection({
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold">Top Customers</CardTitle>
-              <Link to="/parties" className="text-xs text-muted-foreground hover:text-foreground">
+              <Link href="/parties" className="text-xs text-muted-foreground hover:text-foreground">
                 View all →
               </Link>
             </div>
@@ -115,7 +115,10 @@ export function DashboardHighlightsSection({
                       Create parties and invoices to see top customers here.
                     </p>
                   </div>
-                  <Link to="/parties" className="text-xs font-medium text-primary hover:underline">
+                  <Link
+                    href="/parties"
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
                     Add parties →
                   </Link>
                 </div>

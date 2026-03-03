@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight, BarChart2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChartTooltipContent } from "@/components/ui/chart";
@@ -96,7 +96,7 @@ export function HeroCard({
 
   return (
     <Link
-      to={href}
+      href={href}
       className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       {content}
@@ -179,7 +179,7 @@ export function QuickStat({ label, value, href, variant = "default", children }:
 
   return (
     <Link
-      to={href}
+      href={href}
       className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       {content}

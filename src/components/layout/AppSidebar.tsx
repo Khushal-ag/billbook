@@ -1,4 +1,5 @@
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsSimpleMode } from "@/hooks/use-simple-mode";
 import {
@@ -85,23 +86,21 @@ interface AppSidebarProps {
 }
 
 export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
-  const { pathname } = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
   const { logout, user } = useAuth();
   const isSimpleMode = useIsSimpleMode();
+  const safePathname = pathname ?? "";
 
   const handleLogout = async () => {
-    // Close mobile sheet (if any) and navigate to the public landing first.
-    // We pass state to prevent Landing from redirecting back to /dashboard while
-    // logout is still in-flight.
     onNavigate?.();
-    navigate("/", { replace: true, state: { loggedOut: true } });
+    router.replace("/?loggedOut=1");
     await logout();
   };
 
   const isActive = (path: string) => {
-    if (path === "/dashboard") return pathname === "/dashboard";
-    return pathname.startsWith(path);
+    if (path === "/dashboard") return safePathname === "/dashboard";
+    return safePathname.startsWith(path);
   };
 
   const getVisibleSections = (): NavSection[] => {
@@ -128,7 +127,7 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
     >
       {/* Logo */}
       <Link
-        to="/dashboard"
+        href="/dashboard"
         className="flex h-14 shrink-0 items-center px-4 transition-opacity hover:opacity-80"
         onClick={onNavigate}
       >
@@ -156,7 +155,7 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
               {section.items.map((item) => (
                 <Link
                   key={item.path}
-                  to={item.path}
+                  href={item.path}
                   onClick={onNavigate}
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
@@ -181,7 +180,7 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
       <div className="shrink-0 space-y-1 p-2">
         {!collapsed && (
           <Link
-            to="/settings"
+            href="/settings"
             onClick={onNavigate}
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",

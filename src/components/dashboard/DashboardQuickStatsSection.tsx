@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { Package, Users, TrendingDown, TrendingUp } from "lucide-react";
 import { QuickStat } from "./dashboard-utils";
 import type { DashboardData } from "@/types/dashboard";
@@ -13,7 +13,7 @@ export function DashboardQuickStatsSection({ dashboard }: DashboardQuickStatsSec
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold">Business snapshot</h2>
-        <Link to="/reports" className="text-xs text-muted-foreground hover:text-foreground">
+        <Link href="/reports" className="text-xs text-muted-foreground hover:text-foreground">
           View analytics →
         </Link>
       </div>

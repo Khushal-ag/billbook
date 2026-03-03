@@ -11,7 +11,7 @@ import { formatCurrency, formatQuantity } from "@/lib/utils";
 import { formatDate } from "@/lib/utils";
 import { useStockEntry } from "@/hooks/use-items";
 import { Package, Calendar, Hash, DollarSign, Building2, Layers, Wrench } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import type { Item } from "@/types/item";
 
 interface StockEntryDetailSheetProps {
@@ -99,7 +99,10 @@ export function StockEntryDetailSheet({
                   <div>
                     <p className={labelClass}>Item</p>
                     <p className={valueClass}>
-                      <Link to={`/items/${entry.itemId}`} className="text-primary hover:underline">
+                      <Link
+                        href={`/items/${entry.itemId}`}
+                        className="text-primary hover:underline"
+                      >
                         {entry.item?.name ?? `Item #${entry.itemId}`}
                       </Link>
                       {entry.unit && (
