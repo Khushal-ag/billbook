@@ -1,61 +1,75 @@
 import { Badge } from "@/components/ui/badge";
-import { formatDate } from "@/lib/utils";
-import { getActionBadgeVariant, getChangesDisplay } from "@/lib/audit-log";
+import { formatDate, formatTime } from "@/lib/utils";
+import {
+  getActionBadgeVariant,
+  getAuditActivityTitle,
+  getAuditChangeHighlights,
+  getAuditMeta,
+  getAuditResourceTypeLabel,
+} from "@/lib/audit-log";
+import { ACTION_DOT_COLORS } from "@/constants/audit";
 import type { AuditLog } from "@/types/audit-log";
 
 export function AuditLogsTable({ logs }: { logs: AuditLog[] }) {
+  const getDotColor = (action: string) => ACTION_DOT_COLORS[action] ?? "bg-slate-400";
+
   return (
-    <div className="data-table-container">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b bg-muted/30">
-            <th className="px-4 py-3 text-left font-medium text-muted-foreground sm:px-6">
-              Timestamp
-            </th>
-            <th className="px-3 py-3 text-left font-medium text-muted-foreground">Action</th>
-            <th className="px-3 py-3 text-left font-medium text-muted-foreground">Resource</th>
-            <th className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell">
-              Changes
-            </th>
-            <th className="hidden px-3 py-3 text-left font-medium text-muted-foreground lg:table-cell">
-              Role
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {logs.map((log) => (
-            <tr key={log.id} className="border-b last:border-0 hover:bg-muted/20">
-              <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground sm:px-6">
-                {formatDate(log.createdAt)}
-              </td>
-              <td className="px-3 py-3">
-                <Badge variant={getActionBadgeVariant(log.action)} className="font-mono text-xs">
-                  {log.action}
-                </Badge>
-              </td>
-              <td className="px-3 py-3">
-                <Badge variant="outline" className="text-xs">
-                  {log.resourceType}
-                </Badge>
-                {log.resourceId != null && (
-                  <span className="ml-2 font-medium text-accent">#{log.resourceId}</span>
-                )}
-              </td>
-              <td className="hidden px-3 py-3 text-xs text-muted-foreground md:table-cell">
-                {getChangesDisplay(log.changes)}
-              </td>
-              <td className="hidden px-3 py-3 lg:table-cell">
-                <Badge
-                  variant={log.actorRole === "OWNER" ? "default" : "secondary"}
-                  className="text-xs"
-                >
-                  {log.actorRole ?? "—"}
-                </Badge>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="rounded-lg border bg-card p-3 sm:p-4">
+      <div className="mb-3 flex items-center justify-between border-b pb-3 sm:mb-4 sm:pb-4">
+        <p className="text-sm font-semibold text-foreground">Activity Timeline</p>
+        <p className="text-xs text-muted-foreground">Latest first</p>
+      </div>
+
+      <div className="space-y-3 sm:space-y-4">
+        {logs.map((log, index) => {
+          const hasConnector = index < logs.length - 1;
+          const activityTitle = getAuditActivityTitle(log);
+          const activityMeta = getAuditMeta(log);
+          const highlights = getAuditChangeHighlights(log.changes);
+
+          return (
+            <article key={log.id} className="relative">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <div className="relative mt-1 flex w-4 shrink-0 justify-center">
+                  <span
+                    className={`relative z-10 h-3 w-3 rounded-full ring-2 ring-background ${getDotColor(log.action)}`}
+                  />
+                  {hasConnector && (
+                    <span className="absolute top-3 h-[calc(100%+1rem)] w-px bg-border/80 sm:h-[calc(100%+1.25rem)]" />
+                  )}
+                </div>
+
+                <div className="min-w-0 flex-1 rounded-md border border-border/60 bg-background/70 p-3 transition-colors hover:bg-muted/30 sm:p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold leading-5 text-foreground">
+                      {activityTitle}
+                    </p>
+                    <Badge variant={getActionBadgeVariant(log.action)} className="text-[10px]">
+                      {log.action}
+                    </Badge>
+                  </div>
+
+                  <p className="mt-1 text-[12px] text-muted-foreground">
+                    {formatDate(log.createdAt)} at {formatTime(log.createdAt)}
+                  </p>
+
+                  {highlights ? (
+                    <p className="mt-2 text-xs text-muted-foreground">{highlights}</p>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted-foreground">{activityMeta}</p>
+                  )}
+
+                  <div className="mt-2">
+                    <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
+                      {getAuditResourceTypeLabel(log.resourceType)}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </div>
   );
 }

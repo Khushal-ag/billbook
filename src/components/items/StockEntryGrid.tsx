@@ -82,14 +82,16 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
   }, []);
 
   const isRowComplete = useCallback((r: StockEntryRow) => {
-    if (!r.item || !r.quantity.trim()) return false;
-    const q = parseFloat(r.quantity.trim());
-    if (!Number.isFinite(q) || q <= 0) return false;
+    if (!r.item) return false;
     const selling = parseFloat(String(r.sellingPrice ?? "").trim());
     if (!Number.isFinite(selling) || selling < 0) return false;
     if (r.item.type === "SERVICE") {
       return true;
     }
+
+    if (!r.quantity.trim()) return false;
+    const q = parseFloat(r.quantity.trim());
+    if (!Number.isFinite(q) || q <= 0) return false;
 
     if (!r.purchaseDate || r.supplierId == null) return false;
     const purchase = parseFloat(String(r.purchasePrice ?? "").trim());
@@ -107,7 +109,7 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
 
     try {
       const isService = currentRow.item!.type === "SERVICE";
-      const qty = parseFloat(currentRow.quantity.trim());
+      const qty = isService ? 1 : parseFloat(currentRow.quantity.trim());
       const selling = parseFloat(String(currentRow.sellingPrice ?? "").trim());
       if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(selling) || selling < 0) {
         throw new Error("Invalid quantity or selling price");
@@ -203,7 +205,12 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                 <td className="px-3 py-2.5 align-middle sm:px-4">
                   <ItemAutocomplete
                     value={row.item}
-                    onValueChange={(item) => updateRow(row.id, { item })}
+                    onValueChange={(item) =>
+                      updateRow(row.id, {
+                        item,
+                        quantity: item?.type === "SERVICE" ? "1" : row.quantity,
+                      })
+                    }
                     items={items}
                     stockOnly={false}
                     compact
@@ -275,7 +282,8 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                       min="0"
                       step="any"
                       placeholder="0"
-                      value={row.quantity}
+                      value={row.item?.type === "SERVICE" ? "1" : row.quantity}
+                      disabled={row.item?.type === "SERVICE"}
                       onChange={(e) => updateRow(row.id, { quantity: e.target.value })}
                       className={`${inputClass} w-20 shrink-0 text-right tabular-nums`}
                     />

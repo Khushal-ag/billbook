@@ -7,9 +7,11 @@ export interface AuditLog {
   businessId: number;
   actorUserId: number | null;
   actorRole: Role | null;
+  actorName?: string | null;
   action: string;
   resourceType: string;
   resourceId: number | null;
+  resourceName?: string | null;
   changes: Record<string, unknown> | null;
   createdAt: string;
 }

@@ -9,6 +9,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -20,8 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, TriangleAlert } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CategoryCombobox } from "@/components/items/CategoryCombobox";
 import { UnitCombobox } from "@/components/items/UnitCombobox";
 import {
@@ -73,6 +84,17 @@ const schema = z
         path: ["minStockThreshold"],
         message: "Min stock alert is required for stock items",
       });
+    }
+
+    if (data.type === "STOCK" && (data.minStockThreshold ?? "").trim()) {
+      const threshold = (data.minStockThreshold ?? "").trim();
+      if (!/^\d+$/.test(threshold)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["minStockThreshold"],
+          message: "Min stock alert must be a whole number",
+        });
+      }
     }
 
     // If taxable is true, validate tax fields
@@ -163,6 +185,8 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
   const createUnitMutation = useCreateUnit();
   const [category, setCategory] = useState<Category | null>(null);
   const [showCategoryError, setShowCategoryError] = useState(false);
+  const [deactivateConfirmOpen, setDeactivateConfirmOpen] = useState(false);
+  const isItemActive = watch("isActive");
 
   // Reset form when dialog opens or edited item changes. Omit `categories` from deps so that
   // adding a category (which refetches categories) does not reset the form or clear selection.
@@ -243,7 +267,17 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
       return;
     }
 
+    await submitItem(data);
+  };
+
+  const submitItem = async (data: FormData) => {
     setShowCategoryError(false);
+
+    if (!category || !category.id || category.id <= 0) {
+      setShowCategoryError(true);
+      showErrorToast(null, "Category is required");
+      return;
+    }
 
     const payload: CreateItemRequest = {
       name: capitaliseWords(data.name),
@@ -276,6 +310,26 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
     } catch (err) {
       showErrorToast(err, isEdit ? "Failed to update item" : "Failed to create item");
     }
+  };
+
+  const handleStatusChange = (value: string) => {
+    if (value === "active") {
+      setValue("isActive", true);
+      return;
+    }
+
+    // Confirm only when deactivating an already-active existing item.
+    if (isEdit && item?.isActive && isItemActive) {
+      setDeactivateConfirmOpen(true);
+      return;
+    }
+
+    setValue("isActive", false);
+  };
+
+  const handleConfirmDeactivate = () => {
+    setValue("isActive", false);
+    setDeactivateConfirmOpen(false);
   };
 
   const handleCreateUnit = async (
@@ -349,24 +403,6 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
                     </Select>
                   </div>
                 </div>
-                <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-muted/10 px-4 py-3">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Active</p>
-                    <p className="text-xs text-muted-foreground">
-                      Inactive items are hidden by default from lists and selections.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {watch("isActive") ? "Active" : "Inactive"}
-                    </span>
-                    <Switch
-                      id="isActive"
-                      checked={watch("isActive")}
-                      onCheckedChange={(v) => setValue("isActive", !!v)}
-                    />
-                  </div>
-                </div>
                 <div className="space-y-2">
                   <Label>Category *</Label>
                   <CategoryCombobox
@@ -407,7 +443,15 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
                       <Label>Min stock alert *</Label>
                       <Input
                         className="placeholder:opacity-80"
-                        {...register("minStockThreshold")}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        step={1}
+                        min={0}
+                        {...register("minStockThreshold", {
+                          onChange: (event) => {
+                            event.target.value = event.target.value.replace(/\D/g, "");
+                          },
+                        })}
                         placeholder="e.g. 10"
                       />
                       {errors.minStockThreshold && (
@@ -465,7 +509,7 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
                   <Switch
                     id="isTaxable"
                     checked={watch("isTaxable")}
-                    onCheckedChange={(v) => setValue("isTaxable", !!v)}
+                    onCheckedChange={(checked: boolean) => setValue("isTaxable", checked)}
                   />
                   <Label htmlFor="isTaxable" className="cursor-pointer font-normal">
                     Taxable
@@ -563,6 +607,30 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
               </section>
             </div>
           </div>
+          <div className="shrink-0 border-t px-6 py-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <Label className="text-sm font-medium">Status</Label>
+              <RadioGroup
+                value={isItemActive ? "active" : "inactive"}
+                onValueChange={handleStatusChange}
+                className="flex items-center gap-6"
+                aria-label="Item status"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem id="status-active" value="active" />
+                  <Label htmlFor="status-active" className="cursor-pointer text-sm font-normal">
+                    Active
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem id="status-inactive" value="inactive" />
+                  <Label htmlFor="status-inactive" className="cursor-pointer text-sm font-normal">
+                    Inactive
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
           <DialogFooter className="shrink-0 border-t px-6 py-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -574,6 +642,33 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <AlertDialog
+        open={deactivateConfirmOpen}
+        onOpenChange={(open) => setDeactivateConfirmOpen(open)}
+      >
+        <AlertDialogContent className="max-w-md overflow-hidden p-0">
+          <AlertDialogHeader className="border-b bg-destructive/5 px-5 py-4">
+            <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-destructive/15 text-destructive">
+              <TriangleAlert className="h-4 w-4" />
+            </div>
+            <AlertDialogTitle className="text-base">Deactivate this item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will mark the item as inactive and hide it by default in item lists and
+              selections.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="border-t px-5 py-4">
+            <AlertDialogCancel>Keep Active</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeactivate}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

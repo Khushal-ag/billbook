@@ -4,8 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Item } from "@/types/item";
 import { getItemCategoryDisplay, getItemTaxDisplay } from "@/types/item";
-import { Switch } from "@/components/ui/switch";
-import { useSetItemActive } from "@/hooks/use-items";
 
 interface ItemsTableProps {
   items: Item[];
@@ -14,7 +12,6 @@ interface ItemsTableProps {
 }
 
 export function ItemsTable({ items, onEdit, onViewLedger }: ItemsTableProps) {
-  const setActiveMutation = useSetItemActive();
   return (
     <div className="data-table-container">
       <table className="w-full text-sm" role="table" aria-label="Items list">
@@ -38,7 +35,7 @@ export function ItemsTable({ items, onEdit, onViewLedger }: ItemsTableProps) {
             <th className="hidden min-w-[80px] px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground lg:table-cell">
               HSN / SAC
             </th>
-            <th className="min-w-[132px] px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <th className="min-w-[88px] px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Actions
             </th>
           </tr>
@@ -90,21 +87,9 @@ export function ItemsTable({ items, onEdit, onViewLedger }: ItemsTableProps) {
               </td>
               <td className="px-3 py-3.5 text-right align-middle">
                 <div
-                  className="grid grid-cols-[auto_2rem_2rem] items-center justify-end gap-1.5"
+                  className="grid grid-cols-[2rem_2rem] items-center justify-end gap-1.5"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex h-8 items-center justify-end pr-1">
-                    <Switch
-                      checked={item.isActive}
-                      disabled={
-                        setActiveMutation.isPending && setActiveMutation.variables?.id === item.id
-                      }
-                      onCheckedChange={(checked) =>
-                        setActiveMutation.mutate({ id: item.id, isActive: checked })
-                      }
-                      aria-label={`${item.isActive ? "Deactivate" : "Activate"} ${item.name}`}
-                    />
-                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
