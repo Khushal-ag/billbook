@@ -65,7 +65,7 @@ export default function InvoiceDialog({ open, onOpenChange }: Props) {
   const { data: partiesData } = useParties();
   const { data: itemsData } = useItems({ limit: 500 });
 
-  const parties = (partiesData?.parties ?? []).filter((p) => !p.deletedAt);
+  const parties = (partiesData?.parties ?? []).filter((p) => p.isActive);
   const items = (itemsData?.items ?? []).filter((i) => i.isActive);
 
   const {

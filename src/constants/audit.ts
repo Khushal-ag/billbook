@@ -1,5 +1,13 @@
 /** Audit log action filter options. */
-export const AUDIT_ACTIONS = ["CREATE", "UPDATE", "DELETE", "FINALIZE", "CANCEL"] as const;
+export const AUDIT_ACTIONS = [
+  "CREATE",
+  "UPDATE",
+  "DELETE",
+  "FINALIZE",
+  "CANCEL",
+  "ACTIVATE",
+  "DEACTIVATE",
+] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
@@ -11,6 +19,8 @@ export const ACTION_BADGE_VARIANTS: Record<string, AuditBadgeVariant> = {
   DELETE: "destructive",
   FINALIZE: "default",
   CANCEL: "destructive",
+  ACTIVATE: "default",
+  DEACTIVATE: "outline",
 };
 
 export const ACTION_VERBS: Record<string, string> = {
@@ -19,6 +29,8 @@ export const ACTION_VERBS: Record<string, string> = {
   DELETE: "deleted",
   FINALIZE: "finalized",
   CANCEL: "canceled",
+  ACTIVATE: "activated",
+  DEACTIVATE: "deactivated",
 };
 
 export const ACTION_DOT_COLORS: Record<string, string> = {
@@ -27,6 +39,8 @@ export const ACTION_DOT_COLORS: Record<string, string> = {
   DELETE: "bg-rose-500",
   CANCEL: "bg-rose-500",
   FINALIZE: "bg-sky-500",
+  ACTIVATE: "bg-emerald-500",
+  DEACTIVATE: "bg-slate-500",
 };
 
 export const RESOURCE_TYPE_LABELS: Record<string, string> = {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsSimpleMode } from "@/hooks/use-simple-mode";
 import {
@@ -87,10 +87,13 @@ interface AppSidebarProps {
 
 export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { logout, user } = useAuth();
   const isSimpleMode = useIsSimpleMode();
   const safePathname = pathname ?? "";
+  const ledgerSource = searchParams.get("from");
+  const isPartyLedgerRoute = /^\/parties\/[^/]+\/ledger\/?$/.test(safePathname);
 
   const handleLogout = async () => {
     onNavigate?.();
@@ -99,6 +102,11 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
   };
 
   const isActive = (path: string) => {
+    if (isPartyLedgerRoute && ledgerSource === "vendors") {
+      if (path === "/vendors") return true;
+      if (path === "/parties") return false;
+    }
+
     if (path === "/dashboard") return safePathname === "/dashboard";
     return safePathname.startsWith(path);
   };

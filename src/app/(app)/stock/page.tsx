@@ -56,9 +56,7 @@ export default function Stock() {
   const createStockEntry = useCreateStockEntry();
 
   const items = (itemsData?.items ?? []).filter((i) => i.isActive);
-  const suppliers = (partiesData?.parties ?? []).filter(
-    (p) => !p.deletedAt && p.type === "SUPPLIER",
-  );
+  const suppliers = (partiesData?.parties ?? []).filter((p) => p.isActive && p.type === "SUPPLIER");
   const stockEntries = useMemo(
     (): StockEntry[] => stockEntriesData?.entries ?? [],
     [stockEntriesData],

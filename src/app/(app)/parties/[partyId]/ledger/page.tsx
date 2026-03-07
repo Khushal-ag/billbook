@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import {
-  useParties,
+  useParty,
   usePartyLedger,
   usePartyBalance,
   usePartyStatement,
@@ -57,9 +57,9 @@ export default function PartyLedger() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // Fetch party details
-  const partiesQuery = useParties({ type: "CUSTOMER" });
-  const party = partiesQuery.data?.parties?.find((p) => p.id === numPartyId);
+  // Fetch party details by ID so vendors/inactive parties resolve correctly.
+  const partyQuery = useParty(numPartyId);
+  const party = partyQuery.data;
 
   // Fetch ledger data
   const ledgerQuery = usePartyLedger(numPartyId);
@@ -69,7 +69,7 @@ export default function PartyLedger() {
     format: "json",
     startDate: startDate || undefined,
     endDate: endDate || undefined,
-    enabled: false,
+    enabled: tab === "statement",
   });
   const statementPdf = usePartyStatement({
     partyId: numPartyId,
@@ -144,7 +144,7 @@ export default function PartyLedger() {
     }
   };
 
-  if (partiesQuery.isPending) {
+  if (partyQuery.isPending) {
     return <SettingsSkeleton />;
   }
 
@@ -155,9 +155,9 @@ export default function PartyLedger() {
           title="Party Ledger"
           description="View party accounting details"
           action={
-            <Button variant="ghost" onClick={() => router.push("/parties")} className="mr-4">
+            <Button variant="ghost" onClick={() => router.push(backTo)} className="mr-4">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
+              {backLabel}
             </Button>
           }
         />

@@ -10,13 +10,11 @@ import SearchInput from "@/components/SearchInput";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import PartyDialog from "@/components/dialogs/PartyDialog";
-import ConfirmDialog from "@/components/ConfirmDialog";
 import { PartiesTable } from "@/components/parties/PartySections";
-import { useParties, useDeleteParty } from "@/hooks/use-parties";
-import { usePermissions } from "@/hooks/use-permissions";
+import { Switch } from "@/components/ui/switch";
+import { useParties } from "@/hooks/use-parties";
 import { useDebounce } from "@/hooks/use-debounce";
 import type { Party } from "@/types/party";
-import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
 const PARTY_TYPE = "SUPPLIER" as const;
 
@@ -26,19 +24,13 @@ export default function Vendors() {
   const debouncedSearch = useDebounce(search, 300);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editParty, setEditParty] = useState<Party | undefined>();
-  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; party: Party | null }>({
-    open: false,
-    party: null,
-  });
-  const { isOwner } = usePermissions();
+  const [includeInactive, setIncludeInactive] = useState(false);
 
-  const { data, isPending, error } = useParties({ type: PARTY_TYPE });
-  const deleteParty = useDeleteParty();
+  const { data, isPending, error } = useParties({ type: PARTY_TYPE, includeInactive });
 
   const parties = data?.parties ?? [];
   const filtered = parties.filter(
     (p) =>
-      !p.deletedAt &&
       p.type === PARTY_TYPE &&
       (!debouncedSearch || p.name.toLowerCase().includes(debouncedSearch.toLowerCase())),
   );
@@ -50,24 +42,6 @@ export default function Vendors() {
   const openEdit = (p: Party) => {
     setEditParty(p);
     setDialogOpen(true);
-  };
-
-  const handleDelete = (p: Party) => {
-    setDeleteConfirm({ open: true, party: p });
-  };
-
-  const confirmDelete = () => {
-    if (!deleteConfirm.party) return;
-    deleteParty.mutate(deleteConfirm.party.id, {
-      onSuccess: () => {
-        showSuccessToast("Vendor deleted");
-        setDeleteConfirm({ open: false, party: null });
-      },
-      onError: (err) => {
-        showErrorToast(err, "Failed to delete");
-        setDeleteConfirm({ open: false, party: null });
-      },
-    });
   };
 
   return (
@@ -90,6 +64,15 @@ export default function Vendors() {
         className="mb-4 w-full sm:max-w-sm"
       />
 
+      <div className="mb-4 flex w-fit items-center gap-2 rounded-lg border border-border bg-muted/20 px-3 py-1.5">
+        <Switch
+          checked={includeInactive}
+          onCheckedChange={setIncludeInactive}
+          aria-label="Show inactive vendors"
+        />
+        <span className="text-sm text-muted-foreground">Show inactive</span>
+      </div>
+
       <ErrorBanner error={error} fallbackMessage="Failed to load vendors" />
 
       {isPending ? (
@@ -109,11 +92,8 @@ export default function Vendors() {
       ) : (
         <PartiesTable
           parties={filtered}
-          isOwner={isOwner}
-          deletePending={deleteParty.isPending}
           onEdit={openEdit}
           onLedger={(partyId) => router.push(`/parties/${partyId}/ledger?from=vendors`)}
-          onDelete={handleDelete}
         />
       )}
 
@@ -123,16 +103,6 @@ export default function Vendors() {
         party={editParty}
         defaultType="SUPPLIER"
         typeLocked
-      />
-
-      <ConfirmDialog
-        open={deleteConfirm.open}
-        onOpenChange={(open) => setDeleteConfirm({ open, party: deleteConfirm.party })}
-        onConfirm={confirmDelete}
-        title="Delete Vendor"
-        description={`Are you sure you want to delete "${deleteConfirm.party?.name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        variant="destructive"
       />
     </div>
   );

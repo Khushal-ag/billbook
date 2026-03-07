@@ -13,9 +13,9 @@ export interface Party {
   state: string | null;
   postalCode: string | null;
   openingBalance: string | null;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  deletedAt: string | null;
 }
 
 export interface CreatePartyRequest {
@@ -29,6 +29,7 @@ export interface CreatePartyRequest {
   state?: string;
   postalCode?: string;
   openingBalance?: string;
+  isActive?: boolean;
 }
 
 export type LedgerEntryType = "OPENING_BALANCE" | "INVOICE" | "PAYMENT" | "CREDIT_NOTE";
@@ -36,6 +37,7 @@ export type LedgerEntryType = "OPENING_BALANCE" | "INVOICE" | "PAYMENT" | "CREDI
 export interface PartyLedgerEntry {
   entryType: LedgerEntryType;
   entryDate?: string;
+  createdAt?: string;
   debitAmount?: string;
   creditAmount?: string;
   runningBalance: string;

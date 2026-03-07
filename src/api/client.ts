@@ -127,8 +127,10 @@ async function request<T>(
 async function refreshAccessToken(): Promise<string> {
   if (refreshPromise) return refreshPromise;
 
+  const currentRefreshToken = getRefreshToken();
+
   refreshPromise = request<{ tokens: AuthTokens }>("POST", REFRESH_PATH, {
-    body: {},
+    body: currentRefreshToken ? { refreshToken: currentRefreshToken } : {},
     shouldRetry: false,
     includeAuth: false,
   })

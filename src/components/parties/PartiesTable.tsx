@@ -1,26 +1,17 @@
-import { History, Pencil, Trash2 } from "lucide-react";
+import { History, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useIsSimpleMode } from "@/hooks/use-simple-mode";
 import { formatCurrency } from "@/lib/utils";
 import type { Party } from "@/types/party";
 
 interface PartiesTableProps {
   parties: Party[];
-  isOwner: boolean;
-  deletePending: boolean;
   onEdit: (party: Party) => void;
   onLedger: (partyId: number) => void;
-  onDelete: (party: Party) => void;
 }
 
-export function PartiesTable({
-  parties,
-  isOwner,
-  deletePending,
-  onEdit,
-  onLedger,
-  onDelete,
-}: PartiesTableProps) {
+export function PartiesTable({ parties, onEdit, onLedger }: PartiesTableProps) {
   const isSimpleMode = useIsSimpleMode();
 
   return (
@@ -65,6 +56,11 @@ export function PartiesTable({
             >
               <td className="max-w-[200px] truncate px-4 py-3 font-medium sm:max-w-none sm:px-6">
                 {party.name}
+                {!party.isActive && (
+                  <Badge variant="outline" className="ml-2 text-[10px] font-medium">
+                    Inactive
+                  </Badge>
+                )}
               </td>
               <td className="px-3 py-3 text-muted-foreground">{party.phone || "—"}</td>
               <td className="hidden px-3 py-3 font-mono text-xs text-muted-foreground md:table-cell">
@@ -96,19 +92,6 @@ export function PartiesTable({
                       aria-label={`View account history for ${party.name}`}
                     >
                       <History className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                  {isOwner && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => onDelete(party)}
-                      disabled={deletePending}
-                      title="Delete"
-                      aria-label={`Delete ${party.name}`}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   )}
                 </div>

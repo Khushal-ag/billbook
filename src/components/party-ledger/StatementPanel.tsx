@@ -93,7 +93,7 @@ export function StatementPanel({
                 {statement.entries.map((entry, idx) => (
                   <tr key={`${entry.entryType}-${idx}`} className="border-t">
                     <td className="px-3 py-2 text-muted-foreground">
-                      {formatDate(entry.entryDate)}
+                      {formatDate(entry.entryDate ?? entry.createdAt)}
                     </td>
                     <td className="px-3 py-2">{entry.entryType}</td>
                     <td className="px-3 py-2 text-right">

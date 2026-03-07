@@ -47,7 +47,7 @@ interface Props {
 export default function InvoiceEditDialog({ open, onOpenChange, invoice }: Props) {
   const updateMutation = useUpdateInvoice(invoice.id);
   const { data: partiesData } = useParties();
-  const parties = (partiesData?.parties ?? []).filter((p) => !p.deletedAt);
+  const parties = (partiesData?.parties ?? []).filter((p) => p.isActive);
 
   const {
     register,

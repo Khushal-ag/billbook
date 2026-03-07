@@ -13,13 +13,17 @@ import type {
   AdvancePayment,
 } from "@/types/party";
 
-export function useParties(params: { type?: string } = {}) {
-  const { type } = params;
+export function useParties(params: { type?: string; includeInactive?: boolean } = {}) {
+  const { type, includeInactive } = params;
 
   return useQuery({
-    queryKey: ["parties", type],
+    queryKey: ["parties", type, includeInactive],
     queryFn: async () => {
-      const res = await api.get<PartyListResponse>("/parties");
+      const qs = buildQueryString({
+        type,
+        includeInactive: includeInactive ? "true" : undefined,
+      });
+      const res = await api.get<PartyListResponse>(`/parties${qs ? `?${qs}` : ""}`);
       return res.data;
     },
   });
@@ -50,7 +54,7 @@ export function useCreateParty() {
 export function useUpdateParty(id: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: Partial<CreatePartyRequest>) => {
+    mutationFn: async (data: Partial<CreatePartyRequest> & { isActive?: boolean }) => {
       const res = await api.put<Party>(`/parties/${id}`, data);
       return res.data;
     },
@@ -58,16 +62,6 @@ export function useUpdateParty(id: number) {
       qc.invalidateQueries({ queryKey: ["parties"] });
       qc.invalidateQueries({ queryKey: ["party", id] });
     },
-  });
-}
-
-export function useDeleteParty() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`/parties/${id}`);
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["parties"] }),
   });
 }
 

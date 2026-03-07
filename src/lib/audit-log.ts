@@ -106,6 +106,14 @@ export function getAuditActivityTitle(log: LogLike): string {
   const resource = log.resourceName?.trim();
   const actualChanges = extractChanges(log.changes);
 
+  if (log.action === "ACTIVATE" || log.action === "DEACTIVATE") {
+    const verb = actionToVerb(log.action);
+    const entityName = resource || getStringValue(actualChanges, "name");
+    return entityName
+      ? `${actor} ${verb} ${resourceLabel} ${entityName}`
+      : `${actor} ${verb} ${resourceLabel}`;
+  }
+
   if (
     log.resourceType === "ITEM" &&
     log.action === "UPDATE" &&

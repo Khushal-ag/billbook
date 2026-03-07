@@ -1,6 +1,13 @@
 import type { Role } from "./auth";
 
-export type AuditAction = "CREATE" | "UPDATE" | "DELETE" | "FINALIZE" | "CANCEL";
+export type AuditAction =
+  | "CREATE"
+  | "UPDATE"
+  | "DELETE"
+  | "FINALIZE"
+  | "CANCEL"
+  | "ACTIVATE"
+  | "DEACTIVATE";
 
 export interface AuditLog {
   id: number;

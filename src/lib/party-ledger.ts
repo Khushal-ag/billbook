@@ -6,6 +6,7 @@ export interface BalanceSummary {
 
 export interface LedgerEntry {
   entryDate?: string;
+  createdAt?: string;
   entryType: string;
   debitAmount?: string;
   creditAmount?: string;

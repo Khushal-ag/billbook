@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useCreateParty, useUpdateParty } from "@/hooks/use-parties";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { Party } from "@/types/party";
 import { gstinString, optionalEmail, priceString, optionalString } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
@@ -49,6 +51,7 @@ const schema = z.object({
   state: optionalString,
   postalCode: optionalString,
   openingBalance: priceString,
+  isActive: z.boolean().default(true),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -75,6 +78,7 @@ export default function PartyDialog({
   const isEdit = !!party;
   const createMutation = useCreateParty();
   const updateMutation = useUpdateParty(party?.id ?? 0);
+  const [deactivateConfirmOpen, setDeactivateConfirmOpen] = useState(false);
 
   const {
     register,
@@ -89,6 +93,7 @@ export default function PartyDialog({
   });
 
   const partyType = watch("type");
+  const isPartyActive = watch("isActive");
   const postalCode = watch("postalCode");
   const pincodeInitialMountRef = useRef(true);
 
@@ -137,6 +142,7 @@ export default function PartyDialog({
           state: party.state ?? "",
           postalCode: party.postalCode ?? "",
           openingBalance: party.openingBalance ?? "",
+          isActive: party.isActive ?? true,
         });
       } else {
         reset({
@@ -150,6 +156,7 @@ export default function PartyDialog({
           state: "",
           postalCode: "",
           openingBalance: "",
+          isActive: true,
         });
       }
     }
@@ -167,6 +174,7 @@ export default function PartyDialog({
       state: data.state || undefined,
       postalCode: data.postalCode || undefined,
       openingBalance: data.openingBalance || undefined,
+      isActive: data.isActive,
     };
     try {
       if (isEdit) {
@@ -184,6 +192,25 @@ export default function PartyDialog({
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
+
+  const handleStatusChange = (value: string) => {
+    if (value === "active") {
+      setValue("isActive", true);
+      return;
+    }
+
+    if (isEdit && party?.isActive && isPartyActive) {
+      setDeactivateConfirmOpen(true);
+      return;
+    }
+
+    setValue("isActive", false);
+  };
+
+  const handleConfirmDeactivate = () => {
+    setValue("isActive", false);
+    setDeactivateConfirmOpen(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -277,6 +304,31 @@ export default function PartyDialog({
             </div>
           </div>
 
+          <div className="border-t pt-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <Label className="text-sm font-medium">Status</Label>
+              <RadioGroup
+                value={isPartyActive ? "active" : "inactive"}
+                onValueChange={handleStatusChange}
+                className="flex items-center gap-6"
+                aria-label="Party status"
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem id="status-active" value="active" />
+                  <Label htmlFor="status-active" className="cursor-pointer text-sm font-normal">
+                    Active
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem id="status-inactive" value="inactive" />
+                  <Label htmlFor="status-inactive" className="cursor-pointer text-sm font-normal">
+                    Inactive
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
@@ -288,6 +340,17 @@ export default function PartyDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <ConfirmDialog
+        open={deactivateConfirmOpen}
+        onOpenChange={setDeactivateConfirmOpen}
+        onConfirm={handleConfirmDeactivate}
+        title="Deactivate this party?"
+        description="Inactive parties are hidden by default in customer/vendor lists and selectors."
+        confirmText="Deactivate"
+        cancelText="Keep Active"
+        variant="destructive"
+      />
     </Dialog>
   );
 }
