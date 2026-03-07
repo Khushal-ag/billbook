@@ -76,6 +76,20 @@ export function formatDate(dateString: string | undefined | null): string {
 }
 
 /**
+ * Format a datetime string to human-readable time (e.g., "03:42 PM").
+ */
+export function formatTime(dateString: string | undefined | null): string {
+  if (!dateString) return "—";
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "—";
+    return date.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "—";
+  }
+}
+
+/**
  * Format a date string to month year format (e.g., "Feb 2026").
  */
 export function formatMonthYear(dateString: string | undefined | null): string {
@@ -249,7 +263,7 @@ export function generateSalesReportHTML(exportData: {
     <div class="header">
       <h1>Sales Report</h1>
       <p><strong>Period:</strong> ${startDate} to ${endDate}</p>
-      <p><strong>Generated:</strong> ${exportedDate}, ${new Date(exportData.exportedAt).toLocaleTimeString("en-IN")}</p>
+      <p><strong>Generated:</strong> ${exportedDate}, ${formatTime(exportData.exportedAt)}</p>
     </div>
 
     <div class="summary">
@@ -444,7 +458,7 @@ export function generateGSTReportHTML(exportData: {
     <div class="header">
       <h1>GST / Tax Report</h1>
       <p><strong>Period:</strong> ${startDate} to ${endDate}</p>
-      <p><strong>Generated:</strong> ${exportedDate}, ${new Date(exportData.exportedAt).toLocaleTimeString("en-IN")}</p>
+      <p><strong>Generated:</strong> ${exportedDate}, ${formatTime(exportData.exportedAt)}</p>
     </div>
 
     <div class="summary">
