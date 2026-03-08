@@ -24,7 +24,7 @@ export default function Parties() {
   const debouncedSearch = useDebounce(search, 300);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editParty, setEditParty] = useState<Party | undefined>();
-  const [includeInactive, setIncludeInactive] = useState(false);
+  const [includeInactive, setIncludeInactive] = useState(true);
 
   const { data, isPending, error } = useParties({ type: PARTY_TYPE, includeInactive });
 

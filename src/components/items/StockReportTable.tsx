@@ -58,9 +58,7 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
               <th className={cn(thRight, "hidden lg:table-cell")}>Value (cost)</th>
               <th className={cn(thClass, "hidden text-center md:table-cell")}>Status</th>
               {onAdjust && (
-                <th className="px-2 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:px-4">
-                  Actions
-                </th>
+                <th className={cn(thClass, "min-w-[92px] px-2 text-left sm:px-4")}>Actions</th>
               )}
             </tr>
           </thead>
@@ -117,7 +115,7 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
                   </td>
                   <td className={cn(tdClass, "hidden text-center md:table-cell")}>
                     {service ? (
-                      <span className="text-xs text-muted-foreground">Service</span>
+                      <span className="text-xs text-muted-foreground">N/A</span>
                     ) : row.isLowStock === true ? (
                       <Badge variant="destructive" className="text-xs font-medium">
                         Low stock
@@ -127,22 +125,24 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
                     )}
                   </td>
                   {onAdjust && (
-                    <td className="px-2 py-3 text-center sm:px-4">
-                      {!service && (
+                    <td className={cn(tdClass, "w-[92px] px-2 text-left sm:px-4")}>
+                      <div className="flex min-h-8 items-center">
                         <Button
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0"
+                          disabled={service}
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (service) return;
                             onAdjust(row.itemId, row.itemName);
                           }}
-                          title="Adjust stock"
+                          title={service ? "Not available for service items" : "Adjust stock"}
                           aria-label={`Adjust stock for ${row.itemName}`}
                         >
                           <SlidersHorizontal className="h-4 w-4" />
                         </Button>
-                      )}
+                      </div>
                     </td>
                   )}
                 </tr>

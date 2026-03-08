@@ -15,11 +15,18 @@ import { StockEntryGrid } from "@/components/items/StockEntryGrid";
 import { StockReportTable } from "@/components/items/StockReportTable";
 import { StockEntriesTable } from "@/components/items/StockEntriesTable";
 import { StockEntryDetailSheet } from "@/components/items/StockEntryDetailSheet";
-import AdjustStockDialog from "@/components/items/AdjustStockDialog";
-import { useItems, useStockList, useStockEntries, useCreateStockEntry } from "@/hooks/use-items";
+import AdjustStockDialog from "@/components/dialogs/AdjustStockDialog";
+import EditStockEntryDialog from "@/components/dialogs/EditStockEntryDialog";
+import {
+  useItems,
+  useStockList,
+  useStockEntries,
+  useCreateStockEntry,
+  useUpdateStockEntry,
+} from "@/hooks/use-items";
 import { useAlerts, useMarkAlertRead } from "@/hooks/use-alerts";
-import { useParties } from "@/hooks/use-parties";
-import type { CreateStockEntryRequest, StockEntry } from "@/types/item";
+import type { CreateStockEntryRequest, StockEntry, UpdateStockEntryRequest } from "@/types/item";
+import type { Party } from "@/types/party";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +41,8 @@ export default function Stock() {
   const [adjustItemName, setAdjustItemName] = useState<string>("");
   const [adjustStockEntryId, setAdjustStockEntryId] = useState<number | undefined>(undefined);
   const [adjustDialogOpen, setAdjustDialogOpen] = useState(false);
+  const [entryToEdit, setEntryToEdit] = useState<StockEntry | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
 
@@ -52,14 +61,68 @@ export default function Stock() {
     isPending: entriesPending,
     error: entriesError,
   } = useStockEntries({ limit: 200, search: debouncedSearch || undefined });
-  const { data: partiesData } = useParties();
   const createStockEntry = useCreateStockEntry();
+  const updateStockEntry = useUpdateStockEntry();
 
   const items = (itemsData?.items ?? []).filter((i) => i.isActive);
-  const suppliers = (partiesData?.parties ?? []).filter((p) => p.isActive && p.type === "SUPPLIER");
   const stockEntries = useMemo(
     (): StockEntry[] => stockEntriesData?.entries ?? [],
     [stockEntriesData],
+  );
+  const allSuppliers = useMemo((): Party[] => {
+    const map = new Map<number, Party>();
+
+    for (const entry of stockEntries) {
+      if (entry.supplierId == null) continue;
+      const existing = map.get(entry.supplierId);
+      const supplier: Party = {
+        id: entry.supplierId,
+        businessId: entry.businessId,
+        name: entry.supplierName ?? existing?.name ?? `#${entry.supplierId}`,
+        type: "SUPPLIER",
+        gstin: null,
+        email: null,
+        phone: null,
+        address: null,
+        city: null,
+        state: null,
+        postalCode: null,
+        openingBalance: null,
+        isActive: entry.supplierIsActive ?? existing?.isActive ?? true,
+        createdAt: existing?.createdAt ?? entry.createdAt,
+        updatedAt: existing?.updatedAt ?? entry.updatedAt,
+      };
+      map.set(entry.supplierId, supplier);
+    }
+
+    for (const row of stockData?.stock ?? []) {
+      if (row.supplierId == null) continue;
+      const existing = map.get(row.supplierId);
+      const supplier: Party = {
+        id: row.supplierId,
+        businessId: existing?.businessId ?? 0,
+        name: row.supplierName ?? existing?.name ?? `#${row.supplierId}`,
+        type: "SUPPLIER",
+        gstin: existing?.gstin ?? null,
+        email: existing?.email ?? null,
+        phone: existing?.phone ?? null,
+        address: existing?.address ?? null,
+        city: existing?.city ?? null,
+        state: existing?.state ?? null,
+        postalCode: existing?.postalCode ?? null,
+        openingBalance: existing?.openingBalance ?? null,
+        isActive: row.supplierIsActive ?? existing?.isActive ?? true,
+        createdAt: existing?.createdAt ?? "",
+        updatedAt: existing?.updatedAt ?? "",
+      };
+      map.set(row.supplierId, supplier);
+    }
+
+    return Array.from(map.values());
+  }, [stockData?.stock, stockEntries]);
+  const activeSuppliers = useMemo(
+    () => allSuppliers.filter((supplier) => supplier.isActive),
+    [allSuppliers],
   );
 
   // Cards always use overall (unfiltered) summary; list uses filtered data
@@ -79,22 +142,47 @@ export default function Stock() {
   );
   const selectedSupplierName = useMemo(() => {
     if (!selectedEntry?.supplierId) return null;
-    return suppliers.find((p) => p.id === selectedEntry.supplierId)?.name ?? null;
-  }, [selectedEntry?.supplierId, suppliers]);
+    return allSuppliers.find((p) => p.id === selectedEntry.supplierId)?.name ?? null;
+  }, [allSuppliers, selectedEntry?.supplierId]);
 
   const handleStockSubmit = useCallback(
-    async (entries: CreateStockEntryRequest[]) => {
+    async (entries: CreateStockEntryRequest[]): Promise<StockEntry[]> => {
       try {
+        const created: StockEntry[] = [];
         for (const entry of entries) {
-          await createStockEntry.mutateAsync(entry);
+          const saved = await createStockEntry.mutateAsync(entry);
+          created.push(saved);
         }
         showSuccessToast(entries.length === 1 ? "Stock entry saved" : "Stock entries saved");
+        return created;
       } catch (err) {
         showErrorToast(err, "Failed to save stock entries");
         throw err;
       }
     },
     [createStockEntry],
+  );
+
+  const openEditStockEntry = useCallback((entry: StockEntry) => {
+    setEntryToEdit(entry);
+    setEditDialogOpen(true);
+  }, []);
+
+  const handleEditStockEntry = useCallback(
+    async (entryId: number, data: UpdateStockEntryRequest) => {
+      try {
+        const updated = await updateStockEntry.mutateAsync({ entryId, data });
+        showSuccessToast("Stock entry updated");
+        return updated;
+      } catch (err) {
+        showErrorToast(
+          err,
+          "Failed to update stock entry. If API is missing, please add update endpoint.",
+        );
+        throw err;
+      }
+    },
+    [updateStockEntry],
   );
 
   const handleViewEntry = useCallback((entryId: number) => {
@@ -236,9 +324,9 @@ export default function Stock() {
                 <StockEntriesTable
                   entries={stockEntries}
                   items={items}
-                  suppliers={suppliers}
                   onView={handleViewEntry}
                   onAdjust={openAdjustStock}
+                  onEditEntry={openEditStockEntry}
                 />
               )}
             </div>
@@ -256,8 +344,9 @@ export default function Stock() {
           ) : (
             <StockEntryGrid
               items={items}
-              suppliers={suppliers}
+              suppliers={activeSuppliers}
               onSubmit={handleStockSubmit}
+              onEditSessionEntry={handleEditStockEntry}
               isSubmitting={createStockEntry.isPending}
             />
           )}
@@ -287,6 +376,37 @@ export default function Stock() {
           stockEntryId={adjustStockEntryId}
         />
       )}
+
+      <EditStockEntryDialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) setEntryToEdit(null);
+        }}
+        entry={
+          entryToEdit
+            ? {
+                id: entryToEdit.id,
+                itemName:
+                  entryToEdit.itemName ??
+                  entryToEdit.item?.name ??
+                  items.find((item) => item.id === entryToEdit.itemId)?.name ??
+                  `#${entryToEdit.itemId}`,
+                itemType:
+                  entryToEdit.itemType ??
+                  items.find((item) => item.id === entryToEdit.itemId)?.type ??
+                  "STOCK",
+                unit: entryToEdit.unit,
+                purchaseDate: entryToEdit.purchaseDate,
+                sellingPrice: entryToEdit.sellingPrice ?? "",
+                purchasePrice: entryToEdit.purchasePrice,
+                supplierId: entryToEdit.supplierId,
+              }
+            : null
+        }
+        suppliers={allSuppliers}
+        onSave={handleEditStockEntry}
+      />
     </div>
   );
 }

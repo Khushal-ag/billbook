@@ -7,10 +7,9 @@ import {
 } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency, formatQuantity } from "@/lib/utils";
-import { formatDate } from "@/lib/utils";
+import { formatCurrency, formatQuantity, formatDate, cn } from "@/lib/utils";
 import { useStockEntry } from "@/hooks/use-items";
-import { Package, Calendar, Hash, DollarSign, Building2, Layers, Wrench } from "lucide-react";
+import { Package, Calendar, Scale, DollarSign, Building2, Layers, Wrench } from "lucide-react";
 import Link from "next/link";
 import type { Item } from "@/types/item";
 
@@ -19,7 +18,7 @@ interface StockEntryDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   supplierName?: string | null;
-  /** Used to detect SERVICE items and hide purchase/supplier fields */
+  /** Used to detect SERVICE items and hide purchase-only fields */
   items?: Item[];
 }
 
@@ -131,7 +130,7 @@ export function StockEntryDetailSheet({
               <Card>
                 <CardContent className="space-y-4 pt-4">
                   <div className="flex items-center gap-2 border-b border-border/60 pb-3">
-                    <Hash className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <Scale className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className={labelClass}>Quantity</span>
                   </div>
                   <div>
@@ -207,15 +206,22 @@ export function StockEntryDetailSheet({
                 </CardContent>
               </Card>
 
-              {!isService && (entry.supplierId != null || supplierName) && (
+              {(entry.supplierId != null || entry.supplierName || supplierName) && (
                 <Card>
                   <CardContent className="pt-4">
                     <div className="flex items-center gap-2 border-b border-border/60 pb-3">
                       <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      <span className={labelClass}>Supplier</span>
+                      <span className={labelClass}>Vendor</span>
                     </div>
-                    <p className={valueClass}>
-                      {supplierName ?? (entry.supplierId != null ? `#${entry.supplierId}` : "—")}
+                    <p
+                      className={cn(
+                        valueClass,
+                        entry.supplierIsActive === false && "text-destructive",
+                      )}
+                    >
+                      {entry.supplierName ??
+                        supplierName ??
+                        (entry.supplierId != null ? `#${entry.supplierId}` : "—")}
                     </p>
                   </CardContent>
                 </Card>

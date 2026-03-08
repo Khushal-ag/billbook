@@ -24,7 +24,7 @@ export default function Vendors() {
   const debouncedSearch = useDebounce(search, 300);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editParty, setEditParty] = useState<Party | undefined>();
-  const [includeInactive, setIncludeInactive] = useState(false);
+  const [includeInactive, setIncludeInactive] = useState(true);
 
   const { data, isPending, error } = useParties({ type: PARTY_TYPE, includeInactive });
 
@@ -48,7 +48,7 @@ export default function Vendors() {
     <div className="page-container animate-fade-in">
       <PageHeader
         title="Vendor"
-        description="Manage vendors and suppliers for stock"
+        description="Manage vendors for stock"
         action={
           <Button onClick={openCreate}>
             <Plus className="mr-2 h-4 w-4" />

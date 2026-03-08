@@ -16,7 +16,7 @@ import ErrorBanner from "@/components/ErrorBanner";
 import SearchInput from "@/components/SearchInput";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
-import ItemDialog from "@/components/items/ItemDialog";
+import ItemDialog from "@/components/dialogs/ItemDialog";
 import { ItemsTable } from "@/components/items/ItemsTable";
 import { ItemDetailView } from "@/components/items/ItemDetailView";
 import { useItems, useCategories } from "@/hooks/use-items";

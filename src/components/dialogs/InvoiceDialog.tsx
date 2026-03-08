@@ -24,7 +24,7 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useCreateInvoice } from "@/hooks/use-invoices";
 import { useParties } from "@/hooks/use-parties";
 import { useItems } from "@/hooks/use-items";
-import ItemDialog from "@/components/items/ItemDialog";
+import ItemDialog from "@/components/dialogs/ItemDialog";
 import {
   quantityString,
   priceString,

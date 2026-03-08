@@ -213,7 +213,7 @@ export function VendorAutocomplete({
               </p>
               <p className="text-center text-xs text-muted-foreground">
                 {inputValue.trim()
-                  ? "Add the supplier from Parties, then try again."
+                  ? "Add the vendor from Parties, then try again."
                   : "Start typing to filter the list."}
               </p>
             </CommandEmpty>

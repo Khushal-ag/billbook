@@ -1,17 +1,16 @@
-import { Eye, SlidersHorizontal, Layers } from "lucide-react";
+import { Eye, SlidersHorizontal, Layers, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, formatQuantity, formatDate, cn } from "@/lib/utils";
 import type { StockEntry } from "@/types/item";
-import type { Party } from "@/types/party";
 import type { Item } from "@/types/item";
 
 interface StockEntriesTableProps {
   entries: StockEntry[];
   items: Item[];
-  suppliers: Party[];
   onView: (entryId: number) => void;
   onAdjust?: (itemId: number, itemName: string, stockEntryId?: number) => void;
+  onEditEntry?: (entry: StockEntry) => void;
 }
 
 function getItemName(entry: StockEntry, items: Item[]): string {
@@ -21,10 +20,15 @@ function getItemName(entry: StockEntry, items: Item[]): string {
   return item?.name ?? `#${entry.itemId}`;
 }
 
-function getSupplierName(entry: StockEntry, suppliers: Party[]): string {
-  if (entry.supplierId == null) return "—";
-  const party = suppliers.find((p) => p.id === entry.supplierId);
-  return party?.name ?? `#${entry.supplierId}`;
+function getSupplierDisplay(entry: StockEntry): {
+  label: string;
+  isInactive: boolean;
+} {
+  if (entry.supplierId == null) return { label: "—", isInactive: false };
+  if (entry.supplierName) {
+    return { label: entry.supplierName, isInactive: entry.supplierIsActive === false };
+  }
+  return { label: `#${entry.supplierId}`, isInactive: false };
 }
 
 const thClass = "px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
@@ -35,9 +39,9 @@ const tdRight = tdClass + " text-right tabular-nums";
 export function StockEntriesTable({
   entries,
   items,
-  suppliers,
   onView,
   onAdjust,
+  onEditEntry,
 }: StockEntriesTableProps) {
   if (entries.length === 0) {
     return (
@@ -73,11 +77,9 @@ export function StockEntriesTable({
               <th className={cn(thRight, "min-w-[80px]")}>Selling</th>
               <th className={cn(thRight, "hidden min-w-[88px] sm:table-cell")}>Purchase</th>
               <th className={cn(thClass, "hidden min-w-[120px] text-left md:table-cell")}>
-                Supplier
+                Vendor
               </th>
-              <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Actions
-              </th>
+              <th className={cn(thClass, "min-w-[132px] text-center")}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -93,6 +95,7 @@ export function StockEntriesTable({
               const sold = entry.quantitySold ?? "0";
               const actual = entry.actualQuantity ?? entry.quantity;
               const actualStr = typeof actual === "string" ? actual : String(actual);
+              const vendor = getSupplierDisplay(entry);
               return (
                 <tr
                   key={entry.id}
@@ -149,13 +152,18 @@ export function StockEntriesTable({
                         ? formatCurrency(entry.purchasePrice)
                         : "—"}
                   </td>
-                  <td
-                    className={cn(tdClass, "hidden text-left text-muted-foreground md:table-cell")}
-                  >
-                    {getSupplierName(entry, suppliers)}
+                  <td className={cn(tdClass, "hidden text-left md:table-cell")}>
+                    <span
+                      className={cn(
+                        "text-muted-foreground",
+                        vendor.isInactive && "font-medium text-destructive",
+                      )}
+                    >
+                      {vendor.label}
+                    </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-0.5">
+                  <td className={cn(tdClass, "w-[132px] text-left")}>
+                    <div className="inline-flex min-h-8 items-center gap-1 whitespace-nowrap">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -169,19 +177,38 @@ export function StockEntriesTable({
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      {onAdjust && !isService && (
+                      {onAdjust && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          disabled={isService}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isService) return;
+                            onAdjust(entry.itemId, itemName, entry.id);
+                          }}
+                          title={
+                            isService ? "Not available for service items" : "Adjust this batch"
+                          }
+                          aria-label={`Adjust ${itemName}`}
+                        >
+                          <SlidersHorizontal className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {onEditEntry && (
                         <Button
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onAdjust(entry.itemId, itemName, entry.id);
+                            onEditEntry(entry);
                           }}
-                          title="Adjust this batch"
-                          aria-label={`Adjust ${itemName}`}
+                          title="Edit stock entry"
+                          aria-label={`Edit ${itemName}`}
                         >
-                          <SlidersHorizontal className="h-4 w-4" />
+                          <Pencil className="h-4 w-4" />
                         </Button>
                       )}
                     </div>

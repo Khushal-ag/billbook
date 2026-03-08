@@ -8,7 +8,7 @@ import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import CreditNoteDialog from "@/components/dialogs/CreditNoteDialog";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import {
   CreditNotesTable,
   CreditNoteDetailSheet,
