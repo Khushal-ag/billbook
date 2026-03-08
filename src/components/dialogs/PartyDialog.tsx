@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useCreateParty, useUpdateParty } from "@/hooks/use-parties";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { Party } from "@/types/party";
 import { gstinString, optionalEmail, priceString, optionalString } from "@/lib/validation-schemas";

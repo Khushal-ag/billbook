@@ -9,6 +9,7 @@ import type {
   StockEntry,
   StockEntryListResponse,
   CreateStockEntryRequest,
+  UpdateStockEntryRequest,
   StockListResponse,
   ItemLedgerResponse,
   AdjustStockRequest,
@@ -254,6 +255,21 @@ export function useCreateStockEntry() {
       return res.data;
     },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["items", "stock-entries"] });
+      qc.invalidateQueries({ queryKey: ["items", "stock"] });
+      qc.invalidateQueries({ queryKey: ["items"] });
+    },
+  });
+}
+
+export function useUpdateStockEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ entryId, data }: { entryId: number; data: UpdateStockEntryRequest }) => {
+      const res = await api.put<StockEntry>(`${ITEMS_BASE}/stock-entries/${entryId}`, data);
+      return res.data;
+    },
+    onSuccess: (_entry) => {
       qc.invalidateQueries({ queryKey: ["items", "stock-entries"] });
       qc.invalidateQueries({ queryKey: ["items", "stock"] });
       qc.invalidateQueries({ queryKey: ["items"] });

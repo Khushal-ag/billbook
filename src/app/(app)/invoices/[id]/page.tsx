@@ -9,7 +9,7 @@ import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import InvoiceEditDialog from "@/components/dialogs/InvoiceEditDialog";
 import PaymentDialog from "@/components/dialogs/PaymentDialog";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import {
   InvoiceHeaderActions,
   InvoiceSummaryCards,

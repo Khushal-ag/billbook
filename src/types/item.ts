@@ -113,6 +113,8 @@ export interface StockEntry {
   /** null for SERVICE entries */
   purchasePrice: string | null;
   supplierId: number | null;
+  supplierName?: string | null;
+  supplierIsActive?: boolean | null;
   createdAt: string;
   updatedAt: string;
   item?: { id: number; name: string };
@@ -135,6 +137,13 @@ export interface CreateStockEntryRequest {
   quantity: string;
   sellingPrice?: string;
   /** Omit for SERVICE items */
+  purchaseDate?: string;
+  purchasePrice?: string;
+  supplierId?: number | null;
+}
+
+export interface UpdateStockEntryRequest {
+  sellingPrice: string;
   purchaseDate?: string;
   purchasePrice?: string;
   supplierId?: number | null;
@@ -163,6 +172,9 @@ export interface StockListItem {
   stockEntriesCount?: number;
   /** Selling price per unit from latest entry; null for STOCK. Used for SERVICE rate. */
   defaultRate?: string | null;
+  supplierId?: number | null;
+  supplierName?: string | null;
+  supplierIsActive?: boolean | null;
 }
 
 /** GET /api/items/stock summary – stock value totals */

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { Plus, Trash2, Loader2, CalendarIcon } from "lucide-react";
+import { Plus, Trash2, Loader2, CalendarIcon, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,9 @@ import { cn } from "@/lib/utils";
 import { parseISODateString, toISODateString, formatISODateDisplay } from "@/lib/date";
 import { showErrorToast } from "@/lib/toast-helpers";
 import type { Item } from "@/types/item";
-import type { CreateStockEntryRequest } from "@/types/item";
+import type { CreateStockEntryRequest, StockEntry, UpdateStockEntryRequest } from "@/types/item";
 import type { Party } from "@/types/party";
+import EditStockEntryDialog from "@/components/dialogs/EditStockEntryDialog";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -45,14 +46,21 @@ const defaultRow = (): StockEntryRow => ({
 interface StockEntryGridProps {
   items: Item[];
   suppliers: Party[];
-  onSubmit: (entries: CreateStockEntryRequest[]) => Promise<void>;
+  onSubmit: (entries: CreateStockEntryRequest[]) => Promise<StockEntry[]>;
+  onEditSessionEntry?: (
+    entryId: number,
+    data: UpdateStockEntryRequest,
+  ) => Promise<StockEntry | void>;
   isSubmitting?: boolean;
 }
 
 interface AddedSessionRow {
   id: string;
+  stockEntryId: number | null;
+  itemId: number;
   itemName: string;
   itemType: Item["type"];
+  supplierId: number | null;
   vendorName: string;
   purchaseDate: string;
   quantity: string;
@@ -66,9 +74,17 @@ function formatNumeric(value: string): string {
   return new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 }).format(n);
 }
 
-export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: StockEntryGridProps) {
+export function StockEntryGrid({
+  items,
+  suppliers,
+  onSubmit,
+  onEditSessionEntry,
+  isSubmitting,
+}: StockEntryGridProps) {
   const [rows, setRows] = useState<StockEntryRow[]>(() => [defaultRow()]);
   const [addedRows, setAddedRows] = useState<AddedSessionRow[]>([]);
+  const [rowBeingEdited, setRowBeingEdited] = useState<AddedSessionRow | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addVendorDialogOpen, setAddVendorDialogOpen] = useState(false);
   const pendingVendorCreatedRef = useRef<((party: Party) => void) | null>(null);
   const pendingVendorRowIdRef = useRef<string | null>(null);
@@ -135,7 +151,8 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
             supplierId: currentRow.supplierId ?? undefined,
           };
 
-      await onSubmit([payload]);
+      const createdEntries = await onSubmit([payload]);
+      const createdEntry = createdEntries[0];
 
       const vendorName =
         currentRow.supplierId != null
@@ -145,8 +162,11 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
       setAddedRows((prev) => [
         {
           id: crypto.randomUUID(),
+          stockEntryId: createdEntry?.id ?? null,
+          itemId: currentRow.item!.id,
           itemName: currentRow.item!.name,
           itemType: currentRow.item!.type,
+          supplierId: currentRow.supplierId,
           vendorName,
           purchaseDate: isService ? "—" : currentRow.purchaseDate,
           quantity: quantityStr,
@@ -165,6 +185,48 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
   };
 
   const canSubmit = isRowComplete(rows[0] ?? defaultRow());
+
+  const handleEditClick = useCallback((row: AddedSessionRow) => {
+    setRowBeingEdited(row);
+    setEditDialogOpen(true);
+  }, []);
+
+  const handleSessionEntrySave = useCallback(
+    async (entryId: number, data: UpdateStockEntryRequest) => {
+      if (!onEditSessionEntry) return;
+
+      const updated = await onEditSessionEntry(entryId, data);
+      const supplierName =
+        data.supplierId != null
+          ? (suppliers.find((s) => s.id === data.supplierId)?.name ?? "—")
+          : "—";
+
+      setAddedRows((prev) =>
+        prev.map((row) => {
+          if (row.stockEntryId !== entryId) return row;
+          return {
+            ...row,
+            supplierId: data.supplierId ?? null,
+            vendorName: supplierName,
+            purchaseDate:
+              row.itemType === "SERVICE" ? "—" : (data.purchaseDate ?? row.purchaseDate),
+            quantity:
+              updated?.quantity != null
+                ? typeof updated.quantity === "string"
+                  ? updated.quantity
+                  : String(updated.quantity)
+                : row.quantity,
+            sellingPrice: updated?.sellingPrice ?? data.sellingPrice,
+            purchasePrice:
+              row.itemType === "SERVICE"
+                ? "—"
+                : (updated?.purchasePrice ?? data.purchasePrice ?? row.purchasePrice),
+          };
+        }),
+      );
+    },
+    [onEditSessionEntry, suppliers],
+  );
 
   const inputClass = "h-9 text-sm";
 
@@ -405,6 +467,9 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                   <th className="px-3 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Purchase
                   </th>
+                  <th className="px-3 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -431,6 +496,24 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
                     <td className="px-3 py-2.5 text-right tabular-nums">
                       {row.purchasePrice === "—" ? "—" : formatNumeric(row.purchasePrice)}
                     </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        disabled={row.stockEntryId == null || !onEditSessionEntry}
+                        onClick={() => handleEditClick(row)}
+                        title={
+                          row.stockEntryId == null
+                            ? "Cannot edit until stock entry id is available"
+                            : "Edit stock entry"
+                        }
+                        aria-label={`Edit ${row.itemName}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -438,6 +521,32 @@ export function StockEntryGrid({ items, suppliers, onSubmit, isSubmitting }: Sto
           </div>
         </div>
       )}
+
+      <EditStockEntryDialog
+        open={editDialogOpen}
+        onOpenChange={(open) => {
+          setEditDialogOpen(open);
+          if (!open) setRowBeingEdited(null);
+        }}
+        entry={
+          rowBeingEdited
+            ? {
+                id: rowBeingEdited.stockEntryId ?? -1,
+                itemName: rowBeingEdited.itemName,
+                itemType: rowBeingEdited.itemType,
+                purchaseDate:
+                  rowBeingEdited.purchaseDate === "—" ? "" : rowBeingEdited.purchaseDate,
+                sellingPrice: rowBeingEdited.sellingPrice,
+                purchasePrice:
+                  rowBeingEdited.purchasePrice === "—" ? "" : rowBeingEdited.purchasePrice,
+                supplierId: rowBeingEdited.supplierId,
+                unit: items.find((item) => item.id === rowBeingEdited.itemId)?.unit,
+              }
+            : null
+        }
+        suppliers={suppliers}
+        onSave={handleSessionEntrySave}
+      />
 
       <PartyDialog
         open={addVendorDialogOpen}
