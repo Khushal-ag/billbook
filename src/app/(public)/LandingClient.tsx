@@ -10,6 +10,7 @@ import {
   LandingFeatureTabs,
   LandingValueGrid,
   LandingFaq,
+  LandingCtaBanner,
   LandingFooter,
 } from "@/components/landing/LandingSections";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,6 +43,7 @@ export default function LandingClient({ redirectTo, isLoggingOut }: LandingClien
         <LandingFeatureTabs />
         <LandingValueGrid />
         <LandingFaq />
+        <LandingCtaBanner />
         <LandingFooter />
       </main>
     </div>

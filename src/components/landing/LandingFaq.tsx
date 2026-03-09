@@ -38,9 +38,6 @@ export function LandingFaq() {
                   <Button asChild size="sm">
                     <Link href="/?auth=signup">Start free</Link>
                   </Button>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href="/?auth=signup">Book a demo</Link>
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -99,9 +96,6 @@ export function LandingFaq() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className="text-sm font-medium text-foreground">{faq.q}</p>
-                        <p className="mt-1 hidden text-xs text-muted-foreground sm:block">
-                          Tap to expand
-                        </p>
                       </div>
                       <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-md border bg-background text-muted-foreground transition-transform group-open:rotate-180">
                         <ChevronDown className="h-4 w-4" />

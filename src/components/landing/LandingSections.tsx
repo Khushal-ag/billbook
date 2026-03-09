@@ -4,4 +4,5 @@ export { LandingHeroSection } from "./LandingHeroSection";
 export { LandingFeatureTabs } from "./LandingFeatureTabs";
 export { LandingValueGrid } from "./LandingValueGrid";
 export { LandingFaq } from "./LandingFaq";
+export { LandingCtaBanner } from "./LandingCtaBanner";
 export { LandingFooter } from "./LandingFooter";

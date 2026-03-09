@@ -14,7 +14,24 @@ export function LandingValueGrid() {
           </p>
         </div>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border bg-border sm:grid-cols-4">
+          {[
+            { value: "₹0", label: "Free to start" },
+            { value: "< 2 min", label: "First invoice" },
+            { value: "5+", label: "Export formats" },
+            { value: "100%", label: "Audit-tracked" },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="flex flex-col items-center justify-center bg-card px-4 py-6 text-center"
+            >
+              <p className="text-2xl font-bold tracking-tight text-foreground">{stat.value}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               title: "Multi-language ready",
