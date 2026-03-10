@@ -23,7 +23,7 @@ interface VendorAutocompleteProps {
   disabled?: boolean;
   compact?: boolean;
   /** When provided, shows "Add vendor" option; called with callback to select the newly created party */
-  onAddVendor?: (onCreated: (party: Party) => void) => void;
+  onAddVendor?: (onCreated: (party: Party) => void, draftName?: string) => void;
 }
 
 const NONE_VALUE = "__none__";
@@ -56,13 +56,15 @@ export function VendorAutocomplete({
         .slice(0, 50),
     [suppliers, inputValue],
   );
+  const trimmedInput = inputValue.trim();
+  const shouldShowAddVendor = Boolean(onAddVendor && trimmedInput);
 
-  const optionsLength = 1 + filtered.length + (onAddVendor ? 1 : 0);
-  const addVendorIndex = onAddVendor ? 1 + filtered.length : -1;
+  const optionsLength = 1 + filtered.length + (shouldShowAddVendor ? 1 : 0);
+  const addVendorIndex = shouldShowAddVendor ? 1 + filtered.length : -1;
   const options: (Party | null | typeof ADD_VENDOR_VALUE)[] = [
     null,
     ...filtered,
-    ...(onAddVendor ? [ADD_VENDOR_VALUE] : []),
+    ...(shouldShowAddVendor ? [ADD_VENDOR_VALUE] : []),
   ];
   const highlightedOption = options[highlightedIndex] ?? null;
 
@@ -129,7 +131,7 @@ export function VendorAutocomplete({
         onAddVendor((party) => {
           onValueChange(party);
           setOpen(false);
-        });
+        }, trimmedInput);
         return;
       }
       handleSelect(highlightedOption as Party | null);
@@ -255,14 +257,14 @@ export function VendorAutocomplete({
                   </span>
                 </CommandItem>
               ))}
-              {onAddVendor && (
+              {shouldShowAddVendor && (
                 <CommandItem
                   value={ADD_VENDOR_VALUE}
                   onSelect={() => {
-                    onAddVendor((party) => {
+                    onAddVendor?.((party) => {
                       onValueChange(party);
                       setOpen(false);
-                    });
+                    }, trimmedInput);
                   }}
                   data-highlight-index={addVendorIndex}
                   id={open ? "vendor-add" : undefined}
@@ -270,7 +272,7 @@ export function VendorAutocomplete({
                 >
                   <Plus className="mr-2 h-4 w-4 shrink-0 text-muted-foreground group-data-[selected=true]:text-accent-foreground" />
                   <span className="text-muted-foreground group-data-[selected=true]:text-accent-foreground">
-                    Add vendor
+                    Add vendor{trimmedInput ? ` "${trimmedInput}"` : ""}
                   </span>
                 </CommandItem>
               )}
