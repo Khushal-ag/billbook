@@ -14,13 +14,20 @@ interface StockReportTableProps {
   onAdjust?: (itemId: number, itemName: string) => void;
 }
 
-const thClass = "px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
+const thClass = "px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
 const thRight = thClass + " text-right";
-const tdClass = "px-4 py-3 align-middle";
+const tdClass = "px-3 py-2.5 align-middle";
 const tdRight = tdClass + " text-right tabular-nums";
 
 function qtyDisplay(value: string | null): string {
   return value != null && value !== "" ? formatQuantity(value) : "—";
+}
+
+function adjustedQtyDisplay(value: string | null): string {
+  if (value == null || value === "") return "—";
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "—";
+  return Math.round(Math.abs(numeric)).toString();
 }
 
 export function StockReportTable({ rows, items, onAdjust }: StockReportTableProps) {
@@ -45,7 +52,7 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
   return (
     <Card>
       <div className="-mx-1 overflow-x-auto px-1 sm:mx-0 sm:px-0">
-        <table className="w-full min-w-[320px] text-sm" role="table" aria-label="Stock by item">
+        <table className="w-full min-w-[920px] text-sm" role="table" aria-label="Stock by item">
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th className={cn(thClass, "pl-3 text-left sm:pl-4")}>Item</th>
@@ -54,8 +61,8 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
               <th className={cn(thRight, "hidden md:table-cell")}>Adjusted</th>
               <th className={cn(thRight, "hidden md:table-cell")}>Sold</th>
               <th className={cn(thRight, "min-w-[72px]")}>Current</th>
-              <th className={cn(thRight, "hidden sm:table-cell")}>Value (sell)</th>
-              <th className={cn(thRight, "hidden lg:table-cell")}>Value (cost)</th>
+              <th className={cn(thRight, "hidden sm:table-cell")}>Total Value (sell)</th>
+              <th className={cn(thRight, "hidden lg:table-cell")}>Total Value (cost)</th>
               <th className={cn(thClass, "hidden text-center md:table-cell")}>Status</th>
               {onAdjust && (
                 <th className={cn(thClass, "min-w-[92px] px-2 text-left sm:px-4")}>Actions</th>
@@ -70,7 +77,9 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
                 ? "text-muted-foreground"
                 : adjustedValue < 0
                   ? "text-destructive"
-                  : "text-emerald-600";
+                  : adjustedValue > 0
+                    ? "text-emerald-600"
+                    : "text-foreground";
               return (
                 <tr
                   key={row.itemId}
@@ -87,6 +96,9 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
                     >
                       {row.itemName}
                     </Link>
+                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                      ({service ? "service" : "stock"})
+                    </span>
                   </td>
                   <td
                     className={cn(tdClass, "hidden text-left text-muted-foreground sm:table-cell")}
@@ -103,7 +115,7 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
                       service ? "text-muted-foreground" : adjustedTextClass,
                     )}
                   >
-                    {service ? "—" : qtyDisplay(row.quantityAdjusted)}
+                    {service ? "—" : adjustedQtyDisplay(row.quantityAdjusted)}
                   </td>
                   <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>
                     {service ? "—" : qtyDisplay(row.quantitySold)}

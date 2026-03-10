@@ -121,7 +121,7 @@
 
 @layer components {
   .page-container {
-    @apply mx-auto w-full max-w-7xl p-4 sm:p-6 lg:p-8;
+    @apply mx-auto w-full max-w-7xl p-2 sm:p-3 lg:p-4;
   }
 
   .page-header {

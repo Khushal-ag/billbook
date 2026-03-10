@@ -19,9 +19,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, TriangleAlert } from "lucide-react";
 import { useCreateParty, useUpdateParty } from "@/hooks/use-parties";
-import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { Party } from "@/types/party";
 import { gstinString, optionalEmail, priceString, optionalString } from "@/lib/validation-schemas";
@@ -60,6 +69,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   party?: Party | null;
+  initialName?: string;
   defaultType?: "CUSTOMER" | "SUPPLIER";
   /** When true, type is fixed to defaultType and the Type field is hidden (e.g. when opening from Customer or Vendor page) */
   typeLocked?: boolean;
@@ -71,6 +81,7 @@ export default function PartyDialog({
   open,
   onOpenChange,
   party,
+  initialName,
   defaultType = "CUSTOMER",
   typeLocked = false,
   onSuccess,
@@ -94,6 +105,7 @@ export default function PartyDialog({
 
   const partyType = watch("type");
   const isPartyActive = watch("isActive");
+  const partyLabel = partyType === "SUPPLIER" ? "vendor" : "customer";
   const postalCode = watch("postalCode");
   const pincodeInitialMountRef = useRef(true);
 
@@ -146,7 +158,7 @@ export default function PartyDialog({
         });
       } else {
         reset({
-          name: "",
+          name: initialName?.trim() ?? "",
           type: defaultType,
           gstin: "",
           email: "",
@@ -160,7 +172,7 @@ export default function PartyDialog({
         });
       }
     }
-  }, [open, party, reset, defaultType, typeLocked]);
+  }, [open, party, reset, defaultType, typeLocked, initialName]);
 
   const onSubmit = async (data: FormData) => {
     const payload = {
@@ -341,16 +353,32 @@ export default function PartyDialog({
         </form>
       </DialogContent>
 
-      <ConfirmDialog
+      <AlertDialog
         open={deactivateConfirmOpen}
-        onOpenChange={setDeactivateConfirmOpen}
-        onConfirm={handleConfirmDeactivate}
-        title="Deactivate this party?"
-        description="Inactive parties are hidden by default in customer/vendor lists and selectors."
-        confirmText="Deactivate"
-        cancelText="Keep Active"
-        variant="destructive"
-      />
+        onOpenChange={(open) => setDeactivateConfirmOpen(open)}
+      >
+        <AlertDialogContent className="max-w-md overflow-hidden p-0">
+          <AlertDialogHeader className="border-b bg-destructive/5 px-5 py-4">
+            <div className="mb-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-destructive/15 text-destructive">
+              <TriangleAlert className="h-4 w-4" />
+            </div>
+            <AlertDialogTitle className="text-base">Deactivate this {partyLabel}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will mark the {partyLabel} as inactive and hide it by default in {partyLabel}{" "}
+              lists and selections.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="border-t px-5 py-4">
+            <AlertDialogCancel>Keep Active</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeactivate}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

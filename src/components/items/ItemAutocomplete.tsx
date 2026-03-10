@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Check, Package } from "lucide-react";
+import { Check, Package, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,7 +26,11 @@ interface ItemAutocompleteProps {
   stockOnly?: boolean;
   /** Input is used inside a grid cell; compact styling */
   compact?: boolean;
+  /** When provided, shows "Add item" option; called with callback to select the newly created item */
+  onAddItem?: (onCreated: (item: Item) => void, draftName?: string) => void;
 }
+
+const ADD_ITEM_VALUE = "__add_item__" as const;
 
 export function ItemAutocomplete({
   value,
@@ -37,6 +41,7 @@ export function ItemAutocomplete({
   disabled,
   stockOnly,
   compact,
+  onAddItem,
 }: ItemAutocompleteProps) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -63,6 +68,23 @@ export function ItemAutocomplete({
         .slice(0, 50),
     [items, stockOnly, inputValue],
   );
+  const trimmedInput = inputValue.trim();
+  const normalizedInput = trimmedInput.toLowerCase();
+  const hasExactNameMatch = useMemo(
+    () =>
+      Boolean(
+        normalizedInput &&
+        items.some((item) => {
+          if (stockOnly && item.type !== "STOCK") return false;
+          if (!item.isActive) return false;
+          return item.name.trim().toLowerCase() === normalizedInput;
+        }),
+      ),
+    [items, stockOnly, normalizedInput],
+  );
+  const shouldShowAddItem = Boolean(onAddItem && trimmedInput && !hasExactNameMatch);
+  const optionsLength = filtered.length + (shouldShowAddItem ? 1 : 0);
+  const addItemIndex = shouldShowAddItem ? filtered.length : -1;
 
   const displayValue = open ? inputValue : value ? value.name : inputValue;
 
@@ -72,8 +94,8 @@ export function ItemAutocomplete({
   }, [open, value]);
 
   useEffect(() => {
-    if (open) setHighlightedIndex(filtered.length > 0 ? 0 : -1);
-  }, [open, filtered.length, inputValue]);
+    if (open) setHighlightedIndex(optionsLength > 0 ? 0 : -1);
+  }, [open, optionsLength, inputValue]);
 
   useEffect(() => {
     if (!open || highlightedIndex < 0 || !listRef.current) return;
@@ -107,7 +129,7 @@ export function ItemAutocomplete({
     if (!open) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setHighlightedIndex((i) => (i < filtered.length - 1 ? i + 1 : i));
+      setHighlightedIndex((i) => (i < optionsLength - 1 ? i + 1 : i));
       return;
     }
     if (e.key === "ArrowUp") {
@@ -115,9 +137,18 @@ export function ItemAutocomplete({
       setHighlightedIndex((i) => (i > 0 ? i - 1 : 0));
       return;
     }
-    if (e.key === "Enter" && filtered[highlightedIndex]) {
+    if (e.key === "Enter") {
       e.preventDefault();
-      handleSelect(filtered[highlightedIndex]);
+      if (shouldShowAddItem && highlightedIndex === addItemIndex && onAddItem) {
+        onAddItem((item) => {
+          onValueChange(item);
+          setOpen(false);
+        }, trimmedInput);
+        return;
+      }
+      if (filtered[highlightedIndex]) {
+        handleSelect(filtered[highlightedIndex]);
+      }
     }
   };
 
@@ -171,14 +202,23 @@ export function ItemAutocomplete({
       <PopoverContent
         id="item-listbox"
         role="listbox"
-        className={cn("w-[var(--radix-popover-trigger-width)] p-0", compact && "max-h-56")}
+        className={cn(
+          "w-[min(20rem,calc(100vw-1rem))] min-w-[var(--radix-popover-trigger-width)] p-0",
+          compact && "max-h-56",
+        )}
         align="start"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <Command
           shouldFilter={false}
-          value={filtered[highlightedIndex] ? String(filtered[highlightedIndex].id) : "__none__"}
+          value={
+            shouldShowAddItem && highlightedIndex === addItemIndex
+              ? ADD_ITEM_VALUE
+              : filtered[highlightedIndex]
+                ? String(filtered[highlightedIndex].id)
+                : "__none__"
+          }
         >
           <CommandList ref={listRef}>
             <CommandEmpty className="flex flex-col items-center justify-center gap-2 px-4 py-8">
@@ -188,7 +228,7 @@ export function ItemAutocomplete({
               </p>
               <p className="text-center text-xs text-muted-foreground">
                 {inputValue.trim()
-                  ? "Add the item from Items, then try again."
+                  ? "Use Add item below to quickly create it."
                   : "Start typing to filter the list."}
               </p>
             </CommandEmpty>
@@ -200,22 +240,48 @@ export function ItemAutocomplete({
                   onSelect={() => handleSelect(item)}
                   data-highlight-index={index}
                   id={open ? `item-${item.id}` : undefined}
-                  className="group cursor-pointer data-[selected=true]:text-accent-foreground"
+                  className="group cursor-pointer items-start gap-2 py-2 data-[selected=true]:text-accent-foreground"
                 >
+                  <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground group-data-[selected=true]:text-accent-foreground/85">
+                    <Package className="h-3.5 w-3.5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm leading-5">{item.name}</p>
+                    {categoryLabel(item) && (
+                      <p className="truncate text-xs leading-4 text-muted-foreground group-data-[selected=true]:text-accent-foreground/85">
+                        {categoryLabel(item)}
+                      </p>
+                    )}
+                  </div>
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4 shrink-0",
-                      value?.id === item.id ? "text-accent-foreground opacity-100" : "opacity-0",
+                      "mt-0.5 h-4 w-4 shrink-0",
+                      value?.id === item.id
+                        ? "text-foreground opacity-100 group-data-[selected=true]:text-accent-foreground"
+                        : "opacity-0",
                     )}
                   />
-                  <span className="truncate">{item.name}</span>
-                  {categoryLabel(item) && (
-                    <span className="ml-2 truncate text-xs text-muted-foreground group-data-[selected=true]:text-accent-foreground">
-                      ({categoryLabel(item)})
-                    </span>
-                  )}
                 </CommandItem>
               ))}
+              {shouldShowAddItem && (
+                <CommandItem
+                  value={ADD_ITEM_VALUE}
+                  onSelect={() => {
+                    onAddItem?.((item) => {
+                      onValueChange(item);
+                      setOpen(false);
+                    }, trimmedInput);
+                  }}
+                  data-highlight-index={addItemIndex}
+                  id={open ? "item-add" : undefined}
+                  className="group mt-1 cursor-pointer border-t border-border pt-1 data-[selected=true]:text-accent-foreground"
+                >
+                  <Plus className="mr-2 h-4 w-4 shrink-0 text-muted-foreground group-data-[selected=true]:text-accent-foreground" />
+                  <span className="truncate text-muted-foreground group-data-[selected=true]:text-accent-foreground">
+                    Add item{trimmedInput ? ` "${trimmedInput}"` : ""}
+                  </span>
+                </CommandItem>
+              )}
             </CommandGroup>
           </CommandList>
         </Command>

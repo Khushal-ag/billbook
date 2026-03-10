@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ItemAutocomplete } from "@/components/items/ItemAutocomplete";
 import { VendorAutocomplete } from "@/components/items/VendorAutocomplete";
 import PartyDialog from "@/components/dialogs/PartyDialog";
+import ItemDialog from "@/components/dialogs/ItemDialog";
 import { cn } from "@/lib/utils";
 import { parseISODateString, toISODateString, formatISODateDisplay } from "@/lib/date";
 import { showErrorToast } from "@/lib/toast-helpers";
@@ -85,7 +86,12 @@ export function StockEntryGrid({
   const [addedRows, setAddedRows] = useState<AddedSessionRow[]>([]);
   const [rowBeingEdited, setRowBeingEdited] = useState<AddedSessionRow | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
+  const [pendingItemName, setPendingItemName] = useState("");
   const [addVendorDialogOpen, setAddVendorDialogOpen] = useState(false);
+  const [pendingVendorName, setPendingVendorName] = useState("");
+  const pendingItemCreatedRef = useRef<((item: Item) => void) | null>(null);
+  const pendingItemRowIdRef = useRef<string | null>(null);
   const pendingVendorCreatedRef = useRef<((party: Party) => void) | null>(null);
   const pendingVendorRowIdRef = useRef<string | null>(null);
 
@@ -277,6 +283,12 @@ export function StockEntryGrid({
                     stockOnly={false}
                     compact
                     placeholder="Type to search item..."
+                    onAddItem={(onCreated, draftName) => {
+                      pendingItemCreatedRef.current = onCreated;
+                      pendingItemRowIdRef.current = row.id;
+                      setPendingItemName((draftName ?? "").trim());
+                      setAddItemDialogOpen(true);
+                    }}
                   />
                 </td>
                 <td className="px-3 py-2.5 align-middle lg:px-4">
@@ -292,9 +304,10 @@ export function StockEntryGrid({
                     suppliers={suppliers}
                     compact
                     placeholder="Type to search vendor..."
-                    onAddVendor={(onCreated) => {
+                    onAddVendor={(onCreated, draftName) => {
                       pendingVendorCreatedRef.current = onCreated;
                       pendingVendorRowIdRef.current = row.id;
+                      setPendingVendorName((draftName ?? "").trim());
                       setAddVendorDialogOpen(true);
                     }}
                   />
@@ -548,9 +561,11 @@ export function StockEntryGrid({
 
       <PartyDialog
         open={addVendorDialogOpen}
+        initialName={pendingVendorName}
         onOpenChange={(open) => {
           setAddVendorDialogOpen(open);
           if (!open) {
+            setPendingVendorName("");
             pendingVendorCreatedRef.current = null;
             pendingVendorRowIdRef.current = null;
           }
@@ -565,6 +580,33 @@ export function StockEntryGrid({
           pendingVendorCreatedRef.current?.(party);
           pendingVendorCreatedRef.current = null;
           pendingVendorRowIdRef.current = null;
+          setPendingVendorName("");
+        }}
+      />
+
+      <ItemDialog
+        open={addItemDialogOpen}
+        initialName={pendingItemName}
+        onOpenChange={(open) => {
+          setAddItemDialogOpen(open);
+          if (!open) {
+            setPendingItemName("");
+            pendingItemCreatedRef.current = null;
+            pendingItemRowIdRef.current = null;
+          }
+        }}
+        onSuccess={(item) => {
+          const rowId = pendingItemRowIdRef.current;
+          if (rowId) {
+            updateRow(rowId, {
+              item,
+              quantity: item.type === "SERVICE" ? "1" : "",
+            });
+          }
+          pendingItemCreatedRef.current?.(item);
+          pendingItemCreatedRef.current = null;
+          pendingItemRowIdRef.current = null;
+          setPendingItemName("");
         }}
       />
     </form>

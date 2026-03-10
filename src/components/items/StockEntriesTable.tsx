@@ -1,7 +1,7 @@
 import { Eye, SlidersHorizontal, Layers, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrency, formatQuantity, formatDate, cn } from "@/lib/utils";
+import { formatCurrency, formatQuantity, cn } from "@/lib/utils";
 import type { StockEntry } from "@/types/item";
 import type { Item } from "@/types/item";
 
@@ -31,10 +31,32 @@ function getSupplierDisplay(entry: StockEntry): {
   return { label: `#${entry.supplierId}`, isInactive: false };
 }
 
-const thClass = "px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
+const thClass = "px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
 const thRight = thClass + " text-right";
-const tdClass = "px-4 py-3 align-middle";
+const tdClass = "px-3 py-2.5 align-middle";
 const tdRight = tdClass + " text-right tabular-nums";
+
+function adjustedQtyDisplay(value: string | null): string {
+  if (value == null || value === "") return "—";
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "—";
+  return Math.round(Math.abs(numeric)).toString();
+}
+
+function compactDateDisplay(dateString: string | undefined | null): string {
+  if (!dateString) return "—";
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "—";
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    });
+  } catch {
+    return "—";
+  }
+}
 
 export function StockEntriesTable({
   entries,
@@ -62,13 +84,11 @@ export function StockEntriesTable({
   return (
     <Card>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[320px] text-sm" role="table" aria-label="Stock by batch">
+        <table className="w-full min-w-[980px] text-sm" role="table" aria-label="Stock by batch">
           <thead>
             <tr className="border-b border-border bg-muted/50">
               <th className={cn(thClass, "min-w-[120px] px-3 text-left sm:px-4")}>Item</th>
-              <th className={cn(thClass, "hidden min-w-[100px] text-left lg:table-cell")}>
-                Category
-              </th>
+              <th className={cn(thClass, "min-w-[140px] text-left")}>Vendor/Category</th>
               <th className={cn(thClass, "min-w-[88px] text-left")}>Date</th>
               <th className={cn(thRight, "hidden min-w-[72px] md:table-cell")}>Quantity</th>
               <th className={cn(thRight, "hidden min-w-[72px] md:table-cell")}>Adjusted</th>
@@ -76,9 +96,6 @@ export function StockEntriesTable({
               <th className={cn(thRight, "min-w-[72px]")}>Balance Quantity</th>
               <th className={cn(thRight, "min-w-[80px]")}>Selling Price</th>
               <th className={cn(thRight, "hidden min-w-[88px] sm:table-cell")}>Purchase Price</th>
-              <th className={cn(thClass, "hidden min-w-[120px] text-left md:table-cell")}>
-                Vendor
-              </th>
               <th className={cn(thClass, "min-w-[132px] text-center")}>Actions</th>
             </tr>
           </thead>
@@ -97,11 +114,14 @@ export function StockEntriesTable({
                 ? "text-muted-foreground"
                 : adjustedValue < 0
                   ? "text-destructive"
-                  : "text-emerald-600";
+                  : adjustedValue > 0
+                    ? "text-emerald-600"
+                    : "text-foreground";
               const sold = entry.quantitySold ?? "0";
               const actual = entry.actualQuantity ?? entry.quantity;
               const actualStr = typeof actual === "string" ? actual : String(actual);
               const vendor = getSupplierDisplay(entry);
+              const category = entry.categoryName?.trim();
               return (
                 <tr
                   key={entry.id}
@@ -126,13 +146,14 @@ export function StockEntriesTable({
                       <span className="ml-1.5 font-normal text-muted-foreground">({unit})</span>
                     )}
                   </td>
-                  <td
-                    className={cn(tdClass, "hidden text-left text-muted-foreground lg:table-cell")}
-                  >
-                    {entry.categoryName ?? "—"}
+                  <td className={cn(tdClass, "whitespace-nowrap text-left")}>
+                    <span className={cn(vendor.isInactive && "font-medium text-destructive")}>
+                      {vendor.label}
+                    </span>
+                    {category ? <span className="text-muted-foreground"> ({category})</span> : null}
                   </td>
-                  <td className={cn(tdClass, "text-left text-muted-foreground")}>
-                    {isService ? "—" : formatDate(entry.purchaseDate)}
+                  <td className={cn(tdClass, "whitespace-nowrap text-left text-muted-foreground")}>
+                    {isService ? "—" : compactDateDisplay(entry.purchaseDate)}
                   </td>
                   <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>
                     {isService ? "—" : formatQuantity(purchased)}
@@ -144,7 +165,7 @@ export function StockEntriesTable({
                       isService ? "text-muted-foreground" : adjustedTextClass,
                     )}
                   >
-                    {isService ? "—" : formatQuantity(adjusted)}
+                    {isService ? "—" : adjustedQtyDisplay(adjusted)}
                   </td>
                   <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>
                     {isService ? "—" : formatQuantity(sold)}
@@ -163,16 +184,6 @@ export function StockEntriesTable({
                       : entry.purchasePrice != null && entry.purchasePrice !== ""
                         ? formatCurrency(entry.purchasePrice)
                         : "—"}
-                  </td>
-                  <td className={cn(tdClass, "hidden text-left md:table-cell")}>
-                    <span
-                      className={cn(
-                        "text-muted-foreground",
-                        vendor.isInactive && "font-medium text-destructive",
-                      )}
-                    >
-                      {vendor.label}
-                    </span>
                   </td>
                   <td className={cn(tdClass, "w-[132px] text-left")}>
                     <div className="inline-flex min-h-8 items-center gap-1 whitespace-nowrap">

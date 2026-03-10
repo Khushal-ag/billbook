@@ -142,9 +142,17 @@ interface ItemDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item?: Item | null;
+  initialName?: string;
+  onSuccess?: (item: Item) => void;
 }
 
-export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps) {
+export default function ItemDialog({
+  open,
+  onOpenChange,
+  item,
+  initialName,
+  onSuccess,
+}: ItemDialogProps) {
   const isEdit = !!item;
   const createMutation = useCreateItem();
   const updateMutation = useUpdateItem(item?.id ?? 0);
@@ -224,7 +232,7 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
         setShowCategoryError(false);
       } else {
         reset({
-          name: "",
+          name: initialName?.trim() ?? "",
           type: "STOCK",
           isActive: true,
           unit: "nos",
@@ -245,7 +253,7 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- omit categories so adding a category does not reset form
-  }, [open, item, reset]);
+  }, [open, item, reset, initialName]);
 
   const handleCreateCategory = async (name: string): Promise<Category | null> => {
     try {
@@ -303,8 +311,9 @@ export default function ItemDialog({ open, onOpenChange, item }: ItemDialogProps
         await updateMutation.mutateAsync(payload);
         showSuccessToast("Item updated");
       } else {
-        await createMutation.mutateAsync(payload);
+        const created = await createMutation.mutateAsync(payload);
         showSuccessToast("Item created");
+        onSuccess?.(created);
       }
       onOpenChange(false);
     } catch (err) {
