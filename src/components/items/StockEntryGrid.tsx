@@ -364,7 +364,6 @@ export function StockEntryGrid({
                     type="number"
                     min="0"
                     step={row.sellingPriceDecimal ? "0.25" : "1"}
-                    placeholder="0"
                     value={row.sellingPrice}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -388,7 +387,6 @@ export function StockEntryGrid({
                       type="number"
                       min="0"
                       step={row.purchasePriceDecimal ? "0.25" : "1"}
-                      placeholder="0"
                       value={row.purchasePrice}
                       onChange={(e) => {
                         const val = e.target.value;

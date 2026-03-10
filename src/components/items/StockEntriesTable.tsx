@@ -70,12 +70,12 @@ export function StockEntriesTable({
                 Category
               </th>
               <th className={cn(thClass, "min-w-[88px] text-left")}>Date</th>
-              <th className={cn(thRight, "hidden min-w-[72px] md:table-cell")}>Purchased</th>
+              <th className={cn(thRight, "hidden min-w-[72px] md:table-cell")}>Quantity</th>
               <th className={cn(thRight, "hidden min-w-[72px] md:table-cell")}>Adjusted</th>
               <th className={cn(thRight, "hidden min-w-[72px] md:table-cell")}>Sold</th>
-              <th className={cn(thRight, "min-w-[72px]")}>Actual</th>
-              <th className={cn(thRight, "min-w-[80px]")}>Selling</th>
-              <th className={cn(thRight, "hidden min-w-[88px] sm:table-cell")}>Purchase</th>
+              <th className={cn(thRight, "min-w-[72px]")}>Balance Quantity</th>
+              <th className={cn(thRight, "min-w-[80px]")}>Selling Price</th>
+              <th className={cn(thRight, "hidden min-w-[88px] sm:table-cell")}>Purchase Price</th>
               <th className={cn(thClass, "hidden min-w-[120px] text-left md:table-cell")}>
                 Vendor
               </th>
@@ -92,6 +92,12 @@ export function StockEntriesTable({
                 entry.quantityPurchased ??
                 (typeof entry.quantity === "string" ? entry.quantity : String(entry.quantity));
               const adjusted = entry.quantityAdjusted ?? "0";
+              const adjustedValue = Number(adjusted);
+              const adjustedTextClass = !Number.isFinite(adjustedValue)
+                ? "text-muted-foreground"
+                : adjustedValue < 0
+                  ? "text-destructive"
+                  : "text-emerald-600";
               const sold = entry.quantitySold ?? "0";
               const actual = entry.actualQuantity ?? entry.quantity;
               const actualStr = typeof actual === "string" ? actual : String(actual);
@@ -131,7 +137,13 @@ export function StockEntriesTable({
                   <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>
                     {isService ? "—" : formatQuantity(purchased)}
                   </td>
-                  <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>
+                  <td
+                    className={cn(
+                      tdRight,
+                      "hidden md:table-cell",
+                      isService ? "text-muted-foreground" : adjustedTextClass,
+                    )}
+                  >
                     {isService ? "—" : formatQuantity(adjusted)}
                   </td>
                   <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>

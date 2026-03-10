@@ -50,7 +50,7 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
             <tr className="border-b border-border bg-muted/50">
               <th className={cn(thClass, "pl-3 text-left sm:pl-4")}>Item</th>
               <th className={cn(thClass, "hidden text-left sm:table-cell")}>Unit</th>
-              <th className={cn(thRight, "hidden md:table-cell")}>Purchased</th>
+              <th className={cn(thRight, "hidden md:table-cell")}>Quantity</th>
               <th className={cn(thRight, "hidden md:table-cell")}>Adjusted</th>
               <th className={cn(thRight, "hidden md:table-cell")}>Sold</th>
               <th className={cn(thRight, "min-w-[72px]")}>Current</th>
@@ -65,6 +65,12 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
           <tbody>
             {rows.map((row, i) => {
               const service = isService(row);
+              const adjustedValue = Number(row.quantityAdjusted ?? "");
+              const adjustedTextClass = !Number.isFinite(adjustedValue)
+                ? "text-muted-foreground"
+                : adjustedValue < 0
+                  ? "text-destructive"
+                  : "text-emerald-600";
               return (
                 <tr
                   key={row.itemId}
@@ -90,7 +96,13 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
                   <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>
                     {service ? "—" : qtyDisplay(row.quantityPurchased)}
                   </td>
-                  <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>
+                  <td
+                    className={cn(
+                      tdRight,
+                      "hidden md:table-cell",
+                      service ? "text-muted-foreground" : adjustedTextClass,
+                    )}
+                  >
                     {service ? "—" : qtyDisplay(row.quantityAdjusted)}
                   </td>
                   <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>
