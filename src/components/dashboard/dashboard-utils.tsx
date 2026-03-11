@@ -1,35 +1,8 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowDownRight, ArrowUpRight, BarChart2 } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChartTooltipContent } from "@/components/ui/chart";
 import { cn } from "@/lib/utils";
-
-type EmptyChartProps = {
-  text: string;
-  height?: number;
-  /** Optional second line; default explains data will appear with usage */
-  subtitle?: string;
-};
-
-export function EmptyChart({
-  text,
-  height = 200,
-  subtitle = "Data will appear here once you have activity",
-}: EmptyChartProps) {
-  return (
-    <div
-      className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-muted/60 bg-muted/5 py-8 text-center"
-      style={{ minHeight: height }}
-    >
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50">
-        <BarChart2 className="h-5 w-5 text-muted-foreground" />
-      </div>
-      <p className="text-sm font-medium text-muted-foreground">{text}</p>
-      <p className="text-xs text-muted-foreground/80">{subtitle}</p>
-    </div>
-  );
-}
 
 type HeroCardVariant = "default" | "success" | "warning";
 
@@ -101,37 +74,6 @@ export function HeroCard({
     >
       {content}
     </Link>
-  );
-}
-
-type PaymentTooltipContentProps = {
-  valueFormatter: (value: string | number) => string;
-} & Omit<ComponentProps<typeof ChartTooltipContent>, "formatter">;
-
-export function PaymentTooltipContent({ valueFormatter, ...props }: PaymentTooltipContentProps) {
-  return (
-    <ChartTooltipContent
-      {...props}
-      formatter={(value, name) =>
-        (() => {
-          const normalized = Array.isArray(value) ? value[0] : value;
-          const formatted = valueFormatter(
-            typeof normalized === "number" || typeof normalized === "string"
-              ? normalized
-              : Number(normalized),
-          );
-
-          return (
-            <div className="flex w-full items-center justify-between gap-3">
-              <span className="text-muted-foreground">{name}</span>
-              <span className="font-mono font-medium tabular-nums text-foreground">
-                {formatted}
-              </span>
-            </div>
-          );
-        })()
-      }
-    />
   );
 }
 

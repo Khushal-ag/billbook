@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
+import { invalidateQueryKeys } from "@/lib/query";
 import type { Alert, AlertListResponse } from "@/types/alert";
 
 export function useAlerts(unreadOnly = false) {
@@ -20,8 +21,6 @@ export function useMarkAlertRead() {
       const res = await api.patch<Alert>(`/alerts/${alertId}/read`, {});
       return res.data;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["alerts"] });
-    },
+    onSuccess: () => invalidateQueryKeys(qc, [["alerts"]]),
   });
 }

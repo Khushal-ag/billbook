@@ -1,5 +1,19 @@
-import { InvoiceCreatePage } from "@/components/invoices/InvoiceCreatePage";
+import dynamic from "next/dynamic";
 import type { InvoiceType } from "@/types/invoice";
+
+const InvoiceCreatePage = dynamic(
+  () =>
+    import("@/components/invoices/InvoiceCreatePage").then((mod) => ({
+      default: mod.InvoiceCreatePage,
+    })),
+  {
+    loading: () => (
+      <div className="page-container flex min-h-[40vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    ),
+  },
+);
 
 function normalizeInvoiceType(value: string | undefined): InvoiceType {
   switch (value) {

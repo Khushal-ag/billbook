@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
+import { invalidateQueryKeys } from "@/lib/query";
 import type { BusinessProfile, UpdateBusinessProfile, BusinessUser } from "@/types/auth";
 import type { DashboardData, TopItem } from "@/types/dashboard";
 
@@ -83,7 +84,7 @@ export function useUpdateBusinessProfile() {
       const res = await api.put<BusinessProfile>("/business/profile", data);
       return normalizeBusinessProfile(res.data as unknown as Record<string, unknown>);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["business-profile"] }),
+    onSuccess: () => invalidateQueryKeys(qc, [["business-profile"]]),
   });
 }
 

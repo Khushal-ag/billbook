@@ -1,4 +1,3 @@
-import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import type { PaymentStatusBreakdown, DashboardData, DashboardBusiness } from "@/types/dashboard";
 
 /** Default dashboard shape when API returns no data — keeps dashboard UI visible with empty state. */
@@ -34,12 +33,6 @@ const PAYMENT_COLORS: Record<string, string> = {
   PARTIAL: "hsl(38 92% 50%)",
   UNPAID: "hsl(0 84% 60%)",
 };
-
-export const PAYMENT_ICONS = {
-  PAID: CheckCircle2,
-  PARTIAL: Clock,
-  UNPAID: AlertTriangle,
-} as const;
 
 export type PaymentStatusItem = {
   name: PaymentStatusBreakdown["status"];

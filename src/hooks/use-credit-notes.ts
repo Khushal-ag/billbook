@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
+import { invalidateQueryKeys } from "@/lib/query";
 import { buildQueryString } from "@/lib/utils";
 import type {
   CreditNote,
@@ -38,7 +39,7 @@ export function useCreateCreditNote() {
       const res = await api.post<CreditNote>("/credit-notes", data);
       return res.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["credit-notes"] }),
+    onSuccess: () => invalidateQueryKeys(qc, [["credit-notes"]]),
   });
 }
 
@@ -49,7 +50,7 @@ export function useFinalizeCreditNote() {
       const res = await api.post<CreditNote>(`/credit-notes/${id}/finalize`);
       return res.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["credit-notes"] }),
+    onSuccess: () => invalidateQueryKeys(qc, [["credit-notes"]]),
   });
 }
 
@@ -59,6 +60,6 @@ export function useDeleteCreditNote() {
     mutationFn: async (id: number) => {
       await api.delete(`/credit-notes/${id}`);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["credit-notes"] }),
+    onSuccess: () => invalidateQueryKeys(qc, [["credit-notes"]]),
   });
 }

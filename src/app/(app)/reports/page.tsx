@@ -20,7 +20,7 @@ import {
   useSalesExport,
 } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
-import { generateSalesReportHTML, downloadHTML } from "@/lib/utils";
+import { generateSalesReportHTML, downloadHTML } from "@/lib/report-html";
 
 export default function Reports() {
   const {

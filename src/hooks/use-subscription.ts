@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
+import { invalidateQueryKeys } from "@/lib/query";
 import type { Subscription, SubscriptionPlan } from "@/types/subscription";
 
 export function useSubscription() {
@@ -33,6 +34,6 @@ export function useSubscribePlan() {
       const res = await api.post("/subscriptions", { planId });
       return res.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["subscription"] }),
+    onSuccess: () => invalidateQueryKeys(qc, [["subscription"]]),
   });
 }
