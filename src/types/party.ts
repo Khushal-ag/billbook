@@ -106,5 +106,6 @@ export interface AdvancePayment {
 
 export interface PartyListResponse {
   parties: Party[];
+  /** Number of items in the current page (not total; no total for full result set when using limit/offset) */
   count: number;
 }

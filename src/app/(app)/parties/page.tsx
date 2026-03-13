@@ -26,14 +26,13 @@ export default function Parties() {
   const [editParty, setEditParty] = useState<Party | undefined>();
   const [includeInactive, setIncludeInactive] = useState(true);
 
-  const { data, isPending, error } = useParties({ type: PARTY_TYPE, includeInactive });
+  const { data, isPending, error } = useParties({
+    type: PARTY_TYPE,
+    includeInactive,
+    search: debouncedSearch || undefined,
+  });
 
   const parties = data?.parties ?? [];
-  const filtered = parties.filter(
-    (p) =>
-      p.type === PARTY_TYPE &&
-      (!debouncedSearch || p.name.toLowerCase().includes(debouncedSearch.toLowerCase())),
-  );
 
   const openCreate = () => {
     setEditParty(undefined);
@@ -77,11 +76,15 @@ export default function Parties() {
 
       {isPending ? (
         <TableSkeleton rows={3} />
-      ) : filtered.length === 0 ? (
+      ) : parties.length === 0 ? (
         <EmptyState
           icon={<Users className="h-5 w-5" />}
           title="No customers found"
-          description="Add your first customer to get started."
+          description={
+            debouncedSearch
+              ? `No customers match "${debouncedSearch}". Try a different search or add a new customer.`
+              : "Add your first customer to get started."
+          }
           action={
             <Button size="sm" onClick={openCreate}>
               <Plus className="mr-2 h-4 w-4" />
@@ -91,7 +94,7 @@ export default function Parties() {
         />
       ) : (
         <PartiesTable
-          parties={filtered}
+          parties={parties}
           onEdit={openEdit}
           onLedger={(partyId) => router.push(`/parties/${partyId}/ledger?from=parties`)}
         />

@@ -23,12 +23,22 @@ export function useInvoices(params: {
   page?: number;
   pageSize?: number;
   status?: string;
+  search?: string;
   invoiceType?: InvoiceType;
   partyId?: number;
   startDate?: string;
   endDate?: string;
 }) {
-  const { page = 1, pageSize = 20, status, invoiceType, partyId, startDate, endDate } = params;
+  const {
+    page = 1,
+    pageSize = 20,
+    status,
+    search,
+    invoiceType,
+    partyId,
+    startDate,
+    endDate,
+  } = params;
   const hasDateRange = Boolean(startDate && endDate);
   const queryStartDate = hasDateRange ? startDate : undefined;
   const queryEndDate = hasDateRange ? endDate : undefined;
@@ -37,6 +47,7 @@ export function useInvoices(params: {
     page,
     pageSize,
     status: status !== "ALL" ? status : undefined,
+    search: search?.trim() || undefined,
     invoiceType,
     partyId,
     startDate: queryStartDate,
@@ -49,6 +60,7 @@ export function useInvoices(params: {
       page,
       pageSize,
       status,
+      search,
       invoiceType,
       partyId,
       queryStartDate,

@@ -57,6 +57,7 @@ export function InvoicesByTypePage({
     page,
     pageSize,
     status: statusFilter,
+    search: debouncedSearch || undefined,
     invoiceType,
     partyId,
     startDate: startDate || undefined,
@@ -64,6 +65,7 @@ export function InvoicesByTypePage({
   });
 
   const invoices = useMemo(() => data?.invoices ?? [], [data?.invoices]);
+  /** count = total number of invoices (for pagination); server-side search when search param is set */
   const totalPages = Math.ceil((data?.count ?? 0) / pageSize) || 1;
   const total = data?.count ?? 0;
 
@@ -80,14 +82,6 @@ export function InvoicesByTypePage({
     const overdueCount = invoices.filter((inv) => inv.isOverdue).length;
     return { totalValue, collected, outstanding, overdueCount };
   }, [invoices]);
-
-  const filtered = debouncedSearch
-    ? invoices.filter(
-        (inv) =>
-          inv.invoiceNumber.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-          (inv.partyName ?? "").toLowerCase().includes(debouncedSearch.toLowerCase()),
-      )
-    : invoices;
 
   return (
     <div className="page-container max-w-[96rem] animate-fade-in">
@@ -171,30 +165,36 @@ export function InvoicesByTypePage({
 
       {isPending ? (
         <TableSkeleton rows={5} />
-      ) : filtered.length === 0 ? (
+      ) : invoices.length === 0 ? (
         <EmptyState
           icon={<FileText className="h-5 w-5" />}
           title={`No ${title.toLowerCase()} found`}
-          description={`Create your first ${title.toLowerCase()} to get started.`}
+          description={
+            debouncedSearch
+              ? `No invoices match "${debouncedSearch}". Try a different search or clear filters.`
+              : `Create your first ${title.toLowerCase()} to get started.`
+          }
           action={
-            <Button size="sm" asChild>
-              <Link href={`/invoices/new?type=${invoiceType}`}>
-                <Plus className="mr-2 h-4 w-4" />
-                {createLabel}
-              </Link>
-            </Button>
+            !debouncedSearch ? (
+              <Button size="sm" asChild>
+                <Link href={`/invoices/new?type=${invoiceType}`}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {createLabel}
+                </Link>
+              </Button>
+            ) : undefined
           }
         />
       ) : (
         <>
           {debouncedSearch && (
             <p className="mb-2 text-xs text-muted-foreground">
-              {filtered.length} result{filtered.length !== 1 ? "s" : ""} for &ldquo;
+              {invoices.length} result{invoices.length !== 1 ? "s" : ""} for &ldquo;
               {debouncedSearch}&rdquo;
             </p>
           )}
 
-          <InvoicesTable invoices={filtered} />
+          <InvoicesTable invoices={invoices} />
 
           <TablePagination
             page={page}

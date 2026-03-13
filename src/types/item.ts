@@ -213,7 +213,7 @@ export interface LowStockSummary {
   totalQuantity: string;
 }
 
-/** GET /items/stock response. Stock list includes SERVICE items (0 quantity, entry count). */
+/** GET /items/stock response. Stock list includes SERVICE items (0 quantity, entry count). Summary: stockValue, lowStock. */
 export interface StockListResponse {
   stock: StockListItem[];
   count: number;
@@ -254,11 +254,13 @@ export interface AdjustStockRequest {
 export interface ItemListResponse {
   items: Item[];
   count: number;
+  /** Total number of items matching filters (for pagination) */
   total: number;
 }
 
 export interface StockEntryListResponse {
   entries: StockEntry[];
   count: number;
+  /** Total number of entries (for pagination when using limit/offset) */
   total?: number;
 }

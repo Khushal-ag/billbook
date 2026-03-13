@@ -14,15 +14,28 @@ import type {
   AdvancePayment,
 } from "@/types/party";
 
-export function useParties(params: { type?: string; includeInactive?: boolean } = {}) {
-  const { type, includeInactive } = params;
+export function useParties(
+  params: {
+    type?: string;
+    includeInactive?: boolean;
+    /** Search name, email, phone, gstin, address, city, state */
+    search?: string;
+    /** Max 200 */
+    limit?: number;
+    offset?: number;
+  } = {},
+) {
+  const { type, includeInactive, search, limit, offset } = params;
 
   return useQuery({
-    queryKey: ["parties", type, includeInactive],
+    queryKey: ["parties", type, includeInactive, search, limit, offset],
     queryFn: async () => {
       const qs = buildQueryString({
         type,
         includeInactive: includeInactive ? "true" : undefined,
+        search: search?.trim() || undefined,
+        limit: limit != null ? Math.min(200, limit) : undefined,
+        offset,
       });
       const res = await api.get<PartyListResponse>(`/parties${qs ? `?${qs}` : ""}`);
       return res.data;

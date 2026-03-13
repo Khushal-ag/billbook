@@ -100,6 +100,7 @@ export interface InvoiceCommunicationsSummary {
   };
 }
 
+/** Create/update line item: identified by stockEntryId only (do not send itemId). All numeric fields are strings. */
 export interface InvoiceItemInput {
   stockEntryId: number;
   quantity: string;
@@ -161,6 +162,7 @@ export interface InvoicePdfResponse {
   invoiceNumber: string;
   downloadUrl: string | null;
   format: string;
+  /** ISO date string when PDF URL is returned */
   generatedAt: string | null;
   message?: string;
 }
@@ -169,5 +171,6 @@ export interface InvoiceListResponse {
   invoices: Invoice[];
   page: number;
   pageSize: number;
+  /** Total number of invoices (for pagination) */
   count: number;
 }
