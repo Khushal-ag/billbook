@@ -7,13 +7,15 @@ import type { InvoiceDetail } from "@/types/invoice";
 interface InvoiceSummaryCardsProps {
   invoice: InvoiceDetail;
   balanceDue: string;
+  businessLogoUrl?: string | null;
 }
 
-export function InvoiceSummaryCards({ invoice, balanceDue }: InvoiceSummaryCardsProps) {
+export function InvoiceSummaryCards({
+  invoice,
+  balanceDue,
+  businessLogoUrl,
+}: InvoiceSummaryCardsProps) {
   const balanceDueValue = getInvoiceBalanceDue(invoice);
-  const total = parseFloat(invoice.totalAmount ?? "0") || 0;
-  const paid = parseFloat(invoice.paidAmount ?? "0") || 0;
-  const paidPercent = total > 0 ? Math.min(100, (paid / total) * 100) : 0;
   const typeLabel =
     INVOICE_TYPE_OPTIONS.find((o) => o.type === invoice.invoiceType)?.label ?? invoice.invoiceType;
   const isFullyPaid = balanceDueValue <= 0 && invoice.status === "FINAL";
@@ -24,105 +26,100 @@ export function InvoiceSummaryCards({ invoice, balanceDue }: InvoiceSummaryCards
         {/* Status accent bar */}
         <div
           className={cn(
-            "h-1",
+            "h-1.5",
             invoice.status === "DRAFT" && "bg-amber-400",
             invoice.status === "FINAL" && (isFullyPaid ? "bg-emerald-500" : "bg-primary"),
             invoice.status === "CANCELLED" && "bg-muted-foreground/30",
           )}
         />
 
-        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start sm:justify-between">
-          {/* Left: invoice identity + party + dates */}
-          <div className="min-w-0 flex-1 space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border bg-muted/50 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                {typeLabel}
-              </span>
-              <StatusBadge status={invoice.status} />
+        <div className="space-y-5 p-6">
+          {/* Header: Logo + Invoice Number aligned horizontally | Status badge */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-4">
+              {businessLogoUrl && (
+                <img
+                  src={businessLogoUrl}
+                  alt="Company logo"
+                  className="h-12 w-auto max-w-[160px] rounded object-contain"
+                />
+              )}
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  {typeLabel}
+                </p>
+                <h2 className="text-2xl font-bold tracking-tight">{invoice.invoiceNumber}</h2>
+              </div>
             </div>
+            <StatusBadge status={invoice.status} />
+          </div>
 
+          <div className="border-t" />
+
+          {/* Bill To (left) + Dates (right) */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight">{invoice.invoiceNumber}</h2>
-              {invoice.partyName && (
-                <p className="mt-0.5 text-base text-muted-foreground">{invoice.partyName}</p>
+              <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Bill To
+              </p>
+              <p className="font-semibold">{invoice.partyName ?? "—"}</p>
+              {invoice.notes && (
+                <p className="mt-1 max-w-xs text-sm text-muted-foreground">{invoice.notes}</p>
               )}
             </div>
-
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              <span className="text-muted-foreground">
-                Issued{" "}
-                <span className="font-medium text-foreground">
-                  {formatDate(invoice.invoiceDate)}
-                </span>
-              </span>
+            <div className="space-y-1 text-sm sm:text-right">
+              <div>
+                <span className="text-muted-foreground">Invoice Date </span>
+                <span className="font-medium">{formatDate(invoice.invoiceDate)}</span>
+              </div>
               {invoice.dueDate && (
-                <span
-                  className={cn(
-                    "text-muted-foreground",
-                    invoice.isOverdue && "font-medium text-destructive",
-                  )}
-                >
-                  Due{" "}
-                  <span className={cn("font-medium", !invoice.isOverdue && "text-foreground")}>
+                <div>
+                  <span className="text-muted-foreground">Due Date </span>
+                  <span className={cn("font-medium", invoice.isOverdue && "text-destructive")}>
                     {formatDate(invoice.dueDate)}
                   </span>
                   {invoice.isOverdue && invoice.overdueDays && invoice.overdueDays > 0 && (
-                    <span className="ml-1 text-xs">({invoice.overdueDays}d overdue)</span>
+                    <span className="ml-1 text-xs text-destructive">
+                      ({invoice.overdueDays}d overdue)
+                    </span>
                   )}
-                </span>
+                </div>
               )}
               {invoice.financialYear && (
-                <span className="text-muted-foreground">
-                  FY <span className="font-medium text-foreground">{invoice.financialYear}</span>
-                </span>
+                <div>
+                  <span className="text-muted-foreground">FY </span>
+                  <span className="font-medium">{invoice.financialYear}</span>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Right: financial summary */}
-          <div className="shrink-0 space-y-3 sm:min-w-[180px] sm:text-right">
+          <div className="border-t" />
+
+          {/* Financial totals row */}
+          <div className="flex flex-wrap justify-end gap-8">
             <div>
               <p className="text-xs text-muted-foreground">Total Amount</p>
-              <p className="text-3xl font-bold tabular-nums">
+              <p className="text-2xl font-bold tabular-nums">
                 {formatCurrency(invoice.totalAmount)}
               </p>
             </div>
-
-            {invoice.status === "FINAL" && (
-              <div className="space-y-1.5">
-                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={cn(
-                      "h-full rounded-full transition-all duration-500",
-                      isFullyPaid ? "bg-emerald-500" : "bg-primary",
-                    )}
-                    style={{ width: `${paidPercent}%` }}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {Math.round(paidPercent)}% collected
-                </p>
-              </div>
-            )}
-
-            <div className="flex gap-6 sm:flex-col sm:gap-1.5">
-              <div>
-                <p className="text-xs text-muted-foreground">Paid</p>
-                <p className="text-sm font-semibold tabular-nums text-emerald-600">
-                  {formatCurrency(invoice.paidAmount ?? "0")}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Balance Due</p>
-                <p
-                  className={cn(
-                    "text-sm font-semibold tabular-nums",
-                    isFullyPaid ? "text-emerald-600" : invoice.isOverdue ? "text-destructive" : "",
-                  )}
-                >
-                  {isFullyPaid ? "Paid in full" : formatCurrency(balanceDue)}
-                </p>
-              </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Paid</p>
+              <p className="text-base font-semibold tabular-nums text-emerald-600">
+                {formatCurrency(invoice.paidAmount ?? "0")}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Balance Due</p>
+              <p
+                className={cn(
+                  "text-base font-semibold tabular-nums",
+                  isFullyPaid ? "text-emerald-600" : invoice.isOverdue ? "text-destructive" : "",
+                )}
+              >
+                {isFullyPaid ? "Paid in full" : formatCurrency(balanceDue)}
+              </p>
             </div>
           </div>
         </div>

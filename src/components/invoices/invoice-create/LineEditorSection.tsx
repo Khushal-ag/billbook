@@ -219,7 +219,13 @@ export function LineEditorSection({
                           ? formatISODateDisplay(getEntryDateIso(lineEntry)) || "No date"
                           : "-"}
                       </td>
-                      <td className="px-3 py-2.5 text-right tabular-nums">{line.quantity}</td>
+                      <td className="px-3 py-2.5">
+                        <Input
+                          value={line.quantity}
+                          onChange={(e) => updateLine(line.id, { quantity: e.target.value })}
+                          className="h-8 text-right tabular-nums"
+                        />
+                      </td>
                       <td className="px-3 py-2.5 text-right tabular-nums">
                         {formatCurrency(line.unitPrice)}
                       </td>

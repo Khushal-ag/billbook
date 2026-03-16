@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import ItemDialog from "@/components/dialogs/ItemDialog";
@@ -10,15 +11,18 @@ import { useInvoiceCreateState } from "@/hooks/invoices/useInvoiceCreateState";
 import { PartyAndDatesCards } from "@/components/invoices/invoice-create/PartyAndDatesCards";
 import { LineEditorSection } from "@/components/invoices/invoice-create/LineEditorSection";
 import { InvoiceTotalsSummary } from "@/components/invoices/invoice-create/InvoiceTotalsSummary";
+import { useBusinessProfile } from "@/hooks/use-business";
 import type { InvoiceType } from "@/types/invoice";
 
 interface InvoiceCreatePageProps {
   initialType: InvoiceType;
+  initialSourceInvoiceId?: number;
 }
 
-export function InvoiceCreatePage({ initialType }: InvoiceCreatePageProps) {
-  const state = useInvoiceCreateState(initialType);
+export function InvoiceCreatePage({ initialType, initialSourceInvoiceId }: InvoiceCreatePageProps) {
+  const state = useInvoiceCreateState(initialType, initialSourceInvoiceId);
   const copy = state.createCopy;
+  const { data: businessProfile } = useBusinessProfile();
 
   return (
     <div className="page-container max-w-[96rem] animate-fade-in space-y-5">
@@ -31,6 +35,23 @@ export function InvoiceCreatePage({ initialType }: InvoiceCreatePageProps) {
           </Button>
         }
       />
+
+      {(state.isNextInvoiceNumberPending || state.nextInvoiceNumber) && (
+        <div className="flex items-center gap-4">
+          {businessProfile?.logoUrl && (
+            <img
+              src={businessProfile.logoUrl}
+              alt="Company logo"
+              className="h-12 w-auto max-w-[160px] rounded object-contain"
+            />
+          )}
+          {state.isNextInvoiceNumberPending ? (
+            <Skeleton className="h-8 w-48" />
+          ) : (
+            <h2 className="text-2xl font-bold tracking-tight">{state.nextInvoiceNumber}</h2>
+          )}
+        </div>
+      )}
 
       <ErrorBanner error={state.stockEntriesError} fallbackMessage={copy.loadErrorMessage} />
 

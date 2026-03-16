@@ -19,6 +19,55 @@ import type {
   InvoiceCommunicationsSummary,
 } from "@/types/invoice";
 
+function incrementInvoiceNumber(value: string): string | null {
+  const match = value.match(/^(.*?)(\d+)([^\d]*)$/);
+  if (!match) return null;
+
+  const [, prefix, numericPart, suffix] = match;
+  const incremented = String(Number(numericPart) + 1).padStart(numericPart.length, "0");
+  return `${prefix}${incremented}${suffix}`;
+}
+
+function extractNextInvoiceNumber(payload: unknown): string | null {
+  if (typeof payload === "string" && payload.trim()) return payload;
+  if (!payload || typeof payload !== "object") return null;
+
+  const obj = payload as Record<string, unknown>;
+  const candidates = [obj.invoiceNumber, obj.nextInvoiceNumber, obj.number, obj.nextNumber];
+  const first = candidates.find((x) => typeof x === "string" && x.trim());
+  return typeof first === "string" ? first : null;
+}
+
+export function useNextInvoiceNumber(invoiceType: InvoiceType) {
+  return useQuery({
+    queryKey: ["invoice-next-number", invoiceType],
+    queryFn: async () => {
+      const endpoints = ["/invoices/next-number", "/invoices/next"];
+
+      for (const endpoint of endpoints) {
+        try {
+          const res = await api.get<unknown>(endpoint);
+          const nextFromEndpoint = extractNextInvoiceNumber(res.data);
+          if (nextFromEndpoint) return nextFromEndpoint;
+        } catch {
+          // Fall back to deriving from the latest invoice number.
+        }
+      }
+
+      const qs = buildQueryString({ page: 1, pageSize: 1 });
+      const listRes = await api.get<InvoiceListResponse>(`/invoices?${qs}`);
+      const latestNumber = listRes.data.invoices?.[0]?.invoiceNumber;
+      if (latestNumber) {
+        const derivedNext = incrementInvoiceNumber(latestNumber);
+        if (derivedNext) return derivedNext;
+      }
+
+      // Brand-new account with zero invoices: use the conventional first number.
+      return "INV-000001";
+    },
+  });
+}
+
 export function useInvoices(params: {
   page?: number;
   pageSize?: number;
