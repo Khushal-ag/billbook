@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BusinessIdentity } from "../BusinessIdentity";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import ErrorBanner from "@/components/ErrorBanner";
@@ -38,13 +39,13 @@ export function InvoiceCreatePage({ initialType, initialSourceInvoiceId }: Invoi
 
       {(state.isNextInvoiceNumberPending || state.nextInvoiceNumber) && (
         <div className="flex items-center gap-4">
-          {businessProfile?.logoUrl && (
-            <img
-              src={businessProfile.logoUrl}
-              alt="Company logo"
-              className="h-12 w-auto max-w-[160px] rounded object-contain"
-            />
-          )}
+          <BusinessIdentity
+            name={businessProfile?.name}
+            logoUrl={businessProfile?.logoUrl}
+            size="md"
+            showName={!businessProfile?.logoUrl}
+            nameClassName="text-sm font-semibold text-foreground"
+          />
           {state.isNextInvoiceNumberPending ? (
             <Skeleton className="h-8 w-48" />
           ) : (

@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
+import { BusinessIdentity } from "../BusinessIdentity";
 import { getInvoiceBalanceDue, INVOICE_TYPE_OPTIONS } from "@/lib/invoice";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import type { InvoiceDetail } from "@/types/invoice";
@@ -8,12 +9,14 @@ interface InvoiceSummaryCardsProps {
   invoice: InvoiceDetail;
   balanceDue: string;
   businessLogoUrl?: string | null;
+  businessName?: string | null;
 }
 
 export function InvoiceSummaryCards({
   invoice,
   balanceDue,
   businessLogoUrl,
+  businessName,
 }: InvoiceSummaryCardsProps) {
   const balanceDueValue = getInvoiceBalanceDue(invoice);
   const typeLabel =
@@ -37,13 +40,13 @@ export function InvoiceSummaryCards({
           {/* Header: Logo + Invoice Number aligned horizontally | Status badge */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              {businessLogoUrl && (
-                <img
-                  src={businessLogoUrl}
-                  alt="Company logo"
-                  className="h-12 w-auto max-w-[160px] rounded object-contain"
-                />
-              )}
+              <BusinessIdentity
+                name={businessName}
+                logoUrl={businessLogoUrl}
+                size="md"
+                showName={!businessLogoUrl}
+                nameClassName="text-sm font-semibold text-foreground"
+              />
               <div>
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   {typeLabel}

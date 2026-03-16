@@ -184,6 +184,7 @@ export default function InvoiceDetail() {
             invoice={invoice}
             balanceDue={balanceDue}
             businessLogoUrl={businessProfile?.logoUrl ?? null}
+            businessName={businessProfile?.name ?? null}
           />
           <InvoiceLineItemsTable
             items={invoice.items}
