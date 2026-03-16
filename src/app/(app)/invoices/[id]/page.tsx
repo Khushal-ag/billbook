@@ -28,6 +28,7 @@ import {
   useInvoiceCommunications,
 } from "@/hooks/use-invoices";
 import { useStockEntriesByIds } from "@/hooks/use-items";
+import { useBusinessProfile } from "@/hooks/use-business";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useResourceAuditLogs } from "@/hooks/use-audit-logs";
 import { getInvoiceBalanceDue, INVOICE_TYPE_OPTIONS } from "@/lib/invoice";
@@ -46,6 +47,7 @@ export default function InvoiceDetail() {
   const [cancelConfirm, setCancelConfirm] = useState(false);
 
   const { data: invoice, isPending, error } = useInvoice(invoiceId);
+  const { data: businessProfile } = useBusinessProfile();
   const stockEntryIds = invoice?.items.map((item) => item.stockEntryId) ?? [];
   const stockEntriesQuery = useStockEntriesByIds(stockEntryIds);
   const { data: pdfData } = useInvoicePdf(invoice?.status === "FINAL" ? invoiceId : undefined);
@@ -178,12 +180,17 @@ export default function InvoiceDetail() {
             }
           />
 
-          <InvoiceSummaryCards invoice={invoice} balanceDue={balanceDue} />
-          <InvoiceDetailsCards invoice={invoice} />
+          <InvoiceSummaryCards
+            invoice={invoice}
+            balanceDue={balanceDue}
+            businessLogoUrl={businessProfile?.logoUrl ?? null}
+            businessName={businessProfile?.name ?? null}
+          />
           <InvoiceLineItemsTable
             items={invoice.items}
             purchaseDateByStockEntryId={purchaseDateByStockEntryId}
           />
+          <InvoiceDetailsCards invoice={invoice} />
           <InvoicePaymentsTable payments={invoice.payments} />
           {auditData?.logs && <InvoiceAuditHistory logs={auditData.logs} />}
 

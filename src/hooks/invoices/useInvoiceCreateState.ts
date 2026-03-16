@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   createLine,
@@ -13,8 +13,13 @@ import {
   toNum,
 } from "@/lib/invoice-create";
 import type { InvoiceLineDraft, StockChoice, StockLineIssue } from "@/types/invoice-create";
-import { useCreateInvoice } from "@/hooks/use-invoices";
-import { getStockEntryById, useItems, useStockEntries } from "@/hooks/use-items";
+import { useCreateInvoice, useInvoice, useNextInvoiceNumber } from "@/hooks/use-invoices";
+import {
+  getStockEntryById,
+  useItems,
+  useStockEntries,
+  useStockEntriesByIds,
+} from "@/hooks/use-items";
 import { useParties } from "@/hooks/use-parties";
 import { useDebounce } from "@/hooks/use-debounce";
 import { getInvoiceTypeCreateCopy, INVOICE_TYPE_OPTIONS, isSalesFamily } from "@/lib/invoice";
@@ -24,10 +29,11 @@ import type { Item, StockEntry } from "@/types/item";
 import type { Party } from "@/types/party";
 import type { InvoiceType } from "@/types/invoice";
 
-export function useInvoiceCreateState(initialType: InvoiceType) {
+export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?: number) {
   const router = useRouter();
   const createInvoice = useCreateInvoice();
   const invoiceType = initialType;
+  const hasHydratedSourceInvoice = useRef(false);
 
   const [party, setParty] = useState<Party | null>(null);
   const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -64,6 +70,14 @@ export function useInvoiceCreateState(initialType: InvoiceType) {
     search: debouncedStockSearch || undefined,
     limit: 100,
   });
+  const { data: sourceInvoice } = useInvoice(sourceInvoiceId);
+  const { data: nextInvoiceNumber, isPending: isNextInvoiceNumberPending } =
+    useNextInvoiceNumber(invoiceType);
+  const sourceEntryIds = useMemo(
+    () => sourceInvoice?.items.map((line) => line.stockEntryId) ?? [],
+    [sourceInvoice?.items],
+  );
+  const sourceStockEntryMapQuery = useStockEntriesByIds(sourceEntryIds);
 
   const parties = useMemo(
     () => (partiesData?.parties ?? []).filter((p) => p.isActive),
@@ -219,6 +233,141 @@ export function useInvoiceCreateState(initialType: InvoiceType) {
 
   const canSubmit = party != null && addedLines.length > 0;
   const roundOffInputValue = autoRoundOff ? summary.roundOff.toFixed(2) : roundOffAmount;
+
+  useEffect(() => {
+    const sourceConfigByReturnType: Record<
+      InvoiceType,
+      { sourceType: InvoiceType; partyType: "CUSTOMER" | "SUPPLIER"; notePrefix: string } | null
+    > = {
+      SALE_RETURN: {
+        sourceType: "SALE_INVOICE",
+        partyType: "CUSTOMER",
+        notePrefix: "Sales return against",
+      },
+      PURCHASE_RETURN: {
+        sourceType: "PURCHASE_INVOICE",
+        partyType: "SUPPLIER",
+        notePrefix: "Purchase return against",
+      },
+      SALE_INVOICE: null,
+      PURCHASE_INVOICE: null,
+    };
+
+    const sourceConfig = sourceConfigByReturnType[invoiceType];
+    if (!sourceConfig) return;
+    if (!sourceInvoiceId) return;
+    if (hasHydratedSourceInvoice.current) return;
+    if (!sourceInvoice) return;
+    if (sourceInvoice.invoiceType !== sourceConfig.sourceType) return;
+    if (!sourceStockEntryMapQuery.data) return;
+
+    const partyFromList = parties.find((p) => p.id === sourceInvoice.partyId);
+    const fallbackParty: Party = {
+      id: sourceInvoice.partyId,
+      businessId: sourceInvoice.businessId,
+      name:
+        sourceInvoice.partyName ??
+        (sourceConfig.partyType === "SUPPLIER" ? "Supplier" : "Customer"),
+      type: sourceConfig.partyType,
+      gstin: null,
+      email: null,
+      phone: null,
+      address: null,
+      city: null,
+      state: null,
+      postalCode: null,
+      openingBalance: null,
+      isActive: true,
+      createdAt: sourceInvoice.createdAt,
+      updatedAt: sourceInvoice.updatedAt,
+    };
+    setParty(partyFromList ?? fallbackParty);
+
+    const prefilledLines: InvoiceLineDraft[] = [];
+
+    for (const invoiceItem of sourceInvoice.items) {
+      const entry = sourceStockEntryMapQuery.data?.[invoiceItem.stockEntryId];
+      if (!entry) continue;
+
+      const catalogItem = itemMap.get(entry.itemId);
+      const entryItem = entry.item;
+      const resolvedItem =
+        catalogItem ??
+        (entryItem
+          ? {
+              id: entryItem.id,
+              businessId: sourceInvoice.businessId,
+              name: entryItem.name,
+              type: entry.itemType ?? "STOCK",
+              hsnCode:
+                "hsnCode" in entryItem
+                  ? ((entryItem.hsnCode as string | null | undefined) ?? null)
+                  : (invoiceItem.hsnCode ?? null),
+              sacCode:
+                "sacCode" in entryItem
+                  ? ((entryItem.sacCode as string | null | undefined) ?? null)
+                  : (invoiceItem.sacCode ?? null),
+              categoryId: null,
+              categoryName: entry.categoryName ?? null,
+              category: entry.categoryName ?? null,
+              unit: entry.unit ?? "pcs",
+              description: null,
+              isTaxable: true,
+              taxType: "GST" as const,
+              cgstRate:
+                "cgstRate" in entryItem
+                  ? ((entryItem.cgstRate as string | null | undefined) ?? null)
+                  : (invoiceItem.cgstRate ?? "0"),
+              sgstRate:
+                "sgstRate" in entryItem
+                  ? ((entryItem.sgstRate as string | null | undefined) ?? null)
+                  : (invoiceItem.sgstRate ?? "0"),
+              igstRate:
+                "igstRate" in entryItem
+                  ? ((entryItem.igstRate as string | null | undefined) ?? null)
+                  : (invoiceItem.igstRate ?? "0"),
+              otherTaxName: null,
+              otherTaxRate: null,
+              minStockThreshold: null,
+              isActive: true,
+              createdAt: sourceInvoice.createdAt,
+              updatedAt: sourceInvoice.updatedAt,
+            }
+          : null);
+
+      if (!resolvedItem) continue;
+
+      prefilledLines.push({
+        id: crypto.randomUUID(),
+        item: resolvedItem,
+        stockEntryId: invoiceItem.stockEntryId,
+        quantity: invoiceItem.quantity,
+        unitPrice: invoiceItem.unitPrice || entry.sellingPrice || "",
+        discountPercent: invoiceItem.discountPercent ?? "0",
+        cgstRate: resolvedItem.cgstRate ?? "0",
+        sgstRate: resolvedItem.sgstRate ?? "0",
+        igstRate: resolvedItem.igstRate ?? "0",
+      });
+    }
+
+    if (prefilledLines.length > 0) {
+      setLines([createLine(), ...prefilledLines]);
+    }
+
+    if (!notes.trim()) {
+      setNotes(`${sourceConfig.notePrefix} ${sourceInvoice.invoiceNumber}`);
+    }
+
+    hasHydratedSourceInvoice.current = true;
+  }, [
+    invoiceType,
+    sourceInvoiceId,
+    sourceInvoice,
+    sourceStockEntryMapQuery.data,
+    parties,
+    itemMap,
+    notes,
+  ]);
 
   const updateLine = useCallback((lineId: string, patch: Partial<InvoiceLineDraft>) => {
     setLines((prev) => prev.map((line) => (line.id === lineId ? { ...line, ...patch } : line)));
@@ -442,19 +591,22 @@ export function useInvoiceCreateState(initialType: InvoiceType) {
       return;
     }
 
-    const liveIssues = await validateLiveStockForAddedLines();
-    if (liveIssues.length > 0) {
-      const issueMap = Object.fromEntries(liveIssues.map((issue) => [issue.lineId, issue]));
-      setStockLineIssues(issueMap);
-      setFocusedIssueLineId(liveIssues[0]?.lineId ?? null);
-      showErrorToast(
-        null,
-        `Stock changed for ${liveIssues.length} line(s). Use Fix qty or reselect batch.`,
-      );
-      return;
+    if (invoiceType !== "SALE_RETURN" && invoiceType !== "PURCHASE_RETURN") {
+      const liveIssues = await validateLiveStockForAddedLines();
+      if (liveIssues.length > 0) {
+        const issueMap = Object.fromEntries(liveIssues.map((issue) => [issue.lineId, issue]));
+        setStockLineIssues(issueMap);
+        setFocusedIssueLineId(liveIssues[0]?.lineId ?? null);
+        showErrorToast(
+          null,
+          `Stock changed for ${liveIssues.length} line(s). Use Fix qty or reselect batch.`,
+        );
+        return;
+      }
+      setStockLineIssues({});
+    } else {
+      setStockLineIssues({});
     }
-
-    setStockLineIssues({});
 
     const invalidCostLine = addedLines.find((line) => getCostFloorViolation(line, stockEntries));
     if (invalidCostLine) {
@@ -610,6 +762,8 @@ export function useInvoiceCreateState(initialType: InvoiceType) {
     // Meta & copy
     partyType,
     pageMeta,
+    nextInvoiceNumber,
+    isNextInvoiceNumberPending,
     createCopy: getInvoiceTypeCreateCopy(invoiceType),
     stockEntriesError,
     createInvoice,
