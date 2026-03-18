@@ -171,6 +171,7 @@ export const api = {
   postForm: <T>(path: string, formData: FormData) => request<T>("POST", path, { body: formData }),
 };
 
+/** RFC 4122 UUID — matches Swagger `Idempotency-Key` format (uuid). */
 export function generateIdempotencyKey(): string {
-  return `${Date.now()}-${crypto.randomUUID()}`;
+  return crypto.randomUUID();
 }

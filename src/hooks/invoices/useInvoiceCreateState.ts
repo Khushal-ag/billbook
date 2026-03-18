@@ -83,10 +83,9 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
     { enabled: stockSearchOpen, staleTime: 30_000 },
   );
   const { data: sourceInvoice } = useInvoice(sourceInvoiceId);
-  const { data: nextInvoiceNumber, isPending: isNextInvoiceNumberPending } = useNextInvoiceNumber(
-    invoiceType,
-    { invoiceDate },
-  );
+  const { data: nextInvoiceNumber, isPending: isNextInvoiceNumberPending } = useNextInvoiceNumber({
+    invoiceDate,
+  });
   const sourceEntryIds = useMemo(
     () => sourceInvoice?.items.map((line) => line.stockEntryId) ?? [],
     [sourceInvoice?.items],

@@ -29,21 +29,17 @@ export type UseNextInvoiceNumberOptions = {
 };
 
 /**
- * Preview next invoice number (same FY / sequence logic as create).
- * Calls GET /invoices/next-number (Bearer + business scope).
+ * Preview next invoice number (FY-scoped). GET /invoices/next-number — query params per API:
+ * `financialYear`, `invoiceDate` only.
  */
-export function useNextInvoiceNumber(
-  invoiceType: InvoiceType,
-  options?: UseNextInvoiceNumberOptions,
-) {
+export function useNextInvoiceNumber(options?: UseNextInvoiceNumberOptions) {
   const invoiceDate = options?.invoiceDate?.trim() || undefined;
   const financialYear = options?.financialYear?.trim() || undefined;
 
   return useQuery({
-    queryKey: ["invoice-next-number", invoiceType, invoiceDate ?? "", financialYear ?? ""],
+    queryKey: ["invoice-next-number", invoiceDate ?? "", financialYear ?? ""],
     queryFn: async () => {
       const qs = buildQueryString({
-        invoiceType,
         invoiceDate,
         financialYear,
       });
