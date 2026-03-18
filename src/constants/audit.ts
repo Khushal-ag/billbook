@@ -11,6 +11,10 @@ export const AUDIT_ACTIONS = [
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
+/** Resource / action strings used when resolving invoice update diffs in audit UI. */
+export const AUDIT_RESOURCE_INVOICE = "INVOICE" as const;
+export const AUDIT_ACTION_UPDATE = "UPDATE" as const;
+
 export type AuditBadgeVariant = "default" | "secondary" | "destructive" | "outline";
 
 export const ACTION_BADGE_VARIANTS: Record<string, AuditBadgeVariant> = {

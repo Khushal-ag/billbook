@@ -646,7 +646,7 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
         setFocusedIssueLineId(liveIssues[0]?.lineId ?? null);
         showErrorToast(
           null,
-          `Stock changed for ${liveIssues.length} line(s). Use Fix qty or reselect batch.`,
+          `Stock changed for ${liveIssues.length} product${liveIssues.length !== 1 ? "s" : ""} on this invoice. Fix quantity or pick another batch.`,
         );
         return;
       }
