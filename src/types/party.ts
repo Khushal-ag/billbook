@@ -3,6 +3,8 @@ export type PartyType = "CUSTOMER" | "SUPPLIER";
 export interface Party {
   id: number;
   businessId: number;
+  /** e.g. P-00001 — generated on create (API) */
+  partyCode?: string;
   name: string;
   type: PartyType;
   gstin: string | null;
@@ -13,6 +15,8 @@ export interface Party {
   state: string | null;
   postalCode: string | null;
   openingBalance: string | null;
+  contactPersonName?: string | null;
+  contactPersonMobile?: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -29,6 +33,8 @@ export interface CreatePartyRequest {
   state?: string;
   postalCode?: string;
   openingBalance?: string;
+  contactPersonName?: string | null;
+  contactPersonMobile?: string | null;
   isActive?: boolean;
 }
 
