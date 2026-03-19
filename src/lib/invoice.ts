@@ -1,4 +1,4 @@
-import type { Invoice, InvoiceType } from "@/types/invoice";
+import type { Invoice, InvoiceDetail, InvoiceType } from "@/types/invoice";
 
 function parseAmount(value: string | null | undefined): number {
   const parsed = parseFloat((value ?? "0").replace(/,/g, ""));
@@ -161,4 +161,60 @@ const INVOICE_TYPE_CREATE_COPY: Record<InvoiceType, InvoiceTypeCreateCopy> = {
 
 export function getInvoiceTypeCreateCopy(type: InvoiceType): InvoiceTypeCreateCopy {
   return INVOICE_TYPE_CREATE_COPY[type];
+}
+
+/** Bill-style figures for invoice detail (aligned with create flow bill summary). */
+export interface InvoiceBillSummary {
+  grossAmount: number;
+  lineDiscountTotal: number;
+  taxableTotal: number;
+  taxTotal: number;
+  taxPercentEffective: number;
+  invoiceDiscount: number;
+  subtotalBeforeRoundOff: number;
+  roundOff: number;
+  grandTotal: number;
+}
+
+function invoiceHeaderDiscount(invoice: InvoiceDetail): number {
+  const da = (invoice.discountAmount ?? "").trim();
+  const dp = (invoice.discountPercent ?? "").trim();
+  const taxable = parseAmount(invoice.subTotal);
+  if (da !== "" && parseAmount(da) > 0) return Math.max(0, parseAmount(da));
+  if (dp !== "" && parseAmount(dp) > 0) {
+    return (taxable * Math.min(100, Math.max(0, parseAmount(dp)))) / 100;
+  }
+  return 0;
+}
+
+/**
+ * Derive display totals from the invoice header + lines. Uses `subTotal` as taxable amount (sum of
+ * line taxable bases). Does not split tax by CGST/SGST/IGST — use `taxTotal` only.
+ */
+export function getInvoiceBillSummary(invoice: InvoiceDetail): InvoiceBillSummary {
+  let grossAmount = 0;
+  for (const item of invoice.items) {
+    grossAmount += parseAmount(item.quantity) * parseAmount(item.unitPrice);
+  }
+  const taxableTotal = parseAmount(invoice.subTotal);
+  const lineDiscountTotal = invoice.items.length > 0 ? Math.max(0, grossAmount - taxableTotal) : 0;
+
+  const taxTotal = parseAmount(invoice.totalTax);
+  const invoiceDiscount = invoiceHeaderDiscount(invoice);
+  const subtotalBeforeRoundOff = Math.max(0, taxableTotal + taxTotal - invoiceDiscount);
+  const roundOff = parseAmount(invoice.roundOffAmount);
+  const grandTotal = parseAmount(invoice.totalAmount);
+  const taxPercentEffective = taxableTotal > 0.000_5 ? (taxTotal / taxableTotal) * 100 : 0;
+
+  return {
+    grossAmount,
+    lineDiscountTotal,
+    taxableTotal,
+    taxTotal,
+    taxPercentEffective,
+    invoiceDiscount,
+    subtotalBeforeRoundOff,
+    roundOff,
+    grandTotal,
+  };
 }

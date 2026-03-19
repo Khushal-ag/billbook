@@ -1,104 +1,151 @@
+import type { ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { INVOICE_TYPE_OPTIONS } from "@/lib/invoice";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { getInvoiceBillSummary, getInvoiceTypeCreateCopy } from "@/lib/invoice";
+import { cn, formatCurrency, formatDate, formatSignedCurrency, formatTime } from "@/lib/utils";
 import type { InvoiceDetail } from "@/types/invoice";
 
 interface InvoiceDetailsCardsProps {
   invoice: InvoiceDetail;
 }
 
+const EPS = 0.000_5;
+
+function formatPartyAddressLines(invoice: InvoiceDetail): string | null {
+  const line1 = invoice.partyAddress?.trim();
+  const city = invoice.partyCity?.trim();
+  const state = invoice.partyState?.trim();
+  const pin = invoice.partyPostalCode?.trim();
+  const cityState = [city, state].filter(Boolean).join(", ");
+  const line2 = [cityState, pin].filter(Boolean).join(" ").trim();
+
+  const lines = [line1, line2].filter((l): l is string => Boolean(l));
+  return lines.length > 0 ? lines.join("\n") : null;
+}
+
+function DetailRow({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex items-center justify-between gap-3 text-sm", className)}>
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <div className="min-w-0 text-right font-medium text-foreground">{children}</div>
+    </div>
+  );
+}
+
 export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
-  const typeLabel =
-    INVOICE_TYPE_OPTIONS.find((o) => o.type === invoice.invoiceType)?.label ?? invoice.invoiceType;
+  const summaryTitle = getInvoiceTypeCreateCopy(invoice.invoiceType).summaryTitle;
+  const bill = getInvoiceBillSummary(invoice);
+  const partyAddressText = formatPartyAddressLines(invoice);
+
+  const showLineDiscount = bill.lineDiscountTotal > EPS;
+  const showInvoiceDiscount = bill.invoiceDiscount > EPS;
+  const showRoundOff = Math.abs(bill.roundOff) > EPS;
+  const taxLabel =
+    bill.taxableTotal > EPS || bill.taxTotal > EPS
+      ? `Total tax (${bill.taxPercentEffective.toFixed(2)}%)`
+      : "Total tax";
 
   return (
-    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-      <Card>
+    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch">
+      {/* Left: notes, party address (when API provides it), created/updated */}
+      <Card className="flex h-full flex-col overflow-hidden">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold text-foreground">Details</CardTitle>
+          <CardTitle className="text-sm font-semibold text-foreground">
+            Notes &amp; details
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Invoice Type</span>
-            <span className="font-medium">{typeLabel}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Invoice Date</span>
-            <span>{formatDate(invoice.invoiceDate)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Due Date</span>
-            <span>{invoice.dueDate ? formatDate(invoice.dueDate) : "—"}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Financial Year</span>
-            <span>{invoice.financialYear ?? "—"}</span>
-          </div>
-          {invoice.partyName && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Party</span>
-              <span className="font-medium">{invoice.partyName}</span>
+        <CardContent className="flex flex-1 flex-col space-y-4 text-sm">
+          {invoice.notes ? (
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Notes
+              </p>
+              <div className="rounded-md border border-dashed bg-muted/10 px-3 py-2.5 text-sm leading-relaxed text-muted-foreground">
+                {invoice.notes}
+              </div>
             </div>
-          )}
-          {invoice.notes && (
-            <div className="flex justify-between gap-4">
-              <span className="shrink-0 text-muted-foreground">Notes</span>
-              <span className="text-right text-muted-foreground">{invoice.notes}</span>
+          ) : null}
+
+          {partyAddressText ? (
+            <div className={cn("space-y-2", invoice.notes ? "border-t pt-4" : "")}>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Party address
+              </p>
+              <div className="whitespace-pre-line rounded-md border bg-muted/15 px-3 py-2.5 text-sm leading-relaxed text-foreground">
+                {partyAddressText}
+              </div>
             </div>
-          )}
+          ) : null}
+
+          <div
+            className={cn("space-y-2", invoice.notes || partyAddressText ? "border-t pt-4" : "")}
+          >
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Record
+            </p>
+            <div className="space-y-2 rounded-md border bg-muted/15 p-3">
+              <DetailRow label="Created">
+                <span className="text-xs tabular-nums sm:text-sm">
+                  {formatDate(invoice.createdAt)} · {formatTime(invoice.createdAt)}
+                </span>
+              </DetailRow>
+              <DetailRow label="Updated">
+                <span className="text-xs tabular-nums sm:text-sm">
+                  {formatDate(invoice.updatedAt)} · {formatTime(invoice.updatedAt)}
+                </span>
+              </DetailRow>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="flex h-full flex-col overflow-hidden">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold text-foreground">
-            Financial Breakdown
-          </CardTitle>
+          <CardTitle className="text-sm font-semibold text-foreground">{summaryTitle}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Sub Total</span>
-            <span className="tabular-nums">{formatCurrency(invoice.subTotal)}</span>
-          </div>
-          {invoice.discountAmount && invoice.discountAmount !== "0" && (
-            <div className="flex justify-between text-muted-foreground">
-              <span>Discount</span>
-              <span className="tabular-nums">−{formatCurrency(invoice.discountAmount)}</span>
+        <CardContent className="flex flex-1 flex-col space-y-2 text-sm">
+          <div className="flex flex-1 flex-col space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-muted-foreground">Gross amount</span>
+              <span className="tabular-nums">{formatCurrency(bill.grossAmount)}</span>
             </div>
-          )}
-          {invoice.cgstAmount && parseFloat(invoice.cgstAmount) > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">CGST</span>
-              <span className="tabular-nums">{formatCurrency(invoice.cgstAmount)}</span>
+            {showLineDiscount && (
+              <div className="flex items-center justify-between gap-2 text-muted-foreground">
+                <span>Item discount</span>
+                <span className="tabular-nums">−{formatCurrency(bill.lineDiscountTotal)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-2 border-t border-dashed pt-2">
+              <span className="font-medium text-foreground">Taxable amount</span>
+              <span className="font-medium tabular-nums">{formatCurrency(bill.taxableTotal)}</span>
             </div>
-          )}
-          {invoice.sgstAmount && parseFloat(invoice.sgstAmount) > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">SGST</span>
-              <span className="tabular-nums">{formatCurrency(invoice.sgstAmount)}</span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-muted-foreground">{taxLabel}</span>
+              <span className="shrink-0 tabular-nums">{formatCurrency(bill.taxTotal)}</span>
             </div>
-          )}
-          {invoice.igstAmount && parseFloat(invoice.igstAmount) > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">IGST</span>
-              <span className="tabular-nums">{formatCurrency(invoice.igstAmount)}</span>
+            {showInvoiceDiscount && (
+              <div className="flex items-center justify-between gap-2 text-muted-foreground">
+                <span>Invoice discount</span>
+                <span className="tabular-nums">−{formatCurrency(bill.invoiceDiscount)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-2 border-t border-dashed pt-2 text-muted-foreground">
+              <span>Subtotal (before round-off)</span>
+              <span className="tabular-nums">{formatCurrency(bill.subtotalBeforeRoundOff)}</span>
             </div>
-          )}
-          {invoice.totalTax && parseFloat(invoice.totalTax) > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Total Tax</span>
-              <span className="tabular-nums">{formatCurrency(invoice.totalTax)}</span>
-            </div>
-          )}
-          {invoice.roundOffAmount && invoice.roundOffAmount !== "0" && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Round Off</span>
-              <span className="tabular-nums">{formatCurrency(invoice.roundOffAmount)}</span>
-            </div>
-          )}
-          <div className="flex justify-between border-t pt-2 font-semibold">
-            <span>Grand Total</span>
-            <span className="tabular-nums">{formatCurrency(invoice.totalAmount)}</span>
+            {showRoundOff && (
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-muted-foreground">Round-off</span>
+                <span className="tabular-nums">{formatSignedCurrency(bill.roundOff)}</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

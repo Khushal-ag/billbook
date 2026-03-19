@@ -75,9 +75,14 @@ export function getLineAmounts(line: InvoiceLineDraft) {
   const taxRate = Math.max(0, toNum(line.cgstRate) + toNum(line.sgstRate) + toNum(line.igstRate));
 
   const percentDiscount = (gross * discPercent) / 100;
+  /** Prefer % when set so line discount scales with qty × rate; else fixed ₹ amount. */
   const lineDiscount = Math.min(
     gross,
-    line.discountAmount.trim() ? discountAmountInput : percentDiscount,
+    line.discountPercent.trim() !== ""
+      ? percentDiscount
+      : line.discountAmount.trim() !== ""
+        ? discountAmountInput
+        : 0,
   );
   const taxable = Math.max(0, gross - lineDiscount);
   const tax = (taxable * taxRate) / 100;
@@ -138,9 +143,14 @@ export function getCostFloorViolation(
   const gross = qty * sellingPrice;
   const discountPercent = Math.min(100, Math.max(0, toNum(line.discountPercent)));
   const discountAmountInput = Math.max(0, toNum(line.discountAmount));
+  const percentDiscount = (gross * discountPercent) / 100;
   const lineDiscount = Math.min(
     gross,
-    line.discountAmount.trim() ? discountAmountInput : (gross * discountPercent) / 100,
+    line.discountPercent.trim() !== ""
+      ? percentDiscount
+      : line.discountAmount.trim() !== ""
+        ? discountAmountInput
+        : 0,
   );
   const netUnitPrice = Math.max(0, (gross - lineDiscount) / qty);
 

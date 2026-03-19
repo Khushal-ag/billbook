@@ -33,6 +33,15 @@ export interface Invoice {
   updatedAt: string;
   deletedAt: string | null;
   partyName?: string;
+  /** Present on some invoice detail API responses */
+  partyPhone?: string | null;
+  partyGstin?: string | null;
+  partyType?: string | null;
+  /** Present on some invoice detail API responses */
+  partyAddress?: string | null;
+  partyCity?: string | null;
+  partyState?: string | null;
+  partyPostalCode?: string | null;
 }
 
 export interface InvoiceItem {
