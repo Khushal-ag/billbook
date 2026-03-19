@@ -48,6 +48,15 @@ export function formatCurrency(value: string | number): string {
   return `₹${formatNumber(value)}`;
 }
 
+const MONEY_DISPLAY_EPS = 1e-6;
+
+/** Prefix +/− for small adjustments (e.g. round-off) using Unicode minus for clarity. */
+export function formatSignedCurrency(amount: number): string {
+  if (Math.abs(amount) < MONEY_DISPLAY_EPS) return formatCurrency(0);
+  if (amount < 0) return `−${formatCurrency(Math.abs(amount))}`;
+  return `+${formatCurrency(amount)}`;
+}
+
 /**
  * Build a URL query string from a params object, filtering out undefined/null/empty values.
  */

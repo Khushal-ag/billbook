@@ -170,12 +170,7 @@ export default function InvoiceDetail() {
       ) : (
         <>
           <PageHeader
-            title={`Invoice ${invoice.invoiceNumber}`}
-            description={
-              invoice.partyName
-                ? `${typeMeta?.label ?? invoice.invoiceType} · ${invoice.partyName}`
-                : (typeMeta?.label ?? invoice.invoiceType)
-            }
+            title={typeMeta?.label ?? "Invoice"}
             action={
               <InvoiceHeaderActions
                 invoice={invoice}
@@ -205,11 +200,11 @@ export default function InvoiceDetail() {
             businessLogoUrl={businessProfile?.logoUrl ?? null}
             businessName={businessProfile?.name ?? null}
           />
+          <InvoiceDetailsCards invoice={invoice} />
           <InvoiceLineItemsTable
             items={invoice.items}
             purchaseDateByStockEntryId={purchaseDateByStockEntryId}
           />
-          <InvoiceDetailsCards invoice={invoice} />
           <InvoicePaymentsTable payments={invoice.payments} />
           {auditData?.logs && <InvoiceAuditHistory logs={auditData.logs} />}
 

@@ -7,6 +7,7 @@ export interface InvoiceLineDraft {
   quantity: string;
   unitPrice: string;
   discountPercent: string;
+  discountAmount: string;
   cgstRate: string;
   sgstRate: string;
   igstRate: string;

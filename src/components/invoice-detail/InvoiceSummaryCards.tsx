@@ -23,6 +23,8 @@ export function InvoiceSummaryCards({
     INVOICE_TYPE_OPTIONS.find((o) => o.type === invoice.invoiceType)?.label ?? invoice.invoiceType;
   const isFullyPaid = balanceDueValue <= 0 && invoice.status === "FINAL";
 
+  const partyHeading = invoice.partyType === "SUPPLIER" ? "Supplier" : "Bill to";
+
   return (
     <Card className="mb-6 overflow-hidden">
       <CardContent className="p-0">
@@ -59,35 +61,49 @@ export function InvoiceSummaryCards({
 
           <div className="border-t" />
 
-          {/* Bill To (left) + Dates (right) */}
+          {/* Party (left) + Dates (right) — single source for identity & dates */}
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
             <div>
               <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Bill To
+                {partyHeading}
               </p>
               <p className="font-semibold">{invoice.partyName ?? "—"}</p>
-              {invoice.notes && (
-                <p className="mt-1 max-w-xs text-sm text-muted-foreground">{invoice.notes}</p>
-              )}
+              {invoice.partyPhone ? (
+                <p className="mt-1.5 text-sm tabular-nums text-muted-foreground">
+                  {invoice.partyPhone}
+                </p>
+              ) : null}
+              {invoice.partyGstin ? (
+                <p className="mt-1 font-mono text-xs text-muted-foreground">
+                  GSTIN {invoice.partyGstin}
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1 text-sm sm:text-right">
               <div>
-                <span className="text-muted-foreground">Invoice Date </span>
+                <span className="text-muted-foreground">Invoice date </span>
                 <span className="font-medium">{formatDate(invoice.invoiceDate)}</span>
               </div>
-              {invoice.dueDate && (
-                <div>
-                  <span className="text-muted-foreground">Due Date </span>
-                  <span className={cn("font-medium", invoice.isOverdue && "text-destructive")}>
-                    {formatDate(invoice.dueDate)}
-                  </span>
-                  {invoice.isOverdue && invoice.overdueDays && invoice.overdueDays > 0 && (
+              <div>
+                <span className="text-muted-foreground">Due date </span>
+                <span
+                  className={cn(
+                    "font-medium",
+                    invoice.dueDate ? "" : "text-muted-foreground",
+                    invoice.dueDate && invoice.isOverdue && "text-destructive",
+                  )}
+                >
+                  {invoice.dueDate ? formatDate(invoice.dueDate) : "—"}
+                </span>
+                {invoice.dueDate &&
+                  invoice.isOverdue &&
+                  invoice.overdueDays &&
+                  invoice.overdueDays > 0 && (
                     <span className="ml-1 text-xs text-destructive">
                       ({invoice.overdueDays}d overdue)
                     </span>
                   )}
-                </div>
-              )}
+              </div>
               {invoice.financialYear && (
                 <div>
                   <span className="text-muted-foreground">FY </span>
@@ -99,10 +115,10 @@ export function InvoiceSummaryCards({
 
           <div className="border-t" />
 
-          {/* Financial totals row */}
+          {/* Amounts — invoice total + settlement; breakdown lives in bill summary below */}
           <div className="flex flex-wrap justify-end gap-8">
             <div>
-              <p className="text-xs text-muted-foreground">Total Amount</p>
+              <p className="text-xs text-muted-foreground">Invoice total</p>
               <p className="text-2xl font-bold tabular-nums">
                 {formatCurrency(invoice.totalAmount)}
               </p>
@@ -114,7 +130,7 @@ export function InvoiceSummaryCards({
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Balance Due</p>
+              <p className="text-xs text-muted-foreground">Balance due</p>
               <p
                 className={cn(
                   "text-base font-semibold tabular-nums",
