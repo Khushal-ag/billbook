@@ -100,7 +100,7 @@ export interface InvoiceCommunicationsSummary {
   };
 }
 
-/** Create/update line item: identified by stockEntryId only (do not send itemId). All numeric fields are strings. */
+/** Create/update an invoice row (product/service): identified by stockEntryId only (do not send itemId). All numeric fields are strings. */
 export interface InvoiceItemInput {
   stockEntryId: number;
   quantity: string;

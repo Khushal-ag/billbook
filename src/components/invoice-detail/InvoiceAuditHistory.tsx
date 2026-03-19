@@ -1,8 +1,13 @@
 import { History } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsSimpleMode } from "@/hooks/use-simple-mode";
-import { getAuditActivityTitle, getAuditChangeHighlights } from "@/lib/audit-log";
-import { formatDate } from "@/lib/utils";
+import {
+  buildAuditHighlightParams,
+  getAuditActivityTitle,
+  getAuditChangeHighlights,
+  resolveInvoiceAuditDisplayContext,
+} from "@/lib/audit-log";
+import { formatDate, formatTime } from "@/lib/utils";
 import type { AuditLog } from "@/types/audit-log";
 
 interface InvoiceAuditHistoryProps {
@@ -32,12 +37,6 @@ function deduplicateLogs(logs: AuditLog[]): Array<AuditLog & { collapsedCount?: 
   return result;
 }
 
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
 export function InvoiceAuditHistory({ logs }: InvoiceAuditHistoryProps) {
   const isSimpleMode = useIsSimpleMode();
 
@@ -57,10 +56,14 @@ export function InvoiceAuditHistory({ logs }: InvoiceAuditHistoryProps) {
       <CardContent className="pb-4">
         <ol className="space-y-0 divide-y divide-border">
           {entries.map((log) => {
-            const title = getAuditActivityTitle(log);
-            const highlight = getAuditChangeHighlights(log.changes);
+            const invoiceCtx = resolveInvoiceAuditDisplayContext(logs, log);
+            const title = getAuditActivityTitle(log, invoiceCtx);
+            const highlight = log.collapsedCount
+              ? ""
+              : getAuditChangeHighlights(log.changes, buildAuditHighlightParams(log, invoiceCtx));
             const date = formatDate(log.createdAt);
-            const time = formatTime(log.createdAt);
+            const timeRaw = formatTime(log.createdAt);
+            const time = timeRaw === "—" ? "" : timeRaw;
 
             return (
               <li key={log.id} className="py-3 first:pt-0 last:pb-0">
