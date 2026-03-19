@@ -36,7 +36,7 @@ export default function Logo({
         <path d="M28 16 L58 16 L72 30 L72 84 L28 84 Z" fill="white" fillOpacity={0.95} />
         <path d="M58 16 L58 30 L72 30 Z" fill="white" fillOpacity={0.55} />
 
-        {/* Invoice line items */}
+        {/* Invoice items */}
         <rect
           x="35"
           y="38"

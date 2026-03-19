@@ -1,5 +1,35 @@
-import type { StockEntry } from "@/types/item";
+import type { Item, StockEntry } from "@/types/item";
+import { normalizeItemType } from "@/types/item";
 import type { InvoiceLineDraft } from "@/types/invoice-create";
+
+/** Build a full Item from a stock-entry row (list API embeds item name/type, etc.). */
+export function itemFromStockEntry(entry: StockEntry): Item {
+  const emb = entry.item;
+  const partial = emb as Partial<Item> | undefined;
+  return {
+    id: entry.itemId,
+    businessId: entry.businessId,
+    name: emb?.name ?? entry.itemName ?? `Item #${entry.itemId}`,
+    type: normalizeItemType(entry.itemType ?? (partial?.type as string | undefined)),
+    hsnCode: partial?.hsnCode ?? null,
+    sacCode: partial?.sacCode ?? null,
+    categoryId: entry.categoryId ?? partial?.categoryId ?? null,
+    categoryName: entry.categoryName ?? partial?.categoryName,
+    unit: entry.unit ?? partial?.unit ?? "PCS",
+    description: partial?.description ?? null,
+    isTaxable: partial?.isTaxable,
+    taxType: partial?.taxType,
+    cgstRate: partial?.cgstRate ?? null,
+    sgstRate: partial?.sgstRate ?? null,
+    igstRate: partial?.igstRate ?? null,
+    otherTaxName: partial?.otherTaxName,
+    otherTaxRate: partial?.otherTaxRate,
+    minStockThreshold: partial?.minStockThreshold,
+    isActive: true,
+    createdAt: entry.createdAt,
+    updatedAt: entry.updatedAt,
+  };
+}
 
 export function createLine(): InvoiceLineDraft {
   return {

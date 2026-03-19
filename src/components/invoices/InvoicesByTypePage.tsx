@@ -194,7 +194,7 @@ export function InvoicesByTypePage({
             </p>
           )}
 
-          <InvoicesTable invoices={invoices} />
+          <InvoicesTable invoices={invoices} invoiceType={invoiceType} />
 
           <TablePagination
             page={page}

@@ -1,11 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatTime } from "@/lib/utils";
 import {
+  buildAuditHighlightParams,
   getActionBadgeVariant,
   getAuditActivityTitle,
   getAuditChangeHighlights,
   getAuditMeta,
   getAuditResourceTypeLabel,
+  resolveInvoiceAuditDisplayContext,
 } from "@/lib/audit-log";
 import { ACTION_DOT_COLORS } from "@/constants/audit";
 import type { AuditLog } from "@/types/audit-log";
@@ -23,9 +25,13 @@ export function AuditLogsTable({ logs }: { logs: AuditLog[] }) {
       <div className="space-y-3 sm:space-y-4">
         {logs.map((log, index) => {
           const hasConnector = index < logs.length - 1;
-          const activityTitle = getAuditActivityTitle(log);
+          const invoiceCtx = resolveInvoiceAuditDisplayContext(logs, log);
+          const activityTitle = getAuditActivityTitle(log, invoiceCtx);
           const activityMeta = getAuditMeta(log);
-          const highlights = getAuditChangeHighlights(log.changes);
+          const highlights = getAuditChangeHighlights(
+            log.changes,
+            buildAuditHighlightParams(log, invoiceCtx),
+          );
 
           return (
             <article key={log.id} className="relative">

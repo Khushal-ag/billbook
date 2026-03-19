@@ -55,15 +55,33 @@ function clearSessionAndNotify() {
   notifyAuthExpired();
 }
 
+function extractRequestIdFromPayload(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== "object") return undefined;
+  const o = payload as Record<string, unknown>;
+  const id = o.requestId ?? o.request_id;
+  return typeof id === "string" && id.trim() ? id.trim() : undefined;
+}
+
 async function request<T>(
   method: HttpMethod,
   path: string,
   { body, headers, shouldRetry = true, includeAuth = true }: RequestOptions = {},
 ): Promise<ApiResponse<T>> {
   const isRefreshRequest = path.includes(REFRESH_PATH);
+  const merged = { ...(headers ?? {}) };
+  const existingId =
+    typeof merged["X-Request-Id"] === "string"
+      ? merged["X-Request-Id"].trim()
+      : typeof merged["x-request-id"] === "string"
+        ? merged["x-request-id"].trim()
+        : "";
+  const outboundRequestId = existingId || crypto.randomUUID();
+  delete merged["x-request-id"];
+
   const requestHeaders: Record<string, string> = {
     Accept: "application/json",
-    ...(headers ?? {}),
+    ...merged,
+    "X-Request-Id": outboundRequestId,
   };
 
   if (includeAuth) {
@@ -102,9 +120,11 @@ async function request<T>(
   }
 
   const payload = await parseBody(response);
+  const headerRequestId = response.headers.get("x-request-id")?.trim() || undefined;
 
   if (!response.ok) {
     const errorData = payload as { error?: string; details?: unknown } | null;
+    const requestId = extractRequestIdFromPayload(payload) ?? headerRequestId ?? outboundRequestId;
 
     if (response.status === 401 && !isRefreshRequest) {
       clearSessionAndNotify();
@@ -114,11 +134,17 @@ async function request<T>(
       errorData?.error || `Request failed (${response.status})`,
       response.status,
       errorData?.details,
+      requestId,
     );
   }
 
   if (!payload || typeof payload !== "object") {
-    throw new ApiClientError("Unexpected API response", response.status);
+    throw new ApiClientError(
+      "Unexpected API response",
+      response.status,
+      undefined,
+      headerRequestId ?? outboundRequestId,
+    );
   }
 
   return payload as ApiResponse<T>;
@@ -171,6 +197,7 @@ export const api = {
   postForm: <T>(path: string, formData: FormData) => request<T>("POST", path, { body: formData }),
 };
 
+/** RFC 4122 UUID — matches Swagger `Idempotency-Key` format (uuid). */
 export function generateIdempotencyKey(): string {
-  return `${Date.now()}-${crypto.randomUUID()}`;
+  return crypto.randomUUID();
 }

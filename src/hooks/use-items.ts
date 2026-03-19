@@ -106,13 +106,16 @@ export function useCreateUnit() {
   });
 }
 
-export function useItems(params?: {
-  categoryId?: number;
-  search?: string;
-  limit?: number;
-  offset?: number;
-  includeInactive?: boolean;
-}) {
+export function useItems(
+  params?: {
+    categoryId?: number;
+    search?: string;
+    limit?: number;
+    offset?: number;
+    includeInactive?: boolean;
+  },
+  options?: { enabled?: boolean; staleTime?: number },
+) {
   const qs = new URLSearchParams();
   if (params?.categoryId != null) qs.set("categoryId", String(params.categoryId));
   if (params?.search) qs.set("search", params.search);
@@ -122,7 +125,15 @@ export function useItems(params?: {
   const query = qs.toString();
 
   return useQuery({
-    queryKey: ["items", "list", params],
+    queryKey: [
+      "items",
+      "list",
+      params?.categoryId ?? "",
+      params?.search ?? "",
+      params?.limit ?? "",
+      params?.offset ?? "",
+      Boolean(params?.includeInactive),
+    ],
     queryFn: async () => {
       const res = await api.get<ItemListResponse>(`${ITEMS_BASE}${query ? `?${query}` : ""}`);
       return {
@@ -130,6 +141,8 @@ export function useItems(params?: {
         items: (res.data.items ?? []).map(normalizeItem),
       };
     },
+    enabled: options?.enabled ?? true,
+    staleTime: options?.staleTime,
   });
 }
 
@@ -224,13 +237,16 @@ export function useSetItemActive() {
 }
 
 /** GET /items/stock-entries (and GET /items/:itemId/stock-entries) include SERVICE entries. */
-export function useStockEntries(params?: {
-  itemId?: number;
-  categoryId?: number;
-  search?: string;
-  limit?: number;
-  offset?: number;
-}) {
+export function useStockEntries(
+  params?: {
+    itemId?: number;
+    categoryId?: number;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  },
+  options?: { enabled?: boolean; staleTime?: number },
+) {
   const itemId = params?.itemId;
   const path =
     itemId != null ? `${ITEMS_BASE}/${itemId}/stock-entries` : `${ITEMS_BASE}/stock-entries`;
@@ -244,8 +260,21 @@ export function useStockEntries(params?: {
   const query = qs?.toString();
   const url = query ? `${path}?${query}` : path;
 
+  const listQueryKey =
+    itemId != null
+      ? (["items", "stock-entries", "by-item", itemId, query] as const)
+      : ([
+          "items",
+          "stock-entries",
+          "list",
+          params?.categoryId ?? "",
+          params?.search ?? "",
+          params?.limit ?? 100,
+          params?.offset ?? 0,
+        ] as const);
+
   return useQuery({
-    queryKey: ["items", "stock-entries", itemId ?? params],
+    queryKey: [...listQueryKey],
     queryFn: async () => {
       const res = await api.get<StockEntryListResponse>(url);
       return {
@@ -253,6 +282,8 @@ export function useStockEntries(params?: {
         entries: (res.data.entries ?? []).map(normalizeStockEntry),
       };
     },
+    enabled: options?.enabled ?? true,
+    staleTime: options?.staleTime,
   });
 }
 

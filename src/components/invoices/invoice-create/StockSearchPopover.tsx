@@ -59,7 +59,10 @@ export function StockSearchPopover({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[min(38rem,calc(100vw-1rem))] p-0">
-        <Command shouldFilter={false}>
+        <Command
+          shouldFilter={false}
+          className="[&_[cmdk-item]:hover]:!bg-muted/45 [&_[cmdk-item]:hover]:!text-foreground [&_[cmdk-item][data-selected=true]]:!bg-muted/55 [&_[cmdk-item][data-selected=true]]:!text-foreground [&_[cmdk-item]]:transition-colors"
+        >
           <div className="border-b p-2">
             <Input
               value={searchText}
@@ -90,10 +93,10 @@ export function StockSearchPopover({
                     value={`${choice.item.name}-${choice.entry.id}`}
                     onSelect={() => onSelectChoice(draftLineId, choice)}
                     className={cn(
-                      "items-start py-2 transition-colors",
+                      "items-start py-2",
                       choice.enabledForSelection
-                        ? "cursor-pointer text-foreground hover:bg-muted/50 data-[selected=true]:bg-primary/15 data-[selected=true]:text-foreground"
-                        : "cursor-not-allowed bg-muted/30 text-muted-foreground hover:bg-muted/50 data-[selected=true]:bg-muted/50 data-[selected=true]:text-muted-foreground",
+                        ? "cursor-pointer text-foreground"
+                        : "cursor-not-allowed bg-muted/30 text-muted-foreground",
                     )}
                   >
                     <div className="min-w-0 flex-1">
@@ -141,7 +144,7 @@ export function StockSearchPopover({
                   key={`no-stock-${item.id}`}
                   value={`no-stock-${item.id}-${item.name}`}
                   onSelect={() => onAddStockForItem(item)}
-                  className="items-start py-2 text-foreground transition-colors hover:bg-muted/50"
+                  className="items-start py-2 text-foreground"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">{item.name}</div>
@@ -157,7 +160,7 @@ export function StockSearchPopover({
                 <CommandItem
                   value={`add-item-${searchText.trim().toLowerCase()}`}
                   onSelect={onAddNewItem}
-                  className="items-start py-2 text-foreground transition-colors hover:bg-muted/50"
+                  className="items-start py-2 text-foreground"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, generateIdempotencyKey } from "@/api";
+import { ApiClientError } from "@/api/error";
 import { invalidateQueryKeys } from "@/lib/query";
 import { buildQueryString } from "@/lib/utils";
 import type {
@@ -17,7 +18,39 @@ import type {
   InvoiceCommunicationRequest,
   InvoiceCommunicationResponse,
   InvoiceCommunicationsSummary,
+  NextInvoiceNumberData,
 } from "@/types/invoice";
+
+export type UseNextInvoiceNumberOptions = {
+  /** YYYY-MM-DD or ISO; used to pick FY when financialYear is omitted */
+  invoiceDate?: string;
+  /** e.g. 2025-2026 (must match ^\\d{4}-\\d{4}$ if sent) */
+  financialYear?: string;
+};
+
+/**
+ * Preview next invoice number (FY-scoped). GET …/invoices/next-number (alias …/invoices/next).
+ * Response: `{ data: { nextNumber, financialYear } }` — unchanged.
+ */
+export function useNextInvoiceNumber(options?: UseNextInvoiceNumberOptions) {
+  const invoiceDate = options?.invoiceDate?.trim() || undefined;
+  const financialYear = options?.financialYear?.trim() || undefined;
+
+  return useQuery({
+    queryKey: ["invoice-next-number", invoiceDate ?? "", financialYear ?? ""],
+    queryFn: async () => {
+      const qs = buildQueryString({
+        invoiceDate,
+        financialYear,
+      });
+      const path = qs ? `/invoices/next-number?${qs}` : "/invoices/next-number";
+      const res = await api.get<NextInvoiceNumberData>(path);
+      const next = res.data?.nextNumber;
+      if (typeof next === "string" && next.trim()) return next.trim();
+      throw new ApiClientError("Next invoice number not returned", 500);
+    },
+  });
+}
 
 export function useInvoices(params: {
   page?: number;

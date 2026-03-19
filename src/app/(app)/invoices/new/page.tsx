@@ -30,10 +30,13 @@ function normalizeInvoiceType(value: string | undefined): InvoiceType {
 export default async function NewInvoicePage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ type?: string; sourceInvoiceId?: string }>;
 }) {
   const params = await searchParams;
   const invoiceType = normalizeInvoiceType(params.type);
+  const sourceInvoiceIdRaw = Number(params.sourceInvoiceId);
+  const sourceInvoiceId =
+    Number.isFinite(sourceInvoiceIdRaw) && sourceInvoiceIdRaw > 0 ? sourceInvoiceIdRaw : undefined;
 
-  return <InvoiceCreatePage initialType={invoiceType} />;
+  return <InvoiceCreatePage initialType={invoiceType} initialSourceInvoiceId={sourceInvoiceId} />;
 }

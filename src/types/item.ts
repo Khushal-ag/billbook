@@ -70,6 +70,8 @@ export interface Unit {
 export interface Item {
   id: number;
   businessId: number;
+  /** e.g. ITM-00001 — generated on create (API) */
+  itemCode?: string;
   name: string;
   type: ItemType;
   hsnCode: string | null;

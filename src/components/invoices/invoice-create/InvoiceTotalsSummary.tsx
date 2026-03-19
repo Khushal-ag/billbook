@@ -47,7 +47,7 @@ export function InvoiceTotalsSummary({
     <div className="flex justify-end">
       <div className="w-full max-w-[360px] space-y-2">
         <div className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
-          GST note: tax is calculated line-wise on taxable amount after item discount.
+          GST note: tax is calculated per product or service on taxable amount after discount.
         </div>
         <Card className="lg:sticky lg:top-4">
           <CardHeader>

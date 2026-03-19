@@ -1,7 +1,7 @@
 import { Eye, SlidersHorizontal, Layers, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrency, formatQuantity, cn } from "@/lib/utils";
+import { formatCurrency, formatDateCompact, formatQuantity, cn } from "@/lib/utils";
 import type { StockEntry } from "@/types/item";
 import type { Item } from "@/types/item";
 import { isServiceType } from "@/types/item";
@@ -42,21 +42,6 @@ function adjustedQtyDisplay(value: string | null): string {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return "—";
   return Math.round(Math.abs(numeric)).toString();
-}
-
-function compactDateDisplay(dateString: string | undefined | null): string {
-  if (!dateString) return "—";
-  try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "2-digit",
-    });
-  } catch {
-    return "—";
-  }
 }
 
 export function StockEntriesTable({
@@ -154,7 +139,7 @@ export function StockEntriesTable({
                     {category ? <span className="text-muted-foreground"> ({category})</span> : null}
                   </td>
                   <td className={cn(tdClass, "whitespace-nowrap text-left text-muted-foreground")}>
-                    {isService ? "—" : compactDateDisplay(entry.purchaseDate)}
+                    {isService ? "—" : formatDateCompact(entry.purchaseDate)}
                   </td>
                   <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>
                     {isService ? "—" : formatQuantity(purchased)}

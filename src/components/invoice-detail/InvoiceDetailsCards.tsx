@@ -10,13 +10,6 @@ interface InvoiceDetailsCardsProps {
 export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
   const typeLabel =
     INVOICE_TYPE_OPTIONS.find((o) => o.type === invoice.invoiceType)?.label ?? invoice.invoiceType;
-  const discountValue = Math.max(0, Number(invoice.discountAmount ?? "0") || 0);
-  const roundOffValue = Number(invoice.roundOffAmount ?? "0") || 0;
-  const combinedRoundOffDiscount = discountValue - roundOffValue;
-  const formatSignedCurrency = (amount: number) => {
-    const abs = formatCurrency(Math.abs(amount));
-    return amount < 0 ? `+${abs}` : `−${abs}`;
-  };
 
   return (
     <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -67,10 +60,42 @@ export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
             <span className="text-muted-foreground">Sub Total</span>
             <span className="tabular-nums">{formatCurrency(invoice.subTotal)}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Round Off / Discount</span>
-            <span className="tabular-nums">{formatSignedCurrency(combinedRoundOffDiscount)}</span>
-          </div>
+          {invoice.discountAmount && invoice.discountAmount !== "0" && (
+            <div className="flex justify-between text-muted-foreground">
+              <span>Discount</span>
+              <span className="tabular-nums">−{formatCurrency(invoice.discountAmount)}</span>
+            </div>
+          )}
+          {invoice.cgstAmount && parseFloat(invoice.cgstAmount) > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">CGST</span>
+              <span className="tabular-nums">{formatCurrency(invoice.cgstAmount)}</span>
+            </div>
+          )}
+          {invoice.sgstAmount && parseFloat(invoice.sgstAmount) > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">SGST</span>
+              <span className="tabular-nums">{formatCurrency(invoice.sgstAmount)}</span>
+            </div>
+          )}
+          {invoice.igstAmount && parseFloat(invoice.igstAmount) > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">IGST</span>
+              <span className="tabular-nums">{formatCurrency(invoice.igstAmount)}</span>
+            </div>
+          )}
+          {invoice.totalTax && parseFloat(invoice.totalTax) > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Total Tax</span>
+              <span className="tabular-nums">{formatCurrency(invoice.totalTax)}</span>
+            </div>
+          )}
+          {invoice.roundOffAmount && invoice.roundOffAmount !== "0" && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Round Off</span>
+              <span className="tabular-nums">{formatCurrency(invoice.roundOffAmount)}</span>
+            </div>
+          )}
           <div className="flex justify-between border-t pt-2 font-semibold">
             <span>Grand Total</span>
             <span className="tabular-nums">{formatCurrency(invoice.totalAmount)}</span>

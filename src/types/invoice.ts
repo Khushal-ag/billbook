@@ -100,7 +100,7 @@ export interface InvoiceCommunicationsSummary {
   };
 }
 
-/** Create/update line item: identified by stockEntryId only (do not send itemId). All numeric fields are strings. */
+/** Create/update an invoice row (product/service): identified by stockEntryId only (do not send itemId). All numeric fields are strings. */
 export interface InvoiceItemInput {
   stockEntryId: number;
   quantity: string;
@@ -174,4 +174,10 @@ export interface InvoiceListResponse {
   pageSize: number;
   /** Total number of invoices (for pagination) */
   count: number;
+}
+
+/** Response data for GET /invoices/next-number (and /invoices/next). */
+export interface NextInvoiceNumberData {
+  nextNumber: string;
+  financialYear: string;
 }

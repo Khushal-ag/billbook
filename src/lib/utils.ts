@@ -102,3 +102,19 @@ export function formatMonthYear(dateString: string | undefined | null): string {
     return "—";
   }
 }
+
+/** Compact numeric date for dense tables (e.g. DD/MM/YY). */
+export function formatDateCompact(dateString: string | undefined | null): string {
+  if (!dateString) return "—";
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "—";
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    });
+  } catch {
+    return "—";
+  }
+}
