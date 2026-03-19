@@ -26,6 +26,8 @@ export type UseNextInvoiceNumberOptions = {
   invoiceDate?: string;
   /** e.g. 2025-2026 (must match ^\\d{4}-\\d{4}$ if sent) */
   financialYear?: string;
+  /** Set false when editing a draft (no next-number preview). */
+  enabled?: boolean;
 };
 
 /**
@@ -37,6 +39,7 @@ export function useNextInvoiceNumber(options?: UseNextInvoiceNumberOptions) {
   const financialYear = options?.financialYear?.trim() || undefined;
 
   return useQuery({
+    enabled: options?.enabled !== false,
     queryKey: ["invoice-next-number", invoiceDate ?? "", financialYear ?? ""],
     queryFn: async () => {
       const qs = buildQueryString({
@@ -141,6 +144,20 @@ export function useUpdateInvoice(id: number) {
   });
 }
 
+/** PUT draft invoice — id passed per call (create flow edit mode). */
+export function useUpdateInvoiceById() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ invoiceId, body }: { invoiceId: number; body: UpdateInvoiceRequest }) => {
+      const res = await api.put<Invoice>(`/invoices/${invoiceId}`, body);
+      return res.data;
+    },
+    onSuccess: (_, { invoiceId }) => {
+      invalidateQueryKeys(qc, [["invoices"], ["invoice", invoiceId]]);
+    },
+  });
+}
+
 export function useFinalizeInvoice() {
   const qc = useQueryClient();
   return useMutation({
@@ -161,10 +178,12 @@ export function useFinalizeInvoice() {
 export function useCancelInvoice() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`/invoices/${id}`);
+    mutationFn: async ({ invoiceId, reason }: { invoiceId: number; reason: string }) => {
+      await api.delete(`/invoices/${invoiceId}`, { reason: reason.trim() });
     },
-    onSuccess: () => invalidateQueryKeys(qc, [["invoices"]]),
+    onSuccess: (_, { invoiceId }) => {
+      invalidateQueryKeys(qc, [["invoices"], ["invoice", invoiceId]]);
+    },
   });
 }
 

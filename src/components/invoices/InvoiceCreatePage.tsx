@@ -4,8 +4,6 @@ import Link from "next/link";
 import { BusinessIdentity } from "../BusinessIdentity";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import ItemDialog from "@/components/dialogs/ItemDialog";
@@ -15,32 +13,60 @@ import { PartyAndDatesCards } from "@/components/invoices/invoice-create/PartyAn
 import { LineEditorSection } from "@/components/invoices/invoice-create/LineEditorSection";
 import { InvoiceTotalsSummary } from "@/components/invoices/invoice-create/InvoiceTotalsSummary";
 import { ResizableNotesSummaryRow } from "@/components/invoices/invoice-create/ResizableNotesSummaryRow";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useBusinessProfile } from "@/hooks/use-business";
 import type { InvoiceType } from "@/types/invoice";
 
 interface InvoiceCreatePageProps {
   initialType: InvoiceType;
   initialSourceInvoiceId?: number;
+  /** When set, full create UI edits this draft (PUT) instead of creating. */
+  editInvoiceId?: number;
 }
 
-export function InvoiceCreatePage({ initialType, initialSourceInvoiceId }: InvoiceCreatePageProps) {
-  const state = useInvoiceCreateState(initialType, initialSourceInvoiceId);
+export function InvoiceCreatePage({
+  initialType,
+  initialSourceInvoiceId,
+  editInvoiceId,
+}: InvoiceCreatePageProps) {
+  const state = useInvoiceCreateState(initialType, {
+    sourceInvoiceId: initialSourceInvoiceId,
+    editInvoiceId,
+  });
   const copy = state.createCopy;
   const { data: businessProfile } = useBusinessProfile();
+  const showNumberRow =
+    state.isEditMode || state.isNextInvoiceNumberPending || Boolean(state.nextInvoiceNumber);
+  const displayNumber = state.isEditMode ? state.editingInvoiceNumber : state.nextInvoiceNumber;
+  const numberPending = state.isEditMode
+    ? state.isEditingInvoiceLoading
+    : state.isNextInvoiceNumberPending;
 
   return (
     <div className="page-container max-w-[96rem] animate-fade-in space-y-5">
       <PageHeader
-        title={`Create ${state.pageMeta.label}`}
-        description={copy.pageDescription}
+        title={state.isEditMode ? `Edit ${state.pageMeta.label}` : `Create ${state.pageMeta.label}`}
+        description={
+          state.isEditMode
+            ? "Update party, dates, lines, and totals. Save applies changes to this draft."
+            : copy.pageDescription
+        }
         action={
-          <Button variant="outline" asChild>
-            <Link href={state.pageMeta.path}>Back to List</Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {state.isEditMode && editInvoiceId ? (
+              <Button variant="outline" asChild>
+                <Link href={`/invoices/${editInvoiceId}`}>Back to invoice</Link>
+              </Button>
+            ) : null}
+            <Button variant="outline" asChild>
+              <Link href={state.pageMeta.path}>Back to List</Link>
+            </Button>
+          </div>
         }
       />
 
-      {(state.isNextInvoiceNumberPending || state.nextInvoiceNumber) && (
+      {showNumberRow && (
         <div className="flex items-center gap-4">
           <BusinessIdentity
             name={businessProfile?.name}
@@ -49,10 +75,10 @@ export function InvoiceCreatePage({ initialType, initialSourceInvoiceId }: Invoi
             showName={!businessProfile?.logoUrl}
             nameClassName="text-sm font-semibold text-foreground"
           />
-          {state.isNextInvoiceNumberPending ? (
+          {numberPending ? (
             <Skeleton className="h-8 w-48" />
           ) : (
-            <h2 className="text-2xl font-bold tracking-tight">{state.nextInvoiceNumber}</h2>
+            <h2 className="text-2xl font-bold tracking-tight">{displayNumber}</h2>
           )}
         </div>
       )}
@@ -127,9 +153,10 @@ export function InvoiceCreatePage({ initialType, initialSourceInvoiceId }: Invoi
             roundOffInputValue={state.roundOffInputValue}
             onRoundOffAmountChange={state.setRoundOffAmount}
             canSubmit={state.canSubmit}
-            isPending={state.createInvoice.isPending}
+            isPending={state.saveInvoice.isPending}
             onCreate={state.handleCreate}
             shortLabel={state.pageMeta.shortLabel}
+            submitLabel={state.isEditMode ? `Save ${state.pageMeta.shortLabel}` : undefined}
           />
         }
       />

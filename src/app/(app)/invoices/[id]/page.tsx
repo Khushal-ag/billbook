@@ -7,9 +7,8 @@ import { ArrowLeft } from "lucide-react";
 import InvoiceDetailSkeleton from "@/components/skeletons/InvoiceDetailSkeleton";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
-import InvoiceEditDialog from "@/components/dialogs/InvoiceEditDialog";
 import PaymentDialog from "@/components/dialogs/PaymentDialog";
-import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
+import CancelInvoiceDialog from "@/components/dialogs/CancelInvoiceDialog";
 import {
   InvoiceHeaderActions,
   InvoiceSummaryCards,
@@ -44,7 +43,6 @@ export default function InvoiceDetail() {
   const invalidInvoiceId = Boolean(idParamStr) && invoiceId === undefined;
   const { isOwner } = usePermissions();
 
-  const [editOpen, setEditOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [cancelConfirm, setCancelConfirm] = useState(false);
 
@@ -107,16 +105,17 @@ export default function InvoiceDetail() {
     }
   };
 
-  const confirmCancel = async () => {
+  const confirmCancel = async (reason: string) => {
     if (!invoiceId) return;
     try {
-      await cancelMutation.mutateAsync(invoiceId);
+      await cancelMutation.mutateAsync({ invoiceId, reason });
       showSuccessToast("Invoice cancelled");
       setCancelConfirm(false);
-      router.push("/invoices");
+      const listPath =
+        invoice && INVOICE_TYPE_OPTIONS.find((o) => o.type === invoice.invoiceType)?.path;
+      router.push(listPath ?? "/invoices");
     } catch (err) {
       showErrorToast(err, "Failed to cancel");
-      setCancelConfirm(false);
     }
   };
 
@@ -184,7 +183,7 @@ export default function InvoiceDetail() {
                 isCancelPending={cancelMutation.isPending}
                 isMarkSentPending={markSentMutation.isPending}
                 isMarkReminderPending={markReminderMutation.isPending}
-                onEdit={() => setEditOpen(true)}
+                onEdit={() => router.push(`/invoices/${invoiceId}/edit`)}
                 onCancel={handleCancel}
                 onFinalize={handleFinalize}
                 onOpenPayment={() => setPaymentOpen(true)}
@@ -209,9 +208,6 @@ export default function InvoiceDetail() {
           {auditData?.logs && <InvoiceAuditHistory logs={auditData.logs} />}
 
           {/* Dialogs */}
-          {invoice.status === "DRAFT" && (
-            <InvoiceEditDialog open={editOpen} onOpenChange={setEditOpen} invoice={invoice} />
-          )}
           {invoice.status === "FINAL" && invoiceId && (
             <PaymentDialog
               open={paymentOpen}
@@ -221,14 +217,11 @@ export default function InvoiceDetail() {
             />
           )}
 
-          <ConfirmDialog
+          <CancelInvoiceDialog
             open={cancelConfirm}
             onOpenChange={setCancelConfirm}
             onConfirm={confirmCancel}
-            title="Cancel Invoice"
-            description="Are you sure you want to cancel this invoice? This action cannot be undone."
-            confirmText="Cancel Invoice"
-            variant="destructive"
+            isPending={cancelMutation.isPending}
           />
         </>
       )}

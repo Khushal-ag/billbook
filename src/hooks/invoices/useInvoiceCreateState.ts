@@ -15,7 +15,13 @@ import {
   toNum,
 } from "@/lib/invoice-create";
 import type { InvoiceLineDraft, StockChoice, StockLineIssue } from "@/types/invoice-create";
-import { useCreateInvoice, useInvoice, useNextInvoiceNumber } from "@/hooks/use-invoices";
+import {
+  useCreateInvoice,
+  useInvoice,
+  useNextInvoiceNumber,
+  useUpdateInvoiceById,
+} from "@/hooks/use-invoices";
+import type { UpdateInvoiceRequest } from "@/types/invoice";
 import {
   getStockEntryById,
   useItems,
@@ -29,7 +35,7 @@ import { formatCurrency } from "@/lib/utils";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import type { Item, StockEntry } from "@/types/item";
 import type { Party } from "@/types/party";
-import type { InvoiceType } from "@/types/invoice";
+import type { InvoiceItem, InvoiceType } from "@/types/invoice";
 
 /** Whole paise — avoids float drift on invoice totals and round-off sign bugs. */
 function moneyToPaise(rupees: number): number {
@@ -40,11 +46,66 @@ function paiseToMoney(pa: number): number {
   return pa / 100;
 }
 
-export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?: number) {
+/** Same base as bill summary (taxable + tax − invoice discount), in paise. */
+function computeBasePaiseFromAddedLines(
+  lineDrafts: InvoiceLineDraft[],
+  discountAmountStr: string,
+  discountPercentStr: string,
+): number {
+  const lineBreakup = lineDrafts.map((l) => getLineAmounts(l));
+  const subTotal = lineBreakup.reduce((s, x) => s + x.gross, 0);
+  const invoiceDiscount = discountAmountStr.trim()
+    ? Math.max(0, toNum(discountAmountStr))
+    : (subTotal * Math.max(0, toNum(discountPercentStr))) / 100;
+  const taxableTotal = lineBreakup.reduce((s, x) => s + x.taxable, 0);
+  const taxTotal = lineBreakup.reduce((s, x) => s + x.tax, 0);
+  const baseTotal = Math.max(0, taxableTotal + taxTotal - invoiceDiscount);
+  return moneyToPaise(baseTotal);
+}
+
+/**
+ * GST % on the saved invoice line wins over master item / stock embed (catalog often has 0% while
+ * the line was invoiced at e.g. 4% IGST) — required for correct bill summary on edit.
+ */
+function pickInvoiceTaxRate(
+  invoiceVal: string | null | undefined,
+  itemVal: string | null | undefined,
+): string {
+  const v = invoiceVal?.trim();
+  if (v !== undefined && v !== "") return v;
+  const i = itemVal?.trim();
+  if (i !== undefined && i !== "") return i;
+  return "0";
+}
+
+/** Prefer invoice API line display fields over stock-entry fallbacks (e.g. "Item #47"). */
+function mergeItemFromInvoiceLine(item: Item, invLine: InvoiceItem): Item {
+  const name = invLine.itemName?.trim();
+  const hsn = invLine.hsnCode?.trim();
+  const sac = invLine.sacCode?.trim();
+  return {
+    ...item,
+    name: name || item.name,
+    hsnCode: hsn ? invLine.hsnCode! : item.hsnCode,
+    sacCode: sac ? invLine.sacCode! : item.sacCode,
+    cgstRate: pickInvoiceTaxRate(invLine.cgstRate, item.cgstRate),
+    sgstRate: pickInvoiceTaxRate(invLine.sgstRate, item.sgstRate),
+    igstRate: pickInvoiceTaxRate(invLine.igstRate, item.igstRate),
+  };
+}
+
+export function useInvoiceCreateState(
+  initialType: InvoiceType,
+  options?: { sourceInvoiceId?: number; editInvoiceId?: number },
+) {
+  const editInvoiceId = options?.editInvoiceId;
+  const sourceInvoiceId = editInvoiceId ? undefined : options?.sourceInvoiceId;
   const router = useRouter();
   const createInvoice = useCreateInvoice();
+  const updateDraftInvoice = useUpdateInvoiceById();
   const invoiceType = initialType;
   const hasHydratedSourceInvoice = useRef(false);
+  const hasHydratedEditInvoice = useRef(false);
 
   const [party, setParty] = useState<Party | null>(null);
   const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -93,12 +154,15 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
     { enabled: stockSearchOpen, staleTime: 30_000 },
   );
   const { data: sourceInvoice } = useInvoice(sourceInvoiceId);
+  const { data: editingDraftInvoice } = useInvoice(editInvoiceId);
   const { data: nextInvoiceNumber, isPending: isNextInvoiceNumberPending } = useNextInvoiceNumber({
     invoiceDate,
+    enabled: !editInvoiceId,
   });
+  const stockAnchorInvoice = editInvoiceId ? editingDraftInvoice : sourceInvoice;
   const sourceEntryIds = useMemo(
-    () => sourceInvoice?.items.map((line) => line.stockEntryId) ?? [],
-    [sourceInvoice?.items],
+    () => stockAnchorInvoice?.items.map((line) => line.stockEntryId) ?? [],
+    [stockAnchorInvoice?.items],
   );
   const neededStockEntryIds = useMemo(() => {
     const s = new Set<number>();
@@ -355,7 +419,7 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
 
       const catalogItem = itemMap.get(entry.itemId);
       const entryItem = entry.item;
-      const resolvedItem =
+      let resolvedItem: Item | null =
         catalogItem ??
         (entryItem
           ? {
@@ -399,7 +463,11 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
             }
           : null);
 
-      if (!resolvedItem) continue;
+      if (!resolvedItem) {
+        resolvedItem = itemFromStockEntry(entry);
+      }
+
+      resolvedItem = mergeItemFromInvoiceLine(resolvedItem, invoiceItem);
 
       prefilledLines.push({
         id: crypto.randomUUID(),
@@ -433,6 +501,151 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
     itemMap,
     notes,
   ]);
+
+  useEffect(() => {
+    if (!editInvoiceId || !editingDraftInvoice) return;
+    if (editingDraftInvoice.status !== "DRAFT") return;
+    if (hasHydratedEditInvoice.current) return;
+    if (!stockEntryByIdQuery.data) return;
+
+    const partyFromList = parties.find((p) => p.id === editingDraftInvoice.partyId);
+    const partySide = isSalesFamily(editingDraftInvoice.invoiceType) ? "CUSTOMER" : "SUPPLIER";
+    const fallbackParty: Party = {
+      id: editingDraftInvoice.partyId,
+      businessId: editingDraftInvoice.businessId,
+      name: editingDraftInvoice.partyName ?? (partySide === "SUPPLIER" ? "Supplier" : "Customer"),
+      type: partySide,
+      gstin: null,
+      email: null,
+      phone: null,
+      address: null,
+      city: null,
+      state: null,
+      postalCode: null,
+      openingBalance: null,
+      isActive: true,
+      createdAt: editingDraftInvoice.createdAt,
+      updatedAt: editingDraftInvoice.updatedAt,
+    };
+    setParty(partyFromList ?? fallbackParty);
+
+    setInvoiceDate(editingDraftInvoice.invoiceDate.slice(0, 10));
+    setDueDate(editingDraftInvoice.dueDate?.slice(0, 10) ?? "");
+    setNotes(editingDraftInvoice.notes ?? "");
+    setDiscountAmount(editingDraftInvoice.discountAmount ?? "");
+    setDiscountPercent(editingDraftInvoice.discountPercent ?? "");
+
+    const prefilledLines: InvoiceLineDraft[] = [];
+
+    for (const invoiceItem of editingDraftInvoice.items) {
+      const entry = stockEntryByIdQuery.data?.[invoiceItem.stockEntryId];
+      if (!entry) continue;
+
+      const catalogItem = itemMap.get(entry.itemId);
+      const entryItem = entry.item;
+      let resolvedItem: Item | null =
+        catalogItem ??
+        (entryItem
+          ? {
+              id: entryItem.id,
+              businessId: editingDraftInvoice.businessId,
+              name: entryItem.name,
+              type: entry.itemType ?? "STOCK",
+              hsnCode:
+                "hsnCode" in entryItem
+                  ? ((entryItem.hsnCode as string | null | undefined) ?? null)
+                  : (invoiceItem.hsnCode ?? null),
+              sacCode:
+                "sacCode" in entryItem
+                  ? ((entryItem.sacCode as string | null | undefined) ?? null)
+                  : (invoiceItem.sacCode ?? null),
+              categoryId: null,
+              categoryName: entry.categoryName ?? null,
+              category: entry.categoryName ?? null,
+              unit: entry.unit ?? "pcs",
+              description: null,
+              isTaxable: true,
+              taxType: "GST" as const,
+              cgstRate:
+                "cgstRate" in entryItem
+                  ? ((entryItem.cgstRate as string | null | undefined) ?? null)
+                  : (invoiceItem.cgstRate ?? "0"),
+              sgstRate:
+                "sgstRate" in entryItem
+                  ? ((entryItem.sgstRate as string | null | undefined) ?? null)
+                  : (invoiceItem.sgstRate ?? "0"),
+              igstRate:
+                "igstRate" in entryItem
+                  ? ((entryItem.igstRate as string | null | undefined) ?? null)
+                  : (invoiceItem.igstRate ?? "0"),
+              otherTaxName: null,
+              otherTaxRate: null,
+              minStockThreshold: null,
+              isActive: true,
+              createdAt: editingDraftInvoice.createdAt,
+              updatedAt: editingDraftInvoice.updatedAt,
+            }
+          : null);
+
+      if (!resolvedItem) {
+        resolvedItem = itemFromStockEntry(entry);
+      }
+
+      resolvedItem = mergeItemFromInvoiceLine(resolvedItem, invoiceItem);
+
+      prefilledLines.push({
+        id: crypto.randomUUID(),
+        item: resolvedItem,
+        stockEntryId: invoiceItem.stockEntryId,
+        quantity: invoiceItem.quantity,
+        unitPrice: invoiceItem.unitPrice || entry.sellingPrice || "",
+        discountPercent: invoiceItem.discountPercent ?? "0",
+        discountAmount: invoiceItem.discountAmount ?? "",
+        cgstRate: pickInvoiceTaxRate(invoiceItem.cgstRate, resolvedItem.cgstRate),
+        sgstRate: pickInvoiceTaxRate(invoiceItem.sgstRate, resolvedItem.sgstRate),
+        igstRate: pickInvoiceTaxRate(invoiceItem.igstRate, resolvedItem.igstRate),
+      });
+    }
+
+    const da = editingDraftInvoice.discountAmount ?? "";
+    const dp = editingDraftInvoice.discountPercent ?? "";
+    const basePaise =
+      prefilledLines.length > 0 ? computeBasePaiseFromAddedLines(prefilledLines, da, dp) : 0;
+    const autoRoundPaise = Math.round(basePaise / 100) * 100 - basePaise;
+    const apiRoundPaise = Math.round(
+      parseFloat((editingDraftInvoice.roundOffAmount ?? "0").replace(/,/g, "")) * 100,
+    );
+    const apiFinite = Number.isFinite(apiRoundPaise);
+
+    if (prefilledLines.length === 0) {
+      setAutoRoundOff(true);
+      setRoundOffAmount("0");
+    } else if (apiFinite && apiRoundPaise === autoRoundPaise) {
+      setAutoRoundOff(true);
+      setRoundOffAmount(
+        Math.abs(autoRoundPaise) < 0.5 ? "0" : (Math.abs(autoRoundPaise) / 100).toFixed(2),
+      );
+    } else if (apiFinite && apiRoundPaise === 0) {
+      setAutoRoundOff(false);
+      setRoundOffAmount("0");
+    } else if (apiFinite && apiRoundPaise < 0) {
+      // Manual mode: positive input subtracts; matches negative signed paise from API
+      setAutoRoundOff(false);
+      setRoundOffAmount((Math.abs(apiRoundPaise) / 100).toFixed(2));
+    } else {
+      // Positive / zero mismatch or unparsable — use auto from lines (avoids -0.20 breaking manual Math.max)
+      setAutoRoundOff(true);
+      setRoundOffAmount(
+        Math.abs(autoRoundPaise) < 0.5 ? "0" : (Math.abs(autoRoundPaise) / 100).toFixed(2),
+      );
+    }
+
+    if (prefilledLines.length > 0) {
+      setLines([createLine(), ...prefilledLines]);
+    }
+
+    hasHydratedEditInvoice.current = true;
+  }, [editInvoiceId, editingDraftInvoice, stockEntryByIdQuery.data, parties, itemMap]);
 
   const updateLine = useCallback((lineId: string, patch: Partial<InvoiceLineDraft>) => {
     setLines((prev) => prev.map((line) => (line.id === lineId ? { ...line, ...patch } : line)));
@@ -761,7 +974,40 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
       return;
     }
 
+    const linePayload = addedLines.map((line) => ({
+      stockEntryId: line.stockEntryId!,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice || undefined,
+      discountPercent: line.discountPercent.trim() === "" ? "0" : line.discountPercent,
+      discountAmount: line.discountAmount.trim() === "" ? "0" : line.discountAmount,
+    }));
+
+    /** Signed adjustment: payable = subtotal + tax − invoice discount + roundOffAmount */
+    const roundOffForApi = (() => {
+      const r = summary.roundOff;
+      if (!Number.isFinite(r) || Math.abs(r) < 0.000_5) return "0.00";
+      return r.toFixed(2);
+    })();
+
     try {
+      if (editInvoiceId) {
+        const body: UpdateInvoiceRequest = {
+          partyId: party.id,
+          invoiceType,
+          invoiceDate,
+          dueDate: dueDate.trim() === "" ? null : dueDate,
+          notes: notes.trim() ? notes : undefined,
+          discountAmount: discountAmount.trim() ? discountAmount : undefined,
+          discountPercent: discountPercent.trim() ? discountPercent : undefined,
+          roundOffAmount: roundOffForApi,
+          items: linePayload,
+        };
+        await updateDraftInvoice.mutateAsync({ invoiceId: editInvoiceId, body });
+        showSuccessToast("Invoice updated");
+        router.push(`/invoices/${editInvoiceId}`);
+        return;
+      }
+
       await createInvoice.mutateAsync({
         partyId: party.id,
         invoiceType,
@@ -770,25 +1016,19 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
         notes: notes || undefined,
         discountAmount: discountAmount || undefined,
         discountPercent: discountPercent || undefined,
-        /** Signed adjustment: payable = subtotal + tax − invoice discount + roundOffAmount */
-        roundOffAmount: (() => {
-          const r = summary.roundOff;
-          if (!Number.isFinite(r) || Math.abs(r) < 0.000_5) return "0.00";
-          return r.toFixed(2);
-        })(),
-        items: addedLines.map((line) => ({
-          stockEntryId: line.stockEntryId!,
-          quantity: line.quantity,
-          unitPrice: line.unitPrice || undefined,
-          discountPercent: line.discountPercent.trim() === "" ? "0" : line.discountPercent,
-          discountAmount: line.discountAmount.trim() === "" ? "0" : line.discountAmount,
-        })),
+        roundOffAmount: roundOffForApi,
+        items: linePayload,
       });
 
       showSuccessToast(`${pageMeta.label} created`);
       router.push(pageMeta.path);
     } catch (err) {
-      showErrorToast(err, `Failed to create ${pageMeta.label.toLowerCase()}`);
+      showErrorToast(
+        err,
+        editInvoiceId
+          ? "Failed to update invoice"
+          : `Failed to create ${pageMeta.label.toLowerCase()}`,
+      );
     }
   }, [
     party,
@@ -797,6 +1037,8 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
     validateLiveStockForAddedLines,
     stockEntries,
     createInvoice,
+    updateDraftInvoice,
+    editInvoiceId,
     invoiceType,
     invoiceDate,
     dueDate,
@@ -918,5 +1160,11 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
     createCopy: getInvoiceTypeCreateCopy(invoiceType),
     stockEntriesError,
     createInvoice,
+    isEditMode: Boolean(editInvoiceId),
+    editingInvoiceNumber: editingDraftInvoice?.invoiceNumber ?? null,
+    isEditingInvoiceLoading: Boolean(editInvoiceId) && !editingDraftInvoice,
+    saveInvoice: {
+      isPending: createInvoice.isPending || updateDraftInvoice.isPending,
+    },
   };
 }

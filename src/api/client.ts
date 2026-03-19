@@ -138,7 +138,12 @@ async function request<T>(
     );
   }
 
-  if (!payload || typeof payload !== "object") {
+  // 204 No Content or empty body (common on DELETE)
+  if (payload == null || payload === "") {
+    return { success: true, data: undefined as T } as ApiResponse<T>;
+  }
+
+  if (typeof payload !== "object") {
     throw new ApiClientError(
       "Unexpected API response",
       response.status,
@@ -192,7 +197,8 @@ export const api = {
 
   patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, { body }),
 
-  delete: <T>(path: string) => request<T>("DELETE", path),
+  delete: <T>(path: string, body?: unknown) =>
+    request<T>("DELETE", path, body !== undefined ? { body } : {}),
 
   postForm: <T>(path: string, formData: FormData) => request<T>("POST", path, { body: formData }),
 };

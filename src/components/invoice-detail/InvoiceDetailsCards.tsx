@@ -46,7 +46,6 @@ export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
 
   const showLineDiscount = bill.lineDiscountTotal > EPS;
   const showInvoiceDiscount = bill.invoiceDiscount > EPS;
-  const showRoundOff = Math.abs(bill.roundOff) > EPS;
   const taxLabel =
     bill.taxableTotal > EPS || bill.taxTotal > EPS
       ? `Total tax (${bill.taxPercentEffective.toFixed(2)}%)`
@@ -140,12 +139,12 @@ export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
               <span>Subtotal (before round-off)</span>
               <span className="tabular-nums">{formatCurrency(bill.subtotalBeforeRoundOff)}</span>
             </div>
-            {showRoundOff && (
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-muted-foreground">Round-off</span>
-                <span className="tabular-nums">{formatSignedCurrency(bill.roundOff)}</span>
-              </div>
-            )}
+            <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/20 px-2 py-1.5">
+              <span className="text-muted-foreground">Round off / discount</span>
+              <span className="font-medium tabular-nums text-foreground">
+                {formatSignedCurrency(bill.roundOff)}
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>

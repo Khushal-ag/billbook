@@ -130,15 +130,18 @@ export interface CreateInvoiceRequest {
   items: InvoiceItemInput[];
 }
 
+/** PUT /invoices/:id — all fields optional; `items` if present replaces all lines (min 1). */
 export interface UpdateInvoiceRequest {
   partyId?: number;
   invoiceType?: InvoiceType;
   invoiceDate?: string;
-  dueDate?: string;
+  /** Omit to leave unchanged; `null` clears due date */
+  dueDate?: string | null;
   notes?: string;
   discountAmount?: string;
   discountPercent?: string;
   roundOffAmount?: string;
+  items?: InvoiceItemInput[];
 }
 
 export interface Payment {

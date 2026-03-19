@@ -109,8 +109,10 @@ export function LineEditorSection({
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">{copy.itemSectionTitle}</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold text-foreground">
+          {copy.itemSectionTitle}
+        </CardTitle>
         {copy.itemSectionHelper && (
           <p className="mt-1 text-xs font-normal text-muted-foreground">{copy.itemSectionHelper}</p>
         )}
@@ -220,7 +222,7 @@ export function LineEditorSection({
                     Item
                   </th>
                   <th scope="col" className={thLeft}>
-                    HSN
+                    HSN/SAC
                   </th>
                   <th scope="col" className={cn(thLeft, "min-w-[6.5rem]")}>
                     Stock batch
@@ -276,7 +278,11 @@ export function LineEditorSection({
                         )}
                       </td>
                       <td className="px-3 py-2.5 text-xs text-muted-foreground">
-                        {line.item?.hsnCode ?? "-"}
+                        {line.item?.hsnCode?.trim()
+                          ? line.item.hsnCode
+                          : line.item?.sacCode?.trim()
+                            ? line.item.sacCode
+                            : "—"}
                       </td>
                       <td className="px-3 py-2.5">
                         {lineEntry

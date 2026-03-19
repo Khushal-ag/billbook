@@ -31,6 +31,8 @@ interface InvoiceTotalsSummaryProps {
   isPending: boolean;
   onCreate: () => void;
   shortLabel: string;
+  /** Default: Create {shortLabel} */
+  submitLabel?: string;
 }
 
 export function InvoiceTotalsSummary({
@@ -44,6 +46,7 @@ export function InvoiceTotalsSummary({
   isPending,
   onCreate,
   shortLabel,
+  submitLabel,
 }: InvoiceTotalsSummaryProps) {
   const {
     subTotal,
@@ -161,7 +164,7 @@ export function InvoiceTotalsSummary({
             </div>
             <Button className="mt-3 w-full" disabled={!canSubmit || isPending} onClick={onCreate}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create {shortLabel}
+              {submitLabel ?? `Create ${shortLabel}`}
             </Button>
           </CardContent>
         </Card>
