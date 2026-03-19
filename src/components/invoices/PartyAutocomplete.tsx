@@ -27,6 +27,13 @@ interface PartyAutocompleteProps {
 
 const ADD_PARTY_VALUE = "__add_party__" as const;
 
+function formatPartyAddress(party: Party): string {
+  const parts = [party.address?.trim(), party.city?.trim()].filter((part): part is string =>
+    Boolean(part),
+  );
+  return parts.join(", ");
+}
+
 export function PartyAutocomplete({
   value,
   onValueChange,
@@ -69,7 +76,13 @@ export function PartyAutocomplete({
   const optionsLength = filtered.length + (showAdd ? 1 : 0);
   const addIndex = showAdd ? filtered.length : -1;
 
-  const displayValue = open ? inputValue : value ? value.name : inputValue;
+  const selectedAddress = value ? formatPartyAddress(value) : "";
+  const selectedDisplayValue = value
+    ? selectedAddress
+      ? `${value.name} (${selectedAddress})`
+      : value.name
+    : "";
+  const displayValue = open ? inputValue : value ? selectedDisplayValue : inputValue;
 
   useEffect(() => {
     if (!open && value) setInputValue(value.name);
@@ -188,7 +201,14 @@ export function PartyAutocomplete({
                   data-highlight-index={index}
                   className="group cursor-pointer"
                 >
-                  <span className="min-w-0 flex-1 truncate">{party.name}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate">{party.name}</div>
+                    {formatPartyAddress(party) && (
+                      <div className="truncate text-xs text-foreground/70 group-data-[selected=true]:text-accent-foreground/95">
+                        {formatPartyAddress(party)}
+                      </div>
+                    )}
+                  </div>
                   <Check
                     className={cn(
                       "h-4 w-4 shrink-0",

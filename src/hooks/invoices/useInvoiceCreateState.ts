@@ -9,6 +9,7 @@ import {
   getEntryDateIso,
   getEntryTotalQty,
   getLineAmounts,
+  getMaxAllowedDiscountAmount,
   getMaxAllowedDiscountPercent,
   itemFromStockEntry,
   toNum,
@@ -30,6 +31,15 @@ import type { Item, StockEntry } from "@/types/item";
 import type { Party } from "@/types/party";
 import type { InvoiceType } from "@/types/invoice";
 
+/** Whole paise — avoids float drift on invoice totals and round-off sign bugs. */
+function moneyToPaise(rupees: number): number {
+  return Math.round((Number.isFinite(rupees) ? rupees : 0) * 100);
+}
+
+function paiseToMoney(pa: number): number {
+  return pa / 100;
+}
+
 export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?: number) {
   const router = useRouter();
   const createInvoice = useCreateInvoice();
@@ -43,7 +53,7 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountPercent, setDiscountPercent] = useState("");
   const [roundOffAmount, setRoundOffAmount] = useState("0");
-  const [autoRoundOff, setAutoRoundOff] = useState(false);
+  const [autoRoundOff, setAutoRoundOff] = useState(true);
   const [lines, setLines] = useState<InvoiceLineDraft[]>(() => [createLine()]);
 
   const [addPartyDialogOpen, setAddPartyDialogOpen] = useState(false);
@@ -256,8 +266,13 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
       : (subTotal * Math.max(0, toNum(discountPercent))) / 100;
 
     const baseTotal = Math.max(0, taxableTotal + taxTotal - invoiceDiscount);
-    const roundOff = autoRoundOff ? Math.round(baseTotal) - baseTotal : toNum(roundOffAmount);
-    const grandTotal = Math.max(0, baseTotal + roundOff);
+    const basePaise = moneyToPaise(baseTotal);
+    /** API: payable = baseTotal + roundOffAmount (signed). Auto: adjust to nearest ₹ (+ or −). Manual: always subtract entered amount. */
+    const roundPaise = autoRoundOff
+      ? Math.round(basePaise / 100) * 100 - basePaise
+      : -moneyToPaise(Math.max(0, toNum(roundOffAmount)));
+    const roundOff = paiseToMoney(roundPaise);
+    const grandTotal = Math.max(0, paiseToMoney(basePaise + roundPaise));
 
     return {
       subTotal,
@@ -279,7 +294,9 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
   }, []);
 
   const canSubmit = party != null && addedLines.length > 0;
-  const roundOffInputValue = autoRoundOff ? summary.roundOff.toFixed(2) : roundOffAmount;
+  const roundOffInputValue = autoRoundOff
+    ? Math.abs(summary.roundOff).toFixed(2)
+    : roundOffAmount.replace(/^\s*-/, "");
 
   useEffect(() => {
     const sourceConfigByReturnType: Record<
@@ -391,6 +408,7 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
         quantity: invoiceItem.quantity,
         unitPrice: invoiceItem.unitPrice || entry.sellingPrice || "",
         discountPercent: invoiceItem.discountPercent ?? "0",
+        discountAmount: invoiceItem.discountAmount ?? "",
         cgstRate: resolvedItem.cgstRate ?? "0",
         sgstRate: resolvedItem.sgstRate ?? "0",
         igstRate: resolvedItem.igstRate ?? "0",
@@ -435,6 +453,7 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
         unitPrice: choice.entry.sellingPrice ?? "",
         quantity: "1",
         discountPercent: "",
+        discountAmount: "",
         cgstRate: choice.item.cgstRate ?? "0",
         sgstRate: choice.item.sgstRate ?? "0",
         igstRate: choice.item.igstRate ?? "0",
@@ -459,7 +478,7 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
       if (!line) return;
 
       if (value.trim() === "") {
-        updateLine(lineId, { discountPercent: "" });
+        updateLine(lineId, { discountPercent: "", discountAmount: "" });
         return;
       }
 
@@ -468,7 +487,7 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
       const maxAllowed = getMaxAllowedDiscountPercent(line, stockEntries);
 
       if (safePercent > maxAllowed) {
-        updateLine(lineId, { discountPercent: maxAllowed.toFixed(2) });
+        updateLine(lineId, { discountPercent: maxAllowed.toFixed(2), discountAmount: "" });
         showErrorToast(
           null,
           "Discount cannot reduce selling price below cost price for this stock batch",
@@ -476,7 +495,83 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
         return;
       }
 
-      updateLine(lineId, { discountPercent: value });
+      // Auto-compute discount amount from percentage
+      const qty = Math.max(0, toNum(line.quantity));
+      const unitPrice = Math.max(0, toNum(line.unitPrice));
+      const gross = qty * unitPrice;
+      const computedAmount = (gross * safePercent) / 100;
+
+      updateLine(lineId, { discountPercent: value, discountAmount: computedAmount.toFixed(2) });
+    },
+    [lines, stockEntries, updateLine],
+  );
+
+  const handleLineDiscountAmountChange = useCallback(
+    (lineId: string, value: string) => {
+      const line = lines.find((x) => x.id === lineId);
+      if (!line) return;
+
+      if (value.trim() === "") {
+        updateLine(lineId, { discountAmount: "", discountPercent: "" });
+        return;
+      }
+
+      const parsed = Math.max(0, toNum(value));
+      const qty = Math.max(0, toNum(line.quantity));
+      const unitPrice = Math.max(0, toNum(line.unitPrice));
+      const gross = qty * unitPrice;
+      const maxForCost = getMaxAllowedDiscountAmount(line, stockEntries);
+      const safeAmount = Math.min(gross, parsed);
+
+      if (safeAmount > maxForCost) {
+        updateLine(lineId, { discountAmount: maxForCost.toFixed(2), discountPercent: "" });
+        showErrorToast(
+          null,
+          "Discount cannot reduce selling price below cost price for this stock batch",
+        );
+        return;
+      }
+
+      // Auto-compute discount percentage from amount
+      const computedPercent = gross > 0 ? (safeAmount / gross) * 100 : 0;
+
+      updateLine(lineId, { discountAmount: value, discountPercent: computedPercent.toFixed(2) });
+    },
+    [lines, stockEntries, updateLine],
+  );
+
+  /** Keep ₹ discount in sync when qty changes (% scales with line total; ₹-only scales with qty ratio). */
+  const handleLineQuantityChange = useCallback(
+    (lineId: string, quantity: string) => {
+      const line = lines.find((x) => x.id === lineId);
+      if (!line) return;
+
+      const newQty = Math.max(0, toNum(quantity));
+      const unitPrice = Math.max(0, toNum(line.unitPrice));
+      const gross = newQty * unitPrice;
+      const patch: Partial<InvoiceLineDraft> = { quantity };
+
+      if (line.discountPercent.trim() !== "") {
+        const p = Math.min(100, Math.max(0, toNum(line.discountPercent)));
+        const desiredAmount = (gross * p) / 100;
+        const maxForCost = getMaxAllowedDiscountAmount({ ...line, quantity }, stockEntries);
+        const cappedAmount = Math.min(desiredAmount, maxForCost, gross);
+        patch.discountAmount = cappedAmount.toFixed(2);
+        if (cappedAmount + 0.001 < desiredAmount) {
+          patch.discountPercent = gross > 0 ? ((cappedAmount / gross) * 100).toFixed(2) : "0";
+          showErrorToast(null, "Discount capped so net rate stays above cost for this quantity.");
+        }
+      } else if (line.discountAmount.trim() !== "") {
+        const oldQty = Math.max(0, toNum(line.quantity));
+        const oldAmt = Math.max(0, toNum(line.discountAmount));
+        let newAmt = oldQty > 0 ? oldAmt * (newQty / oldQty) : oldAmt;
+        const maxForCost = getMaxAllowedDiscountAmount({ ...line, quantity }, stockEntries);
+        newAmt = Math.min(newAmt, gross, maxForCost);
+        patch.discountAmount = newAmt.toFixed(2);
+        patch.discountPercent = gross > 0 ? ((newAmt / gross) * 100).toFixed(2) : "";
+      }
+
+      updateLine(lineId, patch);
     },
     [lines, stockEntries, updateLine],
   );
@@ -508,7 +603,7 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
           );
           return;
         }
-        updateLine(draftLine.id, { quantity: formatQty(remaining) });
+        handleLineQuantityChange(draftLine.id, formatQty(remaining));
         setQtyAutoAdjusted(true);
         showErrorToast(
           null,
@@ -535,11 +630,12 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
       const normalizedCurrent = {
         ...current,
         discountPercent: current.discountPercent.trim() === "" ? "0" : current.discountPercent,
+        discountAmount: current.discountAmount.trim() === "" ? "0" : current.discountAmount,
       };
       return [createLine(), normalizedCurrent, ...prev.slice(1)];
     });
     setStockLineIssues({});
-  }, [draftLine, isLineValid, stockEntries, usedQtyByEntryId, updateLine]);
+  }, [draftLine, isLineValid, stockEntries, usedQtyByEntryId, handleLineQuantityChange]);
 
   const removeAddedLine = useCallback((lineId: string) => {
     setLines((prev) => [prev[0], ...prev.slice(1).filter((line) => line.id !== lineId)]);
@@ -618,13 +714,13 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
         return;
       }
 
-      updateLine(lineId, { quantity: formatQty(issue.suggestedQty) });
+      handleLineQuantityChange(lineId, formatQty(issue.suggestedQty));
       setQtyAutoAdjusted(true);
       showSuccessToast(
         `Quantity updated to ${formatQty(issue.suggestedQty)} for ${issue.itemName}.`,
       );
     },
-    [stockLineIssues, updateLine],
+    [stockLineIssues, handleLineQuantityChange],
   );
 
   const handleCreate = useCallback(async () => {
@@ -674,12 +770,18 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
         notes: notes || undefined,
         discountAmount: discountAmount || undefined,
         discountPercent: discountPercent || undefined,
-        roundOffAmount: summary.roundOff.toFixed(2),
+        /** Signed adjustment: payable = subtotal + tax − invoice discount + roundOffAmount */
+        roundOffAmount: (() => {
+          const r = summary.roundOff;
+          if (!Number.isFinite(r) || Math.abs(r) < 0.000_5) return "0.00";
+          return r.toFixed(2);
+        })(),
         items: addedLines.map((line) => ({
           stockEntryId: line.stockEntryId!,
           quantity: line.quantity,
           unitPrice: line.unitPrice || undefined,
           discountPercent: line.discountPercent.trim() === "" ? "0" : line.discountPercent,
+          discountAmount: line.discountAmount.trim() === "" ? "0" : line.discountAmount,
         })),
       });
 
@@ -797,6 +899,8 @@ export function useInvoiceCreateState(initialType: InvoiceType, sourceInvoiceId?
     handleStockChoiceSelect,
     handleAddStockForItem,
     handleLineDiscountChange,
+    handleLineDiscountAmountChange,
+    handleLineQuantityChange,
     addCurrentLine,
     removeAddedLine,
     applySuggestedQtyForLine,

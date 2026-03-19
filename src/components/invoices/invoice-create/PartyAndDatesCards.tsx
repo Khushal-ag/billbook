@@ -1,9 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { DateField } from "@/components/invoices/invoice-create/DateField";
 import { PartyAutocomplete } from "@/components/invoices/PartyAutocomplete";
 import { getInvoiceTypeCreateCopy } from "@/lib/invoice";
@@ -16,16 +14,10 @@ interface PartyAndDatesCardsProps {
   onPartyChange: (party: Party | null) => void;
   parties: Party[];
   onAddParty: (onCreated: (party: Party) => void, draftName?: string) => void;
-  discountAmount: string;
-  onDiscountAmountChange: (value: string) => void;
-  discountPercent: string;
-  onDiscountPercentChange: (value: string) => void;
   invoiceDate: string;
   onInvoiceDateChange: (value: string) => void;
   dueDate: string;
   onDueDateChange: (value: string) => void;
-  notes: string;
-  onNotesChange: (value: string) => void;
 }
 
 export function PartyAndDatesCards({
@@ -34,21 +26,15 @@ export function PartyAndDatesCards({
   onPartyChange,
   parties,
   onAddParty,
-  discountAmount,
-  onDiscountAmountChange,
-  discountPercent,
-  onDiscountPercentChange,
   invoiceDate,
   onInvoiceDateChange,
   dueDate,
   onDueDateChange,
-  notes,
-  onNotesChange,
 }: PartyAndDatesCardsProps) {
   const copy = getInvoiceTypeCreateCopy(invoiceType);
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1.15fr_1fr]">
+    <div className="grid gap-4 xl:grid-cols-2">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">{copy.partyCardTitle}</CardTitle>
@@ -65,23 +51,6 @@ export function PartyAndDatesCards({
               onAddParty={onAddParty}
             />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>{copy.discountAmountLabel}</Label>
-              <Input
-                value={discountAmount}
-                onChange={(e) => onDiscountAmountChange(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>{copy.discountPercentLabel}</Label>
-              <Input
-                value={discountPercent}
-                onChange={(e) => onDiscountPercentChange(e.target.value)}
-                placeholder="0"
-              />
-            </div>
-          </div>
         </CardContent>
       </Card>
 
@@ -92,10 +61,6 @@ export function PartyAndDatesCards({
         <CardContent className="grid gap-3 sm:grid-cols-2">
           <DateField label="Invoice Date" value={invoiceDate} onChange={onInvoiceDateChange} />
           <DateField label="Due Date" value={dueDate} onChange={onDueDateChange} />
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Notes</Label>
-            <Textarea value={notes} onChange={(e) => onNotesChange(e.target.value)} rows={2} />
-          </div>
         </CardContent>
       </Card>
     </div>

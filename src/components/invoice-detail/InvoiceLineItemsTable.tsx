@@ -7,10 +7,17 @@ interface InvoiceLineItemsTableProps {
   purchaseDateByStockEntryId?: Record<number, string | undefined>;
 }
 
+function parseLineMoney(value: string | null | undefined): number {
+  const n = parseFloat(String(value ?? "0").replace(/,/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function InvoiceLineItemsTable({
   items,
   purchaseDateByStockEntryId = {},
 }: InvoiceLineItemsTableProps) {
+  const totalLineAmount = items.reduce((sum, item) => sum + parseLineMoney(item.lineTotal), 0);
+
   return (
     <Card className="mb-6">
       <CardHeader className="pb-3">
@@ -38,20 +45,11 @@ export function InvoiceLineItemsTable({
                   <th className="hidden px-3 py-3 text-right font-medium text-muted-foreground sm:table-cell">
                     Discount
                   </th>
-                  <th className="hidden px-3 py-3 text-right font-medium text-muted-foreground sm:table-cell">
-                    Tax
-                  </th>
-                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">
-                    Net Total
-                  </th>
+                  <th className="px-4 py-3 text-right font-medium text-muted-foreground">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item) => {
-                  const tax =
-                    parseFloat(item.cgstAmount ?? "0") +
-                    parseFloat(item.sgstAmount ?? "0") +
-                    parseFloat(item.igstAmount ?? "0");
                   const hsn = item.hsnCode || item.sacCode;
                   const purchaseDate =
                     purchaseDateByStockEntryId[item.stockEntryId] ?? item.createdAt;
@@ -73,10 +71,9 @@ export function InvoiceLineItemsTable({
                       <td className="hidden px-3 py-3 text-right tabular-nums sm:table-cell">
                         {item.discountPercent && item.discountPercent !== "0"
                           ? `${item.discountPercent}%`
-                          : "—"}
-                      </td>
-                      <td className="hidden px-3 py-3 text-right tabular-nums sm:table-cell">
-                        {tax > 0 ? formatCurrency(tax) : "—"}
+                          : item.discountAmount && item.discountAmount !== "0"
+                            ? formatCurrency(item.discountAmount)
+                            : "—"}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold tabular-nums">
                         {formatCurrency(item.lineTotal)}
@@ -85,6 +82,16 @@ export function InvoiceLineItemsTable({
                   );
                 })}
               </tbody>
+              <tfoot>
+                <tr className="border-t bg-muted/40 font-semibold text-foreground">
+                  <td colSpan={6} className="whitespace-nowrap px-4 py-3 pl-4 text-left">
+                    Total
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">
+                    {formatCurrency(totalLineAmount)}
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         )}

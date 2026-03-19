@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,17 @@ import type { InvoiceLineDraft, StockChoice, StockLineIssue } from "@/types/invo
 import type { Item, StockEntry } from "@/types/item";
 import type { InvoiceType } from "@/types/invoice";
 import { StockSearchPopover } from "./StockSearchPopover";
+
+/** Form row: readable labels (grid has more room than table columns). */
+const draftLabelClass = "mb-2 block text-sm font-medium text-foreground";
+
+/** Table headers: one line, no wrap; normal case reads better than tiny uppercase. */
+const thLeft =
+  "whitespace-nowrap px-3 py-2.5 text-left text-xs font-medium text-foreground lg:text-[13px]";
+const thRight =
+  "whitespace-nowrap px-3 py-2.5 text-right text-xs font-medium text-foreground lg:text-[13px]";
+const thCenter =
+  "whitespace-nowrap px-3 py-2.5 text-center text-xs font-medium text-foreground lg:text-[13px]";
 
 interface LineEditorSectionProps {
   invoiceType: InvoiceType;
@@ -29,8 +41,9 @@ interface LineEditorSectionProps {
   onSelectChoice: (lineId: string, choice: StockChoice) => void;
   onAddStockForItem: (item: Item) => void;
   onAddNewItem: () => void;
-  updateLine: (lineId: string, patch: Partial<InvoiceLineDraft>) => void;
+  onLineQuantityChange: (lineId: string, quantity: string) => void;
   onLineDiscountChange: (lineId: string, value: string) => void;
+  onLineDiscountAmountChange: (lineId: string, value: string) => void;
   addCurrentLine: () => Promise<void>;
   removeAddedLine: (lineId: string) => void;
   applySuggestedQtyForLine: (lineId: string) => void;
@@ -54,8 +67,9 @@ export function LineEditorSection({
   onSelectChoice,
   onAddStockForItem,
   onAddNewItem,
-  updateLine,
+  onLineQuantityChange,
   onLineDiscountChange,
+  onLineDiscountAmountChange,
   addCurrentLine,
   removeAddedLine,
   applySuggestedQtyForLine,
@@ -64,6 +78,21 @@ export function LineEditorSection({
   qtyAutoAdjusted,
 }: LineEditorSectionProps) {
   const copy = getInvoiceTypeCreateCopy(invoiceType);
+
+  const addedLinesTotals = useMemo(() => {
+    return addedLines.reduce(
+      (acc, line) => {
+        const t = getLineAmounts(line);
+        acc.lineDiscount += t.lineDiscount;
+        acc.taxable += t.taxable;
+        acc.tax += t.tax;
+        acc.net += t.total;
+        return acc;
+      },
+      { lineDiscount: 0, taxable: 0, tax: 0, net: 0 },
+    );
+  }, [addedLines]);
+
   const triggerLabel = draftLine.stockEntryId ? (
     <span className="truncate">
       {draftLine.item?.name ?? "Item"} | Batch{" "}
@@ -87,9 +116,11 @@ export function LineEditorSection({
         )}
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid gap-3 rounded-lg border p-3 xl:grid-cols-[2.2fr_.7fr_1fr_.9fr_1fr_1fr_1fr_.8fr] xl:items-end">
+        <div className="grid gap-3 rounded-lg border p-3 xl:grid-cols-[2.2fr_.7fr_1fr_.9fr_.9fr_1fr_1fr_1fr_.8fr] xl:items-end">
           <div>
-            <Label className="mb-1.5 block text-xs">{copy.batchLabel} *</Label>
+            <Label className={draftLabelClass}>
+              {copy.batchLabel} <span className="text-destructive">*</span>
+            </Label>
             <StockSearchPopover
               open={stockSearchOpen}
               onOpenChange={setStockSearchOpen}
@@ -108,10 +139,10 @@ export function LineEditorSection({
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-xs">Qty</Label>
+            <Label className={draftLabelClass}>Quantity</Label>
             <Input
               value={draftLine.quantity}
-              onChange={(e) => updateLine(draftLine.id, { quantity: e.target.value })}
+              onChange={(e) => onLineQuantityChange(draftLine.id, e.target.value)}
               className={cn(
                 "text-right tabular-nums transition-colors",
                 qtyAutoAdjusted &&
@@ -121,12 +152,12 @@ export function LineEditorSection({
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-xs">Unit Price</Label>
+            <Label className={draftLabelClass}>Unit price</Label>
             <Input value={draftLine.unitPrice} disabled className="text-right tabular-nums" />
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-xs">Item Discount %</Label>
+            <Label className={draftLabelClass}>Discount (%)</Label>
             <Input
               value={draftLine.discountPercent}
               onChange={(e) => onLineDiscountChange(draftLine.id, e.target.value)}
@@ -136,7 +167,17 @@ export function LineEditorSection({
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-xs">Taxable Amount</Label>
+            <Label className={draftLabelClass}>Discount (₹)</Label>
+            <Input
+              value={draftLine.discountAmount}
+              onChange={(e) => onLineDiscountAmountChange(draftLine.id, e.target.value)}
+              placeholder="0"
+              className="text-right tabular-nums"
+            />
+          </div>
+
+          <div>
+            <Label className={draftLabelClass}>Taxable amount</Label>
             <Input
               value={formatCurrency(getLineAmounts(draftLine).taxable)}
               disabled
@@ -145,7 +186,7 @@ export function LineEditorSection({
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-xs">Tax Amount</Label>
+            <Label className={draftLabelClass}>Tax amount</Label>
             <Input
               value={formatCurrency(getLineAmounts(draftLine).tax)}
               disabled
@@ -154,7 +195,7 @@ export function LineEditorSection({
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-xs">Net Amount</Label>
+            <Label className={draftLabelClass}>Net amount</Label>
             <Input
               value={formatCurrency(getLineAmounts(draftLine).total)}
               disabled
@@ -172,19 +213,42 @@ export function LineEditorSection({
 
         {addedLines.length > 0 && (
           <div className="data-table-container -mx-1 px-1 sm:mx-0 sm:px-0">
-            <table className="w-full min-w-[960px] text-sm" aria-label="Added invoice items">
-              <thead>
-                <tr className="border-b bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-3 py-2 text-left">Item</th>
-                  <th className="px-3 py-2 text-left">HSN</th>
-                  <th className="px-3 py-2 text-left">Stock Batch</th>
-                  <th className="px-3 py-2 text-right">Qty</th>
-                  <th className="px-3 py-2 text-right">Unit Price</th>
-                  <th className="px-3 py-2 text-right">Item Discount %</th>
-                  <th className="px-3 py-2 text-right">Taxable Amount</th>
-                  <th className="px-3 py-2 text-right">Tax Amount</th>
-                  <th className="px-3 py-2 text-right">Net Amount</th>
-                  <th className="px-3 py-2 text-center">Action</th>
+            <table className="w-full min-w-[1000px] text-sm" aria-label="Added invoice items">
+              <thead className="sticky top-0 z-10 border-b bg-muted/90 backdrop-blur-sm supports-[backdrop-filter]:bg-muted/75">
+                <tr className="[&_th]:align-bottom">
+                  <th scope="col" className={cn(thLeft, "min-w-[9rem] pl-4")}>
+                    Item
+                  </th>
+                  <th scope="col" className={thLeft}>
+                    HSN
+                  </th>
+                  <th scope="col" className={cn(thLeft, "min-w-[6.5rem]")}>
+                    Stock batch
+                  </th>
+                  <th scope="col" className={cn(thRight, "w-[4.25rem]")}>
+                    Qty
+                  </th>
+                  <th scope="col" className={thRight}>
+                    Unit price
+                  </th>
+                  <th scope="col" className={cn(thRight, "min-w-[5.5rem]")}>
+                    Discount %
+                  </th>
+                  <th scope="col" className={cn(thRight, "min-w-[5.5rem]")}>
+                    Discount ₹
+                  </th>
+                  <th scope="col" className={thRight}>
+                    Taxable
+                  </th>
+                  <th scope="col" className={thRight}>
+                    Tax
+                  </th>
+                  <th scope="col" className={thRight}>
+                    Net
+                  </th>
+                  <th scope="col" className={cn(thCenter, "w-[5.5rem] pr-4")}>
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -203,7 +267,7 @@ export function LineEditorSection({
                         focusedIssueLineId === line.id && "ring-2 ring-amber-300",
                       )}
                     >
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-2.5 pl-4">
                         <div>{line.item?.name ?? "-"}</div>
                         {lineIssue && (
                           <div className="mt-1 inline-flex items-center rounded bg-amber-100 px-2 py-0.5 text-[11px] text-amber-800">
@@ -219,18 +283,19 @@ export function LineEditorSection({
                           ? formatISODateDisplay(getEntryDateIso(lineEntry)) || "No date"
                           : "-"}
                       </td>
-                      <td className="px-3 py-2.5">
-                        <Input
-                          value={line.quantity}
-                          onChange={(e) => updateLine(line.id, { quantity: e.target.value })}
-                          className="h-8 text-right tabular-nums"
-                        />
+                      <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
+                        {line.quantity}
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums">
                         {formatCurrency(line.unitPrice)}
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums">
                         {line.discountPercent.trim() === "" ? "0" : line.discountPercent}
+                      </td>
+                      <td className="px-3 py-2.5 text-right tabular-nums">
+                        {formatCurrency(
+                          line.discountAmount.trim() === "" ? "0" : line.discountAmount,
+                        )}
                       </td>
                       <td className="px-3 py-2.5 text-right tabular-nums">
                         {formatCurrency(totals.taxable)}
@@ -241,7 +306,7 @@ export function LineEditorSection({
                       <td className="px-3 py-2.5 text-right font-medium tabular-nums">
                         {formatCurrency(totals.total)}
                       </td>
-                      <td className="px-3 py-2.5 text-center">
+                      <td className="px-3 py-2.5 pr-4 text-center">
                         <div className="flex items-center justify-center gap-1">
                           {lineIssue && (
                             <Button
@@ -269,6 +334,26 @@ export function LineEditorSection({
                   );
                 })}
               </tbody>
+              <tfoot>
+                <tr className="border-t bg-muted/40 font-semibold text-foreground">
+                  <td colSpan={6} className="whitespace-nowrap px-3 py-2.5 pl-4 text-left">
+                    Total
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-muted-foreground">
+                    {formatCurrency(addedLinesTotals.lineDiscount)}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-muted-foreground">
+                    {formatCurrency(addedLinesTotals.taxable)}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-muted-foreground">
+                    {formatCurrency(addedLinesTotals.tax)}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">
+                    {formatCurrency(addedLinesTotals.net)}
+                  </td>
+                  <td className="px-3 py-2.5 pr-4" />
+                </tr>
+              </tfoot>
             </table>
           </div>
         )}
