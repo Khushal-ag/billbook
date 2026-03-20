@@ -60,7 +60,9 @@ export function AuditLogsTable({ logs }: { logs: AuditLog[] }) {
                   </p>
 
                   {highlights ? (
-                    <p className="mt-2 text-xs text-muted-foreground">{highlights}</p>
+                    <p className="mt-2 whitespace-pre-line text-xs text-muted-foreground">
+                      {highlights}
+                    </p>
                   ) : (
                     <p className="mt-2 text-xs text-muted-foreground">{activityMeta}</p>
                   )}

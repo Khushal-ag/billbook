@@ -13,13 +13,28 @@ import type {
   RecordPaymentRequest,
   InvoicePdfResponse,
   FinalizeInvoiceResponse,
-  Payment,
+  LegacyInvoicePayment,
   InvoiceCommunicationChannel,
   InvoiceCommunicationRequest,
   InvoiceCommunicationResponse,
   InvoiceCommunicationsSummary,
   NextInvoiceNumberData,
 } from "@/types/invoice";
+import { parseInvoicePaymentResponse, type RecordInvoicePaymentData } from "@/types/receipt";
+
+export type RecordPaymentResult =
+  | { mode: "receipt"; data: RecordInvoicePaymentData }
+  | { mode: "legacy"; payment: LegacyInvoicePayment };
+
+function parseRecordPaymentResponse(data: unknown): RecordPaymentResult {
+  const parsed = parseInvoicePaymentResponse(data);
+  if (parsed) return { mode: "receipt", data: parsed };
+  const o = data as Record<string, unknown> | null;
+  if (o && typeof o.id === "number" && typeof o.amount === "string") {
+    return { mode: "legacy", payment: o as unknown as LegacyInvoicePayment };
+  }
+  throw new Error("Unexpected payment response from server");
+}
 
 export type UseNextInvoiceNumberOptions = {
   /** YYYY-MM-DD or ISO; used to pick FY when financialYear is omitted */
@@ -191,8 +206,8 @@ export function useRecordPayment(invoiceId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: RecordPaymentRequest) => {
-      const res = await api.post<Payment>(`/invoices/${invoiceId}/payments`, data);
-      return res.data;
+      const res = await api.post<unknown>(`/invoices/${invoiceId}/payments`, data);
+      return parseRecordPaymentResponse(res.data);
     },
     onSuccess: () => {
       invalidateQueryKeys(qc, [["invoice", invoiceId], ["invoices"]]);

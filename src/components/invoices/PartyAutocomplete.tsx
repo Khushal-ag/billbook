@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Plus, Users } from "lucide-react";
+import { Check, Loader2, Plus, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Command,
@@ -12,17 +12,31 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import type { Party } from "@/types/party";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useParties } from "@/hooks/use-parties";
+import type { Party, PartyType } from "@/types/party";
 
 interface PartyAutocompleteProps {
   value: Party | null;
   onValueChange: (party: Party | null) => void;
-  parties: Party[];
+  /** Used only when serverSearch is false (client-side filter). */
+  parties?: Party[];
   placeholder?: string;
   className?: string;
   disabled?: boolean;
   onAddParty?: (onCreated: (party: Party) => void, draftName?: string) => void;
   addLabel?: string;
+  /** Stack popover above Radix Dialog (z-50) so the list is visible and clickable. */
+  inDialog?: boolean;
+  /** Focus input on mount (e.g. when parent dialog opens). */
+  autoFocus?: boolean;
+  /**
+   * When true, loads parties via GET /parties?search=… (debounced) while the dropdown is open.
+   * Matches name, phone, email, GSTIN, etc.
+   */
+  serverSearch?: boolean;
+  /** Narrows GET /parties when serverSearch is on. */
+  partiesQueryType?: PartyType;
 }
 
 const ADD_PARTY_VALUE = "__add_party__" as const;
@@ -37,12 +51,16 @@ function formatPartyAddress(party: Party): string {
 export function PartyAutocomplete({
   value,
   onValueChange,
-  parties,
+  parties: partiesProp = [],
   placeholder = "Search party...",
   className,
   disabled,
   onAddParty,
   addLabel = "Add party",
+  inDialog = false,
+  autoFocus = false,
+  serverSearch = false,
+  partiesQueryType,
 }: PartyAutocompleteProps) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -50,26 +68,52 @@ export function PartyAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const filtered = useMemo(
-    () =>
-      parties
-        .filter((party) => {
-          const q = inputValue.trim().toLowerCase();
-          if (!q) return true;
-          return party.name.toLowerCase().includes(q);
-        })
-        .slice(0, 50),
-    [parties, inputValue],
+  const debouncedSearch = useDebounce(inputValue.trim(), 300);
+
+  const { data: searchData, isFetching } = useParties(
+    {
+      type: partiesQueryType,
+      includeInactive: false,
+      search: debouncedSearch || undefined,
+      limit: 100,
+    },
+    {
+      enabled: serverSearch && open,
+      keepPreviousData: true,
+    },
   );
+
+  const serverParties = useMemo(() => {
+    const list = (searchData?.parties ?? []).filter((p) => p.isActive);
+    if (value && !list.some((p) => p.id === value.id)) {
+      return [value, ...list];
+    }
+    return list;
+  }, [searchData, value]);
+
+  const baseParties = serverSearch ? serverParties : partiesProp;
+
+  const filtered = useMemo(() => {
+    if (serverSearch) {
+      return baseParties.slice(0, 100);
+    }
+    const q = inputValue.trim().toLowerCase();
+    return baseParties
+      .filter((party) => {
+        if (!q) return true;
+        return party.name.toLowerCase().includes(q);
+      })
+      .slice(0, 50);
+  }, [serverSearch, baseParties, inputValue]);
 
   const trimmedInput = inputValue.trim();
   const hasExactMatch = useMemo(
     () =>
       Boolean(
         trimmedInput &&
-        parties.some((party) => party.name.trim().toLowerCase() === trimmedInput.toLowerCase()),
+        baseParties.some((party) => party.name.trim().toLowerCase() === trimmedInput.toLowerCase()),
       ),
-    [parties, trimmedInput],
+    [baseParties, trimmedInput],
   );
   const showAdd = Boolean(onAddParty && trimmedInput && !hasExactMatch);
 
@@ -83,6 +127,12 @@ export function PartyAutocomplete({
       : value.name
     : "";
   const displayValue = open ? inputValue : value ? selectedDisplayValue : inputValue;
+
+  const typingAhead =
+    serverSearch &&
+    open &&
+    inputValue.trim() !== debouncedSearch.trim() &&
+    inputValue.trim() !== "";
 
   useEffect(() => {
     if (!open && value) setInputValue(value.name);
@@ -166,15 +216,25 @@ export function PartyAutocomplete({
             disabled={disabled}
             className={cn("w-full font-normal", className)}
             autoComplete="off"
+            autoFocus={autoFocus}
           />
         </div>
       </PopoverAnchor>
       <PopoverContent
-        className="w-[min(24rem,calc(100vw-1rem))] min-w-[var(--radix-popover-trigger-width)] p-0"
+        className={cn(
+          "w-[min(24rem,calc(100vw-1rem))] min-w-[var(--radix-popover-trigger-width)] p-0",
+          inDialog && "z-[200]",
+        )}
         align="start"
         onOpenAutoFocus={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
+        {serverSearch && (isFetching || typingAhead) && (
+          <div className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+            {typingAhead ? "Searching…" : "Loading parties…"}
+          </div>
+        )}
         <Command
           shouldFilter={false}
           value={
@@ -189,8 +249,21 @@ export function PartyAutocomplete({
             <CommandEmpty className="flex flex-col items-center justify-center gap-2 px-4 py-8">
               <Users className="h-9 w-9 text-muted-foreground/60" />
               <p className="text-center text-sm font-medium text-foreground">
-                {inputValue.trim() ? "No matching party" : "Type to search"}
+                {serverSearch && isFetching && filtered.length === 0
+                  ? "Loading parties…"
+                  : inputValue.trim()
+                    ? "No matching party"
+                    : "Type to search"}
               </p>
+              {serverSearch &&
+                !isFetching &&
+                !typingAhead &&
+                inputValue.trim() &&
+                filtered.length === 0 && (
+                  <p className="text-center text-xs text-muted-foreground">
+                    Try phone, GSTIN, or part of the name
+                  </p>
+                )}
             </CommandEmpty>
             <CommandGroup>
               {filtered.map((party, index) => (

@@ -9,6 +9,7 @@ import {
   type AuditBadgeVariant,
 } from "@/constants/audit";
 import { formatISODateDisplay } from "./date";
+import { formatCurrency } from "./utils";
 
 export function getActionBadgeVariant(action: string): AuditBadgeVariant {
   return ACTION_BADGE_VARIANTS[action] ?? "outline";
@@ -296,8 +297,17 @@ function buildUpdateSummary(
 
   if (relevantKeys.length === 0) return "details updated";
 
+  if (
+    resourceType === "RECEIPT" &&
+    relevantKeys.includes("allocations") &&
+    relevantKeys.length <= 2
+  ) {
+    return "updated receipt allocations";
+  }
+
   const priority = (k: string) => {
     const order = [
+      "allocations",
       "items",
       "totalAmount",
       "discountAmount",
@@ -337,9 +347,25 @@ function formatQuantityHighlight(actualChanges: Record<string, unknown>): string
     : `Quantity: ${quantity}`;
 }
 
+/** Receipt UPDATE: allocations map invoiceId -> amount (IDs hidden in UI). */
+export function formatReceiptAllocationsValue(value: unknown): string {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return String(value);
+  const o = value as Record<string, unknown>;
+  const amounts = Object.values(o).map((amt) =>
+    formatCurrency(typeof amt === "number" ? String(amt) : String(amt ?? "0")),
+  );
+  const n = amounts.length;
+  if (n === 0) return "—";
+  if (n === 1) return `Applied ${amounts[0]} to an invoice`;
+  return [`Split across ${n} invoices`, ...amounts.map((a) => `• ${a}`)].join("\n");
+}
+
 function formatEntryValue(key: string, value: unknown): string {
   if (key === "invoiceType" && typeof value === "string") {
     return formatInvoiceTypeValue(value);
+  }
+  if (key === "allocations") {
+    return formatReceiptAllocationsValue(value);
   }
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value === "string") return value.length > 40 ? `${value.slice(0, 40)}...` : value;
@@ -406,6 +432,27 @@ export function getAuditActivityTitle(log: LogLike, ctx?: AuditDisplayContext): 
     return `${actor} added item ${itemName}`;
   }
 
+  if (log.resourceType === "RECEIPT" && log.action === "CREATE") {
+    const num = getStringValue(actualChanges, "receiptNumber");
+    const party = getStringValue(actualChanges, "partyName");
+    const amt = getStringValue(actualChanges, "totalAmount");
+    const parts = [
+      num ? `receipt ${num}` : "a receipt",
+      party ? `from ${party}` : "",
+      amt ? `(${formatCurrency(amt)})` : "",
+    ].filter(Boolean);
+    return `${actor} recorded ${parts.join(" ")}`.replace(/\s+/g, " ").trim();
+  }
+
+  if (log.resourceType === "RECEIPT" && log.action === "UPDATE" && actualChanges?.allocations) {
+    const alloc = actualChanges.allocations as Record<string, unknown>;
+    const n = Object.keys(alloc ?? {}).length;
+    const num = getStringValue(actualChanges, "receiptNumber") || resource?.trim();
+    return num
+      ? `${actor} allocated ${num} across ${n} invoice${n === 1 ? "" : "s"}`
+      : `${actor} updated receipt allocations (${n} invoice${n === 1 ? "" : "s"})`;
+  }
+
   if (log.action === "UPDATE") {
     const updateSummary = buildUpdateSummary(log.resourceType, log.changes, ctx);
     return resource ? `${actor} ${updateSummary} for ${resource}` : `${actor} ${updateSummary}`;
@@ -426,6 +473,28 @@ export function getAuditChangeHighlights(
 ): string {
   const actualChanges = extractChanges(changes);
   if (!actualChanges) return "";
+
+  if (
+    ctx?.resourceType === "RECEIPT" &&
+    actualChanges.allocations &&
+    typeof actualChanges.allocations === "object" &&
+    !Array.isArray(actualChanges.allocations)
+  ) {
+    return formatReceiptAllocationsValue(actualChanges.allocations);
+  }
+
+  if (ctx?.resourceType === "RECEIPT" && ctx?.action === "CREATE" && actualChanges) {
+    const parts: string[] = [];
+    const num = getStringValue(actualChanges, "receiptNumber");
+    const party = getStringValue(actualChanges, "partyName");
+    const amt = getStringValue(actualChanges, "totalAmount");
+    const alloc = getStringValue(actualChanges, "allocated");
+    if (num) parts.push(`Receipt: ${num}`);
+    if (party) parts.push(`Party: ${party}`);
+    if (amt) parts.push(`Amount: ${formatCurrency(amt)}`);
+    if (alloc != null && alloc !== "") parts.push(`Allocated: ${formatCurrency(alloc)}`);
+    if (parts.length) return parts.join(" • ");
+  }
 
   if (typeof actualChanges.quantity === "string" || typeof actualChanges.quantity === "number") {
     return formatQuantityHighlight(actualChanges);

@@ -21,6 +21,8 @@ export interface AuditLog {
   resourceName?: string | null;
   changes: Record<string, unknown> | null;
   createdAt: string;
+  ipAddress?: string | null;
+  organizationCode?: string | null;
 }
 
 export interface AuditLogListResponse {

@@ -67,7 +67,8 @@ export interface InvoiceItem {
 
 export interface InvoiceDetail extends Invoice {
   items: InvoiceItem[];
-  payments: Payment[];
+  /** Merged timeline: legacy payments, receipt allocations, outbound refunds */
+  payments: (LegacyInvoicePayment | InvoicePaymentLine)[];
 }
 
 export type InvoiceCommunicationChannel = "EMAIL" | "WHATSAPP" | "SMS" | "OTHER";
@@ -144,14 +145,68 @@ export interface UpdateInvoiceRequest {
   items?: InvoiceItemInput[];
 }
 
-export interface Payment {
+/** Legacy inbound payment row (pre-receipts). */
+export interface LegacyInvoicePayment {
   id: number;
-  invoiceId: number;
+  invoiceId?: number;
   amount: string;
   paymentMethod: string;
   referenceNumber: string | null;
   notes: string | null;
   createdAt: string;
+  source?: "LEGACY_PAYMENT";
+  receiptId?: null;
+  receiptNumber?: null;
+}
+
+export type InvoicePaymentSource = "LEGACY_PAYMENT" | "RECEIPT_ALLOCATION" | "OUTBOUND_REFUND";
+
+export interface InvoicePaymentLineBase {
+  id: number;
+  amount: string;
+  paymentMethod: string;
+  referenceNumber?: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export type InvoicePaymentLine =
+  | (InvoicePaymentLineBase & {
+      source: "LEGACY_PAYMENT";
+      receiptId?: null;
+      receiptNumber?: null;
+    })
+  | (InvoicePaymentLineBase & {
+      source: "RECEIPT_ALLOCATION";
+      receiptId: number;
+      receiptNumber: string;
+    })
+  | (InvoicePaymentLineBase & {
+      source: "OUTBOUND_REFUND";
+      outboundPaymentNumber: string;
+    });
+
+/** Normalize GET invoice payments (merged timeline). */
+export function normalizeInvoicePaymentLine(
+  raw: LegacyInvoicePayment | InvoicePaymentLine,
+): InvoicePaymentLine {
+  const s = raw.source;
+  if (s === "RECEIPT_ALLOCATION" && "receiptId" in raw && raw.receiptId != null) {
+    return raw as InvoicePaymentLine;
+  }
+  if (s === "OUTBOUND_REFUND" && "outboundPaymentNumber" in raw) {
+    return raw as InvoicePaymentLine;
+  }
+  const r = raw as LegacyInvoicePayment;
+  return {
+    source: "LEGACY_PAYMENT",
+    id: r.id,
+    amount: r.amount,
+    paymentMethod: r.paymentMethod,
+    referenceNumber: r.referenceNumber,
+    notes: r.notes,
+    createdAt: r.createdAt,
+  };
 }
 
 export interface RecordPaymentRequest {

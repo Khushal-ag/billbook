@@ -11,6 +11,7 @@ import {
   getLineAmounts,
   getMaxAllowedDiscountAmount,
   getMaxAllowedDiscountPercent,
+  isDraftLineServiceItem,
   itemFromStockEntry,
   toNum,
 } from "@/lib/invoice-create";
@@ -28,12 +29,12 @@ import {
   useStockEntries,
   useStockEntriesByIds,
 } from "@/hooks/use-items";
-import { useParties } from "@/hooks/use-parties";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useParties } from "@/hooks/use-parties";
 import { getInvoiceTypeCreateCopy, INVOICE_TYPE_OPTIONS, isSalesFamily } from "@/lib/invoice";
 import { formatCurrency } from "@/lib/utils";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import type { Item, StockEntry } from "@/types/item";
+import { isServiceType, type Item, type StockEntry } from "@/types/item";
 import type { Party } from "@/types/party";
 import type { InvoiceItem, InvoiceType } from "@/types/invoice";
 
@@ -134,6 +135,11 @@ export function useInvoiceCreateState(
     INVOICE_TYPE_OPTIONS.find((o) => o.type === invoiceType) ?? INVOICE_TYPE_OPTIONS[0];
 
   const { data: partiesData } = useParties({ type: partyType, includeInactive: false });
+  const parties = useMemo(
+    () => (partiesData?.parties ?? []).filter((p) => p.isActive),
+    [partiesData],
+  );
+
   /** Only while the batch popover is open; avoids /items + /stock-entries on every keystroke site-wide. */
   const { data: itemsData } = useItems(
     {
@@ -178,10 +184,6 @@ export function useInvoiceCreateState(
   }, [sourceEntryIds, lines]);
   const stockEntryByIdQuery = useStockEntriesByIds(neededStockEntryIds);
 
-  const parties = useMemo(
-    () => (partiesData?.parties ?? []).filter((p) => p.isActive),
-    [partiesData],
-  );
   const items = useMemo(() => (itemsData?.items ?? []).filter((i) => i.isActive), [itemsData]);
   const stockEntries = useMemo(() => {
     const byId = new Map<number, StockEntry>();
@@ -240,7 +242,7 @@ export function useInvoiceCreateState(
       });
       const item = itemMap.get(itemId);
       if (!item) continue;
-      const isService = item.type === "SERVICE";
+      const isService = isServiceType(item.type);
       const firstAvailableIndex = sorted.findIndex((entry) => {
         if (isService) return true;
         const available = getEntryTotalQty(entry);
@@ -477,9 +479,9 @@ export function useInvoiceCreateState(
         unitPrice: invoiceItem.unitPrice || entry.sellingPrice || "",
         discountPercent: invoiceItem.discountPercent ?? "0",
         discountAmount: invoiceItem.discountAmount ?? "",
-        cgstRate: resolvedItem.cgstRate ?? "0",
-        sgstRate: resolvedItem.sgstRate ?? "0",
-        igstRate: resolvedItem.igstRate ?? "0",
+        cgstRate: pickInvoiceTaxRate(invoiceItem.cgstRate, resolvedItem.cgstRate),
+        sgstRate: pickInvoiceTaxRate(invoiceItem.sgstRate, resolvedItem.sgstRate),
+        igstRate: pickInvoiceTaxRate(invoiceItem.igstRate, resolvedItem.igstRate),
       });
     }
 
@@ -629,11 +631,9 @@ export function useInvoiceCreateState(
       setAutoRoundOff(false);
       setRoundOffAmount("0");
     } else if (apiFinite && apiRoundPaise < 0) {
-      // Manual mode: positive input subtracts; matches negative signed paise from API
       setAutoRoundOff(false);
       setRoundOffAmount((Math.abs(apiRoundPaise) / 100).toFixed(2));
     } else {
-      // Positive / zero mismatch or unparsable — use auto from lines (avoids -0.20 breaking manual Math.max)
       setAutoRoundOff(true);
       setRoundOffAmount(
         Math.abs(autoRoundPaise) < 0.5 ? "0" : (Math.abs(autoRoundPaise) / 100).toFixed(2),
@@ -802,7 +802,13 @@ export function useInvoiceCreateState(
         : ((await getStockEntryById(selectedEntryId).catch(() => null)) ??
           stockEntries.find((entry) => entry.id === selectedEntryId));
 
-    if (selectedEntry) {
+    if (!selectedEntry) {
+      showErrorToast(null, "Unable to validate selected stock batch. Please reselect the batch.");
+      return;
+    }
+
+    /** SERVICE items use a nominal batch qty in stock; invoice qty is not stock-limited. */
+    if (!isDraftLineServiceItem(draftLine)) {
       const available = getEntryTotalQty(selectedEntry);
       const used = usedQtyByEntryId.get(selectedEntry.id) ?? 0;
       const remaining = Math.max(0, available - used);
@@ -816,7 +822,7 @@ export function useInvoiceCreateState(
           );
           return;
         }
-        handleLineQuantityChange(draftLine.id, formatQty(remaining));
+        updateLine(draftLine.id, { quantity: formatQty(remaining) });
         setQtyAutoAdjusted(true);
         showErrorToast(
           null,
@@ -824,9 +830,6 @@ export function useInvoiceCreateState(
         );
         return;
       }
-    } else {
-      showErrorToast(null, "Unable to validate selected stock batch. Please reselect the batch.");
-      return;
     }
 
     const costViolation = getCostFloorViolation(draftLine, stockEntries);
@@ -848,7 +851,7 @@ export function useInvoiceCreateState(
       return [createLine(), normalizedCurrent, ...prev.slice(1)];
     });
     setStockLineIssues({});
-  }, [draftLine, isLineValid, stockEntries, usedQtyByEntryId, handleLineQuantityChange]);
+  }, [draftLine, isLineValid, stockEntries, usedQtyByEntryId, updateLine]);
 
   const removeAddedLine = useCallback((lineId: string) => {
     setLines((prev) => [prev[0], ...prev.slice(1).filter((line) => line.id !== lineId)]);
@@ -866,6 +869,7 @@ export function useInvoiceCreateState(
 
     for (const line of addedLines) {
       if (line.stockEntryId == null) continue;
+      if (isDraftLineServiceItem(line)) continue;
       const list = linesByEntryId.get(line.stockEntryId) ?? [];
       list.push(line);
       linesByEntryId.set(line.stockEntryId, list);
@@ -1008,7 +1012,7 @@ export function useInvoiceCreateState(
         return;
       }
 
-      await createInvoice.mutateAsync({
+      const created = await createInvoice.mutateAsync({
         partyId: party.id,
         invoiceType,
         invoiceDate,
@@ -1020,8 +1024,8 @@ export function useInvoiceCreateState(
         items: linePayload,
       });
 
-      showSuccessToast(`${pageMeta.label} created`);
-      router.push(pageMeta.path);
+      showSuccessToast(`${pageMeta.label} created — review and finalize when ready`);
+      router.push(created?.id != null ? `/invoices/${created.id}` : pageMeta.path);
     } catch (err) {
       showErrorToast(
         err,
@@ -1045,7 +1049,7 @@ export function useInvoiceCreateState(
     notes,
     discountAmount,
     discountPercent,
-    summary.roundOff,
+    summary,
     pageMeta,
     router,
   ]);
@@ -1122,7 +1126,6 @@ export function useInvoiceCreateState(
     pendingItemName,
     setPendingItemName,
     // Derived
-    parties,
     stockEntries,
     stockChoices,
     filteredStockChoices,

@@ -89,7 +89,7 @@ export function InvoiceCreatePage({
         invoiceType={initialType}
         party={state.party}
         onPartyChange={state.setParty}
-        parties={state.parties}
+        partiesQueryType={state.partyType}
         onAddParty={state.handleOpenAddParty}
         invoiceDate={state.invoiceDate}
         onInvoiceDateChange={state.setInvoiceDate}

@@ -1,3 +1,5 @@
+import type { ReceiptSummary } from "./receipt";
+
 export type PartyType = "CUSTOMER" | "SUPPLIER";
 
 export interface Party {
@@ -99,15 +101,16 @@ export interface PartyAdvancePaymentRequest {
   notes?: string;
 }
 
-export interface AdvancePayment {
-  id: number;
-  partyId: number;
-  invoiceId: number | null;
-  amount: string;
-  paymentMethod: string;
-  referenceNumber: string | null;
-  notes: string | null;
-  createdAt: string;
+/** POST /parties/:id/payments — receipt created (full or partial shape). */
+export interface PartyAdvanceReceiptResult {
+  receipt?: ReceiptSummary;
+  receiptId?: number;
+  receiptNumber?: string;
+  totalAmount?: string;
+  allocatedAmount?: string;
+  unallocatedAmount?: string;
+  paymentMethod?: string;
+  partyId?: number;
 }
 
 export interface PartyListResponse {

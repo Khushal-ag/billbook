@@ -129,13 +129,21 @@ export default function PartyLedger() {
   const onAdvanceSubmit = async (data: AdvanceFormData) => {
     if (!numPartyId) return;
     try {
-      await advanceMutation.mutateAsync({
+      const res = await advanceMutation.mutateAsync({
         amount: data.amount,
         paymentMethod: data.paymentMethod,
         referenceNumber: data.referenceNumber || undefined,
         notes: data.notes || undefined,
       });
-      showSuccessToast("Advance payment recorded");
+      const receiptNo =
+        res.receipt?.receiptNumber ??
+        res.receiptNumber ??
+        (typeof res.receiptId === "number" ? `Receipt #${res.receiptId}` : null);
+      showSuccessToast(
+        receiptNo
+          ? `Receipt ${receiptNo} recorded — allocate to invoices from Receipts.`
+          : "Advance payment recorded",
+      );
       reset({ amount: "", paymentMethod: "CASH", referenceNumber: "", notes: "" });
       ledgerQuery.refetch();
       balanceQuery.refetch();

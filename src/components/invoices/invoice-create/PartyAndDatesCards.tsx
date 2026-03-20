@@ -5,14 +5,14 @@ import { Label } from "@/components/ui/label";
 import { DateField } from "@/components/invoices/invoice-create/DateField";
 import { PartyAutocomplete } from "@/components/invoices/PartyAutocomplete";
 import { getInvoiceTypeCreateCopy } from "@/lib/invoice";
-import type { Party } from "@/types/party";
+import type { Party, PartyType } from "@/types/party";
 import type { InvoiceType } from "@/types/invoice";
 
 interface PartyAndDatesCardsProps {
   invoiceType: InvoiceType;
   party: Party | null;
   onPartyChange: (party: Party | null) => void;
-  parties: Party[];
+  partiesQueryType: PartyType;
   onAddParty: (onCreated: (party: Party) => void, draftName?: string) => void;
   invoiceDate: string;
   onInvoiceDateChange: (value: string) => void;
@@ -24,7 +24,7 @@ export function PartyAndDatesCards({
   invoiceType,
   party,
   onPartyChange,
-  parties,
+  partiesQueryType,
   onAddParty,
   invoiceDate,
   onInvoiceDateChange,
@@ -45,7 +45,8 @@ export function PartyAndDatesCards({
             <PartyAutocomplete
               value={party}
               onValueChange={onPartyChange}
-              parties={parties}
+              serverSearch
+              partiesQueryType={partiesQueryType}
               placeholder={`Search ${copy.partyPlaceholder}...`}
               addLabel={copy.addPartyLabel}
               onAddParty={onAddParty}

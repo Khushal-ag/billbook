@@ -1,5 +1,5 @@
 import type { Item, StockEntry } from "@/types/item";
-import { normalizeItemType } from "@/types/item";
+import { isServiceType, normalizeItemType } from "@/types/item";
 import type { InvoiceLineDraft } from "@/types/invoice-create";
 
 /** Build a full Item from a stock-entry row (list API embeds item name/type, etc.). */
@@ -53,6 +53,11 @@ export function toNum(v: string | null | undefined): number {
 
 export function formatQty(v: number): string {
   return Number.isInteger(v) ? String(v) : String(Number(v.toFixed(3)));
+}
+
+/** Service lines are not limited by batch quantity on invoices. */
+export function isDraftLineServiceItem(line: Pick<InvoiceLineDraft, "item">): boolean {
+  return isServiceType(line.item?.type);
 }
 
 export function getEntryTotalQty(entry: StockEntry): number {

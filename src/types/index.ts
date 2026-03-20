@@ -11,3 +11,6 @@ export * from "./tax";
 export * from "./subscription";
 export * from "./audit-log";
 export * from "./dashboard";
+export * from "./outbound-payment";
+export * from "./receipt";
+export * from "./business-settings";

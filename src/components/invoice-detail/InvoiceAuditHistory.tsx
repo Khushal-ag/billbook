@@ -78,7 +78,7 @@ export function InvoiceAuditHistory({ logs }: InvoiceAuditHistoryProps) {
                   )}
 
                   {!log.collapsedCount && highlight && (
-                    <p className="text-xs text-muted-foreground">{highlight}</p>
+                    <p className="whitespace-pre-line text-xs text-muted-foreground">{highlight}</p>
                   )}
 
                   <p className="text-xs text-muted-foreground/70">

@@ -16,6 +16,8 @@ import {
   Settings,
   LogOut,
   PackageCheck,
+  Wallet,
+  ArrowDownLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -42,6 +44,8 @@ const navSections: NavSection[] = [
     items: [
       { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
       { label: "Invoices", path: "/invoices", icon: FileText },
+      { label: "Receipts", path: "/receipts", icon: Wallet },
+      { label: "Payments out", path: "/payments/outbound", icon: ArrowDownLeft },
       { label: "Credit Notes", path: "/credit-notes", icon: FileMinus, advancedOnly: true },
     ],
   },
@@ -266,7 +270,7 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
             )}
           >
             <Settings className="h-4 w-4 shrink-0" />
-            <span>Settings</span>
+            <span>Business settings</span>
           </Link>
         )}
 

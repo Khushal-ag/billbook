@@ -11,12 +11,13 @@ import type {
   PartyStatementResponse,
   PartyStatementPdfResponse,
   PartyAdvancePaymentRequest,
-  AdvancePayment,
+  PartyAdvanceReceiptResult,
+  PartyType,
 } from "@/types/party";
 
 export function useParties(
   params: {
-    type?: string;
+    type?: PartyType;
     includeInactive?: boolean;
     /** Search name, email, phone, gstin, address, city, state */
     search?: string;
@@ -24,8 +25,10 @@ export function useParties(
     limit?: number;
     offset?: number;
   } = {},
+  options?: { enabled?: boolean; keepPreviousData?: boolean },
 ) {
   const { type, includeInactive, search, limit, offset } = params;
+  const enabled = options?.enabled ?? true;
 
   return useQuery({
     queryKey: ["parties", type, includeInactive, search, limit, offset],
@@ -40,6 +43,10 @@ export function useParties(
       const res = await api.get<PartyListResponse>(`/parties${qs ? `?${qs}` : ""}`);
       return res.data;
     },
+    enabled,
+    placeholderData: options?.keepPreviousData
+      ? (previousData: PartyListResponse | undefined) => previousData
+      : undefined,
   });
 }
 
@@ -126,7 +133,7 @@ export function useRecordPartyAdvancePayment(partyId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: PartyAdvancePaymentRequest) => {
-      const res = await api.post<AdvancePayment>(
+      const res = await api.post<PartyAdvanceReceiptResult>(
         `/parties/${partyId}/payments`,
         data,
         generateIdempotencyKey(),
@@ -134,7 +141,12 @@ export function useRecordPartyAdvancePayment(partyId: number) {
       return res.data;
     },
     onSuccess: () => {
-      invalidateQueryKeys(qc, [["party-ledger", partyId], ["party-balance", partyId], ["parties"]]);
+      invalidateQueryKeys(qc, [
+        ["party-ledger", partyId],
+        ["party-balance", partyId],
+        ["parties"],
+        ["receipts"],
+      ]);
     },
   });
 }
