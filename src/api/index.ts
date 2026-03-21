@@ -1,3 +1,3 @@
 export { api, generateIdempotencyKey } from "./client";
 export { ApiClientError } from "./error";
-export { setAccessToken, getAccessToken, setRefreshToken } from "./token";
+export { setAccessToken, setRefreshToken } from "./token";

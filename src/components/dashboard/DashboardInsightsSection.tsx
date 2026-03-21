@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsSimpleMode } from "@/hooks/use-simple-mode";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
 import { CHART_COLORS, type PaymentStatusItem } from "@/lib/dashboard";
 import { formatCurrency } from "@/lib/utils";
 import type { RevenueByMonth } from "@/types/dashboard";
@@ -81,31 +81,29 @@ export function DashboardInsightsSection({
           <CardContent className="pt-0">
             <div className="flex flex-col items-center gap-6">
               <ChartContainer config={{}} className="h-[220px] w-full max-w-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={
-                        paymentStatusData.length > 0
-                          ? paymentStatusData
-                          : [{ ...EMPTY_PIE_PLACEHOLDER[0], value: 1 }]
-                      }
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={85}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {(paymentStatusData.length > 0
+                <PieChart>
+                  <Pie
+                    data={
+                      paymentStatusData.length > 0
                         ? paymentStatusData
                         : [{ ...EMPTY_PIE_PLACEHOLDER[0], value: 1 }]
-                      ).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <ChartTooltip content={<CustomPaymentTooltip />} cursor={false} />
-                  </PieChart>
-                </ResponsiveContainer>
+                    }
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={85}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {(paymentStatusData.length > 0
+                      ? paymentStatusData
+                      : [{ ...EMPTY_PIE_PLACEHOLDER[0], value: 1 }]
+                    ).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<CustomPaymentTooltip />} cursor={false} />
+                </PieChart>
               </ChartContainer>
               {paymentStatusData.length > 0 ? (
                 <div className="flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-2">
@@ -161,35 +159,33 @@ export function DashboardInsightsSection({
               config={{ revenue: { label: "Revenue", color: CHART_COLORS.primary } }}
               className="h-[260px]"
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={revenueByMonth.length > 0 ? revenueByMonth : EMPTY_REVENUE_PLACEHOLDER}
-                  maxBarSize={60}
-                >
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11 }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}
-                    width={50}
-                    domain={[0, "auto"]}
-                  />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />
-                    }
-                    cursor={false}
-                  />
-                  <Bar dataKey="revenue" fill={CHART_COLORS.primary} radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <BarChart
+                data={revenueByMonth.length > 0 ? revenueByMonth : EMPTY_REVENUE_PLACEHOLDER}
+                maxBarSize={60}
+              >
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                />
+                <YAxis
+                  tick={{ fontSize: 11 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}K`}
+                  width={50}
+                  domain={[0, "auto"]}
+                />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />
+                  }
+                  cursor={false}
+                />
+                <Bar dataKey="revenue" fill={CHART_COLORS.primary} radius={[8, 8, 0, 0]} />
+              </BarChart>
             </ChartContainer>
             {revenueByMonth.length === 0 && (
               <p className="mt-2 text-center text-xs text-muted-foreground">
@@ -206,31 +202,29 @@ export function DashboardInsightsSection({
           <CardContent className="pt-0">
             <div className="flex flex-col items-center gap-4">
               <ChartContainer config={{}} className="h-[160px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={
-                        paymentStatusData.length > 0
-                          ? paymentStatusData
-                          : [{ ...EMPTY_PIE_PLACEHOLDER[0], value: 1 }]
-                      }
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={35}
-                      outerRadius={55}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {(paymentStatusData.length > 0
+                <PieChart>
+                  <Pie
+                    data={
+                      paymentStatusData.length > 0
                         ? paymentStatusData
                         : [{ ...EMPTY_PIE_PLACEHOLDER[0], value: 1 }]
-                      ).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <ChartTooltip content={<CustomPaymentTooltip />} cursor={false} />
-                  </PieChart>
-                </ResponsiveContainer>
+                    }
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={35}
+                    outerRadius={55}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {(paymentStatusData.length > 0
+                      ? paymentStatusData
+                      : [{ ...EMPTY_PIE_PLACEHOLDER[0], value: 1 }]
+                    ).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<CustomPaymentTooltip />} cursor={false} />
+                </PieChart>
               </ChartContainer>
               {paymentStatusData.length > 0 ? (
                 <div className="w-full space-y-2">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -49,6 +49,7 @@ interface Props {
 export default function PaymentDialog({ open, onOpenChange, invoiceId, balanceDue }: Props) {
   const mutation = useRecordPayment(invoiceId);
   const [successReceipt, setSuccessReceipt] = useState<RecordInvoicePaymentData | null>(null);
+  const wasOpenRef = useRef(false);
 
   const {
     register,
@@ -67,8 +68,12 @@ export default function PaymentDialog({ open, onOpenChange, invoiceId, balanceDu
     },
   });
 
+  // Only reset when the dialog opens — not when balanceDue changes after submit (invalidation
+  // refetches invoice and would otherwise clear the success screen and show the form again).
   useEffect(() => {
-    if (open) {
+    const justOpened = open && !wasOpenRef.current;
+    wasOpenRef.current = open;
+    if (justOpened) {
       setSuccessReceipt(null);
       reset({
         amount: balanceDue ?? "",
