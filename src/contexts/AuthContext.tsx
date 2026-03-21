@@ -9,6 +9,7 @@ import type {
   AuthResponse,
   AuthMeResponse,
 } from "@/types/auth";
+import { AUTH_EXPIRED_EVENT } from "@/constants/auth-events";
 import { api, setAccessToken, setRefreshToken, ApiClientError } from "@/api";
 
 interface AuthState {
@@ -28,7 +29,6 @@ interface AuthContextValue extends AuthState {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const SESSION_KEY = "billbook_session";
-const AUTH_EXPIRED_EVENT = "auth:expired";
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   INVALID_OTP: "Invalid or expired OTP. Please request a new OTP and try again.",

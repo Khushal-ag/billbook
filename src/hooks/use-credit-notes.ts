@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
 import { invalidateQueryKeys } from "@/lib/query";
+import { queryKeys } from "@/lib/query-keys";
 import { buildQueryString } from "@/lib/utils";
 import type {
   CreditNote,
@@ -13,7 +14,7 @@ export function useCreditNotes(params: { invoiceId?: number } = {}) {
   const qs = buildQueryString({ invoiceId });
 
   return useQuery({
-    queryKey: ["credit-notes", invoiceId],
+    queryKey: queryKeys.creditNotes.list(invoiceId),
     queryFn: async () => {
       const res = await api.get<CreditNoteListResponse>(`/credit-notes?${qs}`);
       return res.data;
@@ -23,7 +24,7 @@ export function useCreditNotes(params: { invoiceId?: number } = {}) {
 
 export function useCreditNote(creditNoteId: number | undefined) {
   return useQuery({
-    queryKey: ["credit-notes", "detail", creditNoteId],
+    queryKey: queryKeys.creditNotes.detail(creditNoteId),
     queryFn: async () => {
       const res = await api.get<CreditNote>(`/credit-notes/${creditNoteId}`);
       return res.data;
@@ -39,7 +40,7 @@ export function useCreateCreditNote() {
       const res = await api.post<CreditNote>("/credit-notes", data);
       return res.data;
     },
-    onSuccess: () => invalidateQueryKeys(qc, [["credit-notes"]]),
+    onSuccess: () => invalidateQueryKeys(qc, [queryKeys.creditNotes.root()]),
   });
 }
 
@@ -50,7 +51,7 @@ export function useFinalizeCreditNote() {
       const res = await api.post<CreditNote>(`/credit-notes/${id}/finalize`);
       return res.data;
     },
-    onSuccess: () => invalidateQueryKeys(qc, [["credit-notes"]]),
+    onSuccess: () => invalidateQueryKeys(qc, [queryKeys.creditNotes.root()]),
   });
 }
 
@@ -60,6 +61,6 @@ export function useDeleteCreditNote() {
     mutationFn: async (id: number) => {
       await api.delete(`/credit-notes/${id}`);
     },
-    onSuccess: () => invalidateQueryKeys(qc, [["credit-notes"]]),
+    onSuccess: () => invalidateQueryKeys(qc, [queryKeys.creditNotes.root()]),
   });
 }

@@ -1,10 +1,9 @@
 import type { ApiResponse } from "@/types/api";
 import type { AuthTokens } from "@/types/auth";
+import { AUTH_EXPIRED_EVENT } from "@/constants/auth-events";
 import { env } from "@/lib/env";
 import { getAccessToken, getRefreshToken, setAccessToken, setRefreshToken } from "./token";
 import { ApiClientError } from "./error";
-
-const AUTH_EXPIRED_EVENT = "auth:expired";
 const REFRESH_PATH = "/auth/refresh-token";
 
 function notifyAuthExpired() {

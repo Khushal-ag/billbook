@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, generateIdempotencyKey } from "@/api";
 import { invalidateQueryKeys } from "@/lib/query";
+import { queryKeys } from "@/lib/query-keys";
 import { buildQueryString } from "@/lib/utils";
 import type {
   OutboundPaymentListResponse,
@@ -24,7 +25,7 @@ export function useOutboundPayments(params: {
   });
 
   return useQuery({
-    queryKey: ["outbound-payments", page, pageSize, category, partyId],
+    queryKey: queryKeys.outboundPayments.list(page, pageSize, category, partyId),
     queryFn: async () => {
       const res = await api.get<OutboundPaymentListResponse>(`/payments/outbound?${qs}`);
       return res.data;
@@ -45,11 +46,11 @@ export function useCreateOutboundPayment() {
     },
     onSuccess: () => {
       invalidateQueryKeys(qc, [
-        ["outbound-payments"],
-        ["party-ledger"],
-        ["party-balance"],
-        ["invoice"],
-        ["invoices"],
+        queryKeys.outboundPayments.root(),
+        queryKeys.parties.ledgerPrefix(),
+        queryKeys.parties.balancePrefix(),
+        queryKeys.invoices.detailPrefix(),
+        queryKeys.invoices.root(),
       ]);
     },
   });

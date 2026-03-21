@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, generateIdempotencyKey } from "@/api";
 import { invalidateQueryKeys } from "@/lib/query";
+import { queryKeys } from "@/lib/query-keys";
 import { buildQueryString } from "@/lib/utils";
 import type {
   ReceiptDetail,
@@ -14,7 +15,7 @@ export function useReceipts(params: { page?: number; pageSize?: number; partyId?
   const qs = buildQueryString({ page, pageSize, partyId });
 
   return useQuery({
-    queryKey: ["receipts", page, pageSize, partyId],
+    queryKey: queryKeys.receipts.list(page, pageSize, partyId),
     queryFn: async () => {
       const res = await api.get<ReceiptListResponse>(`/receipts?${qs}`);
       return res.data;
@@ -24,7 +25,7 @@ export function useReceipts(params: { page?: number; pageSize?: number; partyId?
 
 export function useReceipt(receiptId: number | undefined) {
   return useQuery({
-    queryKey: ["receipt", receiptId],
+    queryKey: queryKeys.receipts.detail(receiptId),
     queryFn: async () => {
       const res = await api.get<ReceiptDetail>(`/receipts/${receiptId}`);
       return res.data;
@@ -42,11 +43,11 @@ export function useCreateReceipt() {
     },
     onSuccess: () => {
       invalidateQueryKeys(qc, [
-        ["receipts"],
-        ["receipt"],
-        ["party-ledger"],
-        ["party-balance"],
-        ["invoice"],
+        queryKeys.receipts.root(),
+        queryKeys.receipts.detailPrefix(),
+        queryKeys.parties.ledgerPrefix(),
+        queryKeys.parties.balancePrefix(),
+        queryKeys.invoices.detailPrefix(),
       ]);
     },
   });
@@ -61,12 +62,12 @@ export function useUpdateReceiptAllocations(receiptId: number) {
     },
     onSuccess: () => {
       invalidateQueryKeys(qc, [
-        ["receipt", receiptId],
-        ["receipts"],
-        ["invoice"],
-        ["invoices"],
-        ["party-ledger"],
-        ["party-balance"],
+        queryKeys.receipts.detail(receiptId),
+        queryKeys.receipts.root(),
+        queryKeys.invoices.detailPrefix(),
+        queryKeys.invoices.root(),
+        queryKeys.parties.ledgerPrefix(),
+        queryKeys.parties.balancePrefix(),
       ]);
     },
   });

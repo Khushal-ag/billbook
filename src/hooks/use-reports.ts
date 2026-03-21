@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
+import { queryKeys } from "@/lib/query-keys";
 import type {
   SalesReportData,
   PartyOutstandingData,
@@ -10,7 +11,7 @@ import type {
 
 export function useSalesReport(startDate: string, endDate: string) {
   return useQuery({
-    queryKey: ["reports", "sales", startDate, endDate],
+    queryKey: queryKeys.reports.sales(startDate, endDate),
     queryFn: async () => {
       const res = await api.get<SalesReportData>(
         `/reports/sales?startDate=${startDate}&endDate=${endDate}`,
@@ -23,7 +24,7 @@ export function useSalesReport(startDate: string, endDate: string) {
 
 export function usePartyOutstandingReport() {
   return useQuery({
-    queryKey: ["reports", "party-outstanding"],
+    queryKey: queryKeys.reports.partyOutstanding(),
     queryFn: async () => {
       const res = await api.get<PartyOutstandingData>("/reports/party-outstanding");
       return res.data;
@@ -46,7 +47,7 @@ type ItemSalesRaw = ItemSalesData & {
 
 export function useItemSalesReport(startDate: string, endDate: string) {
   return useQuery({
-    queryKey: ["reports", "item-sales", startDate, endDate],
+    queryKey: queryKeys.reports.itemSales(startDate, endDate),
     queryFn: async () => {
       const res = await api.get<ItemSalesRaw>(
         `/reports/item-sales?startDate=${startDate}&endDate=${endDate}`,
@@ -70,7 +71,7 @@ export function useItemSalesReport(startDate: string, endDate: string) {
 
 export function useSalesExport(startDate: string, endDate: string, enabled = false) {
   return useQuery({
-    queryKey: ["reports", "sales-export", startDate, endDate],
+    queryKey: queryKeys.reports.salesExport(startDate, endDate),
     queryFn: async () => {
       const res = await api.get<ExportData>(
         `/reports/sales/export?startDate=${startDate}&endDate=${endDate}`,

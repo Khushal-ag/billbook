@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
 import { invalidateQueryKeys } from "@/lib/query";
+import { queryKeys } from "@/lib/query-keys";
 import type {
   BusinessSettingsData,
   UpdateBusinessSettingsRequest,
@@ -8,7 +9,7 @@ import type {
 
 export function useBusinessSettings() {
   return useQuery({
-    queryKey: ["business-settings"],
+    queryKey: queryKeys.business.settings(),
     queryFn: async () => {
       const res = await api.get<BusinessSettingsData>("/business/settings");
       return res.data;
@@ -25,9 +26,9 @@ export function useUpdateBusinessSettings() {
     },
     onSuccess: () => {
       invalidateQueryKeys(qc, [
-        ["business-settings"],
-        ["business-profile"],
-        ["invoice-next-number"],
+        queryKeys.business.settings(),
+        queryKeys.business.profile(),
+        queryKeys.invoices.nextNumberRoot(),
       ]);
     },
   });
