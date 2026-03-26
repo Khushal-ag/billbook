@@ -40,7 +40,9 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
   const { requestSignupOtp, verifySignupOtp } = useAuth();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [otpRequested, setOtpRequested] = useState(false);
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const otpInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -55,24 +57,53 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<SignupForm>({
     resolver: zodResolver(signupSchema),
   });
 
+  const firstName = watch("firstName");
+  const lastName = watch("lastName");
+  const email = watch("email");
+  const password = watch("password");
+  const businessName = watch("businessName");
+
   const { ref: otpFormRef, ...otpRegisterRest } = register("otp");
+
+  const handleResendOtp = async () => {
+    setError(null);
+    setInfo(null);
+    setIsResendingOtp(true);
+    try {
+      const resp = await requestSignupOtp({
+        email: email.trim(),
+        password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        businessName: businessName.trim(),
+      });
+      setInfo(resp.message || "OTP resent. Please check your email.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to resend OTP.");
+    } finally {
+      setIsResendingOtp(false);
+    }
+  };
 
   const onSubmit = async (data: SignupForm) => {
     setError(null);
+    setInfo(null);
     try {
       if (!otpRequested) {
-        await requestSignupOtp({
+        const resp = await requestSignupOtp({
           email: data.email,
           password: data.password,
           firstName: data.firstName,
           lastName: data.lastName,
           businessName: data.businessName,
         });
+        setInfo(resp.message || "OTP sent. Please check your email.");
         setOtpRequested(true);
         return;
       }
@@ -118,6 +149,11 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
           {error && (
             <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
               {error}
+            </div>
+          )}
+          {info && (
+            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+              {info}
             </div>
           )}
 
@@ -219,16 +255,35 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
               <p className="text-xs text-muted-foreground">OTP expires in 10 minutes.</p>
 
               <div className="text-center text-sm text-muted-foreground">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOtpRequested(false);
-                    setValue("otp", "");
-                  }}
-                  className="transition-colors hover:text-foreground"
-                >
-                  Edit signup details
-                </button>
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpRequested(false);
+                      setValue("otp", "");
+                      setInfo(null);
+                    }}
+                    className="transition-colors hover:text-foreground"
+                  >
+                    Edit signup details
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleResendOtp()}
+                    disabled={
+                      isSubmitting ||
+                      isResendingOtp ||
+                      !firstName ||
+                      !lastName ||
+                      !email ||
+                      !password ||
+                      !businessName
+                    }
+                    className="transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isResendingOtp ? "Resending..." : "Resend OTP"}
+                  </button>
+                </div>
               </div>
             </>
           )}

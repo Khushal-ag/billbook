@@ -35,11 +35,8 @@ export default function SettingsPage() {
                 </span>
               </h2>
               <p className="text-sm text-muted-foreground">
-                Applies to everyone in this business. Document rules use{" "}
-                <code className="rounded bg-muted px-1 py-0.5 text-[0.7rem]">
-                  /business/settings
-                </code>
-                ; only <strong>owners</strong> can edit numbering and defaults.
+                Applies to everyone in this business. Only <strong>owners</strong> can update
+                document numbering and default settings.
               </p>
             </div>
           </div>

@@ -171,9 +171,8 @@ export function DocumentNumberingCard({ embedded = false }: DocumentNumberingCar
     <div className="mb-6">
       <h3 className="text-base font-semibold tracking-tight">Document numbering</h3>
       <p className="mt-1 text-sm text-muted-foreground">
-        Sale and purchase document prefixes, receipt and payment voucher sequences, and invoice
-        defaults. Synced via{" "}
-        <code className="rounded bg-muted px-1 py-0.5 text-xs">GET/PUT /business/settings</code>.
+        Manage prefixes and starting numbers for sale and purchase documents, plus default invoice
+        settings.
       </p>
     </div>
   ) : null;
@@ -252,8 +251,8 @@ export function DocumentNumberingCard({ embedded = false }: DocumentNumberingCar
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle className="text-sm">Duplicate numbers</AlertTitle>
         <AlertDescription className="text-xs">
-          Lowering a sequence start below numbers already issued in the current financial year can
-          produce duplicate document numbers. The server does not block this — adjust carefully.
+          If you set a starting number lower than already-used numbers in this financial year, you
+          may create duplicate document numbers. Please review carefully before saving.
         </AlertDescription>
       </Alert>
 

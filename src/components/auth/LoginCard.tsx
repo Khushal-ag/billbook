@@ -42,7 +42,9 @@ export default function LoginCard({
   const { requestLoginOtp, verifyLoginOtp } = useAuth();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [otpRequested, setOtpRequested] = useState(false);
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const otpInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -57,15 +59,44 @@ export default function LoginCard({
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
 
+  const email = watch("email");
+  const organizationCode = watch("organizationCode");
+  const password = watch("password");
+
   const { ref: otpFormRef, ...otpRegisterRest } = register("otp");
+
+  const handleResendOtp = async () => {
+    setError(null);
+    setInfo(null);
+    const pwd = password?.trim();
+    if (!pwd) {
+      setError("Password is required to resend OTP.");
+      return;
+    }
+    setIsResendingOtp(true);
+    try {
+      const resp = await requestLoginOtp({
+        email: email.trim(),
+        organizationCode: organizationCode.trim().toUpperCase(),
+        password: pwd,
+      });
+      setInfo(resp.message || "OTP resent. Please check your email.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to resend OTP.");
+    } finally {
+      setIsResendingOtp(false);
+    }
+  };
 
   const onSubmit = async (data: LoginForm) => {
     setError(null);
+    setInfo(null);
     try {
       if (!otpRequested) {
         const pwd = data.password?.trim();
@@ -78,6 +109,7 @@ export default function LoginCard({
           organizationCode: data.organizationCode,
           password: pwd,
         });
+        setInfo("OTP sent. Please check your email.");
         setOtpRequested(true);
         return;
       }
@@ -120,6 +152,11 @@ export default function LoginCard({
           {error && (
             <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
               {error}
+            </div>
+          )}
+          {info && (
+            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+              {info}
             </div>
           )}
 
@@ -203,16 +240,29 @@ export default function LoginCard({
               <p className="text-xs text-muted-foreground">OTP expires in 10 minutes.</p>
 
               <div className="text-center text-sm text-muted-foreground">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOtpRequested(false);
-                    setValue("otp", "");
-                  }}
-                  className="transition-colors hover:text-foreground"
-                >
-                  Use different email or organization code
-                </button>
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpRequested(false);
+                      setValue("otp", "");
+                      setInfo(null);
+                    }}
+                    className="transition-colors hover:text-foreground"
+                  >
+                    Use different email or organization code
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleResendOtp()}
+                    disabled={
+                      isSubmitting || isResendingOtp || !email || !organizationCode || !password
+                    }
+                    className="transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isResendingOtp ? "Resending..." : "Resend OTP"}
+                  </button>
+                </div>
               </div>
             </>
           )}
