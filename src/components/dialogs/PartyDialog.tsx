@@ -47,13 +47,9 @@ const schema = z.object({
     .string()
     .trim()
     .min(1, "Phone is required")
-    .regex(
-      /^[0-9+\s\-().]*$/,
-      "Phone can only contain numbers, +, spaces, hyphens, and parentheses",
-    )
+    .regex(/^\d+$/, "Phone can only contain digits")
     .refine((val) => {
-      const digitsOnly = val.replace(/\D/g, "");
-      return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+      return val.length >= 10 && val.length <= 15;
     }, "Phone number must have between 10 and 15 digits"),
   address: optionalString,
   city: optionalString,
@@ -272,7 +268,19 @@ export default function PartyDialog({
             </div>
             <div className="space-y-2">
               <Label>Phone *</Label>
-              <Input {...register("phone")} />
+              <Input
+                {...register("phone", {
+                  onChange: (e) => {
+                    e.target.value = String(e.target.value ?? "")
+                      .replace(/\D/g, "")
+                      .slice(0, 15);
+                  },
+                })}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="tel"
+                maxLength={15}
+              />
               {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
             </div>
           </div>

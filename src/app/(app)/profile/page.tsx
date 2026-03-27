@@ -13,41 +13,65 @@ import { profileSchema, type ProfileForm } from "@/components/settings/profileSc
 import { Button } from "@/components/ui/button";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 
+const getProfileFormValues = (business?: {
+  name?: string | null;
+  country?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  businessType?: string | null;
+  industryType?: string | null;
+  registrationType?: string | null;
+  street?: string | null;
+  area?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  gstin?: string | null;
+  pan?: string | null;
+  financialYearStart?: number | null;
+  extraDetails?: Array<{ key: string; value: string }> | null;
+  taxType?: "GST" | "NON_GST" | null;
+  logoUrl?: string | null;
+  signatureUrl?: string | null;
+}) => ({
+  name: business?.name || "",
+  country: business?.country || "India",
+  email: business?.email || "",
+  phone: business?.phone || "",
+  businessType: business?.businessType || "",
+  industryType: business?.industryType || "",
+  registrationType: business?.registrationType || "",
+  street: business?.street || "",
+  area: business?.area || "",
+  city: business?.city || "",
+  state: business?.state || "",
+  pincode: business?.pincode || "",
+  gstin: business?.gstin || "",
+  pan: business?.pan || "",
+  financialYearStart: business?.financialYearStart ?? 4,
+  extraDetails: business?.extraDetails?.length ? business.extraDetails : [],
+  taxType: business?.taxType || "GST",
+  logoUrl: business?.logoUrl ?? null,
+  signatureUrl: business?.signatureUrl ?? null,
+});
+
 export default function Profile() {
   const { data: business, isPending, error } = useBusinessProfile();
   const updateProfile = useUpdateBusinessProfile();
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
-    values: business
-      ? {
-          name: business.name || "",
-          country: business.country || "India",
-          email: business.email || "",
-          phone: business.phone || "",
-          businessType: business.businessType || "",
-          industryType: business.industryType || "",
-          registrationType: business.registrationType || "",
-          street: business.street || "",
-          area: business.area || "",
-          city: business.city || "",
-          state: business.state || "",
-          pincode: business.pincode || "",
-          gstin: business.gstin || "",
-          pan: business.pan || "",
-          financialYearStart: business.financialYearStart ?? 4,
-          extraDetails: business.extraDetails?.length ? business.extraDetails : [],
-          taxType: business.taxType || "GST",
-          logoUrl: business.logoUrl ?? null,
-          signatureUrl: business.signatureUrl ?? null,
-        }
-      : undefined,
+    defaultValues: getProfileFormValues(),
   });
 
   const {
     formState: { isSubmitting, isDirty },
     reset,
   } = form;
+
+  useEffect(() => {
+    reset(getProfileFormValues(business));
+  }, [business, reset]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -105,31 +129,7 @@ export default function Profile() {
   };
 
   const handleCancel = () => {
-    if (business) {
-      reset({
-        name: business.name || "",
-        country: business.country || "India",
-        email: business.email || "",
-        phone: business.phone || "",
-        businessType: business.businessType || "",
-        industryType: business.industryType || "",
-        registrationType: business.registrationType || "",
-        street: business.street || "",
-        area: business.area || "",
-        city: business.city || "",
-        state: business.state || "",
-        pincode: business.pincode || "",
-        gstin: business.gstin || "",
-        pan: business.pan || "",
-        financialYearStart: business.financialYearStart ?? 4,
-        extraDetails: business.extraDetails?.length ? business.extraDetails : [],
-        taxType: business.taxType || "GST",
-        logoUrl: business.logoUrl ?? null,
-        signatureUrl: business.signatureUrl ?? null,
-      });
-    } else {
-      reset();
-    }
+    reset(getProfileFormValues(business));
   };
 
   if (isPending) {

@@ -10,9 +10,12 @@ interface DateFieldProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  minDate?: string;
 }
 
-export function DateField({ label, value, onChange }: DateFieldProps) {
+export function DateField({ label, value, onChange, minDate }: DateFieldProps) {
+  const minDateObj = minDate ? parseISODateString(minDate) : undefined;
+
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
@@ -38,6 +41,13 @@ export function DateField({ label, value, onChange }: DateFieldProps) {
               if (!date) return;
               onChange(toISODateString(date));
             }}
+            disabled={
+              minDateObj
+                ? (date) =>
+                    date <
+                    new Date(minDateObj.getFullYear(), minDateObj.getMonth(), minDateObj.getDate())
+                : undefined
+            }
             initialFocus
           />
         </PopoverContent>

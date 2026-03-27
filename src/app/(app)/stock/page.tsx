@@ -25,6 +25,7 @@ import {
   useCreateStockEntry,
   useUpdateStockEntry,
 } from "@/hooks/use-items";
+import { useParties } from "@/hooks/use-parties";
 import { useAlerts, useMarkAlertRead } from "@/hooks/use-alerts";
 import type { CreateStockEntryRequest, StockEntry, UpdateStockEntryRequest } from "@/types/item";
 import type { Party } from "@/types/party";
@@ -65,6 +66,11 @@ export default function Stock() {
   } = useStockEntries({ limit: 200, search: debouncedSearch || undefined });
   const createStockEntry = useCreateStockEntry();
   const updateStockEntry = useUpdateStockEntry();
+  const { data: suppliersData } = useParties({
+    type: "SUPPLIER",
+    includeInactive: false,
+    limit: 200,
+  });
 
   const items = (itemsData?.items ?? []).filter((i) => i.isActive);
   const prefillItemId = Number(searchParams.get("addItemId") ?? "");
@@ -133,10 +139,7 @@ export default function Stock() {
 
     return Array.from(map.values());
   }, [stockData?.stock, stockEntries]);
-  const activeSuppliers = useMemo(
-    () => allSuppliers.filter((supplier) => supplier.isActive),
-    [allSuppliers],
-  );
+  const activeSuppliers = useMemo(() => suppliersData?.parties ?? [], [suppliersData?.parties]);
 
   // Cards always use overall (unfiltered) summary; list uses filtered data
   const summary = stockDataForCards?.summary ?? stockData?.summary;

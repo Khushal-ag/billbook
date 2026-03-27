@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { DateField } from "@/components/invoices/invoice-create/DateField";
 import { PartyAutocomplete } from "@/components/invoices/PartyAutocomplete";
 import { getInvoiceTypeCreateCopy } from "@/lib/invoice";
+import { toISODateString } from "@/lib/date";
 import type { Party, PartyType } from "@/types/party";
 import type { InvoiceType } from "@/types/invoice";
 
@@ -32,6 +33,7 @@ export function PartyAndDatesCards({
   onDueDateChange,
 }: PartyAndDatesCardsProps) {
   const copy = getInvoiceTypeCreateCopy(invoiceType);
+  const todayIso = toISODateString(new Date());
 
   return (
     <div className="grid gap-4 xl:grid-cols-2">
@@ -61,7 +63,12 @@ export function PartyAndDatesCards({
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
           <DateField label="Invoice Date" value={invoiceDate} onChange={onInvoiceDateChange} />
-          <DateField label="Due Date" value={dueDate} onChange={onDueDateChange} />
+          <DateField
+            label="Due Date"
+            value={dueDate}
+            onChange={onDueDateChange}
+            minDate={todayIso}
+          />
         </CardContent>
       </Card>
     </div>
