@@ -42,6 +42,18 @@ export interface Invoice {
   partyCity?: string | null;
   partyState?: string | null;
   partyPostalCode?: string | null;
+  /** Selected consignee id snapshot source (null means party primary address). */
+  partyConsigneeId?: number | null;
+  consigneeName?: string | null;
+  consigneePhone?: string | null;
+  consigneeEmail?: string | null;
+  consigneeAddress?: string | null;
+  consigneeCity?: string | null;
+  consigneeState?: string | null;
+  consigneePostalCode?: string | null;
+  /** API helper labels for customer/vendor contexts. */
+  partyRoleLabel?: "Customer" | "Vendor";
+  addressRoleLabel?: "Delivery Address" | "Vendor Address";
 }
 
 export interface InvoiceItem {
@@ -121,6 +133,7 @@ export interface InvoiceItemInput {
 
 export interface CreateInvoiceRequest {
   partyId: number;
+  consigneeId?: number | null;
   invoiceType: InvoiceType;
   invoiceDate: string;
   dueDate?: string;
@@ -134,6 +147,7 @@ export interface CreateInvoiceRequest {
 /** PUT /invoices/:id — all fields optional; `items` if present replaces all lines (min 1). */
 export interface UpdateInvoiceRequest {
   partyId?: number;
+  consigneeId?: number | null;
   invoiceType?: InvoiceType;
   invoiceDate?: string;
   /** Omit to leave unchanged; `null` clears due date */

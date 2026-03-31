@@ -119,7 +119,7 @@ const INVOICE_TYPE_CREATE_COPY: Record<InvoiceType, InvoiceTypeCreateCopy> = {
     discountPercentLabel: "Discount %",
     itemSectionTitle: "Items received",
     batchLabel: "Item / Batch",
-    batchPlaceholder: "Search items or add new — stock can be added later",
+    batchPlaceholder: "Search items or add new item",
     itemSectionHelper:
       "Add everything from your vendor bill. Items don't need to be in stock yet; you can add stock afterwards.",
     summaryTitle: "Purchase summary",

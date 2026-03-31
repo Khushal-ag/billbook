@@ -96,7 +96,7 @@ export default function Vendors() {
         <PartiesTable
           parties={parties}
           onEdit={openEdit}
-          onLedger={(partyId) => router.push(`/parties/${partyId}/ledger?from=vendors`)}
+          onLedger={(partyId) => router.push(`/vendors/${partyId}/ledger`)}
         />
       )}
 

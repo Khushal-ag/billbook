@@ -11,10 +11,10 @@ interface InvoiceDetailsCardsProps {
 const EPS = 0.000_5;
 
 function formatPartyAddressLines(invoice: InvoiceDetail): string | null {
-  const line1 = invoice.partyAddress?.trim();
-  const city = invoice.partyCity?.trim();
-  const state = invoice.partyState?.trim();
-  const pin = invoice.partyPostalCode?.trim();
+  const line1 = invoice.consigneeAddress?.trim() || invoice.partyAddress?.trim();
+  const city = invoice.consigneeCity?.trim() || invoice.partyCity?.trim();
+  const state = invoice.consigneeState?.trim() || invoice.partyState?.trim();
+  const pin = invoice.consigneePostalCode?.trim() || invoice.partyPostalCode?.trim();
   const cityState = [city, state].filter(Boolean).join(", ");
   const line2 = [cityState, pin].filter(Boolean).join(" ").trim();
 
@@ -43,6 +43,7 @@ export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
   const summaryTitle = getInvoiceTypeCreateCopy(invoice.invoiceType).summaryTitle;
   const bill = getInvoiceBillSummary(invoice);
   const partyAddressText = formatPartyAddressLines(invoice);
+  const addressLabel = invoice.addressRoleLabel || "Party address";
 
   const showLineDiscount = bill.lineDiscountTotal > EPS;
   const showInvoiceDiscount = bill.invoiceDiscount > EPS;
@@ -75,7 +76,7 @@ export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
           {partyAddressText ? (
             <div className={cn("space-y-2", invoice.notes ? "border-t pt-4" : "")}>
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Party address
+                {addressLabel}
               </p>
               <div className="whitespace-pre-line rounded-md border bg-muted/15 px-3 py-2.5 text-sm leading-relaxed text-foreground">
                 {partyAddressText}

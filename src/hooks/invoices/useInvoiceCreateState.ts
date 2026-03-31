@@ -30,12 +30,12 @@ import {
   useStockEntriesByIds,
 } from "@/hooks/use-items";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useParties } from "@/hooks/use-parties";
+import { useParties, usePartyConsignees } from "@/hooks/use-parties";
 import { getInvoiceTypeCreateCopy, INVOICE_TYPE_OPTIONS, isSalesFamily } from "@/lib/invoice";
 import { formatCurrency } from "@/lib/utils";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import { isServiceType, type Item, type StockEntry } from "@/types/item";
-import type { Party } from "@/types/party";
+import type { Party, PartyConsignee } from "@/types/party";
 import type { InvoiceItem, InvoiceType } from "@/types/invoice";
 
 /** Whole paise — avoids float drift on invoice totals and round-off sign bugs. */
@@ -109,6 +109,7 @@ export function useInvoiceCreateState(
   const hasHydratedEditInvoice = useRef(false);
 
   const [party, setParty] = useState<Party | null>(null);
+  const [selectedConsigneeId, setSelectedConsigneeId] = useState<number | null>(null);
   const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState("");
   const [notes, setNotes] = useState("");
@@ -135,9 +136,16 @@ export function useInvoiceCreateState(
     INVOICE_TYPE_OPTIONS.find((o) => o.type === invoiceType) ?? INVOICE_TYPE_OPTIONS[0];
 
   const { data: partiesData } = useParties({ type: partyType, includeInactive: false });
+  const { data: consigneesData, isPending: isConsigneesLoading } = usePartyConsignees(party?.id, {
+    enabled: !!party?.id,
+  });
   const parties = useMemo(
     () => (partiesData?.parties ?? []).filter((p) => p.isActive),
     [partiesData],
+  );
+  const consignees = useMemo<PartyConsignee[]>(
+    () => (consigneesData ?? []).filter((c) => c.partyId === party?.id),
+    [consigneesData, party?.id],
   );
 
   /** Only while the batch popover is open; avoids /items + /stock-entries on every keystroke site-wide. */
@@ -413,6 +421,7 @@ export function useInvoiceCreateState(
       updatedAt: sourceInvoice.updatedAt,
     };
     setParty(partyFromList ?? fallbackParty);
+    setSelectedConsigneeId(sourceInvoice.partyConsigneeId ?? null);
 
     const prefilledLines: InvoiceLineDraft[] = [];
 
@@ -531,6 +540,7 @@ export function useInvoiceCreateState(
       updatedAt: editingDraftInvoice.updatedAt,
     };
     setParty(partyFromList ?? fallbackParty);
+    setSelectedConsigneeId(editingDraftInvoice.partyConsigneeId ?? null);
 
     setInvoiceDate(editingDraftInvoice.invoiceDate.slice(0, 10));
     setDueDate(editingDraftInvoice.dueDate?.slice(0, 10) ?? "");
@@ -998,6 +1008,7 @@ export function useInvoiceCreateState(
       if (editInvoiceId) {
         const body: UpdateInvoiceRequest = {
           partyId: party.id,
+          consigneeId: selectedConsigneeId,
           invoiceType,
           invoiceDate,
           dueDate: dueDate.trim() === "" ? null : dueDate,
@@ -1015,6 +1026,7 @@ export function useInvoiceCreateState(
 
       const created = await createInvoice.mutateAsync({
         partyId: party.id,
+        consigneeId: selectedConsigneeId,
         invoiceType,
         invoiceDate,
         dueDate: dueDate || undefined,
@@ -1053,6 +1065,7 @@ export function useInvoiceCreateState(
     summary,
     pageMeta,
     router,
+    selectedConsigneeId,
   ]);
 
   useEffect(() => {
@@ -1078,7 +1091,13 @@ export function useInvoiceCreateState(
 
   const handlePartyCreated = useCallback((createdParty: Party) => {
     setParty(createdParty);
+    setSelectedConsigneeId(null);
     setPendingPartyName("");
+  }, []);
+
+  const handlePartyChange = useCallback((nextParty: Party | null) => {
+    setParty(nextParty);
+    setSelectedConsigneeId(null);
   }, []);
 
   const handleAddItemClick = useCallback(() => {
@@ -1095,7 +1114,11 @@ export function useInvoiceCreateState(
   return {
     // Form state
     party,
-    setParty,
+    setParty: handlePartyChange,
+    selectedConsigneeId,
+    setSelectedConsigneeId,
+    consignees,
+    isConsigneesLoading,
     invoiceDate,
     setInvoiceDate,
     dueDate,
@@ -1162,6 +1185,9 @@ export function useInvoiceCreateState(
     nextInvoiceNumber,
     isNextInvoiceNumberPending,
     createCopy: getInvoiceTypeCreateCopy(invoiceType),
+    addressRoleLabel:
+      editingDraftInvoice?.addressRoleLabel ??
+      (partyType === "CUSTOMER" ? "Delivery Address" : "Vendor Address"),
     stockEntriesError,
     createInvoice,
     isEditMode: Boolean(editInvoiceId),

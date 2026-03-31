@@ -14,6 +14,10 @@ import type {
   PartyAdvancePaymentRequest,
   PartyAdvanceReceiptResult,
   PartyType,
+  PartyConsignee,
+  PartyConsigneesListResponse,
+  CreatePartyConsigneeRequest,
+  UpdatePartyConsigneeRequest,
 } from "@/types/party";
 
 export function useParties(
@@ -30,15 +34,23 @@ export function useParties(
 ) {
   const { type, includeInactive, search, limit, offset } = params;
   const enabled = options?.enabled ?? true;
+  const normalizedSearch = search?.trim() || undefined;
+  const normalizedLimit = limit != null ? Math.min(200, limit) : undefined;
 
   return useQuery({
-    queryKey: queryKeys.parties.list({ type, includeInactive, search, limit, offset }),
+    queryKey: queryKeys.parties.list({
+      type,
+      includeInactive,
+      search: normalizedSearch,
+      limit: normalizedLimit,
+      offset,
+    }),
     queryFn: async () => {
       const qs = buildQueryString({
         type,
         includeInactive: includeInactive ? "true" : undefined,
-        search: search?.trim() || undefined,
-        limit: limit != null ? Math.min(200, limit) : undefined,
+        search: normalizedSearch,
+        limit: normalizedLimit,
         offset,
       });
       const res = await api.get<PartyListResponse>(`/parties${qs ? `?${qs}` : ""}`);
@@ -51,14 +63,84 @@ export function useParties(
   });
 }
 
-export function useParty(id: number | undefined) {
+export function useParty(id: number | undefined, options?: { enabled?: boolean }) {
+  const extraEnabled = options?.enabled;
   return useQuery({
     queryKey: queryKeys.parties.detail(id),
     queryFn: async () => {
       const res = await api.get<Party>(`/parties/${id}`);
       return res.data;
     },
-    enabled: !!id,
+    enabled: !!id && (extraEnabled ?? true),
+  });
+}
+
+/** GET /parties/:partyId/consignees — for a lightweight addresses list without full party. */
+export function usePartyConsignees(partyId: number | undefined, options?: { enabled?: boolean }) {
+  const extraEnabled = options?.enabled;
+  return useQuery({
+    queryKey: queryKeys.parties.consignees(partyId),
+    queryFn: async () => {
+      const res = await api.get<PartyConsigneesListResponse>(`/parties/${partyId}/consignees`);
+      return res.data.consignees;
+    },
+    enabled: !!partyId && (extraEnabled ?? true),
+  });
+}
+
+export function useCreatePartyConsignee(partyId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreatePartyConsigneeRequest) => {
+      const res = await api.post<PartyConsignee>(`/parties/${partyId}/consignees`, data);
+      return res.data;
+    },
+    onSuccess: () => {
+      invalidateQueryKeys(qc, [
+        queryKeys.parties.detail(partyId),
+        queryKeys.parties.consignees(partyId),
+      ]);
+    },
+  });
+}
+
+export function useUpdatePartyConsignee(partyId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      consigneeId,
+      data,
+    }: {
+      consigneeId: number;
+      data: UpdatePartyConsigneeRequest;
+    }) => {
+      const res = await api.put<PartyConsignee>(
+        `/parties/${partyId}/consignees/${consigneeId}`,
+        data,
+      );
+      return res.data;
+    },
+    onSuccess: () => {
+      invalidateQueryKeys(qc, [
+        queryKeys.parties.detail(partyId),
+        queryKeys.parties.consignees(partyId),
+      ]);
+    },
+  });
+}
+
+export function useDeletePartyConsignee(partyId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (consigneeId: number) => {
+      await api.delete(`/parties/${partyId}/consignees/${consigneeId}`);
+    },
+    onSuccess: () => {
+      invalidateQueryKeys(qc, [
+        queryKeys.parties.detail(partyId),
+        queryKeys.parties.consignees(partyId),
+      ]);
+    },
   });
 }
 

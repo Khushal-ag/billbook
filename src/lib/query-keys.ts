@@ -111,6 +111,7 @@ export const queryKeys = {
     }) =>
       ["parties", args.type, args.includeInactive, args.search, args.limit, args.offset] as const,
     detail: (id: number | undefined) => ["party", id] as const,
+    consignees: (partyId: number | undefined) => ["party-consignees", partyId] as const,
     ledger: (partyId: number | undefined) => ["party-ledger", partyId] as const,
     balance: (partyId: number | undefined) => ["party-balance", partyId] as const,
     statement: (

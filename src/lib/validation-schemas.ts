@@ -11,6 +11,13 @@ export const priceString = z
   .optional()
   .or(z.literal(""));
 
+// Signed price/amount validation (e.g., "-10.00", "0.00", "123.45")
+export const signedPriceString = z
+  .string()
+  .regex(/^$|^-?[0-9]+(\.[0-9]{1,2})?$/, "Invalid price/amount")
+  .optional()
+  .or(z.literal(""));
+
 // Required price/amount validation (does not allow empty)
 export const requiredPriceString = z
   .string()

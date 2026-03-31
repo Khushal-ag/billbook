@@ -33,10 +33,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { Party } from "@/types/party";
-import { gstinString, optionalEmail, priceString, optionalString } from "@/lib/validation-schemas";
+import {
+  gstinString,
+  optionalEmail,
+  optionalString,
+  signedPriceString,
+} from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import { capitaliseWords } from "@/lib/utils";
 import { fetchPostalOffice } from "@/lib/pincode";
+import { PartyConsigneesSection } from "@/components/parties/PartyConsigneesSection";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Name is required"),
@@ -55,7 +61,7 @@ const schema = z.object({
   city: optionalString,
   state: optionalString,
   postalCode: optionalString,
-  openingBalance: priceString,
+  openingBalance: signedPriceString,
   isActive: z.boolean().default(true),
 });
 
@@ -101,7 +107,12 @@ export default function PartyDialog({
 
   const partyType = watch("type");
   const isPartyActive = watch("isActive");
-  const partyLabel = partyType === "SUPPLIER" ? "vendor" : "customer";
+  const partyMeta =
+    partyType === "SUPPLIER"
+      ? { label: "vendor", title: "Vendor" }
+      : { label: "customer", title: "Customer" };
+  const partyLabel = partyMeta.label;
+  const partyLabelTitle = partyMeta.title;
   const postalCode = watch("postalCode");
   const pincodeInitialMountRef = useRef(true);
 
@@ -187,19 +198,23 @@ export default function PartyDialog({
     try {
       if (isEdit) {
         await updateMutation.mutateAsync(payload);
-        showSuccessToast("Party updated");
+        showSuccessToast(`${partyLabelTitle} updated`);
       } else {
         const created = await createMutation.mutateAsync(payload);
-        showSuccessToast("Party created");
+        showSuccessToast(`${partyLabelTitle} created`);
         onSuccess?.(created);
       }
       onOpenChange(false);
     } catch (err) {
-      showErrorToast(err, isEdit ? "Failed to update party" : "Failed to create party");
+      showErrorToast(
+        err,
+        isEdit ? `Failed to update ${partyLabel}` : `Failed to create ${partyLabel}`,
+      );
     }
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
+  const isSaving = isSubmitting || isPending;
 
   const handleStatusChange = (value: string) => {
     if (value === "active") {
@@ -222,17 +237,9 @@ export default function PartyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>
-            {typeLocked
-              ? isEdit
-                ? `Edit ${defaultType === "CUSTOMER" ? "Customer" : "Vendor"}`
-                : `New ${defaultType === "CUSTOMER" ? "Customer" : "Vendor"}`
-              : isEdit
-                ? "Edit Party"
-                : "New Party"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? `Edit ${partyLabelTitle}` : `New ${partyLabelTitle}`}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className={typeLocked ? "space-y-2" : "grid grid-cols-2 gap-4"}>
@@ -324,6 +331,10 @@ export default function PartyDialog({
             </div>
           </div>
 
+          {isEdit && party?.id ? (
+            <PartyConsigneesSection partyId={party.id} partyType={partyType} enabled={open} />
+          ) : null}
+
           <div className="border-t pt-3">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <Label className="text-sm font-medium">Status</Label>
@@ -331,7 +342,7 @@ export default function PartyDialog({
                 value={isPartyActive ? "active" : "inactive"}
                 onValueChange={handleStatusChange}
                 className="flex items-center gap-6"
-                aria-label="Party status"
+                aria-label={`${partyLabelTitle} status`}
               >
                 <div className="flex items-center gap-2">
                   <RadioGroupItem id="status-active" value="active" />
@@ -353,9 +364,15 @@ export default function PartyDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEdit ? "Save" : "Create"}
+            <Button type="submit" disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSaving
+                ? isEdit
+                  ? "Saving..."
+                  : `Creating ${partyLabelTitle}...`
+                : isEdit
+                  ? "Save"
+                  : `Create ${partyLabelTitle}`}
             </Button>
           </DialogFooter>
         </form>

@@ -2,6 +2,43 @@ import type { ReceiptSummary } from "./receipt";
 
 export type PartyType = "CUSTOMER" | "SUPPLIER";
 
+/** Extra delivery location for a party (GET list endpoints omit this array). */
+export interface PartyConsignee {
+  id: number;
+  partyId: number;
+  label: string | null;
+  consigneeName: string;
+  phone: string | null;
+  email: string | null;
+  address: string;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+  isDefault: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PartyConsigneesListResponse {
+  consignees: PartyConsignee[];
+}
+
+export interface CreatePartyConsigneeRequest {
+  consigneeName: string;
+  address: string;
+  label?: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  isDefault?: boolean;
+  sortOrder?: number;
+}
+
+export type UpdatePartyConsigneeRequest = Partial<CreatePartyConsigneeRequest>;
+
 export interface Party {
   id: number;
   businessId: number;
@@ -22,6 +59,8 @@ export interface Party {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Present on GET /parties/:id only */
+  consignees?: PartyConsignee[];
 }
 
 export interface CreatePartyRequest {
