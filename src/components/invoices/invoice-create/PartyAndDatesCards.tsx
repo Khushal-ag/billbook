@@ -90,23 +90,33 @@ export function PartyAndDatesCards({
           <div className="space-y-2">
             <Label>{addressRoleLabel}</Label>
             <Select
-              value={selectedConsigneeId == null ? "__PRIMARY__" : String(selectedConsigneeId)}
+              value={
+                party
+                  ? selectedConsigneeId == null
+                    ? "__PRIMARY__"
+                    : String(selectedConsigneeId)
+                  : undefined
+              }
               onValueChange={(value) =>
                 onConsigneeChange(value === "__PRIMARY__" ? null : Number(value))
               }
               disabled={!party || isConsigneesLoading}
             >
-              <SelectTrigger>
-                {party ? (
-                  <div className="flex min-w-0 flex-col text-left leading-tight">
-                    <span className="truncate">{selectedTitle}</span>
-                    {selectedAddressLine ? (
-                      <span className="truncate text-xs opacity-80">{selectedAddressLine}</span>
-                    ) : null}
-                  </div>
-                ) : (
-                  <SelectValue placeholder="Select party first" />
-                )}
+              <SelectTrigger className="h-auto min-h-10 items-start py-2 [&>span]:line-clamp-none">
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5 text-left leading-tight">
+                  {party ? (
+                    <>
+                      <span className="truncate text-sm font-medium">{selectedTitle}</span>
+                      {selectedAddressLine ? (
+                        <span className="truncate text-xs text-muted-foreground">
+                          {selectedAddressLine}
+                        </span>
+                      ) : null}
+                    </>
+                  ) : (
+                    <SelectValue placeholder="Select party first" />
+                  )}
+                </div>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="__PRIMARY__">

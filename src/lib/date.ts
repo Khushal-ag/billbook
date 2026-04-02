@@ -19,6 +19,14 @@ export function toISODateString(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/** Add calendar days to a YYYY-MM-DD string (local date). */
+export function addCalendarDaysToIsoDate(isoDate: string, days: number): string | null {
+  const d = parseISODateString(isoDate);
+  if (!d) return null;
+  const next = new Date(d.getFullYear(), d.getMonth(), d.getDate() + days);
+  return toISODateString(next);
+}
+
 /**
  * Format ISO date string for display. Returns empty string if invalid.
  * @param value - YYYY-MM-DD string
