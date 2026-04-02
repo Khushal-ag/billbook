@@ -1,63 +1,106 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { IndianRupee, TrendingUp, TrendingDown, FileText } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { IndianRupee, Landmark, Scale, FileText } from "lucide-react";
+import { formatCurrency, formatSignedCurrency } from "@/lib/utils";
 import { HeroCard } from "./dashboard-utils";
 import type { DashboardData } from "@/types/dashboard";
 
 interface DashboardHeroSectionProps {
   greeting: string;
-  totalPaid: number;
   dashboard: DashboardData;
 }
 
-export function DashboardHeroSection({
-  greeting,
-  totalPaid,
-  dashboard,
-}: DashboardHeroSectionProps) {
+function netOutstandingAmount(d: DashboardData): number {
+  const n = d.netOutstanding ?? d.totalOutstanding;
+  return typeof n === "number" ? n : Number(n) || 0;
+}
+
+export function DashboardHeroSection({ greeting, dashboard }: DashboardHeroSectionProps) {
+  const netRevenue = dashboard.totalRevenueNet ?? dashboard.totalRevenue;
+  const gross = dashboard.totalInvoicedGross;
+  const credited = dashboard.totalCredited ?? 0;
+  const ledgerPaid = dashboard.totalPaidFromLedger ?? dashboard.totalPaid;
+  const invoiceFieldPaid = dashboard.totalPaidFromInvoiceField;
+  const outstanding = netOutstandingAmount(dashboard);
+  const showPaymentReconcile =
+    typeof invoiceFieldPaid === "number" && Math.abs(ledgerPaid - invoiceFieldPaid) > 0.01;
+
+  let revenueSubtitle: string | undefined;
+  if (credited > 0 && gross != null) {
+    revenueSubtitle = `Gross ${formatCurrency(gross)} · Credits ${formatCurrency(credited)}`;
+  } else if (gross != null && Math.abs(gross - netRevenue) > 0.01) {
+    revenueSubtitle = `Gross ${formatCurrency(gross)}`;
+  }
+
+  const paymentHint = showPaymentReconcile
+    ? `Ledger includes all party payment credits (advances, suppliers, etc.). On final sale invoices only, paid amount recorded is ${formatCurrency(invoiceFieldPaid!)}.`
+    : "Sum of party-ledger payment credits for this business — includes advances and other payments, not only sale invoices.";
+
+  const outstandingHint =
+    outstanding < 0
+      ? "Negative net means balance in favour of parties (e.g. advances or prepayments), not overdue customer debt."
+      : "Positive net is what customers owe you on the ledger, net of advances.";
+
   return (
     <section className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 p-6 sm:p-8">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Dashboard</p>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Business overview</h1>
-          <p className="text-sm text-muted-foreground">{greeting}</p>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Sales dashboard</h1>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            <span>{greeting}</span>
+            <span className="text-muted-foreground/40" aria-hidden>
+              ·
+            </span>
+            <Link
+              href="/invoices/purchases"
+              className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Purchases →
+            </Link>
+          </div>
         </div>
-        <Button asChild size="lg" className="h-11 rounded-full px-6">
+        <Button asChild size="lg" className="h-11 shrink-0 rounded-full px-6">
           <Link href="/invoices?action=new">
-            <span className="mr-1">+</span> New Invoice
+            <span className="mr-1">+</span> New sale invoice
           </Link>
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <HeroCard
-          title="Gross Invoiced"
-          value={formatCurrency(dashboard.totalInvoicedGross ?? dashboard.totalRevenue)}
-          subtitle={`Net: ${formatCurrency(dashboard.totalRevenueNet ?? dashboard.totalRevenue)}`}
+          title="Net sales revenue"
+          value={formatCurrency(netRevenue)}
+          subtitle={revenueSubtitle}
           icon={<IndianRupee className="h-5 w-5" />}
           trend={(dashboard.revenueByMonth ?? []).length > 1 ? "up" : undefined}
           href="/reports"
         />
         <HeroCard
-          title="Total Paid"
-          value={formatCurrency(totalPaid)}
-          icon={<TrendingUp className="h-5 w-5" />}
+          title="Payments (ledger)"
+          value={formatCurrency(ledgerPaid)}
+          subtitle={
+            showPaymentReconcile ? `Invoices: ${formatCurrency(invoiceFieldPaid!)}` : undefined
+          }
+          titleHint={paymentHint}
+          icon={<Landmark className="h-5 w-5" />}
           variant="success"
         />
         <HeroCard
-          title="Outstanding"
-          value={formatCurrency(dashboard.netOutstanding ?? String(dashboard.totalOutstanding))}
-          icon={<TrendingDown className="h-5 w-5" />}
-          variant={
-            Number(dashboard.netOutstanding ?? dashboard.totalOutstanding) > 0
-              ? "warning"
-              : "default"
+          title="Net outstanding (ledger)"
+          value={outstanding < 0 ? formatSignedCurrency(outstanding) : formatCurrency(outstanding)}
+          subtitle={
+            outstanding < 0
+              ? "Party credit balance"
+              : outstanding > 0
+                ? "Net receivable"
+                : undefined
           }
+          titleHint={outstanding !== 0 ? outstandingHint : undefined}
+          icon={<Scale className="h-5 w-5" />}
+          variant={outstanding > 0 ? "warning" : "default"}
         />
         <HeroCard
-          title="Invoices"
+          title="Sale documents"
           value={String(dashboard.totalInvoices)}
           subtitle={`${dashboard.totalItems ?? 0} items · ${dashboard.totalParties ?? 0} parties`}
           icon={<FileText className="h-5 w-5" />}

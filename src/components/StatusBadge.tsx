@@ -9,6 +9,8 @@ const statusStyles: Record<string, string> = {
   FINAL: "bg-status-final-bg text-status-final border-transparent",
   CANCELLED: "bg-status-cancelled-bg text-status-cancelled border-transparent",
   PAID: "bg-status-paid-bg text-status-paid border-transparent",
+  PARTIAL: "bg-status-pending-bg text-status-pending border-transparent",
+  UNPAID: "bg-status-overdue-bg text-status-overdue border-transparent",
   PENDING: "bg-status-pending-bg text-status-pending border-transparent",
   OVERDUE: "bg-status-overdue-bg text-status-overdue border-transparent",
 };

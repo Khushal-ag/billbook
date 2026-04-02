@@ -13,7 +13,7 @@ export const INVOICE_CANCEL_PRESET_REASONS = [
 
 export const INVOICE_CANCEL_OTHER_ID = "other" as const;
 
-export const CANCEL_INVOICE_REASON_MIN = 3;
+const CANCEL_INVOICE_REASON_MIN = 3;
 export const CANCEL_INVOICE_REASON_MAX = 2000;
 
 export function validateCancelInvoiceReason(reason: string): string | null {

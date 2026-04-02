@@ -15,7 +15,12 @@ export default function ErrorBanner({
 }: ErrorBannerProps) {
   if (!error) return null;
 
-  const message = error instanceof Error ? error.message : fallbackMessage;
+  const message =
+    error instanceof ApiClientError && error.status === 401
+      ? "Your session expired. Please sign in again."
+      : error instanceof Error
+        ? error.message
+        : fallbackMessage;
   const requestId = error instanceof ApiClientError ? error.requestId : undefined;
 
   return (

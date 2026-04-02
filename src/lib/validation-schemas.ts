@@ -4,13 +4,6 @@ import { z } from "zod";
  * Common validation schemas for reuse across forms
  */
 
-// Price/amount validation (e.g., "0.00", "123.45")
-export const priceString = z
-  .string()
-  .regex(/^$|^[0-9]+(\.[0-9]{1,2})?$/, "Invalid price/amount")
-  .optional()
-  .or(z.literal(""));
-
 // Signed price/amount validation (e.g., "-10.00", "0.00", "123.45")
 export const signedPriceString = z
   .string()
@@ -29,15 +22,6 @@ export const percentString = z
   .regex(/^$|^\d+(\.\d{1,2})?$/, "Invalid percentage")
   .optional()
   .or(z.literal(""));
-
-// Quantity validation (can be negative for stock adjustments)
-export const quantityString = (allowNegative = false) =>
-  z
-    .string()
-    .regex(
-      allowNegative ? /^-?\d+(\.\d{1,2})?$/ : /^\d+(\.\d{1,2})?$/,
-      `Enter a valid quantity${allowNegative ? " (can be negative)" : ""}`,
-    );
 
 // Optional string field (can be empty)
 export const optionalString = z.string().optional().or(z.literal(""));
@@ -67,6 +51,3 @@ export const panString = z
   .regex(/^$|^[A-Z]{5}[0-9]{4}[A-Z]$/, "Invalid PAN format")
   .optional()
   .or(z.literal(""));
-
-// Date string (ISO format YYYY-MM-DD)
-export const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format");

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
+import { ApiClientError } from "@/api/error";
 import { invalidateQueryKeys } from "@/lib/query";
 import { queryKeys } from "@/lib/query-keys";
 import { normalizeBusinessProfile, normalizeDashboard } from "@/lib/mappers/business";
@@ -12,6 +13,10 @@ export function useDashboard() {
     queryFn: async () => {
       const res = await api.get<DashboardData>("/business/dashboard");
       return normalizeDashboard(res.data as unknown as Record<string, unknown>);
+    },
+    retry: (failureCount, err) => {
+      if (err instanceof ApiClientError && err.status === 401) return false;
+      return failureCount < 2;
     },
   });
 }

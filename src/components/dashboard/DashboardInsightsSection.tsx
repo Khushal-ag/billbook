@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useIsSimpleMode } from "@/hooks/use-simple-mode";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
-import { CHART_COLORS, type PaymentStatusItem } from "@/lib/dashboard";
+import { CHART_COLORS, type PaymentStatusItem, type InvoiceStatusItem } from "@/lib/dashboard";
 import { formatCurrency } from "@/lib/utils";
 import type { RevenueByMonth } from "@/types/dashboard";
 
@@ -19,6 +19,8 @@ interface DashboardInsightsSectionProps {
   revenueByMonth: RevenueByMonth[];
   paymentStatusData: PaymentStatusItem[];
   totalPaymentAmount: number;
+  invoiceStatusData: InvoiceStatusItem[];
+  totalInvoiceStatusAmount: number;
 }
 
 const CustomPaymentTooltip = ({
@@ -67,6 +69,8 @@ export function DashboardInsightsSection({
   revenueByMonth,
   paymentStatusData,
   totalPaymentAmount,
+  invoiceStatusData,
+  totalInvoiceStatusAmount,
 }: DashboardInsightsSectionProps) {
   const isSimpleMode = useIsSimpleMode();
 
@@ -76,7 +80,10 @@ export function DashboardInsightsSection({
       <section className="space-y-4">
         <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">
           <CardHeader className="pb-4">
-            <CardTitle className="text-base font-semibold">Payment Overview</CardTitle>
+            <CardTitle className="text-base font-semibold">Sale invoice payment status</CardTitle>
+            <p className="text-xs font-normal text-muted-foreground">
+              Final sale invoices only — status from recorded paid amount vs total.
+            </p>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex flex-col items-center gap-6">
@@ -130,7 +137,7 @@ export function DashboardInsightsSection({
                 <div className="flex flex-col items-center gap-1.5">
                   <p className="text-xs font-medium text-muted-foreground">No payment data yet</p>
                   <p className="text-[11px] text-muted-foreground/80">
-                    Payment breakdown will appear once you have invoices.
+                    Appears when you have final sale invoices to analyse.
                   </p>
                 </div>
               )}
@@ -148,7 +155,12 @@ export function DashboardInsightsSection({
         <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm lg:col-span-2">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">Revenue Trend</CardTitle>
+              <div>
+                <CardTitle className="text-base font-semibold">Sales revenue by month</CardTitle>
+                <p className="mt-1 text-xs font-normal text-muted-foreground">
+                  Sale invoices and sale returns — not purchases.
+                </p>
+              </div>
               <Link href="/reports" className="text-xs text-muted-foreground hover:text-foreground">
                 View reports →
               </Link>
@@ -189,7 +201,7 @@ export function DashboardInsightsSection({
             </ChartContainer>
             {revenueByMonth.length === 0 && (
               <p className="mt-2 text-center text-xs text-muted-foreground">
-                No revenue data this period. Create invoices to see trends here.
+                No sales revenue in the chart window yet. Record sale invoices to see trends.
               </p>
             )}
           </CardContent>
@@ -197,7 +209,10 @@ export function DashboardInsightsSection({
 
         <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">
           <CardHeader className="pb-4">
-            <CardTitle className="text-base font-semibold">Payment Status</CardTitle>
+            <CardTitle className="text-base font-semibold">Sale invoice payment status</CardTitle>
+            <p className="text-xs font-normal text-muted-foreground">
+              Final sale invoices — from paid amount vs total (not ledger allocation).
+            </p>
           </CardHeader>
           <CardContent className="pt-0">
             <div className="flex flex-col items-center gap-4">
@@ -255,7 +270,7 @@ export function DashboardInsightsSection({
                 <div className="w-full space-y-1 text-center">
                   <p className="text-xs font-medium text-muted-foreground">No payment data yet</p>
                   <p className="text-[11px] text-muted-foreground/80">
-                    Payment breakdown will appear once you have invoices.
+                    Appears when you have final sale invoices to analyse.
                   </p>
                 </div>
               )}
@@ -263,6 +278,53 @@ export function DashboardInsightsSection({
           </CardContent>
         </Card>
       </div>
+
+      <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base font-semibold">Sale document status</CardTitle>
+          <p className="text-xs font-normal text-muted-foreground">
+            Counts and amounts for sale invoices and sale returns (draft / final / cancelled, etc.).
+          </p>
+        </CardHeader>
+        <CardContent className="pt-0">
+          {invoiceStatusData.length > 0 ? (
+            <div className="space-y-4">
+              {invoiceStatusData.map((item) => {
+                const pct = totalInvoiceStatusAmount
+                  ? Math.round((item.value / totalInvoiceStatusAmount) * 100)
+                  : 0;
+                return (
+                  <div key={item.name} className="space-y-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span className="font-medium">{item.name}</span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {item.count} doc{item.count !== 1 ? "s" : ""} · {formatCurrency(item.value)}{" "}
+                        · {pct}%
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-muted/80">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${Math.min(100, Math.max(pct, item.value > 0 ? 4 : 0))}%`,
+                          backgroundColor: item.fill,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-muted/60 py-10 text-center">
+              <p className="text-sm text-muted-foreground">No sale documents to show yet.</p>
+              <p className="mt-1 text-xs text-muted-foreground/80">
+                Create a sale invoice to see draft and final breakdown here.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </section>
   );
 }

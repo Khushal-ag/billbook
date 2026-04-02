@@ -9,10 +9,19 @@ interface DashboardQuickStatsSectionProps {
 }
 
 export function DashboardQuickStatsSection({ dashboard }: DashboardQuickStatsSectionProps) {
+  const receivables = dashboard.totalReceivables ?? 0;
+  const advanceBalance = dashboard.totalAdvanceBalance ?? 0;
+
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold">Business snapshot</h2>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-base font-semibold">Catalog & ledger snapshot</h2>
+          <p className="text-xs text-muted-foreground">
+            Items and parties are active catalog counts. Balances are from the party ledger (all
+            activity), not sale-only.
+          </p>
+        </div>
         <Link href="/reports" className="text-xs text-muted-foreground hover:text-foreground">
           View analytics →
         </Link>
@@ -24,24 +33,16 @@ export function DashboardQuickStatsSection({ dashboard }: DashboardQuickStatsSec
         <QuickStat label="Parties" value={dashboard.totalParties} href="/parties">
           <Users className="h-4 w-4 text-muted-foreground" />
         </QuickStat>
-        {dashboard.totalReceivables != null && (
-          <QuickStat
-            label="Receivables"
-            value={formatCurrency(dashboard.totalReceivables)}
-            variant="warning"
-          >
-            <TrendingDown className="h-4 w-4" />
-          </QuickStat>
-        )}
-        {dashboard.totalAdvanceBalance != null && (
-          <QuickStat
-            label="Advance"
-            value={formatCurrency(dashboard.totalAdvanceBalance)}
-            variant="success"
-          >
-            <TrendingUp className="h-4 w-4" />
-          </QuickStat>
-        )}
+        <QuickStat label="Receivables" value={formatCurrency(receivables)} variant="warning">
+          <TrendingDown className="h-4 w-4" />
+        </QuickStat>
+        <QuickStat
+          label="Advances (owed to parties)"
+          value={formatCurrency(advanceBalance)}
+          variant="success"
+        >
+          <TrendingUp className="h-4 w-4" />
+        </QuickStat>
       </div>
     </section>
   );

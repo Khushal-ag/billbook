@@ -27,7 +27,7 @@ export function DashboardHighlightsSection({
         <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">Top Items</CardTitle>
+              <CardTitle className="text-base font-semibold">Top items (sales)</CardTitle>
               <Link href="/items" className="text-xs text-muted-foreground hover:text-foreground">
                 View all →
               </Link>
@@ -46,7 +46,9 @@ export function DashboardHighlightsSection({
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{item.itemName}</p>
-                      <p className="text-xs text-muted-foreground">{item.totalQuantity} sold</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.totalQuantity} net qty (sales − returns)
+                      </p>
                     </div>
                     <p className="text-sm font-medium tabular-nums">
                       {formatCurrency(item.totalRevenue)}
@@ -61,7 +63,7 @@ export function DashboardHighlightsSection({
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">No items yet</p>
                     <p className="text-xs text-muted-foreground/90">
-                      Add items and sell them to see top performers here.
+                      Add items and record sale invoices to see top performers here.
                     </p>
                   </div>
                   <Link href="/items" className="text-xs font-medium text-primary hover:underline">
@@ -76,7 +78,7 @@ export function DashboardHighlightsSection({
         <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">Top Customers</CardTitle>
+              <CardTitle className="text-base font-semibold">Top customers (sales)</CardTitle>
               <Link href="/parties" className="text-xs text-muted-foreground hover:text-foreground">
                 View all →
               </Link>
@@ -112,7 +114,7 @@ export function DashboardHighlightsSection({
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-muted-foreground">No customers yet</p>
                     <p className="text-xs text-muted-foreground/90">
-                      Create parties and invoices to see top customers here.
+                      Create parties and sale-side invoices to see top customers here.
                     </p>
                   </div>
                   <Link

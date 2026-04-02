@@ -1,75 +1,31 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
-import { useMemo } from "react";
-import ErrorBanner from "@/components/ErrorBanner";
-import SubscriptionSkeleton from "@/components/skeletons/SubscriptionSkeleton";
-import { CurrentPlanCard, PlansGrid } from "@/components/subscription/SubscriptionSections";
-import { usePermissions } from "@/hooks/use-permissions";
-import { useSubscription, usePlans, useSubscribePlan } from "@/hooks/use-subscription";
-import type { SubscriptionPlan } from "@/types/subscription";
 
+/**
+ * Subscription billing is not implemented yet. This page is static — no `/subscriptions/*` API calls.
+ * When the feature ships, wire `useSubscription` / `usePlans` here and remove this placeholder.
+ */
 export default function Subscription() {
-  const { isOwner } = usePermissions();
-
-  const { data: subscription, isPending: subPending, error: subscriptionError } = useSubscription();
-  const { data: plansData, isPending: plansPending, error: plansError } = usePlans();
-  const subscribeMutation = useSubscribePlan();
-
-  const plans = useMemo(() => plansData?.plans ?? [], [plansData?.plans]);
-
-  const currentPlan: SubscriptionPlan | undefined = useMemo(
-    () => plans.find((p) => p.id === subscription?.planId),
-    [plans, subscription?.planId],
-  );
-
-  if (subPending || plansPending) {
-    return <SubscriptionSkeleton />;
-  }
-
   return (
     <div className="page-container animate-fade-in">
-      <ErrorBanner
-        error={subscriptionError ?? plansError}
-        fallbackMessage="Failed to load subscription"
-      />
-      <div className="relative overflow-hidden">
-        <div className="pointer-events-none select-none blur-md">
-          <div className="page-header">
-            <h1 className="page-title">Subscription</h1>
-            <p className="page-description">Manage your plan and usage</p>
-          </div>
+      <div className="page-header">
+        <h1 className="page-title">Subscription</h1>
+        <p className="page-description">Manage your plan and usage</p>
+      </div>
 
-          {subscription && (
-            <CurrentPlanCard subscription={subscription} currentPlan={currentPlan} />
-          )}
-
-          {plans.length > 0 && (
-            <PlansGrid
-              plans={plans}
-              currentPlanId={subscription?.planId}
-              isOwner={isOwner}
-              isSubscribing={subscribeMutation.isPending}
-              onSubscribe={(planId) => subscribeMutation.mutate(planId)}
-            />
-          )}
+      <div className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-dashed bg-muted/30 px-6 py-16">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+          <Sparkles className="h-7 w-7 text-primary" />
         </div>
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/70 backdrop-blur-md">
-          <div className="flex flex-col items-center gap-4 rounded-2xl border bg-card/95 px-8 py-10 shadow-lg">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-              <Sparkles className="h-7 w-7 text-primary" />
-            </div>
-            <div className="space-y-1.5 text-center">
-              <h2 className="text-2xl font-semibold tracking-tight">Coming soon</h2>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                Subscription management will be available here shortly.
-              </p>
-            </div>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-              We&apos;re working on it
-            </span>
-          </div>
-        </div>
+        <h2 className="mt-6 text-2xl font-semibold tracking-tight">Coming soon</h2>
+        <p className="mt-2 max-w-sm text-center text-sm text-muted-foreground">
+          Subscription management isn&apos;t available yet. We&apos;ll notify you when you can
+          choose a plan here.
+        </p>
+        <span className="mt-6 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+          We&apos;re working on it
+        </span>
       </div>
     </div>
   );

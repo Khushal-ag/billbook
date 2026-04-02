@@ -5,13 +5,7 @@ export {
   useCreateUnit,
   type UnitsResponse,
 } from "./use-item-catalog";
-export {
-  useItems,
-  useItem,
-  useCreateItem,
-  useUpdateItem,
-  useSetItemActive,
-} from "./use-items-core";
+export { useItems, useItem, useCreateItem, useUpdateItem } from "./use-items-core";
 export {
   useStockEntries,
   useStockEntry,
@@ -22,4 +16,4 @@ export {
   useAdjustStock,
   useItemLedger,
 } from "./use-stock";
-export { getStockEntryById, normalizeItem, normalizeStockEntry } from "@/lib/item-api";
+export { getStockEntryById } from "@/lib/item-api";

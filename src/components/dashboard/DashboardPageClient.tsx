@@ -9,7 +9,7 @@ import {
   DashboardHighlightsSection,
   DashboardRecentInvoicesSection,
 } from "@/components/dashboard/DashboardSections";
-import { buildPaymentStatusData, EMPTY_DASHBOARD } from "@/lib/dashboard";
+import { buildPaymentStatusData, buildInvoiceStatusData, EMPTY_DASHBOARD } from "@/lib/dashboard";
 import { useDashboard } from "@/hooks/use-business";
 
 export default function DashboardPageClient() {
@@ -27,20 +27,23 @@ export default function DashboardPageClient() {
   const { data: paymentStatusData, total: totalPaymentAmount } = buildPaymentStatusData(
     data.paymentStatusBreakdown,
   );
-
-  const totalPaid = data.totalPaidFromInvoiceField ?? data.totalPaid ?? 0;
+  const { data: invoiceStatusData, total: totalInvoiceStatusAmount } = buildInvoiceStatusData(
+    data.invoiceStatusBreakdown,
+  );
 
   return (
     <div className="page-container animate-fade-in">
       <ErrorBanner error={error} fallbackMessage="Failed to load dashboard data." />
 
       <div className="space-y-10">
-        <DashboardHeroSection greeting={greeting} totalPaid={totalPaid} dashboard={data} />
+        <DashboardHeroSection greeting={greeting} dashboard={data} />
         <DashboardQuickStatsSection dashboard={data} />
         <DashboardInsightsSection
           revenueByMonth={data.revenueByMonth ?? []}
           paymentStatusData={paymentStatusData}
           totalPaymentAmount={totalPaymentAmount}
+          invoiceStatusData={invoiceStatusData}
+          totalInvoiceStatusAmount={totalInvoiceStatusAmount}
         />
         <DashboardHighlightsSection
           topItems={data.topItems ?? []}

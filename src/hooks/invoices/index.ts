@@ -1,5 +1,4 @@
 export type { RecordPaymentResult } from "@/lib/invoice-api-helpers";
-export { parseRecordPaymentResponse } from "@/lib/invoice-api-helpers";
 export type { UseNextInvoiceNumberOptions } from "./use-invoice-queries";
 export {
   useNextInvoiceNumber,
@@ -10,7 +9,6 @@ export {
 } from "./use-invoice-queries";
 export {
   useCreateInvoice,
-  useUpdateInvoice,
   useUpdateInvoiceById,
   useFinalizeInvoice,
   useCancelInvoice,

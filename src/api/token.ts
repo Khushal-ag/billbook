@@ -8,8 +8,6 @@ const REFRESH_TOKEN_KEY = "billbook_refresh_token";
 const COOKIE_ACCESS = AUTH_ACCESS_COOKIE_NAME;
 const COOKIE_REFRESH = AUTH_REFRESH_COOKIE_NAME;
 
-export { AUTH_ACCESS_COOKIE_NAME, AUTH_REFRESH_COOKIE_NAME };
-
 const COOKIE_OPTS = "path=/; SameSite=Lax";
 const ACCESS_MAX_AGE = 60 * 15; // 15 min
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 7; // 7 days

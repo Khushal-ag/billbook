@@ -75,7 +75,7 @@ export function getEntryDateIso(entry: StockEntry): string {
 }
 
 /** Sum of CGST+SGST+IGST %: draft line fields win; if blank, use linked catalog `item` (purchase batch / item master). */
-export function lineGstTotalPercent(line: InvoiceLineDraft): number {
+function lineGstTotalPercent(line: InvoiceLineDraft): number {
   const pick = (draft: string, itemVal: string | null | undefined) =>
     draft.trim() !== "" ? toNum(draft) : toNum(itemVal?.trim() ?? "0");
   const cgst = pick(line.cgstRate, line.item?.cgstRate);

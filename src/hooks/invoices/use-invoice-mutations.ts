@@ -24,19 +24,6 @@ export function useCreateInvoice() {
   });
 }
 
-export function useUpdateInvoice(id: number) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: UpdateInvoiceRequest) => {
-      const res = await api.put<Invoice>(`/invoices/${id}`, data);
-      return res.data;
-    },
-    onSuccess: () => {
-      invalidateQueryKeys(qc, [queryKeys.invoices.root(), queryKeys.invoices.detail(id)]);
-    },
-  });
-}
-
 export function useUpdateInvoiceById() {
   const qc = useQueryClient();
   return useMutation({

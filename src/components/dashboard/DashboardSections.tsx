@@ -4,4 +4,3 @@ export { DashboardQuickStatsSection } from "./DashboardQuickStatsSection";
 export { DashboardInsightsSection } from "./DashboardInsightsSection";
 export { DashboardHighlightsSection } from "./DashboardHighlightsSection";
 export { DashboardRecentInvoicesSection } from "./DashboardRecentInvoicesSection";
-export { CHART_COLORS } from "@/lib/dashboard";

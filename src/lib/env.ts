@@ -33,7 +33,3 @@ export const env = new Proxy({} as Env, {
     return validateEnv()[prop as keyof Env];
   },
 });
-
-export function getEnv(): Env {
-  return validateEnv();
-}

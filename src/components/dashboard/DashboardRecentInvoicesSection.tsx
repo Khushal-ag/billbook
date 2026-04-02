@@ -17,14 +17,24 @@ export function DashboardRecentInvoicesSection({
       <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-semibold">Recent Invoices</CardTitle>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div>
+              <CardTitle className="text-base font-semibold">Recent sale activity</CardTitle>
+              <p className="mt-1 text-xs font-normal text-muted-foreground">
+                Latest sale invoices and sale returns — purchase bills are listed under purchases.
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-col items-end gap-1 text-xs text-muted-foreground sm:flex-row sm:items-center sm:gap-3">
               <span>
-                {recentInvoices.length} invoice{recentInvoices.length === 1 ? "" : "s"}
+                {recentInvoices.length} document{recentInvoices.length === 1 ? "" : "s"}
               </span>
-              <Link href="/invoices" className="hover:text-foreground">
-                View all →
-              </Link>
+              <span className="flex flex-wrap justify-end gap-x-3 gap-y-1">
+                <Link href="/invoices" className="hover:text-foreground">
+                  Sales →
+                </Link>
+                <Link href="/invoices/purchases" className="hover:text-foreground">
+                  Purchases →
+                </Link>
+              </span>
             </div>
           </div>
         </CardHeader>
@@ -33,7 +43,7 @@ export function DashboardRecentInvoicesSection({
             <table
               className="w-full min-w-[280px] text-sm"
               role="table"
-              aria-label="Recent invoices"
+              aria-label="Recent sale documents"
             >
               <thead>
                 <tr className="border-b text-muted-foreground">
@@ -90,10 +100,10 @@ export function DashboardRecentInvoicesSection({
                         </div>
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-muted-foreground">
-                            No invoices yet
+                            No sale documents yet
                           </p>
                           <p className="text-xs text-muted-foreground/90">
-                            Create your first invoice to see it here.
+                            Create a sale invoice to see it here.
                           </p>
                         </div>
                         <Link

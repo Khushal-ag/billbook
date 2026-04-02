@@ -51,6 +51,7 @@ import {
   otherTaxName,
 } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { normalizeMinStockThresholdValue } from "@/lib/item-api";
 import { capitaliseWords } from "@/lib/utils";
 import type { Item, Category, CreateItemRequest, Unit } from "@/types/item";
 
@@ -209,7 +210,7 @@ export default function ItemDialog({
           sacCode: item.sacCode ?? "",
           unit: item.unit ?? "nos",
           description: item.description ?? "",
-          minStockThreshold: item.minStockThreshold ?? "",
+          minStockThreshold: normalizeMinStockThresholdValue(item.minStockThreshold) ?? "",
           isTaxable: item.isTaxable ?? true,
           taxType: (item.taxType ?? "GST") as "GST" | "OTHER",
           cgstRate: item.cgstRate ?? "",
@@ -296,7 +297,9 @@ export default function ItemDialog({
       unit: data.unit,
       description: data.description || null,
       minStockThreshold:
-        data.type === "STOCK" ? (data.minStockThreshold ?? "").trim() || null : null,
+        data.type === "STOCK"
+          ? normalizeMinStockThresholdValue((data.minStockThreshold ?? "").trim() || null)
+          : null,
       isActive: data.isActive,
       isTaxable: data.isTaxable,
       taxType: data.taxType,

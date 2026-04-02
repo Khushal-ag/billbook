@@ -1,4 +1,9 @@
-import type { PaymentStatusBreakdown, DashboardData, DashboardBusiness } from "@/types/dashboard";
+import type {
+  PaymentStatusBreakdown,
+  DashboardData,
+  DashboardBusiness,
+  InvoiceStatusBreakdown,
+} from "@/types/dashboard";
 
 /** Default dashboard shape when API returns no data — keeps dashboard UI visible with empty state. */
 export const EMPTY_DASHBOARD: DashboardData = {
@@ -17,7 +22,10 @@ export const EMPTY_DASHBOARD: DashboardData = {
   recentInvoices: [],
   totalInvoicedGross: 0,
   totalRevenueNet: 0,
+  totalCredited: 0,
   netOutstanding: 0,
+  totalReceivables: 0,
+  totalAdvanceBalance: 0,
 };
 
 export const CHART_COLORS = {
@@ -51,6 +59,35 @@ export function buildPaymentStatusData(breakdown?: PaymentStatusBreakdown[]): {
       value: item.totalAmount,
       count: item.count,
       fill: PAYMENT_COLORS[item.status] ?? CHART_COLORS.quaternary,
+    })) ?? [];
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  return { data, total };
+}
+
+const INVOICE_DOC_STATUS_COLORS: Record<string, string> = {
+  DRAFT: "hsl(var(--chart-2))",
+  FINAL: "hsl(142 76% 36%)",
+  CANCELLED: "hsl(var(--muted-foreground) / 0.5)",
+};
+
+export type InvoiceStatusItem = {
+  name: string;
+  value: number;
+  count: number;
+  fill: string;
+};
+
+/** Sale-side documents only — amounts are totalAmount per status from API. */
+export function buildInvoiceStatusData(breakdown?: InvoiceStatusBreakdown[]): {
+  data: InvoiceStatusItem[];
+  total: number;
+} {
+  const data =
+    breakdown?.map((item) => ({
+      name: item.status,
+      value: item.totalAmount,
+      count: item.count,
+      fill: INVOICE_DOC_STATUS_COLORS[item.status] ?? CHART_COLORS.quaternary,
     })) ?? [];
   const total = data.reduce((sum, item) => sum + item.value, 0);
   return { data, total };

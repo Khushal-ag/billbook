@@ -8,10 +8,22 @@ import type { Item, StockEntry } from "@/types/item";
 
 export const ITEMS_API_BASE = "/items";
 
+/** Min stock is whole units only; API may send decimals like `"10.00"`. */
+export function normalizeMinStockThresholdValue(raw: string | null | undefined): string | null {
+  if (raw == null) return null;
+  const t = String(raw).trim();
+  if (!t) return null;
+  const n = Number(t);
+  if (!Number.isFinite(n) || n < 0) return t;
+  return String(Math.trunc(n));
+}
+
 export function normalizeItem(item: Item): Item {
+  const ms = item.minStockThreshold;
   return {
     ...item,
     type: normalizeItemType(item.type),
+    ...(ms !== undefined ? { minStockThreshold: normalizeMinStockThresholdValue(ms) } : {}),
   };
 }
 

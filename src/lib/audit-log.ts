@@ -33,7 +33,7 @@ function deepEqual(a: unknown, b: unknown): boolean {
 }
 
 /** Human-readable label for API keys (camelCase, snake_case). */
-export function formatAuditFieldLabel(key: string): string {
+function formatAuditFieldLabel(key: string): string {
   const idSuffix = (word: string) => (word.toLowerCase() === "id" ? "ID" : word);
 
   if (key.includes("_")) {
@@ -58,9 +58,7 @@ function toSentenceCase(raw: string): string {
     .join(" ");
 }
 
-export function extractChanges(
-  changes: Record<string, unknown> | null,
-): Record<string, unknown> | null {
+function extractChanges(changes: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!changes) return null;
 
   const actualChanges =
@@ -72,7 +70,7 @@ export function extractChanges(
 }
 
 /** Find the next-older audit entry for the same resource (logs are newest-first). */
-export function getPreviousAuditChanges(
+function getPreviousAuditChanges(
   logs: Array<{
     id: number;
     resourceType: string;
@@ -348,7 +346,7 @@ function formatQuantityHighlight(actualChanges: Record<string, unknown>): string
 }
 
 /** Receipt UPDATE: allocations map invoiceId -> amount (IDs hidden in UI). */
-export function formatReceiptAllocationsValue(value: unknown): string {
+function formatReceiptAllocationsValue(value: unknown): string {
   if (!value || typeof value !== "object" || Array.isArray(value)) return String(value);
   const o = value as Record<string, unknown>;
   const amounts = Object.values(o).map((amt) =>
