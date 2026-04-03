@@ -82,6 +82,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
             onMenuClick={isMobile ? () => setMobileNavOpen(true) : undefined}
             onSidebarToggle={() => setCollapsed((c) => !c)}
             sidebarCollapsed={collapsed}
+            isMobile={isMobile}
           />
         </div>
         <main ref={mainRef} className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">

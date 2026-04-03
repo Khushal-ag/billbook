@@ -16,6 +16,10 @@ export interface InvoiceLineDraft {
   cgstRate: string;
   sgstRate: string;
   igstRate: string;
+  /** Original qty on the source sale invoice (sales return — display / max return qty). */
+  soldQuantity?: string;
+  /** When false, line is excluded from the return document and totals. */
+  selectedForReturn?: boolean;
 }
 
 export interface StockChoice {

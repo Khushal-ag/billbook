@@ -73,7 +73,9 @@ export function useInvoiceCreateState(
   const [discountPercent, setDiscountPercent] = useState("");
   const [roundOffAmount, setRoundOffAmount] = useState("0");
   const [autoRoundOff, setAutoRoundOff] = useState(true);
-  const [lines, setLines] = useState<InvoiceLineDraft[]>(() => [createLine()]);
+  const [lines, setLines] = useState<InvoiceLineDraft[]>(() =>
+    initialType === "SALE_RETURN" ? [] : [createLine()],
+  );
 
   const [addPartyDialogOpen, setAddPartyDialogOpen] = useState(false);
   const [pendingPartyName, setPendingPartyName] = useState("");
@@ -181,8 +183,15 @@ export function useInvoiceCreateState(
     return map;
   }, [items, stockEntries]);
 
-  const draftLine = lines[0] ?? createLine();
-  const addedLines = lines.slice(1);
+  /** Sales return: all rows are return lines (no add-item draft row). */
+  const saleReturnLayout = invoiceType === "SALE_RETURN";
+  const draftLine = saleReturnLayout ? createLine() : (lines[0] ?? createLine());
+  const addedLines = saleReturnLayout ? lines : lines.slice(1);
+
+  const linesForBillSummary = useMemo(() => {
+    if (invoiceType !== "SALE_RETURN") return addedLines;
+    return addedLines.filter((l) => l.selectedForReturn !== false && toNum(l.quantity) > 0);
+  }, [addedLines, invoiceType]);
 
   const usedQtyByEntryId = useMemo(() => {
     const map = new Map<number, number>();
@@ -292,7 +301,7 @@ export function useInvoiceCreateState(
     itemsWithoutStockOptions.length === 0;
 
   const summary = useMemo(() => {
-    const lineBreakup = addedLines.map((line) => getLineAmounts(line));
+    const lineBreakup = linesForBillSummary.map((line) => getLineAmounts(line));
     const subTotal = lineBreakup.reduce((sum, x) => sum + x.gross, 0);
     const lineDiscountTotal = lineBreakup.reduce((sum, x) => sum + x.lineDiscount, 0);
     const taxableTotal = lineBreakup.reduce((sum, x) => sum + x.taxable, 0);
@@ -321,10 +330,12 @@ export function useInvoiceCreateState(
       roundOff,
       grandTotal,
     };
-  }, [addedLines, discountAmount, discountPercent, roundOffAmount, autoRoundOff]);
+  }, [linesForBillSummary, discountAmount, discountPercent, roundOffAmount, autoRoundOff]);
 
   const isLineValid = useCallback(
     (line: InvoiceLineDraft) => {
+      if (invoiceType === "SALE_RETURN" && line.selectedForReturn === false) return true;
+
       const qty = toNum(line.quantity);
       if (!Number.isFinite(qty) || qty <= 0) return false;
 
@@ -336,7 +347,11 @@ export function useInvoiceCreateState(
     [invoiceType],
   );
 
-  const canSubmit = party != null && addedLines.length > 0;
+  const canSubmit =
+    party != null &&
+    (invoiceType === "SALE_RETURN"
+      ? linesForBillSummary.length > 0 && linesForBillSummary.every(isLineValid)
+      : addedLines.length > 0 && addedLines.every(isLineValid));
   const roundOffInputValue = autoRoundOff
     ? Math.abs(summary.roundOff).toFixed(2)
     : roundOffAmount.replace(/^\s*-/, "");
@@ -507,6 +522,8 @@ export function useInvoiceCreateState(
         itemName: extraItemName,
         hsnCode: invoiceItem.hsnCode?.trim() ?? "",
         sacCode: invoiceItem.sacCode?.trim() ?? "",
+        soldQuantity: invoiceItem.quantity,
+        selectedForReturn: true,
         quantity: invoiceItem.quantity,
         unitPrice: invoiceItem.unitPrice || entry.sellingPrice || "",
         discountPercent: invoiceItem.discountPercent ?? "0",
@@ -518,7 +535,7 @@ export function useInvoiceCreateState(
     }
 
     if (prefilledLines.length > 0) {
-      setLines([createLine(), ...prefilledLines]);
+      setLines(invoiceType === "SALE_RETURN" ? prefilledLines : [createLine(), ...prefilledLines]);
     }
 
     if (!notes.trim()) {
@@ -705,6 +722,8 @@ export function useInvoiceCreateState(
         itemName: editExtraItemName,
         hsnCode: invoiceItem.hsnCode?.trim() ?? "",
         sacCode: invoiceItem.sacCode?.trim() ?? "",
+        soldQuantity: undefined,
+        selectedForReturn: true,
         quantity: invoiceItem.quantity,
         unitPrice: invoiceItem.unitPrice || entry.sellingPrice || "",
         discountPercent: invoiceItem.discountPercent ?? "0",
@@ -747,7 +766,11 @@ export function useInvoiceCreateState(
     }
 
     if (prefilledLines.length > 0) {
-      setLines([createLine(), ...prefilledLines]);
+      setLines(
+        editingDraftInvoice.invoiceType === "SALE_RETURN"
+          ? prefilledLines
+          : [createLine(), ...prefilledLines],
+      );
     }
 
     hasHydratedEditInvoice.current = true;
@@ -903,10 +926,22 @@ export function useInvoiceCreateState(
       const line = lines.find((x) => x.id === lineId);
       if (!line) return;
 
-      const newQty = Math.max(0, toNum(quantity));
+      let qtyInput = quantity;
+      if (invoiceType === "SALE_RETURN") {
+        const maxSold = toNum(line.soldQuantity ?? "");
+        if (maxSold > 0 && toNum(quantity) > maxSold) {
+          qtyInput = formatQty(maxSold);
+          showErrorToast(
+            null,
+            "Return quantity cannot exceed quantity sold on the original invoice.",
+          );
+        }
+      }
+
+      const newQty = Math.max(0, toNum(qtyInput));
       const unitPrice = Math.max(0, toNum(line.unitPrice));
       const gross = newQty * unitPrice;
-      const patch: Partial<InvoiceLineDraft> = { quantity };
+      const patch: Partial<InvoiceLineDraft> = { quantity: qtyInput };
 
       if (!isSalesFamily(invoiceType)) {
         if (line.discountPercent.trim() !== "") {
@@ -927,7 +962,10 @@ export function useInvoiceCreateState(
       if (line.discountPercent.trim() !== "") {
         const p = Math.min(100, Math.max(0, toNum(line.discountPercent)));
         const desiredAmount = (gross * p) / 100;
-        const maxForCost = getMaxAllowedDiscountAmount({ ...line, quantity }, stockEntries);
+        const maxForCost = getMaxAllowedDiscountAmount(
+          { ...line, quantity: qtyInput },
+          stockEntries,
+        );
         const cappedAmount = Math.min(desiredAmount, maxForCost, gross);
         patch.discountAmount = cappedAmount.toFixed(2);
         if (cappedAmount + 0.001 < desiredAmount) {
@@ -938,7 +976,10 @@ export function useInvoiceCreateState(
         const oldQty = Math.max(0, toNum(line.quantity));
         const oldAmt = Math.max(0, toNum(line.discountAmount));
         let newAmt = oldQty > 0 ? oldAmt * (newQty / oldQty) : oldAmt;
-        const maxForCost = getMaxAllowedDiscountAmount({ ...line, quantity }, stockEntries);
+        const maxForCost = getMaxAllowedDiscountAmount(
+          { ...line, quantity: qtyInput },
+          stockEntries,
+        );
         newAmt = Math.min(newAmt, gross, maxForCost);
         patch.discountAmount = newAmt.toFixed(2);
         patch.discountPercent = gross > 0 ? ((newAmt / gross) * 100).toFixed(2) : "";
@@ -950,6 +991,8 @@ export function useInvoiceCreateState(
   );
 
   const addCurrentLine = useCallback(async () => {
+    if (invoiceType === "SALE_RETURN") return;
+
     if (!isLineValid(draftLine)) {
       showErrorToast(null, "Complete item entry before adding");
       return;
@@ -1027,15 +1070,22 @@ export function useInvoiceCreateState(
     setStockLineIssues({});
   }, [draftLine, invoiceType, isLineValid, stockEntries, usedQtyByEntryId, updateLine]);
 
-  const removeAddedLine = useCallback((lineId: string) => {
-    setLines((prev) => [prev[0], ...prev.slice(1).filter((line) => line.id !== lineId)]);
-    setStockLineIssues((prev) => {
-      if (!prev[lineId]) return prev;
-      const next = { ...prev };
-      delete next[lineId];
-      return next;
-    });
-  }, []);
+  const removeAddedLine = useCallback(
+    (lineId: string) => {
+      setLines((prev) =>
+        invoiceType === "SALE_RETURN"
+          ? prev.filter((line) => line.id !== lineId)
+          : [prev[0], ...prev.slice(1).filter((line) => line.id !== lineId)],
+      );
+      setStockLineIssues((prev) => {
+        if (!prev[lineId]) return prev;
+        const next = { ...prev };
+        delete next[lineId];
+        return next;
+      });
+    },
+    [invoiceType],
+  );
 
   const validateLiveStockForAddedLines = useCallback(async (): Promise<StockLineIssue[]> => {
     const issues: StockLineIssue[] = [];
@@ -1120,9 +1170,33 @@ export function useInvoiceCreateState(
       return;
     }
 
-    if (addedLines.length === 0 || !addedLines.every(isLineValid)) {
-      showErrorToast(null, "Add at least one valid item row");
+    const linesToSubmit =
+      invoiceType === "SALE_RETURN"
+        ? addedLines.filter((l) => l.selectedForReturn !== false && toNum(l.quantity) > 0)
+        : addedLines;
+
+    if (linesToSubmit.length === 0 || !linesToSubmit.every(isLineValid)) {
+      showErrorToast(
+        null,
+        invoiceType === "SALE_RETURN"
+          ? "Select at least one line and enter a return quantity"
+          : "Add at least one valid item row",
+      );
       return;
+    }
+
+    if (invoiceType === "SALE_RETURN") {
+      for (const line of linesToSubmit) {
+        const sold = toNum(line.soldQuantity ?? "");
+        const ret = toNum(line.quantity);
+        if (sold > 0 && ret > sold + 1e-9) {
+          showErrorToast(
+            null,
+            `Return quantity cannot exceed sold quantity for ${line.item?.name ?? "an item"}.`,
+          );
+          return;
+        }
+      }
     }
 
     if (invoiceType === "SALE_INVOICE") {
@@ -1143,7 +1217,9 @@ export function useInvoiceCreateState(
     }
 
     if (isSalesFamily(invoiceType)) {
-      const invalidCostLine = addedLines.find((line) => getCostFloorViolation(line, stockEntries));
+      const invalidCostLine = linesToSubmit.find((line) =>
+        getCostFloorViolation(line, stockEntries),
+      );
       if (invalidCostLine) {
         const violation = getCostFloorViolation(invalidCostLine, stockEntries);
         showErrorToast(
@@ -1156,7 +1232,7 @@ export function useInvoiceCreateState(
 
     let linePayload: InvoiceItemInput[];
     try {
-      linePayload = addedLines.map((line) => buildInvoiceItemInput(line, invoiceType));
+      linePayload = linesToSubmit.map((line) => buildInvoiceItemInput(line, invoiceType));
     } catch {
       showErrorToast(null, "One or more lines are invalid for this document type");
       return;

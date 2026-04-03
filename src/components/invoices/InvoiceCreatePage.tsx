@@ -147,6 +147,7 @@ export function InvoiceCreatePage({
         }
         summary={
           <InvoiceTotalsSummary
+            variant={initialType === "SALE_RETURN" ? "returnTotal" : "default"}
             summaryTitle={copy.summaryTitle}
             summary={state.summary}
             autoRoundOff={state.autoRoundOff}

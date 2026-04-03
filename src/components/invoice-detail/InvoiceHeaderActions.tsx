@@ -1,6 +1,7 @@
 import { Download, Loader2, Pencil, CreditCard, Send, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsSimpleMode } from "@/hooks/use-simple-mode";
+import { invoiceTypeSupportsReceiptPayment } from "@/lib/invoice";
 import { formatCurrency } from "@/lib/utils";
 import type { InvoiceDetail } from "@/types/invoice";
 
@@ -44,6 +45,7 @@ export function InvoiceHeaderActions({
   onMarkReminder,
 }: InvoiceHeaderActionsProps) {
   const isSimpleMode = useIsSimpleMode();
+  const showRecordPayment = invoiceTypeSupportsReceiptPayment(invoice.invoiceType);
 
   return (
     <div className="flex gap-2">
@@ -65,7 +67,7 @@ export function InvoiceHeaderActions({
         </>
       )}
 
-      {invoice.status === "FINAL" && (
+      {invoice.status === "FINAL" && showRecordPayment && (
         <Button
           variant="outline"
           size="sm"

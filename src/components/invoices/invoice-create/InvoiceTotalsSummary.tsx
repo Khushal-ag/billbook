@@ -20,6 +20,8 @@ interface SummaryShape {
 }
 
 interface InvoiceTotalsSummaryProps {
+  /** `returnTotal`: single prominent return amount (sales return). */
+  variant?: "default" | "returnTotal";
   summaryTitle: string;
   summary: SummaryShape;
   /** When true, round-off is signed (+ up / − down). When false, manual field is always an amount subtracted from the bill. */
@@ -36,6 +38,7 @@ interface InvoiceTotalsSummaryProps {
 }
 
 export function InvoiceTotalsSummary({
+  variant = "default",
   summaryTitle,
   summary,
   autoRoundOff,
@@ -68,47 +71,62 @@ export function InvoiceTotalsSummary({
       ? `Total tax (${taxPercent.toFixed(2)}%)`
       : "Total tax";
 
+  const isReturnTotal = variant === "returnTotal";
+
   return (
     <div className="flex justify-end">
       <div className="w-full max-w-[360px] space-y-2">
-        <div className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
-          Tax is calculated per line on taxable value after item discounts. The % shown is the
-          effective rate on total taxable amount; it is approximate when lines use different tax
-          rates.
-        </div>
+        {!isReturnTotal && (
+          <div className="rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">
+            Tax is calculated per line on taxable value after item discounts. The % shown is the
+            effective rate on total taxable amount; it is approximate when lines use different tax
+            rates.
+          </div>
+        )}
         <Card className="lg:sticky lg:top-4">
           <CardHeader>
             <CardTitle className="text-base">{summaryTitle}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-muted-foreground">Gross amount</span>
-              <span className="tabular-nums">{formatCurrency(subTotal)}</span>
-            </div>
-            {showLineDiscount && (
-              <div className="flex items-center justify-between gap-2 text-muted-foreground">
-                <span>Item discount</span>
-                <span className="tabular-nums">−{formatCurrency(lineDiscountTotal)}</span>
-              </div>
+            {!isReturnTotal && (
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">Gross amount</span>
+                  <span className="tabular-nums">{formatCurrency(subTotal)}</span>
+                </div>
+                {showLineDiscount && (
+                  <div className="flex items-center justify-between gap-2 text-muted-foreground">
+                    <span>Item discount</span>
+                    <span className="tabular-nums">−{formatCurrency(lineDiscountTotal)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-2 border-t border-dashed pt-2">
+                  <span className="font-medium text-foreground">Taxable amount</span>
+                  <span className="font-medium tabular-nums">{formatCurrency(taxableTotal)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">{taxLabel}</span>
+                  <span className="shrink-0 tabular-nums">{formatCurrency(taxTotal)}</span>
+                </div>
+                {showInvoiceDiscount && (
+                  <div className="flex items-center justify-between gap-2 text-muted-foreground">
+                    <span>Invoice discount</span>
+                    <span className="tabular-nums">−{formatCurrency(invoiceDiscount)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-2 border-t border-dashed pt-2 text-muted-foreground">
+                  <span>Subtotal (before round-off)</span>
+                  <span className="tabular-nums">{formatCurrency(subtotalBeforeRoundOff)}</span>
+                </div>
+              </>
             )}
-            <div className="flex items-center justify-between gap-2 border-t border-dashed pt-2">
-              <span className="font-medium text-foreground">Taxable amount</span>
-              <span className="font-medium tabular-nums">{formatCurrency(taxableTotal)}</span>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-muted-foreground">{taxLabel}</span>
-              <span className="shrink-0 tabular-nums">{formatCurrency(taxTotal)}</span>
-            </div>
-            {showInvoiceDiscount && (
-              <div className="flex items-center justify-between gap-2 text-muted-foreground">
-                <span>Invoice discount</span>
-                <span className="tabular-nums">−{formatCurrency(invoiceDiscount)}</span>
-              </div>
+
+            {isReturnTotal && (
+              <p className="text-xs text-muted-foreground">
+                Amount is based on return quantities and the same rates/discounts as on the sale
+                line.
+              </p>
             )}
-            <div className="flex items-center justify-between gap-2 border-t border-dashed pt-2 text-muted-foreground">
-              <span>Subtotal (before round-off)</span>
-              <span className="tabular-nums">{formatCurrency(subtotalBeforeRoundOff)}</span>
-            </div>
 
             <div className="space-y-2 rounded-md border bg-muted/20 p-2">
               <div className="flex items-center gap-2">
@@ -159,7 +177,7 @@ export function InvoiceTotalsSummary({
 
             <div className="my-2 border-t" />
             <div className="flex items-center justify-between text-base font-semibold">
-              <span>Payable Amount</span>
+              <span>{isReturnTotal ? "Total return amount" : "Payable Amount"}</span>
               <span className="tabular-nums">{formatCurrency(grandTotal)}</span>
             </div>
             <Button className="mt-3 w-full" disabled={!canSubmit || isPending} onClick={onCreate}>

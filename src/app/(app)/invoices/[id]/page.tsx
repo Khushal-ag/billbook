@@ -30,7 +30,11 @@ import { useStockEntriesByIds } from "@/hooks/use-items";
 import { useBusinessProfile } from "@/hooks/use-business";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useResourceAuditLogs } from "@/hooks/use-audit-logs";
-import { getInvoiceBalanceDue, INVOICE_TYPE_OPTIONS } from "@/lib/invoice";
+import {
+  getInvoiceBalanceDue,
+  INVOICE_TYPE_OPTIONS,
+  invoiceTypeSupportsReceiptPayment,
+} from "@/lib/invoice";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 import { ApiClientError } from "@/api/error";
 
@@ -211,14 +215,16 @@ export default function InvoiceDetail() {
           {auditData?.logs && <InvoiceAuditHistory logs={auditData.logs} />}
 
           {/* Dialogs */}
-          {invoice.status === "FINAL" && invoiceId && (
-            <PaymentDialog
-              open={paymentOpen}
-              onOpenChange={setPaymentOpen}
-              invoiceId={invoiceId}
-              balanceDue={balanceDue}
-            />
-          )}
+          {invoice.status === "FINAL" &&
+            invoiceId &&
+            invoiceTypeSupportsReceiptPayment(invoice.invoiceType) && (
+              <PaymentDialog
+                open={paymentOpen}
+                onOpenChange={setPaymentOpen}
+                invoiceId={invoiceId}
+                balanceDue={balanceDue}
+              />
+            )}
 
           <CancelInvoiceDialog
             open={cancelConfirm}

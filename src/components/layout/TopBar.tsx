@@ -1,7 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useUIMode } from "@/contexts/UIModeContext";
 import { useSimpleLabel } from "@/hooks/use-simple-mode";
-import { BusinessIdentity } from "@/components/BusinessIdentity";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -14,12 +13,15 @@ interface TopBarProps {
   onMenuClick?: () => void;
   onSidebarToggle?: () => void;
   sidebarCollapsed?: boolean;
+  /** When true, sidebar is not visible as a rail — show business name in the top bar. */
+  isMobile?: boolean;
 }
 
 export default function TopBar({
   onMenuClick,
   onSidebarToggle,
   sidebarCollapsed = false,
+  isMobile = false,
 }: TopBarProps) {
   const { user } = useAuth();
   const { mode, setMode } = useUIMode();
@@ -29,7 +31,11 @@ export default function TopBar({
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "";
   const organizationCode = user?.organizationCode?.trim();
+  const businessName = user?.businessName?.trim();
   const handleOpenProfile = () => router.push("/profile");
+
+  /** Desktop + expanded rail: org code only. Otherwise (mobile or collapsed rail): business name + optional org badge. */
+  const desktopSidebarExpanded = !isMobile && !sidebarCollapsed;
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/70 bg-card px-2 sm:px-3">
@@ -61,17 +67,38 @@ export default function TopBar({
             />
           </Button>
         )}
-        <div className="flex items-center gap-2">
-          <BusinessIdentity
-            name={user?.businessName}
-            logoUrl={user?.businessLogoUrl}
-            size="sm"
-            nameClassName="truncate text-sm font-semibold"
-          />
-          {organizationCode && (
-            <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-              {organizationCode}
-            </Badge>
+        <div className="flex min-w-0 items-center gap-2">
+          {desktopSidebarExpanded ? (
+            organizationCode ? (
+              <Badge variant="secondary" className="px-2 py-0.5 text-xs font-medium">
+                {organizationCode}
+              </Badge>
+            ) : null
+          ) : (
+            <>
+              {businessName ? (
+                <p
+                  className={cn(
+                    "truncate text-sm font-semibold text-foreground",
+                    isMobile
+                      ? "max-w-[min(100%,11rem)] sm:max-w-md"
+                      : "max-w-[min(100%,14rem)] sm:max-w-md lg:max-w-lg",
+                  )}
+                  title={businessName}
+                >
+                  {businessName}
+                </p>
+              ) : organizationCode ? (
+                <Badge variant="secondary" className="px-2 py-0.5 text-xs font-medium">
+                  {organizationCode}
+                </Badge>
+              ) : null}
+              {organizationCode && businessName ? (
+                <Badge variant="secondary" className="shrink-0 px-2 py-0.5 text-xs font-medium">
+                  {organizationCode}
+                </Badge>
+              ) : null}
+            </>
           )}
         </div>
       </div>

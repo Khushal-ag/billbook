@@ -3,11 +3,17 @@
 import { useMemo } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getInvoiceTypeCreateCopy, isSalesFamily } from "@/lib/invoice";
-import { getEntryDateIso, getLineAmounts } from "@/lib/invoice-create";
+import {
+  formatIgstFromCgstSgst,
+  getEntryDateIso,
+  getLineAmounts,
+  toNum,
+} from "@/lib/invoice-create";
 import { formatISODateDisplay } from "@/lib/date";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { InvoiceLineDraft, StockChoice, StockLineIssue } from "@/types/invoice-create";
@@ -81,9 +87,12 @@ export function LineEditorSection({
   qtyAutoAdjusted,
 }: LineEditorSectionProps) {
   const copy = getInvoiceTypeCreateCopy(invoiceType);
+  const isSaleReturn = invoiceType === "SALE_RETURN";
   const purchaseFamilyForm = !isSalesFamily(invoiceType);
   const batchRequired = isSalesFamily(invoiceType);
   const unitPriceEditable = purchaseFamilyForm;
+  const draftGstDerived =
+    purchaseFamilyForm && (draftLine.cgstRate.trim() !== "" || draftLine.sgstRate.trim() !== "");
   const addedLinesTotals = useMemo(() => {
     return addedLines.reduce(
       (acc, line) => {
@@ -127,7 +136,110 @@ export function LineEditorSection({
         )}
       </CardHeader>
       <CardContent className="space-y-3">
-        {purchaseFamilyForm ? (
+        {isSaleReturn ? (
+          addedLines.length === 0 ? (
+            <div className="rounded-lg border border-dashed bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
+              No sale lines loaded. Use <strong>Return</strong> on a sales invoice so items from
+              that bill appear here.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border bg-card">
+              <table className="w-full min-w-[800px] text-sm" aria-label="Sales return lines">
+                <thead className="border-b bg-muted/90">
+                  <tr className="[&_th]:py-2.5 [&_th]:text-xs [&_th]:font-medium">
+                    <th scope="col" className="w-10 pl-3 text-center">
+                      <span className="sr-only">Include</span>
+                    </th>
+                    <th scope="col" className={cn(thLeft, "pl-2")}>
+                      Item
+                    </th>
+                    <th scope="col" className={thLeft}>
+                      HSN/SAC
+                    </th>
+                    <th scope="col" className={thLeft}>
+                      Batch
+                    </th>
+                    <th scope="col" className={thRight}>
+                      Sold qty
+                    </th>
+                    <th scope="col" className={thRight}>
+                      Unit price
+                    </th>
+                    <th scope="col" className={thRight}>
+                      Return qty
+                    </th>
+                    <th scope="col" className={cn(thRight, "pr-4")}>
+                      Amount
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {addedLines.map((line) => {
+                    const selected = line.selectedForReturn !== false;
+                    const lineEntry = stockEntries.find((entry) => entry.id === line.stockEntryId);
+                    const totals = getLineAmounts(line);
+                    const displayName = line.itemName.trim() || line.item?.name?.trim() || "—";
+                    const hsnSac = line.hsnCode.trim()
+                      ? line.hsnCode
+                      : line.sacCode.trim()
+                        ? line.sacCode
+                        : line.item?.hsnCode?.trim()
+                          ? line.item.hsnCode
+                          : line.item?.sacCode?.trim()
+                            ? line.item.sacCode
+                            : "—";
+                    return (
+                      <tr
+                        key={line.id}
+                        className={cn(
+                          "border-b last:border-0",
+                          !selected && "bg-muted/30 text-muted-foreground",
+                        )}
+                      >
+                        <td className="py-2 pl-3 text-center">
+                          <Checkbox
+                            checked={selected}
+                            onCheckedChange={(v) =>
+                              updateLine(line.id, { selectedForReturn: v === true })
+                            }
+                            aria-label={`Include ${displayName} in this return`}
+                          />
+                        </td>
+                        <td className="px-2 py-2.5 font-medium text-foreground">{displayName}</td>
+                        <td className="px-3 py-2.5 text-xs text-muted-foreground">{hsnSac}</td>
+                        <td className="px-3 py-2.5 text-xs">
+                          {lineEntry
+                            ? formatISODateDisplay(getEntryDateIso(lineEntry)) || "No date"
+                            : "—"}
+                        </td>
+                        <td className="px-3 py-2.5 text-right tabular-nums">
+                          {line.soldQuantity?.trim() ? line.soldQuantity : "—"}
+                        </td>
+                        <td className="px-3 py-2.5 text-right tabular-nums">
+                          {formatCurrency(line.unitPrice)}
+                        </td>
+                        <td className="px-3 py-2.5 text-right">
+                          <Input
+                            value={line.quantity}
+                            onChange={(e) => onLineQuantityChange(line.id, e.target.value)}
+                            disabled={!selected}
+                            className="inline-block h-8 w-[4.25rem] px-2 py-1 text-right text-xs tabular-nums"
+                            aria-label={`Return quantity for ${displayName}`}
+                          />
+                        </td>
+                        <td className="px-3 py-2.5 pr-4 text-right font-medium tabular-nums text-foreground">
+                          {selected && toNum(line.quantity) > 0
+                            ? formatCurrency(totals.total)
+                            : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
+        ) : purchaseFamilyForm ? (
           <div className="overflow-x-auto rounded-lg border bg-card">
             <p className="sr-only">
               New line fields scroll horizontally when they do not fit on screen.
@@ -233,7 +345,14 @@ export function LineEditorSection({
                 <Label className={draftLabelClass}>CGST %</Label>
                 <Input
                   value={draftLine.cgstRate}
-                  onChange={(e) => updateLine(draftLine.id, { cgstRate: e.target.value })}
+                  onChange={(e) => {
+                    const cgstRate = e.target.value;
+                    const patch: Partial<InvoiceLineDraft> = { cgstRate };
+                    if (cgstRate.trim() !== "" || draftLine.sgstRate.trim() !== "") {
+                      patch.igstRate = formatIgstFromCgstSgst(cgstRate, draftLine.sgstRate);
+                    }
+                    updateLine(draftLine.id, patch);
+                  }}
                   className="h-9 text-right text-sm tabular-nums"
                 />
               </div>
@@ -241,16 +360,38 @@ export function LineEditorSection({
                 <Label className={draftLabelClass}>SGST %</Label>
                 <Input
                   value={draftLine.sgstRate}
-                  onChange={(e) => updateLine(draftLine.id, { sgstRate: e.target.value })}
+                  onChange={(e) => {
+                    const sgstRate = e.target.value;
+                    const patch: Partial<InvoiceLineDraft> = { sgstRate };
+                    if (draftLine.cgstRate.trim() !== "" || sgstRate.trim() !== "") {
+                      patch.igstRate = formatIgstFromCgstSgst(draftLine.cgstRate, sgstRate);
+                    }
+                    updateLine(draftLine.id, patch);
+                  }}
                   className="h-9 text-right text-sm tabular-nums"
                 />
               </div>
               <div>
                 <Label className={draftLabelClass}>IGST %</Label>
                 <Input
-                  value={draftLine.igstRate}
-                  onChange={(e) => updateLine(draftLine.id, { igstRate: e.target.value })}
-                  className="h-9 text-right text-sm tabular-nums"
+                  value={
+                    draftGstDerived
+                      ? formatIgstFromCgstSgst(draftLine.cgstRate, draftLine.sgstRate)
+                      : draftLine.igstRate
+                  }
+                  title={
+                    draftGstDerived
+                      ? "Computed as CGST % + SGST %"
+                      : "Enter IGST %, or fill CGST and SGST to calculate automatically"
+                  }
+                  readOnly={draftGstDerived}
+                  onChange={(e) =>
+                    !draftGstDerived && updateLine(draftLine.id, { igstRate: e.target.value })
+                  }
+                  className={cn(
+                    "h-9 text-right text-sm tabular-nums",
+                    draftGstDerived && "cursor-default bg-muted/50",
+                  )}
                 />
               </div>
               <div>
@@ -388,7 +529,7 @@ export function LineEditorSection({
           </div>
         )}
 
-        {addedLines.length > 0 && (
+        {!isSaleReturn && addedLines.length > 0 && (
           <div className="data-table-container -mx-1 px-1 sm:mx-0 sm:px-0">
             <table className="w-full min-w-[1000px] text-sm" aria-label="Added invoice items">
               <thead className="sticky top-0 z-10 border-b bg-muted/90 backdrop-blur-sm supports-[backdrop-filter]:bg-muted/75">

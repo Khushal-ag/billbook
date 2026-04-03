@@ -52,7 +52,8 @@ import {
 } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import { normalizeMinStockThresholdValue } from "@/lib/item-api";
-import { capitaliseWords } from "@/lib/utils";
+import { formatIgstFromCgstSgst } from "@/lib/invoice-create";
+import { capitaliseWords, cn } from "@/lib/utils";
 import type { Item, Category, CreateItemRequest, Unit } from "@/types/item";
 
 function defaultUnitForType(type: "STOCK" | "SERVICE"): string {
@@ -189,6 +190,13 @@ export default function ItemDialog({
   });
 
   const productType = watch("type");
+  const cgstRateW = watch("cgstRate");
+  const sgstRateW = watch("sgstRate");
+  const taxTypeW = watch("taxType");
+  const isTaxableW = watch("isTaxable");
+  const gstIgstDerived =
+    isTaxableW && taxTypeW === "GST" && (cgstRateW?.trim() !== "" || sgstRateW?.trim() !== "");
+
   const { data: unitsData, isLoading: unitsLoading } = useUnits(productType);
   const units = useMemo(() => (Array.isArray(unitsData) ? unitsData : []), [unitsData]);
   const createUnitMutation = useCreateUnit();
@@ -256,6 +264,17 @@ export default function ItemDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- omit categories so adding a category does not reset form
   }, [open, item, reset, initialName]);
 
+  // IGST % = CGST % + SGST % whenever the user edits CGST or SGST (GST items).
+  useEffect(() => {
+    if (!open || !isTaxableW || taxTypeW !== "GST") return;
+    const c = (cgstRateW ?? "").trim();
+    const s = (sgstRateW ?? "").trim();
+    if (c === "" && s === "") return;
+    setValue("igstRate", formatIgstFromCgstSgst(cgstRateW ?? "", sgstRateW ?? ""), {
+      shouldValidate: true,
+    });
+  }, [open, isTaxableW, taxTypeW, cgstRateW, sgstRateW, setValue]);
+
   const handleCreateCategory = async (name: string): Promise<Category | null> => {
     try {
       const created = await createCategoryMutation.mutateAsync({
@@ -305,7 +324,11 @@ export default function ItemDialog({
       taxType: data.taxType,
       cgstRate: data.cgstRate || "0",
       sgstRate: data.sgstRate || "0",
-      igstRate: data.igstRate || "0",
+      igstRate:
+        data.taxType === "GST" &&
+        ((data.cgstRate ?? "").trim() !== "" || (data.sgstRate ?? "").trim() !== "")
+          ? formatIgstFromCgstSgst(data.cgstRate ?? "", data.sgstRate ?? "") || "0"
+          : data.igstRate || "0",
       otherTaxName: data.otherTaxName || null,
       otherTaxRate: data.otherTaxRate || "0",
     };
@@ -575,7 +598,16 @@ export default function ItemDialog({
                           <Label className="text-xs">IGST % *</Label>
                           <Input
                             placeholder="e.g. 18"
-                            className="placeholder:opacity-80"
+                            title={
+                              gstIgstDerived
+                                ? "Computed as CGST % + SGST %"
+                                : "Enter IGST %, or fill CGST and SGST to calculate automatically"
+                            }
+                            readOnly={gstIgstDerived}
+                            className={cn(
+                              "placeholder:opacity-80",
+                              gstIgstDerived && "cursor-default bg-muted/50",
+                            )}
                             {...register("igstRate")}
                           />
                           {errors.igstRate && (

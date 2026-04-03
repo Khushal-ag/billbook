@@ -58,6 +58,14 @@ export function isSalesFamily(type: InvoiceType): boolean {
   return type === "SALE_INVOICE" || type === "SALE_RETURN";
 }
 
+/**
+ * Inbound receipts record money received from customers and allocate to invoices.
+ * Returns and purchase-side documents are not paid this way (use outbound / vendor flows).
+ */
+export function invoiceTypeSupportsReceiptPayment(type: InvoiceType): boolean {
+  return type === "SALE_INVOICE";
+}
+
 /** UI copy for the invoice create flow — aligns labels and descriptions with each invoice type. */
 export interface InvoiceTypeCreateCopy {
   /** Page description (create screen). */

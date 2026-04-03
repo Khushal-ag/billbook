@@ -22,7 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import Logo from "@/components/Logo";
+import { BusinessIdentity } from "@/components/BusinessIdentity";
 
 interface NavItem {
   label: string;
@@ -168,16 +168,24 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
         collapsed ? "w-16" : "w-64",
       )}
     >
-      {/* Logo */}
+      {/* Subscriber business (replaces product logo); name moves to top bar when collapsed */}
       <Link
         href="/dashboard"
-        className="flex h-14 shrink-0 items-center px-4 transition-opacity hover:opacity-80"
+        className={cn(
+          "flex h-14 shrink-0 items-center px-4 transition-opacity hover:opacity-80",
+          collapsed && "justify-center px-2",
+          !collapsed && "w-full",
+        )}
         onClick={onNavigate}
+        aria-label="Dashboard"
       >
-        <Logo
-          className="h-8 w-8 shrink-0"
-          showText={!collapsed}
-          textClassName="text-sm font-bold text-sidebar-foreground"
+        <BusinessIdentity
+          name={user?.businessName}
+          logoUrl={user?.businessLogoUrl}
+          size="sm"
+          showName={!collapsed}
+          className={cn("min-w-0", !collapsed && "w-full overflow-hidden")}
+          nameClassName="min-w-0 truncate text-sm font-semibold text-sidebar-foreground"
         />
       </Link>
 
@@ -331,6 +339,12 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
           <LogOut className="h-4 w-4 shrink-0" />
           {!collapsed && <span className="ml-3">Logout</span>}
         </Button>
+
+        {!collapsed && (
+          <p className="px-3 pb-1 pt-2 text-left text-xs leading-snug text-sidebar-foreground/50">
+            Bill Book by Hench
+          </p>
+        )}
       </div>
     </aside>
   );

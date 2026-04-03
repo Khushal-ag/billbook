@@ -55,6 +55,21 @@ export function toNum(v: string | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+/**
+ * IGST % equals CGST % + SGST % for the same slab. Used when the user edits CGST/SGST so IGST
+ * stays in sync; also for payload/display. Empty inputs are treated as 0 when the other side has a value.
+ */
+export function formatIgstFromCgstSgst(cgst: string, sgst: string): string {
+  const c = cgst.trim();
+  const s = sgst.trim();
+  if (c === "" && s === "") return "";
+  const sum = toNum(c === "" ? "0" : cgst) + toNum(s === "" ? "0" : sgst);
+  const rounded = Math.round(sum * 100) / 100;
+  if (!Number.isFinite(rounded)) return "";
+  if (Number.isInteger(rounded)) return String(rounded);
+  return String(rounded);
+}
+
 export function formatQty(v: number): string {
   return Number.isInteger(v) ? String(v) : String(Number(v.toFixed(3)));
 }
@@ -74,14 +89,19 @@ export function getEntryDateIso(entry: StockEntry): string {
   return (entry.createdAt || "").slice(0, 10);
 }
 
-/** Sum of CGST+SGST+IGST %: draft line fields win; if blank, use linked catalog `item` (purchase batch / item master). */
+/**
+ * Effective GST % on a line: CGST+SGST (intra-state components) or IGST alone (inter-state /
+ * legacy rows). IGST is stored as CGST+SGST when both are set — do not add IGST on top or tax doubles.
+ */
 function lineGstTotalPercent(line: InvoiceLineDraft): number {
   const pick = (draft: string, itemVal: string | null | undefined) =>
     draft.trim() !== "" ? toNum(draft) : toNum(itemVal?.trim() ?? "0");
   const cgst = pick(line.cgstRate, line.item?.cgstRate);
   const sgst = pick(line.sgstRate, line.item?.sgstRate);
   const igst = pick(line.igstRate, line.item?.igstRate);
-  return Math.max(0, cgst + sgst + igst);
+  const intra = cgst + sgst;
+  if (intra > 0) return Math.max(0, intra);
+  return Math.max(0, igst);
 }
 
 /** Purchase API `items[]` GST fields: same rules as {@link lineGstTotalPercent}. */
