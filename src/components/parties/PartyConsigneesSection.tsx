@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldError, Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -45,7 +45,7 @@ function consigneeUiLabels(partyType: PartyType) {
       emptyList: "No extra vendor locations yet.",
       addDialogTitle: "Add vendor location",
       editDialogTitle: "Edit vendor location",
-      contactFieldLabel: "Site contact *",
+      contactFieldLabel: "Site contact",
       labelPlaceholder: "e.g. Main warehouse, Branch office",
       defaultCheckbox: "Default vendor location",
       itemAriaPrefix: "vendor location",
@@ -68,7 +68,7 @@ function consigneeUiLabels(partyType: PartyType) {
     emptyList: "No extra delivery addresses yet.",
     addDialogTitle: "Add delivery address",
     editDialogTitle: "Edit delivery address",
-    contactFieldLabel: "Contact at delivery *",
+    contactFieldLabel: "Contact at delivery",
     labelPlaceholder: "e.g. Home, Office",
     defaultCheckbox: "Default delivery address",
     itemAriaPrefix: "delivery address",
@@ -274,11 +274,9 @@ function ConsigneeEditorDialog({
               <Input {...register("label")} placeholder={L.labelPlaceholder} />
             </div>
             <div className="space-y-2">
-              <Label>{L.contactFieldLabel}</Label>
-              <Input {...register("consigneeName")} />
-              {errors.consigneeName && (
-                <p className="text-xs text-destructive">{errors.consigneeName.message}</p>
-              )}
+              <Label required>{L.contactFieldLabel}</Label>
+              <Input {...register("consigneeName")} aria-invalid={!!errors.consigneeName} />
+              {errors.consigneeName && <FieldError>{errors.consigneeName.message}</FieldError>}
             </div>
           </div>
 
@@ -286,7 +284,7 @@ function ConsigneeEditorDialog({
             <div className="space-y-2">
               <Label>Email</Label>
               <Input type="email" {...register("email")} />
-              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+              {errors.email && <FieldError>{errors.email.message}</FieldError>}
             </div>
             <div className="space-y-2">
               <Label>Phone</Label>
@@ -303,7 +301,7 @@ function ConsigneeEditorDialog({
                 autoComplete="tel"
                 maxLength={15}
               />
-              {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
+              {errors.phone && <FieldError>{errors.phone.message}</FieldError>}
             </div>
           </div>
 
@@ -316,9 +314,13 @@ function ConsigneeEditorDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Address *</Label>
-            <Input {...register("address")} placeholder="Street / full line" />
-            {errors.address && <p className="text-xs text-destructive">{errors.address.message}</p>}
+            <Label required>Address</Label>
+            <Input
+              {...register("address")}
+              placeholder="Street / full line"
+              aria-invalid={!!errors.address}
+            />
+            {errors.address && <FieldError>{errors.address.message}</FieldError>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

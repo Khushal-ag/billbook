@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldError, Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -126,7 +126,7 @@ export default function EditStockEntryDialog({
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Selling Price *</Label>
+            <Label required>Selling Price</Label>
             <Input
               type="number"
               min="0"
@@ -170,7 +170,7 @@ export default function EditStockEntryDialog({
           {isStockItem && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Purchase Date *</Label>
+                <Label required>Purchase Date</Label>
                 <Input
                   type="date"
                   value={purchaseDate}
@@ -178,7 +178,7 @@ export default function EditStockEntryDialog({
                 />
               </div>
               <div className="space-y-2">
-                <Label>Purchase Price *</Label>
+                <Label required>Purchase Price</Label>
                 <Input
                   type="number"
                   min="0"
@@ -197,7 +197,7 @@ export default function EditStockEntryDialog({
             </div>
           )}
 
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <FieldError>{error}</FieldError>}
         </div>
 
         <DialogFooter>

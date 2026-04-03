@@ -11,6 +11,8 @@ export interface InvoiceLineDraft {
   sacCode: string;
   quantity: string;
   unitPrice: string;
+  /** Purchase invoice: intended retail/selling rate per unit (optional; sent to API to update stock). */
+  sellingPrice?: string;
   discountPercent: string;
   discountAmount: string;
   cgstRate: string;

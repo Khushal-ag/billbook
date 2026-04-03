@@ -13,7 +13,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldError, Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -140,7 +140,7 @@ export function NewReceiptDialog({ open, onOpenChange }: NewReceiptDialogProps) 
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label>Party *</Label>
+              <Label required>Party</Label>
               <PartyAutocomplete
                 value={party}
                 onValueChange={(p) => {
@@ -157,18 +157,18 @@ export function NewReceiptDialog({ open, onOpenChange }: NewReceiptDialogProps) 
                 }}
                 addLabel="Add customer"
               />
-              {partyError && (
-                <p className="text-xs text-destructive">Select a party to continue.</p>
-              )}
+              {partyError && <FieldError>Select a party to continue.</FieldError>}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Amount *</Label>
-                <Input placeholder="0.00" {...register("totalAmount")} />
-                {errors.totalAmount && (
-                  <p className="text-xs text-destructive">{errors.totalAmount.message}</p>
-                )}
+                <Label required>Amount</Label>
+                <Input
+                  placeholder="0.00"
+                  {...register("totalAmount")}
+                  aria-invalid={!!errors.totalAmount}
+                />
+                {errors.totalAmount && <FieldError>{errors.totalAmount.message}</FieldError>}
               </div>
               <div className="space-y-2">
                 <Label>Payment method</Label>

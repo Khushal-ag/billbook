@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { Controller, useFieldArray, type UseFormReturn } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldError, Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -382,8 +382,8 @@ export function BusinessProfileForm({
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="name">
-                        Business Name <span className="text-destructive">*</span>
+                      <Label htmlFor="name" required>
+                        Business Name
                       </Label>
                       <Input
                         id="name"
@@ -393,9 +393,7 @@ export function BusinessProfileForm({
                         aria-describedby={errors.name ? "name-error" : undefined}
                       />
                       {errors.name && (
-                        <p id="name-error" className="text-xs text-destructive" role="alert">
-                          {errors.name.message}
-                        </p>
+                        <FieldError id="name-error">{errors.name.message}</FieldError>
                       )}
                     </div>
                     <div className="space-y-2">

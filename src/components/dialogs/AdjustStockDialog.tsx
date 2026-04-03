@@ -10,7 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldError, Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
@@ -78,20 +78,27 @@ export default function AdjustStockDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label>Quantity *</Label>
-            <Input placeholder="e.g. 10 or -5" {...register("quantity")} />
-            {errors.quantity && (
-              <p className="text-xs text-destructive">{errors.quantity.message}</p>
-            )}
+            <Label required>Quantity</Label>
+            <Input
+              placeholder="e.g. 10 or -5"
+              {...register("quantity")}
+              aria-invalid={!!errors.quantity}
+            />
+            {errors.quantity && <FieldError>{errors.quantity.message}</FieldError>}
             <p className="text-xs text-muted-foreground">
               Positive to add stock, negative to remove.
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label>Reason *</Label>
-            <Textarea rows={2} placeholder="e.g. Damaged goods" {...register("reason")} />
-            {errors.reason && <p className="text-xs text-destructive">{errors.reason.message}</p>}
+            <Label required>Reason</Label>
+            <Textarea
+              rows={2}
+              placeholder="e.g. Damaged goods"
+              {...register("reason")}
+              aria-invalid={!!errors.reason}
+            />
+            {errors.reason && <FieldError>{errors.reason.message}</FieldError>}
           </div>
 
           <DialogFooter>

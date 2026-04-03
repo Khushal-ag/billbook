@@ -2,7 +2,7 @@ import { Loader2 } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldError, Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -49,9 +49,9 @@ export function AdvancePaymentForm({
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label>Amount *</Label>
-          <Input placeholder="0.00" {...register("amount")} />
-          {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
+          <Label required>Amount</Label>
+          <Input placeholder="0.00" {...register("amount")} aria-invalid={!!errors.amount} />
+          {errors.amount && <FieldError>{errors.amount.message}</FieldError>}
         </div>
         <div className="space-y-2">
           <Label>Payment Method</Label>

@@ -210,6 +210,7 @@ export default function InvoiceDetail() {
           <InvoiceLineItemsTable
             items={invoice.items}
             purchaseDateByStockEntryId={purchaseDateByStockEntryId}
+            invoiceType={invoice.invoiceType}
           />
           <InvoicePaymentsTable payments={invoice.payments} />
           {auditData?.logs && <InvoiceAuditHistory logs={auditData.logs} />}

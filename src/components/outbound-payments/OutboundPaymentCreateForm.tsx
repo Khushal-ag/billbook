@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldError, Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -184,7 +184,7 @@ export function OutboundPaymentCreateForm() {
 
       {category === "SALE_RETURN_REFUND" && (
         <div className="space-y-3">
-          <Label>Sale return invoice *</Label>
+          <Label required>Sale return invoice</Label>
           <Input
             placeholder="Search by number or party…"
             value={returnSearch}
@@ -214,7 +214,7 @@ export function OutboundPaymentCreateForm() {
 
       {category === "PARTY_PAYMENT" && (
         <div className="space-y-2">
-          <Label>Party *</Label>
+          <Label required>Party</Label>
           <PartyAutocomplete
             value={party}
             onValueChange={setParty}
@@ -227,7 +227,7 @@ export function OutboundPaymentCreateForm() {
       {category === "EXPENSE" && (
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2 sm:col-span-2">
-            <Label>Payee name *</Label>
+            <Label required>Payee name</Label>
             <Input
               placeholder="Who received the payment"
               value={expensePayee}
@@ -246,9 +246,9 @@ export function OutboundPaymentCreateForm() {
       )}
 
       <div className="space-y-2">
-        <Label>Amount *</Label>
-        <Input placeholder="0.00" {...register("amount")} />
-        {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
+        <Label required>Amount</Label>
+        <Input placeholder="0.00" {...register("amount")} aria-invalid={!!errors.amount} />
+        {errors.amount && <FieldError>{errors.amount.message}</FieldError>}
       </div>
 
       <div className="space-y-2">

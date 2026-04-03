@@ -27,6 +27,8 @@ export interface Invoice {
   overdueDays?: number;
   dueAmount?: string;
   notes: string | null;
+  /** When API persists it: margin % used when creating purchase invoice lines. */
+  sellingPriceMarginPercent?: string | null;
   storagePath: string | null;
   finalizedAt: string | null;
   createdAt: string;
@@ -68,6 +70,8 @@ export interface InvoiceItem {
   isTaxable?: boolean | null;
   quantity: string;
   unitPrice: string;
+  /** Purchase lines: selling price per unit captured at bill time (when supported by API). */
+  sellingPrice?: string | null;
   discountPercent: string | null;
   discountAmount: string | null;
   lineTotal: string;
@@ -126,17 +130,18 @@ export interface InvoiceCommunicationsSummary {
 }
 
 /**
- * Create/update invoice line — one shape for all invoice types; validation depends on `invoiceType`.
- * Do not send `itemId`. Purchase documents must not send `stockEntryId` (use `itemName` + `unitPrice` + `quantity` + optional tax/HSN/SAC).
+ * Create/update invoice line (`items[]`). Rules are enforced server-side by `invoiceType`.
+ * - Sale (`SALE_*`): send `stockEntryId`; do **not** send `itemId` or `sellingPrice`.
+ * - Purchase (`PURCHASE_*`): do **not** send `stockEntryId`; send `itemName` + rates; optional `itemId` (catalog) and `sellingPrice`.
  */
 export interface InvoiceItemInput {
-  /** Sale-side documents only (`SALE_INVOICE`, `SALE_RETURN`). Omit for purchase flows. */
+  /** Sale-side only (`SALE_INVOICE`, `SALE_RETURN`). Omit for purchase flows. */
   stockEntryId?: number;
   quantity: string;
   unitPrice?: string;
   discountPercent?: string;
   discountAmount?: string;
-  /** Required for purchase flows (`PURCHASE_INVOICE`, `PURCHASE_RETURN`). */
+  /** Purchase flows: line label; required for purchase documents. */
   itemName?: string;
   hsnCode?: string;
   sacCode?: string;
@@ -144,6 +149,14 @@ export interface InvoiceItemInput {
   cgstRate?: string;
   sgstRate?: string;
   igstRate?: string;
+  /**
+   * Purchase only (`PURCHASE_INVOICE`, `PURCHASE_RETURN`): catalog item; use when a stock batch should be created on finalize.
+   */
+  itemId?: number;
+  /**
+   * Purchase only: intended selling rate per unit (excl. line GST), same money rules as `unitPrice`; omit or ≥ 0.
+   */
+  sellingPrice?: string;
 }
 
 export interface CreateInvoiceRequest {
@@ -156,6 +169,8 @@ export interface CreateInvoiceRequest {
   discountAmount?: string;
   discountPercent?: string;
   roundOffAmount?: string;
+  /** Optional; non-negative decimal string; stored on the invoice (purchase invoice UI). */
+  sellingPriceMarginPercent?: string;
   items: InvoiceItemInput[];
 }
 
@@ -171,6 +186,7 @@ export interface UpdateInvoiceRequest {
   discountAmount?: string;
   discountPercent?: string;
   roundOffAmount?: string;
+  sellingPriceMarginPercent?: string;
   items?: InvoiceItemInput[];
 }
 

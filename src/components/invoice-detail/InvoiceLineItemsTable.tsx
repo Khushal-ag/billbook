@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDate, formatQuantity } from "@/lib/utils";
-import type { InvoiceItem } from "@/types/invoice";
+import type { InvoiceItem, InvoiceType } from "@/types/invoice";
 
 interface InvoiceLineItemsTableProps {
   items: InvoiceItem[];
   purchaseDateByStockEntryId?: Record<number, string | undefined>;
+  /** When set, show purchase/selling columns and line GST for vendor bills. */
+  invoiceType?: InvoiceType;
 }
 
 function parseLineMoney(value: string | null | undefined): number {
@@ -12,11 +14,25 @@ function parseLineMoney(value: string | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+function formatGstSlab(item: InvoiceItem): string {
+  const cgst = parseLineMoney(item.cgstRate ?? undefined);
+  const sgst = parseLineMoney(item.sgstRate ?? undefined);
+  const igst = parseLineMoney(item.igstRate ?? undefined);
+  if (cgst > 0 || sgst > 0) {
+    if (cgst > 0 && sgst > 0) return `${cgst}%+${sgst}%`;
+    return `${cgst || sgst}%`;
+  }
+  if (igst > 0) return `IGST ${igst}%`;
+  return "—";
+}
+
 export function InvoiceLineItemsTable({
   items,
   purchaseDateByStockEntryId = {},
+  invoiceType,
 }: InvoiceLineItemsTableProps) {
   const totalLineAmount = items.reduce((sum, item) => sum + parseLineMoney(item.lineTotal), 0);
+  const isPurchaseBill = invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN";
 
   return (
     <Card className="mb-6">
@@ -40,8 +56,18 @@ export function InvoiceLineItemsTable({
                   </th>
                   <th className="px-3 py-3 text-right font-medium text-muted-foreground">Qty</th>
                   <th className="px-3 py-3 text-right font-medium text-muted-foreground">
-                    Unit Price
+                    {isPurchaseBill ? "Purchase ₹" : "Unit price"}
                   </th>
+                  {isPurchaseBill ? (
+                    <th className="px-3 py-3 text-right font-medium text-muted-foreground">
+                      Selling ₹
+                    </th>
+                  ) : null}
+                  {isPurchaseBill ? (
+                    <th className="hidden px-3 py-3 text-right font-medium text-muted-foreground lg:table-cell">
+                      GST %
+                    </th>
+                  ) : null}
                   <th className="hidden px-3 py-3 text-right font-medium text-muted-foreground sm:table-cell">
                     Discount
                   </th>
@@ -74,6 +100,18 @@ export function InvoiceLineItemsTable({
                       <td className="px-3 py-3 text-right tabular-nums">
                         {formatCurrency(item.unitPrice)}
                       </td>
+                      {isPurchaseBill ? (
+                        <td className="px-3 py-3 text-right tabular-nums text-foreground">
+                          {item.sellingPrice != null && String(item.sellingPrice).trim() !== ""
+                            ? formatCurrency(item.sellingPrice)
+                            : "—"}
+                        </td>
+                      ) : null}
+                      {isPurchaseBill ? (
+                        <td className="hidden px-3 py-3 text-right text-xs tabular-nums text-muted-foreground lg:table-cell">
+                          {formatGstSlab(item)}
+                        </td>
+                      ) : null}
                       <td className="hidden px-3 py-3 text-right tabular-nums sm:table-cell">
                         {item.discountPercent && item.discountPercent !== "0"
                           ? `${item.discountPercent}%`
@@ -90,7 +128,10 @@ export function InvoiceLineItemsTable({
               </tbody>
               <tfoot>
                 <tr className="border-t bg-muted/40 font-semibold text-foreground">
-                  <td colSpan={6} className="whitespace-nowrap px-4 py-3 pl-4 text-left">
+                  <td
+                    colSpan={isPurchaseBill ? 8 : 6}
+                    className="whitespace-nowrap px-4 py-3 pl-4 text-left"
+                  >
                     Total
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">

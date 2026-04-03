@@ -2,7 +2,11 @@ import type { ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getInvoiceBillSummary, getInvoiceTypeCreateCopy } from "@/lib/invoice";
 import { cn, formatCurrency, formatDate, formatSignedCurrency, formatTime } from "@/lib/utils";
-import type { InvoiceDetail } from "@/types/invoice";
+import type { InvoiceDetail, InvoiceType } from "@/types/invoice";
+
+function isPurchaseFamily(t: InvoiceType): boolean {
+  return t === "PURCHASE_INVOICE" || t === "PURCHASE_RETURN";
+}
 
 interface InvoiceDetailsCardsProps {
   invoice: InvoiceDetail;
@@ -62,6 +66,23 @@ export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-1 flex-col space-y-4 text-sm">
+          {isPurchaseFamily(invoice.invoiceType) &&
+          invoice.sellingPriceMarginPercent != null &&
+          String(invoice.sellingPriceMarginPercent).trim() !== "" ? (
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Purchase pricing
+              </p>
+              <div className="rounded-md border bg-muted/15 px-3 py-2.5">
+                <DetailRow label="Selling price margin">
+                  <span className="tabular-nums">
+                    {String(invoice.sellingPriceMarginPercent).trim()}%
+                  </span>
+                </DetailRow>
+              </div>
+            </div>
+          ) : null}
+
           {invoice.notes ? (
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">

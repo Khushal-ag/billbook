@@ -10,7 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldError, Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -244,9 +244,9 @@ export default function PartyDialog({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className={typeLocked ? "space-y-2" : "grid grid-cols-2 gap-4"}>
             <div className="space-y-2">
-              <Label>Name *</Label>
-              <Input {...register("name")} />
-              {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+              <Label required>Name</Label>
+              <Input {...register("name")} aria-invalid={!!errors.name} />
+              {errors.name && <FieldError>{errors.name.message}</FieldError>}
             </div>
             {!typeLocked && (
               <div className="space-y-2">
@@ -271,11 +271,12 @@ export default function PartyDialog({
             <div className="space-y-2">
               <Label>Email</Label>
               <Input type="email" {...register("email")} />
-              {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+              {errors.email && <FieldError>{errors.email.message}</FieldError>}
             </div>
             <div className="space-y-2">
-              <Label>Phone *</Label>
+              <Label required>Phone</Label>
               <Input
+                aria-invalid={!!errors.phone}
                 {...register("phone", {
                   onChange: (e) => {
                     e.target.value = String(e.target.value ?? "")
@@ -288,7 +289,7 @@ export default function PartyDialog({
                 autoComplete="tel"
                 maxLength={15}
               />
-              {errors.phone && <p className="text-xs text-destructive">{errors.phone.message}</p>}
+              {errors.phone && <FieldError>{errors.phone.message}</FieldError>}
             </div>
           </div>
 
@@ -296,14 +297,12 @@ export default function PartyDialog({
             <div className="space-y-2">
               <Label>GSTIN</Label>
               <Input placeholder="22AAAAA0000A1Z5" {...register("gstin")} />
-              {errors.gstin && <p className="text-xs text-destructive">{errors.gstin.message}</p>}
+              {errors.gstin && <FieldError>{errors.gstin.message}</FieldError>}
             </div>
             <div className="space-y-2">
               <Label>Opening Balance</Label>
               <Input placeholder="0.00" {...register("openingBalance")} />
-              {errors.openingBalance && (
-                <p className="text-xs text-destructive">{errors.openingBalance.message}</p>
-              )}
+              {errors.openingBalance && <FieldError>{errors.openingBalance.message}</FieldError>}
             </div>
           </div>
 

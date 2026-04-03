@@ -58,6 +58,8 @@ interface LineEditorSectionProps {
   stockLineIssues: Record<string, StockLineIssue>;
   focusedIssueLineId: string | null;
   qtyAutoAdjusted: boolean;
+  /** Purchase invoice: updates purchase rate and selling price when margin is set. */
+  onPurchaseUnitPriceChange?: (lineId: string, value: string) => void;
 }
 
 export function LineEditorSection({
@@ -85,14 +87,32 @@ export function LineEditorSection({
   stockLineIssues,
   focusedIssueLineId,
   qtyAutoAdjusted,
+  onPurchaseUnitPriceChange,
 }: LineEditorSectionProps) {
   const copy = getInvoiceTypeCreateCopy(invoiceType);
   const isSaleReturn = invoiceType === "SALE_RETURN";
   const purchaseFamilyForm = !isSalesFamily(invoiceType);
+  /** Purchase bill lines: cost + selling columns. */
+  const isPurchaseCostLine =
+    invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN";
   const batchRequired = isSalesFamily(invoiceType);
   const unitPriceEditable = purchaseFamilyForm;
   const draftGstDerived =
     purchaseFamilyForm && (draftLine.cgstRate.trim() !== "" || draftLine.sgstRate.trim() !== "");
+  const purchaseGridStyle = useMemo(
+    () =>
+      isPurchaseCostLine
+        ? {
+            gridTemplateColumns:
+              "minmax(9.5rem, 1.15fr) minmax(8.5rem, 1.05fr) minmax(3.75rem, 0.36fr) minmax(3.75rem, 0.36fr) minmax(3rem, 0.32fr) minmax(5rem, 0.52fr) minmax(4.25rem, 0.44fr) minmax(3.75rem, 0.42fr) minmax(4.25rem, 0.46fr) minmax(2.85rem, 0.3fr) minmax(2.85rem, 0.3fr) minmax(2.85rem, 0.3fr) minmax(4.5rem, 0.5fr) minmax(4.5rem, 0.5fr) minmax(4.5rem, 0.5fr) auto",
+          }
+        : {
+            gridTemplateColumns:
+              "minmax(9.5rem, 1.15fr) minmax(8.5rem, 1.05fr) minmax(3.75rem, 0.36fr) minmax(3.75rem, 0.36fr) minmax(3rem, 0.32fr) minmax(5rem, 0.52fr) minmax(3.75rem, 0.42fr) minmax(4.25rem, 0.46fr) minmax(2.85rem, 0.3fr) minmax(2.85rem, 0.3fr) minmax(2.85rem, 0.3fr) minmax(4.5rem, 0.5fr) minmax(4.5rem, 0.5fr) minmax(4.5rem, 0.5fr) auto",
+          },
+    [isPurchaseCostLine],
+  );
+
   const addedLinesTotals = useMemo(() => {
     return addedLines.reduce(
       (acc, line) => {
@@ -244,11 +264,10 @@ export function LineEditorSection({
             <p className="sr-only">
               New line fields scroll horizontally when they do not fit on screen.
             </p>
-            <div className="grid w-max min-w-full items-end gap-3 p-3 [grid-template-columns:minmax(9.5rem,1.15fr)_minmax(8.5rem,1.05fr)_minmax(3.75rem,0.36fr)_minmax(3.75rem,0.36fr)_minmax(3rem,0.32fr)_minmax(5rem,0.52fr)_minmax(3.75rem,0.42fr)_minmax(4.25rem,0.46fr)_minmax(2.85rem,0.3fr)_minmax(2.85rem,0.3fr)_minmax(2.85rem,0.3fr)_minmax(4.5rem,0.5fr)_minmax(4.5rem,0.5fr)_minmax(4.5rem,0.5fr)_auto]">
+            <div className="grid w-max min-w-full items-end gap-3 p-3" style={purchaseGridStyle}>
               <div className="min-w-0">
-                <Label className={draftLabelClass}>
-                  {copy.batchLabel}{" "}
-                  {batchRequired ? <span className="text-destructive">*</span> : null}
+                <Label className={draftLabelClass} required={batchRequired}>
+                  {copy.batchLabel}
                 </Label>
                 <StockSearchPopover
                   open={stockSearchOpen}
@@ -268,11 +287,8 @@ export function LineEditorSection({
                 />
               </div>
               <div className="min-w-0">
-                <Label className={draftLabelClass}>
+                <Label className={draftLabelClass} required>
                   Item
-                  {draftLine.itemName.trim() === "" && !draftLine.item?.name?.trim() ? (
-                    <span className="text-destructive"> *</span>
-                  ) : null}
                 </Label>
                 <Input
                   value={draftLine.itemName}
@@ -314,15 +330,30 @@ export function LineEditorSection({
                 />
               </div>
               <div>
-                <Label className={draftLabelClass}>
-                  Unit <span className="text-destructive">*</span>
+                <Label className={draftLabelClass} required>
+                  {isPurchaseCostLine ? "Purchase ₹" : "Unit"}
                 </Label>
                 <Input
                   value={draftLine.unitPrice}
-                  onChange={(e) => updateLine(draftLine.id, { unitPrice: e.target.value })}
+                  onChange={(e) =>
+                    isPurchaseCostLine && onPurchaseUnitPriceChange
+                      ? onPurchaseUnitPriceChange(draftLine.id, e.target.value)
+                      : updateLine(draftLine.id, { unitPrice: e.target.value })
+                  }
                   className="h-9 text-right text-sm tabular-nums"
                 />
               </div>
+              {isPurchaseCostLine ? (
+                <div>
+                  <Label className={draftLabelClass}>Selling ₹</Label>
+                  <Input
+                    value={draftLine.sellingPrice ?? ""}
+                    onChange={(e) => updateLine(draftLine.id, { sellingPrice: e.target.value })}
+                    placeholder="Auto"
+                    className="h-9 text-right text-sm tabular-nums"
+                  />
+                </div>
+              ) : null}
               <div>
                 <Label className={draftLabelClass}>Disc %</Label>
                 <Input
@@ -429,9 +460,8 @@ export function LineEditorSection({
         ) : (
           <div className="grid gap-3 rounded-lg border p-3 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,.65fr)_minmax(0,.95fr)_minmax(0,.85fr)_minmax(0,.85fr)_minmax(0,.95fr)_minmax(0,.95fr)_minmax(0,.95fr)_auto] xl:items-end">
             <div>
-              <Label className={draftLabelClass}>
-                {copy.batchLabel}{" "}
-                {batchRequired ? <span className="text-destructive">*</span> : null}
+              <Label className={draftLabelClass} required={batchRequired}>
+                {copy.batchLabel}
               </Label>
               <StockSearchPopover
                 open={stockSearchOpen}
@@ -531,7 +561,13 @@ export function LineEditorSection({
 
         {!isSaleReturn && addedLines.length > 0 && (
           <div className="data-table-container -mx-1 px-1 sm:mx-0 sm:px-0">
-            <table className="w-full min-w-[1000px] text-sm" aria-label="Added invoice items">
+            <table
+              className={cn(
+                "w-full text-sm",
+                isPurchaseCostLine ? "min-w-[1120px]" : "min-w-[1000px]",
+              )}
+              aria-label="Added invoice items"
+            >
               <thead className="sticky top-0 z-10 border-b bg-muted/90 backdrop-blur-sm supports-[backdrop-filter]:bg-muted/75">
                 <tr className="[&_th]:align-bottom">
                   <th scope="col" className={cn(thLeft, "min-w-[9rem] pl-4")}>
@@ -547,8 +583,13 @@ export function LineEditorSection({
                     Qty
                   </th>
                   <th scope="col" className={thRight}>
-                    Unit price
+                    {isPurchaseCostLine ? "Purchase ₹" : "Unit price"}
                   </th>
+                  {isPurchaseCostLine ? (
+                    <th scope="col" className={thRight}>
+                      Selling ₹
+                    </th>
+                  ) : null}
                   <th scope="col" className={cn(thRight, "min-w-[5.5rem]")}>
                     Discount %
                   </th>
@@ -615,6 +656,11 @@ export function LineEditorSection({
                       <td className="px-3 py-2.5 text-right tabular-nums">
                         {formatCurrency(line.unitPrice)}
                       </td>
+                      {isPurchaseCostLine ? (
+                        <td className="px-3 py-2.5 text-right tabular-nums text-foreground">
+                          {line.sellingPrice?.trim() ? formatCurrency(line.sellingPrice) : "—"}
+                        </td>
+                      ) : null}
                       <td className="px-3 py-2.5 text-right tabular-nums">
                         {line.discountPercent.trim() === "" ? "0" : line.discountPercent}
                       </td>
@@ -662,7 +708,10 @@ export function LineEditorSection({
               </tbody>
               <tfoot>
                 <tr className="border-t bg-muted/40 font-semibold text-foreground">
-                  <td colSpan={6} className="whitespace-nowrap px-3 py-2.5 pl-4 text-left">
+                  <td
+                    colSpan={isPurchaseCostLine ? 7 : 6}
+                    className="whitespace-nowrap px-3 py-2.5 pl-4 text-left"
+                  >
                     Total
                   </td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-muted-foreground">

@@ -100,6 +100,12 @@ export function InvoiceCreatePage({
         onInvoiceDateChange={state.setInvoiceDate}
         dueDate={state.dueDate}
         onDueDateChange={state.setDueDate}
+        sellingPriceMarginPercent={
+          initialType === "PURCHASE_INVOICE" ? state.sellingPriceMarginPercent : undefined
+        }
+        onSellingPriceMarginChange={
+          initialType === "PURCHASE_INVOICE" ? state.handleSellingPriceMarginChange : undefined
+        }
       />
 
       <LineEditorSection
@@ -127,6 +133,11 @@ export function InvoiceCreatePage({
         stockLineIssues={state.stockLineIssues}
         focusedIssueLineId={state.focusedIssueLineId}
         qtyAutoAdjusted={state.qtyAutoAdjusted}
+        onPurchaseUnitPriceChange={
+          initialType === "PURCHASE_INVOICE" || initialType === "PURCHASE_RETURN"
+            ? state.handlePurchaseUnitPriceChange
+            : undefined
+        }
       />
 
       <ResizableNotesSummaryRow

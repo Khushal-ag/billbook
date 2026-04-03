@@ -10,7 +10,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldError, Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -98,7 +98,7 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label>Invoice *</Label>
+            <Label required>Invoice</Label>
             <Select
               value={String(watch("invoiceId"))}
               onValueChange={(v) => setValue("invoiceId", Number(v))}
@@ -122,15 +122,13 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
                 )}
               </SelectContent>
             </Select>
-            {errors.invoiceId && (
-              <p className="text-xs text-destructive">{errors.invoiceId.message}</p>
-            )}
+            {errors.invoiceId && <FieldError>{errors.invoiceId.message}</FieldError>}
           </div>
 
           <div className="space-y-2">
-            <Label>Amount *</Label>
-            <Input placeholder="0.00" {...register("amount")} />
-            {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
+            <Label required>Amount</Label>
+            <Input placeholder="0.00" {...register("amount")} aria-invalid={!!errors.amount} />
+            {errors.amount && <FieldError>{errors.amount.message}</FieldError>}
           </div>
 
           <div className="space-y-2">

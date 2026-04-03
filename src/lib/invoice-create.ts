@@ -42,6 +42,7 @@ export function createLine(): InvoiceLineDraft {
     sacCode: "",
     quantity: "1",
     unitPrice: "",
+    sellingPrice: "",
     discountPercent: "",
     discountAmount: "",
     cgstRate: "0",
@@ -53,6 +54,19 @@ export function createLine(): InvoiceLineDraft {
 export function toNum(v: string | null | undefined): number {
   const n = Number(v ?? "0");
   return Number.isFinite(n) ? n : 0;
+}
+
+/** Selling rate per unit: purchase × (1 + margin%/100). Empty string if purchase rate is invalid. */
+export function sellingPriceFromPurchaseAndMargin(
+  purchaseRate: string,
+  marginPercent: string,
+): string {
+  const rate = Math.max(0, toNum(purchaseRate));
+  if (rate <= 0) return "";
+  const m = Math.max(0, toNum(marginPercent));
+  const sp = rate * (1 + m / 100);
+  if (!Number.isFinite(sp)) return "";
+  return sp.toFixed(2);
 }
 
 /**
@@ -90,18 +104,36 @@ export function getEntryDateIso(entry: StockEntry): string {
 }
 
 /**
- * Effective GST % on a line: CGST+SGST (intra-state components) or IGST alone (inter-state /
- * legacy rows). IGST is stored as CGST+SGST when both are set — do not add IGST on top or tax doubles.
+ * Effective GST % on a line for totals: CGST+SGST (intra) or IGST alone — never sum intra + IGST.
+ *
+ * Draft fields win over item master: if the user clears CGST/SGST and only sets IGST (inter-state),
+ * we must not pull CGST/SGST from the catalog or taxable/tax will be wrong.
  */
 function lineGstTotalPercent(line: InvoiceLineDraft): number {
-  const pick = (draft: string, itemVal: string | null | undefined) =>
-    draft.trim() !== "" ? toNum(draft) : toNum(itemVal?.trim() ?? "0");
-  const cgst = pick(line.cgstRate, line.item?.cgstRate);
-  const sgst = pick(line.sgstRate, line.item?.sgstRate);
-  const igst = pick(line.igstRate, line.item?.igstRate);
-  const intra = cgst + sgst;
-  if (intra > 0) return Math.max(0, intra);
-  return Math.max(0, igst);
+  const cTrim = line.cgstRate.trim();
+  const sTrim = line.sgstRate.trim();
+  const iTrim = line.igstRate.trim();
+
+  const hasExplicitCgst = cTrim !== "";
+  const hasExplicitSgst = sTrim !== "";
+  const hasExplicitIgst = iTrim !== "";
+
+  if (hasExplicitCgst || hasExplicitSgst) {
+    const c = hasExplicitCgst ? toNum(line.cgstRate) : 0;
+    const s = hasExplicitSgst ? toNum(line.sgstRate) : 0;
+    const intra = c + s;
+    if (intra > 0) return Math.max(0, intra);
+  }
+
+  if (hasExplicitIgst) {
+    return Math.max(0, toNum(line.igstRate));
+  }
+
+  const cItem = toNum(line.item?.cgstRate?.trim() ?? "0");
+  const sItem = toNum(line.item?.sgstRate?.trim() ?? "0");
+  const intraItem = cItem + sItem;
+  if (intraItem > 0) return Math.max(0, intraItem);
+  return Math.max(0, toNum(line.item?.igstRate?.trim() ?? "0"));
 }
 
 /** Purchase API `items[]` GST fields: same rules as {@link lineGstTotalPercent}. */

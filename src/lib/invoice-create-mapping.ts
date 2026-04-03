@@ -94,6 +94,15 @@ export function buildInvoiceItemInput(
       discountAmount,
       ...purchaseFamilyTaxFields(line),
     };
+    if (line.item?.id != null) {
+      payload.itemId = line.item.id;
+    }
+    if (
+      (invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN") &&
+      line.sellingPrice?.trim()
+    ) {
+      payload.sellingPrice = line.sellingPrice.trim();
+    }
     if (line.hsnCode.trim()) payload.hsnCode = line.hsnCode.trim();
     else if (line.item?.hsnCode?.trim()) payload.hsnCode = line.item.hsnCode.trim();
     if (line.sacCode.trim()) payload.sacCode = line.sacCode.trim();

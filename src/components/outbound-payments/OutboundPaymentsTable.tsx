@@ -10,6 +10,24 @@ import { OUTBOUND_CATEGORY_LABELS } from "@/constants/outbound-payment";
 import { PAYMENT_METHOD_LABEL } from "@/constants/receipt-ui";
 import type { OutboundPayment } from "@/types/outbound-payment";
 
+/** Prefer directory lookup by id when the API omits or mis-sends `partyName`. */
+function outboundPartyDisplayName(
+  p: OutboundPayment,
+  partyNamesById?: ReadonlyMap<number, string>,
+): string {
+  if (p.category === "EXPENSE") {
+    return p.payeeName?.trim() || "—";
+  }
+  const id = p.partyId;
+  if (id != null) {
+    const fromDirectory = partyNamesById?.get(id);
+    if (fromDirectory?.trim()) return fromDirectory.trim();
+  }
+  const raw = p.partyName?.trim();
+  if (raw) return raw;
+  return id != null ? `Party #${id}` : "—";
+}
+
 interface OutboundPaymentsTableProps {
   payments: OutboundPayment[];
   page: number;
@@ -17,6 +35,8 @@ interface OutboundPaymentsTableProps {
   total: number;
   totalPages: number;
   onPageChange: (p: number) => void;
+  /** Resolve `partyId` → display name when the list API does not return `partyName`. */
+  partyNamesById?: ReadonlyMap<number, string>;
 }
 
 export function OutboundPaymentsTable({
@@ -26,6 +46,7 @@ export function OutboundPaymentsTable({
   total,
   totalPages,
   onPageChange,
+  partyNamesById,
 }: OutboundPaymentsTableProps) {
   return (
     <Card>
@@ -56,13 +77,7 @@ export function OutboundPaymentsTable({
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{formatDate(p.createdAt)}</td>
                   <td className="max-w-[200px] px-4 py-3">
-                    {p.category === "EXPENSE" ? (
-                      <span>{p.payeeName ?? "—"}</span>
-                    ) : (
-                      <span className="truncate">
-                        {p.partyName ?? `Party #${p.partyId ?? "—"}`}
-                      </span>
-                    )}
+                    <span className="truncate">{outboundPartyDisplayName(p, partyNamesById)}</span>
                     {p.invoiceId != null && p.category === "SALE_RETURN_REFUND" && (
                       <div className="mt-0.5 text-xs">
                         <Link

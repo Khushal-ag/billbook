@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldError, Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -407,18 +407,17 @@ export default function ItemDialog({
                 <h3 className="text-sm font-medium text-muted-foreground">Details</h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Name *</Label>
+                    <Label required>Name</Label>
                     <Input
                       className="placeholder:opacity-80"
+                      aria-invalid={!!errors.name}
                       {...register("name")}
                       placeholder="Item or service name"
                     />
-                    {errors.name && (
-                      <p className="text-xs text-destructive">{errors.name.message}</p>
-                    )}
+                    {errors.name && <FieldError>{errors.name.message}</FieldError>}
                   </div>
                   <div className="space-y-2">
-                    <Label>Type *</Label>
+                    <Label required>Type</Label>
                     <Select
                       value={productType}
                       onValueChange={(v) => {
@@ -439,7 +438,7 @@ export default function ItemDialog({
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Category *</Label>
+                  <Label required>Category</Label>
                   <CategoryCombobox
                     value={category}
                     onValueChange={(nextCategory) => {
@@ -454,12 +453,12 @@ export default function ItemDialog({
                     placeholder="Search or add category..."
                   />
                   {showCategoryError && (!category?.id || category.id <= 0) ? (
-                    <p className="text-xs text-destructive">Category is required</p>
+                    <FieldError>Category is required</FieldError>
                   ) : null}
                 </div>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Unit *</Label>
+                    <Label required>Unit</Label>
                     <UnitCombobox
                       type={productType}
                       value={watch("unit") || defaultUnitForType(productType)}
@@ -469,13 +468,11 @@ export default function ItemDialog({
                       onCreateUnit={(value, label) => handleCreateUnit(value, label, productType)}
                       placeholder="Select unit"
                     />
-                    {errors.unit && (
-                      <p className="text-xs text-destructive">{errors.unit.message}</p>
-                    )}
+                    {errors.unit && <FieldError>{errors.unit.message}</FieldError>}
                   </div>
                   {productType === "STOCK" && (
                     <div className="space-y-2">
-                      <Label>Min stock alert *</Label>
+                      <Label required>Min stock alert</Label>
                       <Input
                         className="placeholder:opacity-80"
                         inputMode="numeric"
@@ -490,9 +487,7 @@ export default function ItemDialog({
                         placeholder="e.g. 10"
                       />
                       {errors.minStockThreshold && (
-                        <p className="text-xs text-destructive">
-                          {errors.minStockThreshold.message}
-                        </p>
+                        <FieldError>{errors.minStockThreshold.message}</FieldError>
                       )}
                       <p className="text-xs text-muted-foreground">
                         You'll be notified when quantity drops below this value. Required for stock
@@ -553,7 +548,7 @@ export default function ItemDialog({
                 {watch("isTaxable") && (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label>Tax type *</Label>
+                      <Label required>Tax type</Label>
                       <Select
                         value={watch("taxType")}
                         onValueChange={(v) => setValue("taxType", v as "GST" | "OTHER")}
@@ -566,36 +561,36 @@ export default function ItemDialog({
                           <SelectItem value="OTHER">Other</SelectItem>
                         </SelectContent>
                       </Select>
-                      {errors.taxType && (
-                        <p className="text-xs text-destructive">{errors.taxType.message}</p>
-                      )}
+                      {errors.taxType && <FieldError>{errors.taxType.message}</FieldError>}
                     </div>
                     {watch("taxType") === "GST" ? (
                       <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-2">
-                          <Label className="text-xs">CGST % *</Label>
+                          <Label className="text-xs" required>
+                            CGST %
+                          </Label>
                           <Input
                             placeholder="e.g. 9"
                             className="placeholder:opacity-80"
                             {...register("cgstRate")}
                           />
-                          {errors.cgstRate && (
-                            <p className="text-xs text-destructive">{errors.cgstRate.message}</p>
-                          )}
+                          {errors.cgstRate && <FieldError>{errors.cgstRate.message}</FieldError>}
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs">SGST % *</Label>
+                          <Label className="text-xs" required>
+                            SGST %
+                          </Label>
                           <Input
                             placeholder="e.g. 9"
                             className="placeholder:opacity-80"
                             {...register("sgstRate")}
                           />
-                          {errors.sgstRate && (
-                            <p className="text-xs text-destructive">{errors.sgstRate.message}</p>
-                          )}
+                          {errors.sgstRate && <FieldError>{errors.sgstRate.message}</FieldError>}
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs">IGST % *</Label>
+                          <Label className="text-xs" required>
+                            IGST %
+                          </Label>
                           <Input
                             placeholder="e.g. 18"
                             title={
@@ -610,15 +605,15 @@ export default function ItemDialog({
                             )}
                             {...register("igstRate")}
                           />
-                          {errors.igstRate && (
-                            <p className="text-xs text-destructive">{errors.igstRate.message}</p>
-                          )}
+                          {errors.igstRate && <FieldError>{errors.igstRate.message}</FieldError>}
                         </div>
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label className="text-xs">Other tax name *</Label>
+                          <Label className="text-xs" required>
+                            Other tax name
+                          </Label>
                           <Input
                             className="placeholder:opacity-80"
                             maxLength={100}
@@ -626,22 +621,20 @@ export default function ItemDialog({
                             {...register("otherTaxName")}
                           />
                           {errors.otherTaxName && (
-                            <p className="text-xs text-destructive">
-                              {errors.otherTaxName.message}
-                            </p>
+                            <FieldError>{errors.otherTaxName.message}</FieldError>
                           )}
                         </div>
                         <div className="space-y-2">
-                          <Label className="text-xs">Rate % *</Label>
+                          <Label className="text-xs" required>
+                            Rate %
+                          </Label>
                           <Input
                             placeholder="0"
                             className="placeholder:opacity-80"
                             {...register("otherTaxRate")}
                           />
                           {errors.otherTaxRate && (
-                            <p className="text-xs text-destructive">
-                              {errors.otherTaxRate.message}
-                            </p>
+                            <FieldError>{errors.otherTaxRate.message}</FieldError>
                           )}
                         </div>
                       </div>

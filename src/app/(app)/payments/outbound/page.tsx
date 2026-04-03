@@ -37,11 +37,18 @@ export default function OutboundPaymentsPage() {
     partyId: Number.isFinite(partyId) ? partyId : undefined,
   });
 
-  const { data: partiesData } = useParties({ includeInactive: false, limit: 200 });
+  const { data: partiesData } = useParties({ includeInactive: true, limit: 200 });
   const parties = useMemo(
     () => (partiesData?.parties ?? []).filter((p) => p.isActive),
     [partiesData?.parties],
   );
+  const partyNamesById = useMemo(() => {
+    const m = new Map<number, string>();
+    for (const party of partiesData?.parties ?? []) {
+      m.set(party.id, party.name);
+    }
+    return m;
+  }, [partiesData?.parties]);
 
   const payments = data?.payments ?? [];
   const total = data?.count ?? payments.length;
@@ -132,6 +139,7 @@ export default function OutboundPaymentsPage() {
           total={total}
           totalPages={totalPages}
           onPageChange={setPage}
+          partyNamesById={partyNamesById}
         />
       )}
     </div>

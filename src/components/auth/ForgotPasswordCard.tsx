@@ -7,7 +7,7 @@ import { api } from "@/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldError, Label } from "@/components/ui/label";
 import type {
   PasswordResetOtpResponse,
   PasswordResetVerifyResponse,
@@ -209,47 +209,54 @@ export default function ForgotPasswordCard({ onBackToLogin }: ForgotPasswordCard
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" required>
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
               placeholder="you@company.com"
               disabled={stage !== "request"}
+              aria-invalid={!!errors.email}
               {...register("email")}
             />
-            {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+            {errors.email && <FieldError>{errors.email.message}</FieldError>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="organizationCode">Organization code</Label>
+            <Label htmlFor="organizationCode" required>
+              Organization code
+            </Label>
             <Input
               id="organizationCode"
               placeholder="ABC123"
               disabled={stage !== "request"}
               maxLength={6}
               className="uppercase"
+              aria-invalid={!!errors.organizationCode}
               {...register("organizationCode")}
             />
-            {errors.organizationCode && (
-              <p className="text-xs text-destructive">{errors.organizationCode.message}</p>
-            )}
+            {errors.organizationCode && <FieldError>{errors.organizationCode.message}</FieldError>}
           </div>
 
           {stage === "verify" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="otp">OTP</Label>
+                <Label htmlFor="otp" required>
+                  OTP
+                </Label>
                 <Input
                   id="otp"
                   placeholder="123456"
                   maxLength={6}
+                  aria-invalid={!!errors.otp}
                   ref={(el) => {
                     otpFormRef(el);
                     otpInputRef.current = el;
                   }}
                   {...otpRegisterRest}
                 />
-                {errors.otp && <p className="text-xs text-destructive">{errors.otp.message}</p>}
+                {errors.otp && <FieldError>{errors.otp.message}</FieldError>}
               </div>
               <p className="text-xs text-muted-foreground">OTP expires in 10 minutes.</p>
               <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -281,31 +288,38 @@ export default function ForgotPasswordCard({ onBackToLogin }: ForgotPasswordCard
           {stage === "reset" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="newPassword">New password</Label>
+                <Label htmlFor="newPassword" required>
+                  New password
+                </Label>
                 <Input
                   id="newPassword"
                   type="password"
                   autoComplete="new-password"
                   placeholder="At least 8 characters"
+                  aria-invalid={!!errors.newPassword}
                   ref={(el) => {
                     pwdFormRef(el);
                     passwordInputRef.current = el;
                   }}
                   {...pwdRegisterRest}
                 />
-                {errors.newPassword && (
-                  <p className="text-xs text-destructive">{errors.newPassword.message}</p>
-                )}
+                {errors.newPassword && <FieldError>{errors.newPassword.message}</FieldError>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm password</Label>
+                <Label htmlFor="confirmPassword" required>
+                  Confirm password
+                </Label>
                 <Input
                   id="confirmPassword"
                   type="password"
                   autoComplete="new-password"
                   placeholder="Repeat password"
+                  aria-invalid={!!errors.confirmPassword}
                   {...register("confirmPassword")}
                 />
+                {errors.confirmPassword && (
+                  <FieldError>{errors.confirmPassword.message}</FieldError>
+                )}
               </div>
             </>
           )}

@@ -9,7 +9,7 @@ import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FieldError, Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const loginSchema = z.object({
@@ -161,35 +161,41 @@ export default function LoginCard({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" required>
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
               placeholder="you@company.com"
               disabled={otpRequested}
+              aria-invalid={!!errors.email}
               {...register("email")}
             />
-            {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+            {errors.email && <FieldError>{errors.email.message}</FieldError>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="organizationCode">Organization code</Label>
+            <Label htmlFor="organizationCode" required>
+              Organization code
+            </Label>
             <Input
               id="organizationCode"
               placeholder="ABC123"
               disabled={otpRequested}
               maxLength={6}
               className="uppercase"
+              aria-invalid={!!errors.organizationCode}
               {...register("organizationCode")}
             />
-            {errors.organizationCode && (
-              <p className="text-xs text-destructive">{errors.organizationCode.message}</p>
-            )}
+            {errors.organizationCode && <FieldError>{errors.organizationCode.message}</FieldError>}
           </div>
 
           {!otpRequested && (
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" required>
+                Password
+              </Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -197,6 +203,7 @@ export default function LoginCard({
                   placeholder="Required to receive OTP"
                   autoComplete="current-password"
                   className="pr-9"
+                  aria-invalid={!!errors.password}
                   {...register("password")}
                 />
                 <Button
@@ -214,27 +221,28 @@ export default function LoginCard({
                   )}
                 </Button>
               </div>
-              {errors.password && (
-                <p className="text-xs text-destructive">{errors.password.message}</p>
-              )}
+              {errors.password && <FieldError>{errors.password.message}</FieldError>}
             </div>
           )}
 
           {otpRequested && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="otp">OTP</Label>
+                <Label htmlFor="otp" required>
+                  OTP
+                </Label>
                 <Input
                   id="otp"
                   placeholder="123456"
                   maxLength={6}
+                  aria-invalid={!!errors.otp}
                   ref={(el) => {
                     otpFormRef(el);
                     otpInputRef.current = el;
                   }}
                   {...otpRegisterRest}
                 />
-                {errors.otp && <p className="text-xs text-destructive">{errors.otp.message}</p>}
+                {errors.otp && <FieldError>{errors.otp.message}</FieldError>}
               </div>
 
               <p className="text-xs text-muted-foreground">OTP expires in 10 minutes.</p>

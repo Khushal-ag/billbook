@@ -13,6 +13,7 @@ import {
   getMaxAllowedDiscountPercent,
   isDraftLineServiceItem,
   itemFromStockEntry,
+  sellingPriceFromPurchaseAndMargin,
   toNum,
 } from "@/lib/invoice-create";
 import type { InvoiceLineDraft, StockChoice, StockLineIssue } from "@/types/invoice-create";
@@ -68,6 +69,8 @@ export function useInvoiceCreateState(
   const [selectedConsigneeId, setSelectedConsigneeId] = useState<number | null>(null);
   const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState("");
+  /** PURCHASE_INVOICE: margin on cost for default selling price per line. */
+  const [sellingPriceMarginPercent, setSellingPriceMarginPercent] = useState("");
   const [notes, setNotes] = useState("");
   const [discountAmount, setDiscountAmount] = useState("");
   const [discountPercent, setDiscountPercent] = useState("");
@@ -425,13 +428,14 @@ export function useInvoiceCreateState(
     if (sourceInvoice.invoiceType === "PURCHASE_INVOICE") {
       const purchasePrefill: InvoiceLineDraft[] = sourceInvoice.items.map((invoiceItem) => ({
         id: crypto.randomUUID(),
-        item: null,
+        item: invoiceItem.itemId != null ? (itemMap.get(invoiceItem.itemId) ?? null) : null,
         stockEntryId: null,
         itemName: invoiceItem.itemName?.trim() ?? "",
         hsnCode: invoiceItem.hsnCode?.trim() ?? "",
         sacCode: invoiceItem.sacCode?.trim() ?? "",
         quantity: invoiceItem.quantity,
         unitPrice: invoiceItem.unitPrice ?? "",
+        sellingPrice: invoiceItem.sellingPrice?.trim() ?? "",
         discountPercent: invoiceItem.discountPercent ?? "0",
         discountAmount: invoiceItem.discountAmount ?? "",
         cgstRate: pickInvoiceTaxRate(invoiceItem.cgstRate, "0"),
@@ -583,6 +587,7 @@ export function useInvoiceCreateState(
 
     setInvoiceDate(editingDraftInvoice.invoiceDate.slice(0, 10));
     setDueDate(editingDraftInvoice.dueDate?.slice(0, 10) ?? "");
+    setSellingPriceMarginPercent(editingDraftInvoice.sellingPriceMarginPercent?.trim() ?? "");
     setNotes(editingDraftInvoice.notes ?? "");
     setDiscountAmount(editingDraftInvoice.discountAmount ?? "");
     setDiscountPercent(editingDraftInvoice.discountPercent ?? "");
@@ -591,13 +596,14 @@ export function useInvoiceCreateState(
       const purchaseEditPrefill: InvoiceLineDraft[] = editingDraftInvoice.items.map(
         (invoiceItem) => ({
           id: crypto.randomUUID(),
-          item: null,
+          item: invoiceItem.itemId != null ? (itemMap.get(invoiceItem.itemId) ?? null) : null,
           stockEntryId: null,
           itemName: invoiceItem.itemName?.trim() ?? "",
           hsnCode: invoiceItem.hsnCode?.trim() ?? "",
           sacCode: invoiceItem.sacCode?.trim() ?? "",
           quantity: invoiceItem.quantity,
           unitPrice: invoiceItem.unitPrice ?? "",
+          sellingPrice: invoiceItem.sellingPrice?.trim() ?? "",
           discountPercent: invoiceItem.discountPercent ?? "0",
           discountAmount: invoiceItem.discountAmount ?? "",
           cgstRate: pickInvoiceTaxRate(invoiceItem.cgstRate, "0"),
@@ -793,6 +799,37 @@ export function useInvoiceCreateState(
     });
   }, []);
 
+  const handleSellingPriceMarginChange = useCallback(
+    (value: string) => {
+      setSellingPriceMarginPercent(value);
+      if (invoiceType !== "PURCHASE_INVOICE") return;
+      const trimmed = value.trim();
+      if (trimmed === "") return;
+      setLines((prev) =>
+        prev.map((line) => {
+          const purchase = line.unitPrice.trim();
+          if (purchase === "") return line;
+          return {
+            ...line,
+            sellingPrice: sellingPriceFromPurchaseAndMargin(purchase, trimmed),
+          };
+        }),
+      );
+    },
+    [invoiceType],
+  );
+
+  const handlePurchaseUnitPriceChange = useCallback(
+    (lineId: string, value: string) => {
+      const patch: Partial<InvoiceLineDraft> = { unitPrice: value };
+      if (invoiceType === "PURCHASE_INVOICE" && sellingPriceMarginPercent.trim() !== "") {
+        patch.sellingPrice = sellingPriceFromPurchaseAndMargin(value, sellingPriceMarginPercent);
+      }
+      updateLine(lineId, patch);
+    },
+    [invoiceType, sellingPriceMarginPercent, updateLine],
+  );
+
   const handleStockChoiceSelect = useCallback(
     (lineId: string, choice: StockChoice) => {
       if (!choice.enabledForSelection) return;
@@ -802,6 +839,21 @@ export function useInvoiceCreateState(
           ? (choice.entry.purchasePrice ?? choice.entry.sellingPrice ?? "")
           : (choice.entry.sellingPrice ?? "")
         : (choice.entry.sellingPrice ?? "");
+      const purchaseStr = String(defaultUnitPrice ?? "").trim();
+      let sellingForPurchase = "";
+      if (invoiceType === "PURCHASE_INVOICE") {
+        if (sellingPriceMarginPercent.trim() !== "") {
+          sellingForPurchase = sellingPriceFromPurchaseAndMargin(
+            purchaseStr,
+            sellingPriceMarginPercent,
+          );
+        } else {
+          const existing = choice.entry.sellingPrice?.trim() ?? "";
+          sellingForPurchase = existing !== "" && toNum(existing) > 0 ? existing : purchaseStr;
+        }
+      } else if (invoiceType === "PURCHASE_RETURN") {
+        sellingForPurchase = choice.entry.sellingPrice?.trim() ?? "";
+      }
       updateLine(lineId, {
         item: choice.item,
         stockEntryId: choice.entry.id,
@@ -809,6 +861,9 @@ export function useInvoiceCreateState(
         hsnCode: purchaseSide ? (choice.item.hsnCode?.trim() ?? "") : "",
         sacCode: purchaseSide ? (choice.item.sacCode?.trim() ?? "") : "",
         unitPrice: defaultUnitPrice,
+        ...(invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN"
+          ? { sellingPrice: sellingForPurchase }
+          : {}),
         quantity: "1",
         discountPercent: "",
         discountAmount: "",
@@ -819,7 +874,7 @@ export function useInvoiceCreateState(
       setStockSearchOpen(false);
       setStockSearchText("");
     },
-    [invoiceType, updateLine],
+    [invoiceType, updateLine, sellingPriceMarginPercent],
   );
 
   const handleAddStockForItem = useCallback(
@@ -1257,6 +1312,9 @@ export function useInvoiceCreateState(
           discountAmount: discountAmount.trim() ? discountAmount : undefined,
           discountPercent: discountPercent.trim() ? discountPercent : undefined,
           roundOffAmount: roundOffForApi,
+          ...(invoiceType === "PURCHASE_INVOICE" && sellingPriceMarginPercent.trim() !== ""
+            ? { sellingPriceMarginPercent: sellingPriceMarginPercent.trim() }
+            : {}),
           items: linePayload,
         };
         await updateDraftInvoice.mutateAsync({ invoiceId: editInvoiceId, body });
@@ -1275,6 +1333,9 @@ export function useInvoiceCreateState(
         discountAmount: discountAmount || undefined,
         discountPercent: discountPercent || undefined,
         roundOffAmount: roundOffForApi,
+        ...(invoiceType === "PURCHASE_INVOICE" && sellingPriceMarginPercent.trim() !== ""
+          ? { sellingPriceMarginPercent: sellingPriceMarginPercent.trim() }
+          : {}),
         items: linePayload,
       });
 
@@ -1307,6 +1368,7 @@ export function useInvoiceCreateState(
     pageMeta,
     router,
     selectedConsigneeId,
+    sellingPriceMarginPercent,
   ]);
 
   useEffect(() => {
@@ -1364,6 +1426,9 @@ export function useInvoiceCreateState(
     setInvoiceDate,
     dueDate,
     setDueDate,
+    sellingPriceMarginPercent,
+    handleSellingPriceMarginChange,
+    handlePurchaseUnitPriceChange,
     notes,
     setNotes,
     discountAmount,

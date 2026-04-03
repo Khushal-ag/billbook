@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DateField } from "@/components/invoices/invoice-create/DateField";
+import { Input } from "@/components/ui/input";
 import { PartyAutocomplete } from "@/components/invoices/PartyAutocomplete";
 import { getInvoiceTypeCreateCopy } from "@/lib/invoice";
 import { toISODateString } from "@/lib/date";
@@ -36,6 +37,9 @@ interface PartyAndDatesCardsProps {
   onInvoiceDateChange: (value: string) => void;
   dueDate: string;
   onDueDateChange: (value: string) => void;
+  /** Purchase invoice: margin on purchase rate to suggest selling price per line. */
+  sellingPriceMarginPercent?: string;
+  onSellingPriceMarginChange?: (value: string) => void;
 }
 
 export function PartyAndDatesCards({
@@ -53,6 +57,8 @@ export function PartyAndDatesCards({
   onInvoiceDateChange,
   dueDate,
   onDueDateChange,
+  sellingPriceMarginPercent,
+  onSellingPriceMarginChange,
 }: PartyAndDatesCardsProps) {
   const copy = getInvoiceTypeCreateCopy(invoiceType);
   const todayIso = toISODateString(new Date());
@@ -76,7 +82,7 @@ export function PartyAndDatesCards({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-2">
-            <Label>{copy.partyLabel} *</Label>
+            <Label required>{copy.partyLabel}</Label>
             <PartyAutocomplete
               value={party}
               onValueChange={onPartyChange}
@@ -145,14 +151,38 @@ export function PartyAndDatesCards({
         <CardHeader className="pb-3">
           <CardTitle className="text-base">{copy.detailsCardTitle}</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
-          <DateField label="Invoice Date" value={invoiceDate} onChange={onInvoiceDateChange} />
-          <DateField
-            label="Due Date"
-            value={dueDate}
-            onChange={onDueDateChange}
-            minDate={todayIso}
-          />
+        <CardContent className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <DateField label="Invoice Date" value={invoiceDate} onChange={onInvoiceDateChange} />
+            <DateField
+              label="Due Date"
+              value={dueDate}
+              onChange={onDueDateChange}
+              minDate={todayIso}
+            />
+          </div>
+          {invoiceType === "PURCHASE_INVOICE" &&
+            sellingPriceMarginPercent !== undefined &&
+            onSellingPriceMarginChange && (
+              <div className="space-y-2">
+                <Label htmlFor="selling-price-margin">
+                  Selling price margin (%)
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">
+                    — applies to purchase rate on each line
+                  </span>
+                </Label>
+                <Input
+                  id="selling-price-margin"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="e.g. 20"
+                  value={sellingPriceMarginPercent}
+                  onChange={(e) => onSellingPriceMarginChange(e.target.value)}
+                  className="max-w-[12rem] tabular-nums"
+                  autoComplete="off"
+                />
+              </div>
+            )}
         </CardContent>
       </Card>
     </div>

@@ -49,7 +49,13 @@ export function useFinalizeInvoice() {
       return res.data;
     },
     onSuccess: (_, id) => {
-      invalidateQueryKeys(qc, [queryKeys.invoices.root(), queryKeys.invoices.detail(id)]);
+      invalidateQueryKeys(qc, [
+        queryKeys.invoices.root(),
+        queryKeys.invoices.detail(id),
+        /** Purchase finalize creates/updates stock batches — refresh lists and entries. */
+        queryKeys.items.root(),
+        queryKeys.items.stockEntriesRoot(),
+      ]);
     },
   });
 }
