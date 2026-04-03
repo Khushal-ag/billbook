@@ -9,12 +9,22 @@ import type {
   CreateCreditNoteRequest,
 } from "@/types/credit-note";
 
-export function useCreditNotes(params: { invoiceId?: number } = {}) {
-  const { invoiceId } = params;
-  const qs = buildQueryString({ invoiceId });
+export function useCreditNotes(
+  params: { invoiceId?: number; page?: number; pageSize?: number } = {},
+) {
+  const { invoiceId, page, pageSize } = params;
+
+  const limit = invoiceId ? undefined : pageSize;
+  const offset = invoiceId
+    ? undefined
+    : page != null && pageSize != null
+      ? (page - 1) * pageSize
+      : undefined;
+
+  const qs = buildQueryString({ invoiceId, limit, offset });
 
   return useQuery({
-    queryKey: queryKeys.creditNotes.list(invoiceId),
+    queryKey: queryKeys.creditNotes.list(invoiceId, page, pageSize),
     queryFn: async () => {
       const res = await api.get<CreditNoteListResponse>(`/credit-notes?${qs}`);
       return res.data;

@@ -24,4 +24,6 @@ export interface CreateCreditNoteRequest {
 export interface CreditNoteListResponse {
   creditNotes: CreditNote[];
   count: number;
+  limit?: number;
+  offset?: number;
 }

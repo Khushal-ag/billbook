@@ -49,6 +49,11 @@ export type PaymentStatusItem = {
   fill: string;
 };
 
+function toNum(v: string | number): number {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
 export function buildPaymentStatusData(breakdown?: PaymentStatusBreakdown[]): {
   data: PaymentStatusItem[];
   total: number;
@@ -56,7 +61,7 @@ export function buildPaymentStatusData(breakdown?: PaymentStatusBreakdown[]): {
   const data =
     breakdown?.map((item) => ({
       name: item.status,
-      value: item.totalAmount,
+      value: toNum(item.totalAmount),
       count: item.count,
       fill: PAYMENT_COLORS[item.status] ?? CHART_COLORS.quaternary,
     })) ?? [];
@@ -85,7 +90,7 @@ export function buildInvoiceStatusData(breakdown?: InvoiceStatusBreakdown[]): {
   const data =
     breakdown?.map((item) => ({
       name: item.status,
-      value: item.totalAmount,
+      value: toNum(item.totalAmount),
       count: item.count,
       fill: INVOICE_DOC_STATUS_COLORS[item.status] ?? CHART_COLORS.quaternary,
     })) ?? [];

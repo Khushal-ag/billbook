@@ -10,6 +10,7 @@ import { ReportBackLink } from "@/components/reports/ReportBackLink";
 import { ReportCsvButton } from "@/components/reports/ReportCsvButton";
 import { ReportLimitInput } from "@/components/reports/ReportLimitInput";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCreditNoteRegister } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
@@ -107,7 +108,24 @@ export default function CreditNoteRegisterPage() {
                       {formatCurrency(cn.totalAmount)}
                     </td>
                     <td className="px-3 py-2 text-muted-foreground">
-                      {cn.affectsInventory === undefined ? "—" : cn.affectsInventory ? "Yes" : "No"}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-default">
+                              {cn.affectsInventory === undefined
+                                ? "—"
+                                : cn.affectsInventory
+                                  ? "Yes *"
+                                  : "No"}
+                            </span>
+                          </TooltipTrigger>
+                          {cn.affectsInventory && (
+                            <TooltipContent side="top" className="max-w-[220px] text-xs">
+                              Coming soon — inventory adjustment is not yet automated.
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                     </td>
                     <td className="px-3 py-2 text-muted-foreground">{formatDate(cn.createdAt)}</td>
                   </tr>

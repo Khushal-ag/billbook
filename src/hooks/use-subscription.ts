@@ -8,11 +8,11 @@ import type { Subscription, SubscriptionPlan } from "@/types/subscription";
 /** Backend returns 404 / NOT_FOUND when the business has never had an active subscription. */
 function isNoCurrentSubscriptionError(error: unknown): boolean {
   if (!(error instanceof ApiClientError)) return false;
-  if (error.status === 404) return true;
   const msg = error.message.toLowerCase();
-  if (msg.includes("no active subscription")) return true;
+  if (msg.includes("no active subscription") || msg.includes("subscription not found")) return true;
   const d = error.details as { code?: string } | undefined;
-  return d?.code === "NOT_FOUND";
+  if (error.status === 404 && d?.code === "NOT_FOUND") return true;
+  return false;
 }
 
 type SubscriptionQueryOptions = { enabled?: boolean };

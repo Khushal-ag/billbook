@@ -24,10 +24,9 @@ export function normalizeDashboard(raw: Record<string, unknown>): DashboardData 
     ...d,
     totalItems: d.totalItems ?? d.totalProducts ?? 0,
     topItems,
-    totalReceivables: typeof d.totalReceivables === "number" ? d.totalReceivables : undefined,
-    totalAdvanceBalance:
-      typeof d.totalAdvanceBalance === "number" ? d.totalAdvanceBalance : undefined,
-    netOutstanding: typeof d.netOutstanding === "number" ? d.netOutstanding : undefined,
+    totalReceivables: d.totalReceivables != null ? d.totalReceivables : undefined,
+    totalAdvanceBalance: d.totalAdvanceBalance != null ? d.totalAdvanceBalance : undefined,
+    netOutstanding: d.netOutstanding != null ? d.netOutstanding : undefined,
     revenueByMonth: Array.isArray(d.revenueByMonth) ? d.revenueByMonth : [],
     topCustomers: Array.isArray(d.topCustomers) ? d.topCustomers : [],
     invoiceStatusBreakdown: Array.isArray(d.invoiceStatusBreakdown) ? d.invoiceStatusBreakdown : [],

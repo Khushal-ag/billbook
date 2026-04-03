@@ -10,8 +10,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import StatusBadge from "@/components/StatusBadge";
 import { formatCurrency } from "@/lib/utils";
 import { formatDate } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCreditNote } from "@/hooks/use-credit-notes";
-import { FileText } from "lucide-react";
+import { FileText, Info } from "lucide-react";
 
 interface CreditNoteDetailSheetProps {
   creditNoteId: number | null;
@@ -99,8 +100,18 @@ export function CreditNoteDetailSheet({
                 </div>
               )}
               <div>
-                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <dt className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Affects inventory
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3 w-3 shrink-0" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[220px] text-xs">
+                        Coming soon — inventory adjustment is not yet automated.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </dt>
                 <dd className="mt-1">{creditNote.affectsInventory ? "Yes" : "No"}</dd>
               </div>

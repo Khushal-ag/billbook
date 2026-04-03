@@ -154,6 +154,7 @@ export default function PartyLedgerPage() {
   }
 
   if (!party) {
+    const isLoadError = partyQuery.isError;
     return (
       <div className="page-container">
         <PageHeader
@@ -167,8 +168,12 @@ export default function PartyLedgerPage() {
           }
         />
         <ErrorBanner
-          error={{ message: "Record not found" }}
-          fallbackMessage="The customer or vendor you're looking for does not exist."
+          error={isLoadError ? partyQuery.error : { message: "Record not found" }}
+          fallbackMessage={
+            isLoadError
+              ? "Failed to load party details. Check your connection and try again."
+              : "The customer or vendor you're looking for does not exist."
+          }
         />
       </div>
     );

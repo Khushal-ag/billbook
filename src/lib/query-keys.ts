@@ -181,7 +181,8 @@ export const queryKeys = {
 
   creditNotes: {
     root: () => ["credit-notes"] as const,
-    list: (invoiceId: number | undefined) => ["credit-notes", invoiceId] as const,
+    list: (invoiceId: number | undefined, page?: number, pageSize?: number) =>
+      ["credit-notes", invoiceId, page, pageSize] as const,
     detail: (creditNoteId: number | undefined) => ["credit-notes", "detail", creditNoteId] as const,
   },
 

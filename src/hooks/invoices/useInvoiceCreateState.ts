@@ -52,6 +52,7 @@ import {
 } from "@/lib/invoice-return-cap";
 import { withInvoiceQuantityErrorDetails } from "@/lib/invoice-quantity-error-details";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { ApiClientError } from "@/api/error";
 import { isServiceType, type Item, type StockEntry } from "@/types/item";
 import type { Party, PartyConsignee } from "@/types/party";
 import type { InvoiceType } from "@/types/invoice";
@@ -1382,8 +1383,11 @@ export function useInvoiceCreateState(
     let linePayload: InvoiceItemInput[];
     try {
       linePayload = linesToSubmit.map((line) => buildInvoiceItemInput(line, invoiceType));
-    } catch {
-      showErrorToast(null, "One or more lines are invalid for this document type");
+    } catch (lineErr) {
+      showErrorToast(
+        lineErr instanceof Error ? lineErr.message : null,
+        "One or more lines are invalid for this document type",
+      );
       return;
     }
 
@@ -1457,12 +1461,24 @@ export function useInvoiceCreateState(
       showSuccessToast(`${pageMeta.label} created — review and finalize when ready`);
       router.push(created?.id != null ? `/invoices/${created.id}` : pageMeta.path);
     } catch (err) {
-      showErrorToast(
-        withInvoiceQuantityErrorDetails(err),
-        editInvoiceId
-          ? "Failed to update invoice"
-          : `Failed to create ${pageMeta.label.toLowerCase()}`,
-      );
+      const isSubscriptionError =
+        err instanceof ApiClientError &&
+        (err.status === 403 || err.status === 404) &&
+        /subscription/i.test(err.message);
+
+      if (isSubscriptionError) {
+        showErrorToast(
+          "Your subscription is inactive or missing — please renew to create invoices.",
+          "Subscription required",
+        );
+      } else {
+        showErrorToast(
+          withInvoiceQuantityErrorDetails(err),
+          editInvoiceId
+            ? "Failed to update invoice"
+            : `Failed to create ${pageMeta.label.toLowerCase()}`,
+        );
+      }
     }
   }, [
     party,

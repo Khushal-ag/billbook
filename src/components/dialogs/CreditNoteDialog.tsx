@@ -21,7 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info, Loader2 } from "lucide-react";
 import { useCreateCreditNote } from "@/hooks/use-credit-notes";
 import { useInvoices } from "@/hooks/use-invoices";
 import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
@@ -145,6 +146,17 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
             <Label htmlFor="affectsInventory" className="cursor-pointer font-normal">
               Affects inventory (reverses stock changes)
             </Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px] text-xs">
+                  Coming soon — inventory adjustment is not yet automated. This flag is saved but
+                  stock will not be reversed automatically.
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
           <DialogFooter>

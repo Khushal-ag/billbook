@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/EmptyState";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
+import TablePagination from "@/components/TablePagination";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import CreditNoteDialog from "@/components/dialogs/CreditNoteDialog";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
@@ -18,10 +19,14 @@ import {
   useFinalizeCreditNote,
   useDeleteCreditNote,
 } from "@/hooks/use-credit-notes";
+import { usePagination } from "@/hooks/use-pagination";
 import { usePermissions } from "@/hooks/use-permissions";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 
+const PAGE_SIZE = 20;
+
 export default function CreditNotes() {
+  const { page, setPage } = usePagination();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailSheetOpen, setDetailSheetOpen] = useState(false);
   const [selectedCreditNoteId, setSelectedCreditNoteId] = useState<number | null>(null);
@@ -29,12 +34,14 @@ export default function CreditNotes() {
     open: false,
     id: null,
   });
-  const { data, isPending, error } = useCreditNotes();
+  const { data, isPending, error } = useCreditNotes({ page, pageSize: PAGE_SIZE });
   const finalizeMutation = useFinalizeCreditNote();
   const deleteMutation = useDeleteCreditNote();
   const { isOwner } = usePermissions();
 
   const creditNotes = data?.creditNotes ?? [];
+  const total = data?.count ?? 0;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
 
   const handleFinalize = async (id: number) => {
     try {
@@ -98,15 +105,24 @@ export default function CreditNotes() {
           }
         />
       ) : (
-        <CreditNotesTable
-          creditNotes={creditNotes}
-          isOwner={isOwner}
-          finalizePending={finalizeMutation.isPending}
-          deletePending={deleteMutation.isPending}
-          onView={handleView}
-          onFinalize={handleFinalize}
-          onDelete={handleDelete}
-        />
+        <>
+          <CreditNotesTable
+            creditNotes={creditNotes}
+            isOwner={isOwner}
+            finalizePending={finalizeMutation.isPending}
+            deletePending={deleteMutation.isPending}
+            onView={handleView}
+            onFinalize={handleFinalize}
+            onDelete={handleDelete}
+          />
+          <TablePagination
+            page={page}
+            pageSize={PAGE_SIZE}
+            total={total}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        </>
       )}
 
       <CreditNoteDialog open={dialogOpen} onOpenChange={setDialogOpen} />

@@ -10,20 +10,29 @@ interface DashboardHeroSectionProps {
   dashboard: DashboardData;
 }
 
+function toNumber(v: string | number | undefined | null): number {
+  if (v == null) return 0;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function netOutstandingAmount(d: DashboardData): number {
-  const n = d.netOutstanding ?? d.totalOutstanding;
-  return typeof n === "number" ? n : Number(n) || 0;
+  return toNumber(d.netOutstanding ?? d.totalOutstanding);
 }
 
 export function DashboardHeroSection({ greeting, dashboard }: DashboardHeroSectionProps) {
-  const netRevenue = dashboard.totalRevenueNet ?? dashboard.totalRevenue;
-  const gross = dashboard.totalInvoicedGross;
-  const credited = dashboard.totalCredited ?? 0;
-  const ledgerPaid = dashboard.totalPaidFromLedger ?? dashboard.totalPaid;
-  const invoiceFieldPaid = dashboard.totalPaidFromInvoiceField;
+  const netRevenue = toNumber(dashboard.totalRevenueNet ?? dashboard.totalRevenue);
+  const gross =
+    dashboard.totalInvoicedGross != null ? toNumber(dashboard.totalInvoicedGross) : undefined;
+  const credited = toNumber(dashboard.totalCredited ?? 0);
+  const ledgerPaid = toNumber(dashboard.totalPaidFromLedger ?? dashboard.totalPaid);
+  const invoiceFieldPaid =
+    dashboard.totalPaidFromInvoiceField != null
+      ? toNumber(dashboard.totalPaidFromInvoiceField)
+      : undefined;
   const outstanding = netOutstandingAmount(dashboard);
   const showPaymentReconcile =
-    typeof invoiceFieldPaid === "number" && Math.abs(ledgerPaid - invoiceFieldPaid) > 0.01;
+    invoiceFieldPaid != null && Math.abs(ledgerPaid - invoiceFieldPaid) > 0.01;
 
   let revenueSubtitle: string | undefined;
   if (credited > 0 && gross != null) {

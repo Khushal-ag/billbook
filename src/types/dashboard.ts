@@ -1,17 +1,17 @@
 export interface DashboardData {
   business: DashboardBusiness;
   totalInvoices: number;
-  totalRevenue: number;
-  totalInvoicedGross?: number;
-  totalCredited?: number;
-  totalRevenueNet?: number;
-  totalPaid: number;
-  totalPaidFromLedger?: number;
-  totalPaidFromInvoiceField?: number;
-  totalOutstanding: number;
-  totalReceivables?: number;
-  totalAdvanceBalance?: number;
-  netOutstanding?: number;
+  totalRevenue: string | number;
+  totalInvoicedGross?: string | number;
+  totalCredited?: string | number;
+  totalRevenueNet?: string | number;
+  totalPaid: string | number;
+  totalPaidFromLedger?: string | number;
+  totalPaidFromInvoiceField?: string | number;
+  totalOutstanding: string | number;
+  totalReceivables?: string | number;
+  totalAdvanceBalance?: string | number;
+  netOutstanding?: string | number;
   totalItems: number;
   totalParties: number;
   revenueByMonth: RevenueByMonth[];
@@ -31,35 +31,35 @@ export interface DashboardBusiness {
 
 export interface RevenueByMonth {
   month: string;
-  revenue: number;
+  revenue: string | number;
   invoiceCount: number;
 }
 
 export interface TopItem {
   itemId: number;
   itemName: string;
-  totalRevenue: number;
-  totalQuantity: number;
+  totalRevenue: string | number;
+  totalQuantity: string | number;
 }
 
 export interface TopCustomer {
   partyId: number;
   partyName: string;
-  totalRevenue: number;
+  totalRevenue: string | number;
   invoiceCount: number;
 }
 
 export interface InvoiceStatusBreakdown {
   status: string;
   count: number;
-  totalAmount: number;
+  totalAmount: string | number;
 }
 
 export interface PaymentStatusBreakdown {
   status: "PAID" | "PARTIAL" | "UNPAID";
   count: number;
-  totalAmount: number;
-  totalPaid: number;
+  totalAmount: string | number;
+  totalPaid: string | number;
 }
 
 export interface RecentInvoice {
@@ -67,7 +67,7 @@ export interface RecentInvoice {
   invoiceNumber: string;
   invoiceDate: string;
   partyName: string;
-  totalAmount: number;
-  paidAmount: number;
+  totalAmount: string | number;
+  paidAmount: string | number;
   status: string;
 }

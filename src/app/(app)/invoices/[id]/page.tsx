@@ -75,7 +75,19 @@ export default function InvoiceDetail() {
       await finalizeMutation.mutateAsync(invoiceId);
       showSuccessToast("Invoice finalized");
     } catch (err) {
-      showErrorToast(withInvoiceQuantityErrorDetails(err), "Failed to finalize");
+      const isSubscriptionError =
+        err instanceof ApiClientError &&
+        (err.status === 403 || err.status === 404) &&
+        /subscription/i.test(err.message);
+
+      if (isSubscriptionError) {
+        showErrorToast(
+          "Your subscription is inactive or missing — please renew to finalize invoices.",
+          "Subscription required",
+        );
+      } else {
+        showErrorToast(withInvoiceQuantityErrorDetails(err), "Failed to finalize");
+      }
     }
   };
 

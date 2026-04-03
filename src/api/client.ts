@@ -106,7 +106,16 @@ async function request<T>(
     }
   }
 
-  const response = await fetch(toAbsoluteUrl(path), init);
+  let response = await fetch(toAbsoluteUrl(path), init);
+
+  if (response.status === 429 && shouldRetry) {
+    const retryAfterHeader = response.headers.get("retry-after");
+    const retryMs = retryAfterHeader
+      ? Math.min(Number(retryAfterHeader) * 1000 || 2000, 10000)
+      : 2000;
+    await new Promise((resolve) => setTimeout(resolve, retryMs));
+    response = await fetch(toAbsoluteUrl(path), init);
+  }
 
   if (response.status === 401 && !isRefreshRequest && shouldRetry && getRefreshToken()) {
     try {
@@ -129,12 +138,12 @@ async function request<T>(
       clearSessionAndNotify();
     }
 
-    throw new ApiClientError(
-      errorData?.error || `Request failed (${response.status})`,
-      response.status,
-      errorData?.details,
-      requestId,
-    );
+    const message =
+      response.status === 429
+        ? "Too many requests — please wait a moment and try again."
+        : errorData?.error || `Request failed (${response.status})`;
+
+    throw new ApiClientError(message, response.status, errorData?.details, requestId);
   }
 
   // 204 No Content or empty body (common on DELETE)

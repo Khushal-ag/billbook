@@ -48,18 +48,12 @@ export function ReceiptsTable({
                 return (
                   <tr key={r.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="px-4 py-3">
-                      {canAllocate ? (
-                        <span className="font-medium tabular-nums text-foreground">
-                          {r.receiptNumber}
-                        </span>
-                      ) : (
-                        <Link
-                          href={`/receipts/${r.id}`}
-                          className="font-medium tabular-nums text-primary hover:underline"
-                        >
-                          {r.receiptNumber}
-                        </Link>
-                      )}
+                      <Link
+                        href={`/receipts/${r.id}`}
+                        className="font-medium tabular-nums text-primary hover:underline"
+                      >
+                        {r.receiptNumber}
+                      </Link>
                     </td>
                     <td className="max-w-[180px] truncate px-4 py-3 text-muted-foreground">
                       {r.partyName ?? "—"}

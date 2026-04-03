@@ -31,7 +31,11 @@ function sanitizeDecimalInput(raw: string): string {
 
 function allocFingerprint(receipt: ReceiptDetail): string {
   const a = receipt.allocations ?? [];
-  return `${receipt.id}:${a.map((x) => `${x.invoiceId}:${x.amount}`).join("|")}:${(receipt.openInvoicesForParty ?? []).length}`;
+  const openIds = (receipt.openInvoicesForParty ?? [])
+    .map((i) => i.id)
+    .sort((a, b) => a - b)
+    .join(",");
+  return `${receipt.id}:${a.map((x) => `${x.invoiceId}:${x.amount}`).join("|")}:${openIds}`;
 }
 
 export function ReceiptAllocationEditor({
