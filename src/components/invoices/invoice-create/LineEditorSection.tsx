@@ -13,6 +13,7 @@ import {
   formatIgstFromCgstSgst,
   getEntryDateIso,
   getLineAmounts,
+  getSalesUnitPriceFloor,
   toNum,
 } from "@/lib/invoice-create";
 import { getReturnQuantityCap, isReturnQuantityOverCap } from "@/lib/invoice-return-cap";
@@ -60,8 +61,13 @@ interface LineEditorSectionProps {
   stockLineIssues: Record<string, StockLineIssue>;
   focusedIssueLineId: string | null;
   qtyAutoAdjusted: boolean;
+  unitPriceFloorWarning?: string | null;
+  unitPriceFloorIsError?: boolean;
   /** Purchase invoice: updates purchase rate and selling price when margin is set. */
   onPurchaseUnitPriceChange?: (lineId: string, value: string) => void;
+  /** Sales invoice: keeps unit price editable and validates floor when focus leaves field. */
+  onSalesUnitPriceChange?: (lineId: string, value: string) => void;
+  onSalesUnitPriceBlur?: (lineId: string) => void;
   /** Linked sale/purchase return: show when return qty exceeds remaining (blocks save). */
   returnValidationWarning?: string | null;
 }
@@ -91,7 +97,11 @@ export function LineEditorSection({
   stockLineIssues,
   focusedIssueLineId,
   qtyAutoAdjusted,
+  unitPriceFloorWarning,
+  unitPriceFloorIsError,
   onPurchaseUnitPriceChange,
+  onSalesUnitPriceChange,
+  onSalesUnitPriceBlur,
   returnValidationWarning,
 }: LineEditorSectionProps) {
   const copy = getInvoiceTypeCreateCopy(invoiceType);
@@ -102,9 +112,13 @@ export function LineEditorSection({
     invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN";
   const isPurchaseReturn = invoiceType === "PURCHASE_RETURN";
   const batchRequired = isSalesFamily(invoiceType);
-  const unitPriceEditable = purchaseFamilyForm;
+  const unitPriceEditable = true;
   const draftGstDerived =
     purchaseFamilyForm && (draftLine.cgstRate.trim() !== "" || draftLine.sgstRate.trim() !== "");
+  const salesUnitPriceFloor = useMemo(
+    () => getSalesUnitPriceFloor(draftLine, stockEntries),
+    [draftLine, stockEntries],
+  );
   const purchaseGridStyle = useMemo(
     () =>
       isPurchaseCostLine
@@ -166,6 +180,19 @@ export function LineEditorSection({
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>{returnValidationWarning}</AlertDescription>
+          </Alert>
+        ) : null}
+        {invoiceType === "SALE_INVOICE" && unitPriceFloorWarning ? (
+          <Alert
+            variant={unitPriceFloorIsError ? "destructive" : "default"}
+            className={cn(unitPriceFloorIsError ? "" : "border-amber-200 bg-amber-50")}
+          >
+            <AlertTriangle
+              className={cn("h-4 w-4", unitPriceFloorIsError ? "" : "text-amber-600")}
+            />
+            <AlertDescription className={cn(unitPriceFloorIsError ? "" : "text-amber-800")}>
+              {unitPriceFloorWarning}
+            </AlertDescription>
           </Alert>
         ) : null}
         {isSaleReturn ? (
@@ -528,8 +555,23 @@ export function LineEditorSection({
               <Input
                 value={draftLine.unitPrice}
                 disabled={!unitPriceEditable}
-                onChange={(e) => updateLine(draftLine.id, { unitPrice: e.target.value })}
-                className="text-right tabular-nums"
+                onChange={(e) =>
+                  purchaseFamilyForm
+                    ? updateLine(draftLine.id, { unitPrice: e.target.value })
+                    : onSalesUnitPriceChange?.(draftLine.id, e.target.value)
+                }
+                onBlur={() => {
+                  if (!purchaseFamilyForm) onSalesUnitPriceBlur?.(draftLine.id);
+                }}
+                className={cn(
+                  "text-right tabular-nums",
+                  !purchaseFamilyForm && "border-border bg-background",
+                  invoiceType === "SALE_INVOICE" &&
+                    unitPriceFloorWarning &&
+                    (unitPriceFloorIsError
+                      ? "border-destructive ring-1 ring-destructive/30 focus-visible:ring-destructive"
+                      : "border-amber-500 ring-1 ring-amber-300 focus-visible:ring-amber-400"),
+                )}
               />
             </div>
 

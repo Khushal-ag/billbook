@@ -11,6 +11,7 @@ import {
   getLineAmounts,
   getMaxAllowedDiscountAmount,
   getMaxAllowedDiscountPercent,
+  getSalesUnitPriceFloor,
   isDraftLineServiceItem,
   itemFromStockEntry,
   sellingPriceFromPurchaseAndMargin,
@@ -131,6 +132,8 @@ export function useInvoiceCreateState(
   const [qtyAutoAdjusted, setQtyAutoAdjusted] = useState(false);
   const [stockLineIssues, setStockLineIssues] = useState<Record<string, StockLineIssue>>({});
   const [focusedIssueLineId, setFocusedIssueLineId] = useState<string | null>(null);
+  const [unitPriceFloorWarning, setUnitPriceFloorWarning] = useState<string | null>(null);
+  const [unitPriceFloorIsError, setUnitPriceFloorIsError] = useState(false);
 
   const debouncedStockSearch = useDebounce(stockSearchText, 300);
   const stockSearchQuery = debouncedStockSearch.trim();
@@ -973,6 +976,63 @@ export function useInvoiceCreateState(
     });
   }, []);
 
+  const clearUnitPriceFloorWarning = useCallback(() => {
+    setUnitPriceFloorWarning(null);
+    setUnitPriceFloorIsError(false);
+  }, []);
+
+  const formatBasePriceText = useCallback((price: number) => {
+    if (!Number.isFinite(price)) return "0";
+    return Number.isInteger(price) ? String(price) : price.toFixed(2);
+  }, []);
+
+  const showUnitPriceFloorWarning = useCallback((message: string, isError = false) => {
+    setUnitPriceFloorWarning(message);
+    setUnitPriceFloorIsError(isError);
+  }, []);
+
+  const handleSalesUnitPriceChange = useCallback(
+    (lineId: string, value: string) => {
+      updateLine(lineId, { unitPrice: value });
+      clearUnitPriceFloorWarning();
+    },
+    [clearUnitPriceFloorWarning, updateLine],
+  );
+
+  const handleSalesUnitPriceBlur = useCallback(
+    (lineId: string) => {
+      const line = lines.find((item) => item.id === lineId);
+      if (!line || invoiceType !== "SALE_INVOICE") return;
+      const floor = getSalesUnitPriceFloor(line, stockEntries);
+      if (floor == null) {
+        clearUnitPriceFloorWarning();
+        return;
+      }
+      if (line.unitPrice.trim() === "") {
+        showUnitPriceFloorWarning(
+          `Unit price is required (base price : ${formatBasePriceText(floor)}).`,
+        );
+        return;
+      }
+      const entered = toNum(line.unitPrice);
+      if (entered < floor) {
+        showUnitPriceFloorWarning(
+          `Cannot be lower than base selling price (base price : ${formatBasePriceText(floor)}).`,
+        );
+        return;
+      }
+      clearUnitPriceFloorWarning();
+    },
+    [
+      clearUnitPriceFloorWarning,
+      formatBasePriceText,
+      invoiceType,
+      lines,
+      showUnitPriceFloorWarning,
+      stockEntries,
+    ],
+  );
+
   const handleSellingPriceMarginChange = useCallback(
     (value: string) => {
       setSellingPriceMarginPercent(value);
@@ -1047,8 +1107,9 @@ export function useInvoiceCreateState(
       });
       setStockSearchOpen(false);
       setStockSearchText("");
+      clearUnitPriceFloorWarning();
     },
-    [invoiceType, updateLine, sellingPriceMarginPercent],
+    [clearUnitPriceFloorWarning, invoiceType, updateLine, sellingPriceMarginPercent],
   );
 
   const handleAddStockForItem = useCallback(
@@ -1254,6 +1315,25 @@ export function useInvoiceCreateState(
       return;
     }
 
+    if (invoiceType === "SALE_INVOICE") {
+      const baseSellingPrice = Math.max(0, toNum(selectedEntry.sellingPrice));
+      if (draftLine.unitPrice.trim() === "") {
+        showUnitPriceFloorWarning(
+          `Unit price is required (base price : ${formatBasePriceText(baseSellingPrice)}).`,
+          true,
+        );
+        return;
+      }
+      const editedUnitPrice = Math.max(0, toNum(draftLine.unitPrice));
+      if (editedUnitPrice < baseSellingPrice) {
+        showUnitPriceFloorWarning(
+          `Cannot be lower than base selling price (base price : ${formatBasePriceText(baseSellingPrice)}).`,
+          true,
+        );
+        return;
+      }
+    }
+
     /** SERVICE items use a nominal batch qty in stock; invoice qty is not stock-limited. */
     if (!isDraftLineServiceItem(draftLine)) {
       const available = getEntryTotalQty(selectedEntry);
@@ -1298,7 +1378,16 @@ export function useInvoiceCreateState(
       return [createLine(), normalizedCurrent, ...prev.slice(1)];
     });
     setStockLineIssues({});
-  }, [draftLine, invoiceType, isLineValid, stockEntries, usedQtyByEntryId, updateLine]);
+  }, [
+    draftLine,
+    formatBasePriceText,
+    invoiceType,
+    isLineValid,
+    showUnitPriceFloorWarning,
+    stockEntries,
+    usedQtyByEntryId,
+    updateLine,
+  ]);
 
   const removeAddedLine = useCallback(
     (lineId: string) => {
@@ -1728,6 +1817,8 @@ export function useInvoiceCreateState(
     stockLineIssues,
     focusedIssueLineId,
     qtyAutoAdjusted,
+    unitPriceFloorWarning,
+    unitPriceFloorIsError,
     roundOffInputValue,
     canSubmit,
     returnQtyBlockReason,
@@ -1739,6 +1830,8 @@ export function useInvoiceCreateState(
     handleLineDiscountChange,
     handleLineDiscountAmountChange,
     handleLineQuantityChange,
+    handleSalesUnitPriceChange,
+    handleSalesUnitPriceBlur,
     addCurrentLine,
     removeAddedLine,
     applySuggestedQtyForLine,

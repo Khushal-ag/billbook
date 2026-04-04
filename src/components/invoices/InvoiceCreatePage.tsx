@@ -161,10 +161,18 @@ export function InvoiceCreatePage({
         stockLineIssues={state.stockLineIssues}
         focusedIssueLineId={state.focusedIssueLineId}
         qtyAutoAdjusted={state.qtyAutoAdjusted}
+        unitPriceFloorWarning={state.unitPriceFloorWarning}
+        unitPriceFloorIsError={state.unitPriceFloorIsError}
         onPurchaseUnitPriceChange={
           initialType === "PURCHASE_INVOICE" || initialType === "PURCHASE_RETURN"
             ? state.handlePurchaseUnitPriceChange
             : undefined
+        }
+        onSalesUnitPriceChange={
+          initialType === "SALE_INVOICE" ? state.handleSalesUnitPriceChange : undefined
+        }
+        onSalesUnitPriceBlur={
+          initialType === "SALE_INVOICE" ? state.handleSalesUnitPriceBlur : undefined
         }
       />
 

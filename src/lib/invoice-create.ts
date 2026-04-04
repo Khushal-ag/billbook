@@ -184,6 +184,16 @@ function getLineEntry(line: InvoiceLineDraft, entries: StockEntry[]): StockEntry
   return entries.find((entry) => entry.id === line.stockEntryId);
 }
 
+export function getSalesUnitPriceFloor(
+  line: InvoiceLineDraft,
+  entries: StockEntry[],
+): number | null {
+  const entry = getLineEntry(line, entries);
+  if (!entry) return null;
+  const floor = Math.max(0, toNum(entry.sellingPrice));
+  return Number.isFinite(floor) ? floor : null;
+}
+
 export function getMaxAllowedDiscountPercent(
   line: InvoiceLineDraft,
   entries: StockEntry[],
