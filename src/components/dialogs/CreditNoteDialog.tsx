@@ -129,7 +129,7 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
                 ) : (
                   invoices.map((inv) => (
                     <SelectItem key={inv.id} value={String(inv.id)}>
-                      {inv.invoiceNumber} — {inv.partyName ?? `Party #${inv.partyId}`}
+                      {inv.invoiceNumber} — {inv.partyName?.trim() || "Unknown party"}
                     </SelectItem>
                   ))
                 )}

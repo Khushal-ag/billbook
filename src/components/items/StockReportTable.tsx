@@ -20,6 +20,9 @@ const thRight = thClass + " text-right";
 const tdClass = "px-3 py-2.5 align-middle";
 const tdRight = tdClass + " text-right tabular-nums";
 
+/** Same helper text as pre–API-rename `Outbound` column (see git origin/main). */
+const OUTBOUND_COLUMN_TITLE = "Sold and returned to supplier (combined outbound)" as const;
+
 function qtyDisplay(value: string | null): string {
   return value != null && value !== "" ? formatQuantity(value) : "—";
 }
@@ -62,10 +65,7 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
               <th className={cn(thClass, "hidden text-left sm:table-cell")}>Unit</th>
               <th className={cn(thRight, "hidden md:table-cell")}>Quantity</th>
               <th className={cn(thRight, "hidden md:table-cell")}>Adjusted</th>
-              <th
-                className={cn(thRight, "hidden md:table-cell")}
-                title="Sold and returned to supplier (combined outbound)"
-              >
+              <th className={cn(thRight, "hidden md:table-cell")} title={OUTBOUND_COLUMN_TITLE}>
                 Outbound
               </th>
               <th className={cn(thRight, "min-w-[72px]")}>Current</th>
@@ -98,7 +98,7 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
                 >
                   <td className={cn(tdClass, "pl-3 text-left sm:pl-4")}>
                     <Link
-                      href={`/items/${row.itemId}`}
+                      href={`/items/${row.itemId}?from=stock`}
                       className="font-medium text-foreground hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >

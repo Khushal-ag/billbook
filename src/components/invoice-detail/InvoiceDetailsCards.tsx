@@ -1,9 +1,12 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getInvoiceBillSummary, getInvoiceTypeCreateCopy } from "@/lib/invoice";
 import { cn, formatCurrency, formatDate, formatSignedCurrency, formatTime } from "@/lib/utils";
 import type { InvoiceDetail, InvoiceType } from "@/types/invoice";
+import { useInvoice } from "@/hooks/use-invoices";
 
 function isPurchaseFamily(t: InvoiceType): boolean {
   return t === "PURCHASE_INVOICE" || t === "PURCHASE_RETURN";
@@ -50,6 +53,16 @@ export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
   const partyAddressText = formatPartyAddressLines(invoice);
   const addressLabel = invoice.addressRoleLabel || "Party address";
 
+  const sourceId = invoice.sourceInvoiceId;
+  const isReturnWithSource =
+    (invoice.invoiceType === "SALE_RETURN" || invoice.invoiceType === "PURCHASE_RETURN") &&
+    sourceId != null;
+  const embeddedSourceNumber = invoice.sourceInvoiceNumber?.trim();
+  const { data: sourceInvoice, isPending: sourceInvoicePending } = useInvoice(
+    isReturnWithSource && !embeddedSourceNumber ? sourceId : undefined,
+  );
+  const sourceInvoiceNumber = embeddedSourceNumber || sourceInvoice?.invoiceNumber?.trim();
+
   const showLineDiscount = bill.lineDiscountTotal > EPS;
   const showInvoiceDiscount = bill.invoiceDiscount > EPS;
   const taxLabel =
@@ -67,18 +80,22 @@ export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-1 flex-col space-y-4 text-sm">
-          {(invoice.invoiceType === "SALE_RETURN" || invoice.invoiceType === "PURCHASE_RETURN") &&
-          invoice.sourceInvoiceId != null ? (
+          {isReturnWithSource ? (
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Linked document
               </p>
               <div className="rounded-md border bg-muted/15 px-3 py-2.5">
                 <Link
-                  href={`/invoices/${invoice.sourceInvoiceId}`}
+                  href={`/invoices/${sourceId}`}
                   className="text-sm font-medium text-primary hover:underline"
+                  title="Original invoice"
                 >
-                  Original invoice #{invoice.sourceInvoiceId}
+                  {sourceInvoiceNumber
+                    ? sourceInvoiceNumber
+                    : sourceInvoicePending
+                      ? "Loading…"
+                      : "Original invoice"}
                 </Link>
               </div>
             </div>

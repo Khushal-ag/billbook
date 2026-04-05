@@ -172,8 +172,18 @@ export function useAdjustStock(itemId: number) {
         queryKeys.items.detail(itemId),
         queryKeys.items.stockPrefix(),
         queryKeys.items.stockEntriesRoot(),
+        queryKeys.items.stockEntryMapPrefix(),
+        queryKeys.items.stockEntryDetailPrefix(),
         queryKeys.items.ledger(itemId),
       ]);
+      void qc.invalidateQueries({
+        predicate: (q) =>
+          Array.isArray(q.queryKey) &&
+          q.queryKey[0] === "items" &&
+          q.queryKey[1] === "stock-entries" &&
+          q.queryKey[2] === "by-item" &&
+          q.queryKey[3] === itemId,
+      });
     },
   });
 }

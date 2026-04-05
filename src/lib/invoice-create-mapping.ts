@@ -44,7 +44,7 @@ export function pickInvoiceTaxRate(
   return "0";
 }
 
-/** Prefer invoice API line display fields over stock-entry fallbacks (e.g. "Item #47"). */
+/** Prefer invoice API line display fields over stock-entry fallbacks (e.g. unnamed item). */
 export function mergeItemFromInvoiceLine(item: Item, invLine: InvoiceItem): Item {
   const name = invLine.itemName?.trim();
   const hsn = invLine.hsnCode?.trim();

@@ -10,7 +10,7 @@ export function itemFromStockEntry(entry: StockEntry): Item {
   return {
     id: entry.itemId,
     businessId: entry.businessId,
-    name: emb?.name ?? entry.itemName ?? `Item #${entry.itemId}`,
+    name: emb?.name ?? entry.itemName ?? "Unnamed item",
     type: normalizeItemType(entry.itemType ?? (partial?.type as string | undefined)),
     hsnCode: partial?.hsnCode ?? null,
     sacCode: partial?.sacCode ?? null,

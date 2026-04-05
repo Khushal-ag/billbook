@@ -147,7 +147,7 @@ export interface StockEntry {
         id: number;
         name: string;
       });
-  /** From GET /items/stock-entries list only */
+  /** Item label when the nested `item` object is omitted (common on list and single GET). */
   itemName?: string;
   unit?: string;
   categoryId?: number | null;
@@ -157,8 +157,12 @@ export interface StockEntry {
   /** Per-batch quantity breakdown; null for SERVICE entries */
   quantityPurchased?: string | null;
   quantityAdjusted?: string | null;
-  /** Outbound from this batch: sales plus returns to supplier (combined total from API). */
+  /**
+   * Net outbound from this batch for display: opening + adjustments − on hand
+   * (sales, sale returns, purchase returns, etc. combined per API).
+   */
   quantitySold?: string | null;
+  /** On-hand quantity for this batch (ledger sum for STOCK_ENTRY). */
   actualQuantity?: string | null;
 }
 
@@ -191,8 +195,9 @@ export interface StockListItem {
   /** null for SERVICE (no inventory) */
   quantityPurchased: string | null;
   quantityAdjusted: string | null;
-  /** Outbound: sales + returns to supplier (combined). */
+  /** Net outbound (opening + adjustments − on hand); sales/returns net. */
   quantitySold: string | null;
+  /** On-hand quantity (ledger). */
   actualQuantity: string | null;
   stockValue: string | null;
   /** Balance × latest purchase price; null for SERVICE */
@@ -254,10 +259,10 @@ export interface ItemLedgerResponse {
 }
 
 export interface AdjustStockRequest {
+  /** Batch (stock entry) this adjustment applies to — required. */
+  stockEntryId: number;
   quantity: string;
   reason: string;
-  /** Optional: attribute adjustment to this stock entry (batch) */
-  stockEntryId?: number;
 }
 
 export interface ItemListResponse {

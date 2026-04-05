@@ -4,6 +4,8 @@ export interface CreditNote {
   id: number;
   businessId: number;
   invoiceId: number;
+  /** When API embeds it: linked invoice display number. */
+  invoiceNumber?: string | null;
   creditNoteNumber: string;
   amount: string;
   reason: string | null;

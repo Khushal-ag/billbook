@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { Suspense, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Plus, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import ErrorBanner from "@/components/ErrorBanner";
 import SearchInput from "@/components/SearchInput";
 import PageHeader from "@/components/PageHeader";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
+import ItemDetailSkeleton from "@/components/skeletons/ItemDetailSkeleton";
 import ItemDialog from "@/components/dialogs/ItemDialog";
 import { ItemsTable } from "@/components/items/ItemsTable";
 import { ItemDetailView } from "@/components/items/ItemDetailView";
@@ -62,7 +63,11 @@ export default function Items() {
 
   // Detail view when itemId in URL (ledger, current stock)
   if (itemId) {
-    return <ItemDetailView id={Number(itemId)} onBack={() => router.push("/items")} />;
+    return (
+      <Suspense fallback={<ItemDetailSkeleton />}>
+        <ItemDetailView id={Number(itemId)} />
+      </Suspense>
+    );
   }
 
   return (
@@ -131,7 +136,7 @@ export default function Items() {
         <ItemsTable
           items={filteredItems}
           onEdit={openEdit}
-          onViewLedger={(id) => router.push(`/items/${id}`)}
+          onViewLedger={(id) => router.push(`/items/${id}#stock-ledger`)}
         />
       )}
 

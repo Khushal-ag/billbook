@@ -163,7 +163,7 @@ function summarizeInvoiceLineItems(items: LineRow[]): string {
   const parts = items.map((row, i) => {
     const q = row.quantity ?? "?";
     const p = row.unitPrice != null ? ` × ${row.unitPrice}` : "";
-    return items.length > 1 ? `#${i + 1}: Qty ${q}${p}` : `Qty ${q}${p}`;
+    return items.length > 1 ? `Line ${i + 1}: qty ${q}${p}` : `Qty ${q}${p}`;
   });
   return parts.join(" • ");
 }

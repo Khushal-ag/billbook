@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, History, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,12 +45,33 @@ function stockMovementBadgeVariant(
   }
 }
 
-export function ItemDetailView({ id, onBack }: { id: number; onBack: () => void }) {
+export function ItemDetailView({ id }: { id: number }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { backHref, backLabel } = useMemo(() => {
+    const from = searchParams.get("from");
+    if (from === "stock") {
+      return { backHref: "/stock" as const, backLabel: "Back to Stock" };
+    }
+    return { backHref: "/items" as const, backLabel: "Back to Items" };
+  }, [searchParams]);
+
   const { data: item, isPending: itemPending } = useItem(id);
   const { data: ledger, isPending: ledgerPending } = useItemLedger(
     item == null || isServiceType(item.type) ? undefined : id,
   );
   const isPending = itemPending || (item && !isServiceType(item.type) && ledgerPending);
+
+  useEffect(() => {
+    if (isPending || !item || isServiceType(item.type)) return;
+    if (typeof window === "undefined" || window.location.hash !== "#stock-ledger") return;
+    const raf = window.requestAnimationFrame(() => {
+      document
+        .getElementById("stock-ledger")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [isPending, item]);
 
   return (
     <div className="page-container animate-fade-in">
@@ -54,11 +79,11 @@ export function ItemDetailView({ id, onBack }: { id: number; onBack: () => void 
         <Button
           variant="ghost"
           size="sm"
-          onClick={onBack}
+          onClick={() => router.push(backHref)}
           className="-ml-2 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-          Back to Items
+          {backLabel}
         </Button>
       </div>
 
@@ -71,8 +96,13 @@ export function ItemDetailView({ id, onBack }: { id: number; onBack: () => void 
           <p className="mt-1 text-sm text-muted-foreground">
             It may have been deleted or the link is invalid.
           </p>
-          <Button variant="outline" size="sm" className="mt-4" onClick={onBack}>
-            Back to Items
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => router.push(backHref)}
+          >
+            {backLabel}
           </Button>
         </div>
       ) : (
@@ -144,7 +174,7 @@ export function ItemDetailView({ id, onBack }: { id: number; onBack: () => void 
           </div>
 
           {!isServiceType(item.type) && (
-            <Card>
+            <Card id="stock-ledger" className="scroll-mt-24">
               <CardHeader className="border-b border-border pb-3">
                 <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <History className="h-4 w-4 text-muted-foreground" />

@@ -46,6 +46,8 @@ export interface Invoice {
   partyPostalCode?: string | null;
   /** `SALE_RETURN` / `PURCHASE_RETURN`: original invoice id when linked (cumulative return caps). */
   sourceInvoiceId?: number | null;
+  /** When API embeds it: original invoice’s display number (avoids an extra fetch on returns). */
+  sourceInvoiceNumber?: string | null;
   /** Selected consignee id snapshot source (null means party primary address). */
   partyConsigneeId?: number | null;
   consigneeName?: string | null;
@@ -147,7 +149,9 @@ export interface InvoiceCommunicationsSummary {
  * Create/update invoice line (`items[]`). Rules are enforced server-side by `invoiceType`.
  * - Sale (`SALE_*`): send `stockEntryId`; do **not** send `itemId` or `sellingPrice`.
  * - Purchase (`PURCHASE_INVOICE`): do **not** send `stockEntryId`; send `itemName` + rates; optional `itemId` and `sellingPrice`.
- * - `PURCHASE_RETURN` + catalog **STOCK** line: send `stockEntryId` (batch being returned). Omit for SERVICE lines.
+ * - `PURCHASE_RETURN` + catalog **STOCK** line: send `stockEntryId` (batch being returned). Omit for SERVICE lines. Finalize reduces that batch; **400** if missing where required, **409** if not enough in batch.
+ * - `SALE_RETURN` with source link: send `stockEntryId` matching the original sale line’s batch so the return books to that batch.
+ * - `PURCHASE_INVOICE`: lines get `stockEntryId` after **finalize** when batches are created — refresh invoice detail and stock UIs after finalize.
  * - Link returns with `sourceInvoiceId` on the document and `sourceInvoiceItemId` per line when matching the source bill.
  */
 export interface InvoiceItemInput {

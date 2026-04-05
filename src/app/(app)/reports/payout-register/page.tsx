@@ -81,9 +81,7 @@ export default function PayoutRegisterPage() {
               ) : (
                 data.payouts.map((p) => (
                   <tr key={p.id} className="border-b last:border-0 hover:bg-muted/20">
-                    <td className="px-3 py-2 font-medium tabular-nums">
-                      {p.payoutNumber ?? `#${p.id}`}
-                    </td>
+                    <td className="px-3 py-2 font-medium tabular-nums">{p.payoutNumber ?? "—"}</td>
                     <td className="px-3 py-2 font-medium">
                       {capitaliseWords(String(p.category).replace(/_/g, " "))}
                     </td>

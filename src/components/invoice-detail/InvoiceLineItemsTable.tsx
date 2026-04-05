@@ -82,9 +82,7 @@ export function InvoiceLineItemsTable({
                     sid != null && Number.isFinite(sid)
                       ? (purchaseDateByStockEntryId[sid] ?? item.createdAt)
                       : null;
-                  const displayName =
-                    item.itemName?.trim() ||
-                    (item.itemId != null ? `Item #${item.itemId}` : "Item");
+                  const displayName = item.itemName?.trim() || "Unnamed item";
                   return (
                     <tr key={item.id} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="px-4 py-3">
@@ -96,8 +94,8 @@ export function InvoiceLineItemsTable({
                           <div>
                             <div>{formatDate(purchaseDate)}</div>
                             {sid != null ? (
-                              <div className="mt-0.5 text-xs tabular-nums text-muted-foreground/85">
-                                Batch #{sid}
+                              <div className="mt-0.5 text-xs text-muted-foreground/85">
+                                Inventory batch
                               </div>
                             ) : null}
                           </div>

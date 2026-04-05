@@ -1,4 +1,5 @@
 import { CheckCircle, Eye, Trash2 } from "lucide-react";
+import { LinkedInvoiceLink } from "@/components/invoices/LinkedInvoiceLink";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
 import { formatCurrency } from "@/lib/utils";
@@ -38,7 +39,7 @@ export function CreditNotesTable({
               scope="col"
               className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell"
             >
-              Invoice ID
+              Linked invoice
             </th>
             <th
               scope="col"
@@ -79,7 +80,13 @@ export function CreditNotesTable({
                   {cn.creditNoteNumber}
                 </button>
               </td>
-              <td className="hidden px-3 py-3 text-accent md:table-cell">#{cn.invoiceId}</td>
+              <td className="hidden px-3 py-3 md:table-cell">
+                <LinkedInvoiceLink
+                  invoiceId={cn.invoiceId}
+                  invoiceNumber={cn.invoiceNumber}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </td>
               <td className="hidden max-w-[240px] truncate px-3 py-3 text-muted-foreground md:table-cell">
                 {cn.reason ?? "—"}
               </td>

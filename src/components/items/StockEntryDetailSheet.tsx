@@ -8,12 +8,13 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency, formatQuantity, formatDate, cn } from "@/lib/utils";
-import { stockEntrySourceFullLabel } from "@/lib/stock-entry-labels";
+import { StockEntrySourceBadge } from "@/components/items/StockEntrySourceBadge";
+import { stockEntrySheetSubtitle, stockQuantityTooltips } from "@/lib/stock-entry-labels";
 import { useStockEntry } from "@/hooks/use-items";
 import { Package, Calendar, Scale, DollarSign, Building2, Layers, Wrench } from "lucide-react";
 import Link from "next/link";
 import { isServiceType } from "@/types/item";
-import type { Item } from "@/types/item";
+import type { Item, StockEntry } from "@/types/item";
 
 interface StockEntryDetailSheetProps {
   entryId: number | null;
@@ -26,6 +27,14 @@ interface StockEntryDetailSheetProps {
 
 const labelClass = "text-xs font-medium uppercase tracking-wider text-muted-foreground";
 const valueClass = "mt-1.5 text-sm font-medium text-foreground";
+
+/** Single-entry GET often sends `itemName` without a nested `item` object (same as list API). */
+function stockEntryItemDisplayName(entry: StockEntry, items: Item[]): string {
+  const fromEntry = entry.itemName?.trim() || entry.item?.name?.trim();
+  if (fromEntry) return fromEntry;
+  const fromCatalog = items.find((i) => i.id === entry.itemId)?.name?.trim();
+  return fromCatalog || "Unnamed item";
+}
 
 export function StockEntryDetailSheet({
   entryId,
@@ -58,11 +67,7 @@ export function StockEntryDetailSheet({
             {isService ? "Service Entry" : "Stock Entry"}
           </SheetTitle>
           <SheetDescription>
-            {entry
-              ? isService
-                ? `Entry #${entry.id} · ${formatQuantity(entry.actualQuantity ?? entry.quantity)}${entry.unit ? ` ${entry.unit}` : ""}`
-                : `Batch #${entry.id} · ${formatQuantity(entry.actualQuantity ?? entry.quantity)}${entry.unit ? ` ${entry.unit}` : " units"}`
-              : "View entry details"}
+            {entry ? stockEntrySheetSubtitle(entry, isService) : "View entry details"}
           </SheetDescription>
         </SheetHeader>
 
@@ -104,7 +109,7 @@ export function StockEntryDetailSheet({
                         href={`/items/${entry.itemId}`}
                         className="text-primary hover:underline"
                       >
-                        {entry.item?.name ?? `Item #${entry.itemId}`}
+                        {stockEntryItemDisplayName(entry, items)}
                       </Link>
                       {entry.unit && (
                         <span className="ml-1.5 font-normal text-muted-foreground">
@@ -122,7 +127,9 @@ export function StockEntryDetailSheet({
                   {!isService && (
                     <div>
                       <p className={labelClass}>Source</p>
-                      <p className={valueClass}>{stockEntrySourceFullLabel(entry.entrySource)}</p>
+                      <p className={`${valueClass} flex flex-wrap items-center gap-2`}>
+                        <StockEntrySourceBadge entrySource={entry.entrySource} />
+                      </p>
                     </div>
                   )}
                   <div>
@@ -139,10 +146,15 @@ export function StockEntryDetailSheet({
                 <CardContent className="space-y-4 pt-4">
                   <div className="flex items-center gap-2 border-b border-border/60 pb-3">
                     <Scale className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className={labelClass}>Quantity</span>
+                    <span className={labelClass} title={stockQuantityTooltips.onHand}>
+                      On hand
+                    </span>
                   </div>
                   <div>
-                    <p className="text-2xl font-semibold tabular-nums text-foreground">
+                    <p
+                      className="text-2xl font-semibold tabular-nums text-foreground"
+                      title={stockQuantityTooltips.onHand}
+                    >
                       {formatQuantity(entry.actualQuantity ?? entry.quantity)}
                       {entry.unit && (
                         <span className="ml-1 text-base font-normal text-muted-foreground">
@@ -162,8 +174,8 @@ export function StockEntryDetailSheet({
                             <span>· Adjusted {formatQuantity(entry.quantityAdjusted)}</span>
                           )}
                           {entry.quantitySold != null && entry.quantitySold !== "0" && (
-                            <span title="Sales and returns to supplier (combined)">
-                              · Outbound {formatQuantity(entry.quantitySold)}
+                            <span title={stockQuantityTooltips.netOut}>
+                              · Net out {formatQuantity(entry.quantitySold)}
                             </span>
                           )}
                         </p>
@@ -231,7 +243,7 @@ export function StockEntryDetailSheet({
                     >
                       {entry.supplierName ??
                         supplierName ??
-                        (entry.supplierId != null ? `#${entry.supplierId}` : "—")}
+                        (entry.supplierId != null ? "Unknown vendor" : "—")}
                     </p>
                   </CardContent>
                 </Card>

@@ -97,7 +97,7 @@ export default function Stock() {
       const supplier: Party = {
         id: entry.supplierId,
         businessId: entry.businessId,
-        name: entry.supplierName ?? existing?.name ?? `#${entry.supplierId}`,
+        name: entry.supplierName ?? existing?.name ?? "Unknown vendor",
         type: "SUPPLIER",
         gstin: null,
         email: null,
@@ -120,7 +120,7 @@ export default function Stock() {
       const supplier: Party = {
         id: row.supplierId,
         businessId: existing?.businessId ?? 0,
-        name: row.supplierName ?? existing?.name ?? `#${row.supplierId}`,
+        name: row.supplierName ?? existing?.name ?? "Unknown vendor",
         type: "SUPPLIER",
         gstin: existing?.gstin ?? null,
         email: existing?.email ?? null,
@@ -408,7 +408,7 @@ export default function Stock() {
                   entryToEdit.itemName ??
                   entryToEdit.item?.name ??
                   items.find((item) => item.id === entryToEdit.itemId)?.name ??
-                  `#${entryToEdit.itemId}`,
+                  "Unnamed item",
                 itemType:
                   entryToEdit.itemType ??
                   items.find((item) => item.id === entryToEdit.itemId)?.type ??

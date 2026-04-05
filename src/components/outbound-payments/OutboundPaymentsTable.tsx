@@ -25,7 +25,7 @@ function outboundPartyDisplayName(
   }
   const raw = p.partyName?.trim();
   if (raw) return raw;
-  return id != null ? `Party #${id}` : "—";
+  return id != null ? "Unknown party" : "—";
 }
 
 interface OutboundPaymentsTableProps {

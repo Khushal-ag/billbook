@@ -43,7 +43,7 @@ export function formatInvoiceQuantityErrorDetails(details: unknown): string {
   if (already != null) parts.push(`Already returned: ${String(already)}`);
   if (thisRet != null) parts.push(`This document: ${String(thisRet)}`);
   if (max != null) parts.push(`Max returnable now: ${String(max)}`);
-  if (lineRef != null) parts.push(`Source line #${String(lineRef)}`);
+  if (lineRef != null) parts.push("Linked to an original line on the source invoice");
   return parts.length ? parts.join(" · ") : "";
 }
 

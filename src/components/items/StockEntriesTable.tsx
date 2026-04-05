@@ -1,8 +1,9 @@
-import { Eye, SlidersHorizontal, Layers, Pencil } from "lucide-react";
+import Link from "next/link";
+import { History, SlidersHorizontal, Layers, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, formatDateCompact, formatQuantity, cn } from "@/lib/utils";
-import { stockEntrySourceShortLabel } from "@/lib/stock-entry-labels";
+import { StockEntrySourceBadge } from "@/components/items/StockEntrySourceBadge";
 import type { StockEntry } from "@/types/item";
 import type { Item } from "@/types/item";
 import { isServiceType } from "@/types/item";
@@ -19,7 +20,7 @@ function getItemName(entry: StockEntry, items: Item[]): string {
   if (entry.itemName) return entry.itemName;
   if (entry.item?.name) return entry.item.name;
   const item = items.find((i) => i.id === entry.itemId);
-  return item?.name ?? `#${entry.itemId}`;
+  return item?.name ?? "Unnamed item";
 }
 
 function getSupplierDisplay(entry: StockEntry): {
@@ -30,13 +31,16 @@ function getSupplierDisplay(entry: StockEntry): {
   if (entry.supplierName) {
     return { label: entry.supplierName, isInactive: entry.supplierIsActive === false };
   }
-  return { label: `#${entry.supplierId}`, isInactive: false };
+  return { label: "Unknown vendor", isInactive: false };
 }
 
 const thClass = "px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
 const thRight = thClass + " text-right";
 const tdClass = "px-3 py-2.5 align-middle";
 const tdRight = tdClass + " text-right tabular-nums";
+
+/** Same helper text as pre–API-rename `Outbound` column (see git origin/main). */
+const OUTBOUND_COLUMN_TITLE = "Sold and returned to supplier (combined outbound)" as const;
 
 function adjustedQtyDisplay(value: string | null): string {
   if (value == null || value === "") return "—";
@@ -84,7 +88,7 @@ export function StockEntriesTable({
               <th className={cn(thRight, "hidden min-w-[72px] md:table-cell")}>Adjusted</th>
               <th
                 className={cn(thRight, "hidden min-w-[88px] md:table-cell")}
-                title="Sold and returned to supplier (combined outbound)"
+                title={OUTBOUND_COLUMN_TITLE}
               >
                 Outbound
               </th>
@@ -141,8 +145,12 @@ export function StockEntriesTable({
                       <span className="ml-1.5 font-normal text-muted-foreground">({unit})</span>
                     )}
                   </td>
-                  <td className={cn(tdClass, "whitespace-nowrap text-left text-muted-foreground")}>
-                    {isService ? "—" : stockEntrySourceShortLabel(entry.entrySource)}
+                  <td className={cn(tdClass, "whitespace-nowrap text-left")}>
+                    {isService ? (
+                      <span className="text-muted-foreground">—</span>
+                    ) : (
+                      <StockEntrySourceBadge entrySource={entry.entrySource} />
+                    )}
                   </td>
                   <td className={cn(tdClass, "whitespace-nowrap text-left")}>
                     <span className={cn(vendor.isInactive && "font-medium text-destructive")}>
@@ -185,19 +193,20 @@ export function StockEntriesTable({
                   </td>
                   <td className={cn(tdClass, "w-[132px] text-left")}>
                     <div className="inline-flex min-h-8 items-center gap-1 whitespace-nowrap">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onView(entry.id);
-                        }}
-                        title="View details"
-                        aria-label={`View entry ${entry.id}`}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      {!isService ? (
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>
+                          <Link
+                            href={`/items/${entry.itemId}?from=stock#stock-ledger`}
+                            onClick={(e) => e.stopPropagation()}
+                            title="Stock ledger"
+                            aria-label={`Stock ledger for ${itemName}`}
+                          >
+                            <History className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      ) : (
+                        <div className="h-8 w-8" aria-hidden />
+                      )}
                       {onAdjust && (
                         <Button
                           variant="ghost"

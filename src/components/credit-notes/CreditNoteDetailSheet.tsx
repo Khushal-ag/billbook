@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { LinkedInvoiceLink } from "@/components/invoices/LinkedInvoiceLink";
 import {
   Sheet,
   SheetContent,
@@ -77,12 +77,10 @@ export function CreditNoteDetailSheet({
                   Invoice
                 </dt>
                 <dd className="mt-1">
-                  <Link
-                    href={`/invoices/${creditNote.invoiceId}`}
-                    className="text-primary hover:underline"
-                  >
-                    #{creditNote.invoiceId}
-                  </Link>
+                  <LinkedInvoiceLink
+                    invoiceId={creditNote.invoiceId}
+                    invoiceNumber={creditNote.invoiceNumber}
+                  />
                 </dd>
               </div>
               <div>

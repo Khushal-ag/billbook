@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { LinkedInvoiceLink } from "@/components/invoices/LinkedInvoiceLink";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Calendar, FileText, Landmark, List, User, Wallet } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
@@ -273,12 +274,10 @@ export default function ReceiptDetailPage() {
                       className="border-b border-border/50 last:border-0 hover:bg-muted/20"
                     >
                       <td className="px-4 py-3 font-medium">
-                        <Link
-                          href={`/invoices/${a.invoiceId}`}
-                          className="text-primary hover:underline"
-                        >
-                          {a.invoiceNumber ?? `Invoice #${a.invoiceId}`}
-                        </Link>
+                        <LinkedInvoiceLink
+                          invoiceId={a.invoiceId}
+                          invoiceNumber={a.invoiceNumber}
+                        />
                       </td>
                       <td className="px-4 py-3 text-right font-medium tabular-nums">
                         {formatCurrency(a.amount)}

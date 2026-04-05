@@ -132,10 +132,7 @@ export default function PartyLedgerPage() {
         referenceNumber: data.referenceNumber || undefined,
         notes: data.notes || undefined,
       });
-      const receiptNo =
-        res.receipt?.receiptNumber ??
-        res.receiptNumber ??
-        (typeof res.receiptId === "number" ? `Receipt #${res.receiptId}` : null);
+      const receiptNo = res.receipt?.receiptNumber ?? res.receiptNumber ?? null;
       showSuccessToast(
         receiptNo
           ? `Receipt ${receiptNo} recorded — allocate this payment from the Receipts page.`

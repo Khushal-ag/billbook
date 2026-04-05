@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,9 +13,18 @@ import { Input } from "@/components/ui/input";
 import { FieldError, Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import { useAdjustStock } from "@/hooks/use-items";
+import { useAdjustStock, useStockEntries } from "@/hooks/use-items";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { stockBatchSelectLabel } from "@/lib/stock-entry-labels";
+import { isServiceType } from "@/types/item";
 
 const schema = z.object({
   quantity: z
@@ -32,7 +41,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   itemId: number;
   itemName: string;
-  /** When provided, adjustment is attributed to this batch (from By stock view) */
+  /** Pre-selected batch when opening from “By stock” row */
   stockEntryId?: number;
 }
 
@@ -41,9 +50,19 @@ export default function AdjustStockDialog({
   onOpenChange,
   itemId,
   itemName,
-  stockEntryId,
+  stockEntryId: initialStockEntryId,
 }: Props) {
   const mutation = useAdjustStock(itemId);
+  const { data: stockList, isPending: entriesLoading } = useStockEntries(
+    { itemId, limit: 200 },
+    { enabled: open && itemId > 0 },
+  );
+
+  const batches = useMemo(() => {
+    return (stockList?.entries ?? []).filter((e) => !isServiceType(e.itemType ?? "STOCK"));
+  }, [stockList?.entries]);
+
+  const [selectedEntryId, setSelectedEntryId] = useState<string>("");
 
   const {
     register,
@@ -56,15 +75,39 @@ export default function AdjustStockDialog({
   });
 
   useEffect(() => {
-    if (open) reset({ quantity: "", reason: "" });
-  }, [open, reset]);
+    if (!open) return;
+    reset({ quantity: "", reason: "" });
+    setSelectedEntryId(
+      initialStockEntryId != null && Number.isFinite(initialStockEntryId)
+        ? String(initialStockEntryId)
+        : "",
+    );
+  }, [open, initialStockEntryId, reset]);
+
+  useEffect(() => {
+    if (!open || entriesLoading) return;
+    const validIds = new Set(batches.map((b) => b.id));
+    const current = Number.parseInt(selectedEntryId, 10);
+    if (selectedEntryId !== "" && !validIds.has(current)) {
+      setSelectedEntryId(batches.length === 1 ? String(batches[0].id) : "");
+      return;
+    }
+    if (selectedEntryId === "" && batches.length === 1) {
+      setSelectedEntryId(String(batches[0].id));
+    }
+  }, [open, entriesLoading, batches, selectedEntryId]);
 
   const onSubmit = async (data: FormData) => {
+    const sid = Number.parseInt(selectedEntryId, 10);
+    if (!Number.isFinite(sid)) {
+      showErrorToast(null, "Select a stock batch.");
+      return;
+    }
     try {
       await mutation.mutateAsync({
+        stockEntryId: sid,
         quantity: data.quantity,
         reason: data.reason,
-        ...(stockEntryId != null && { stockEntryId }),
       });
       showSuccessToast("Stock adjusted");
       onOpenChange(false);
@@ -73,6 +116,8 @@ export default function AdjustStockDialog({
     }
   };
 
+  const selectDisabled = entriesLoading || batches.length === 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -80,6 +125,38 @@ export default function AdjustStockDialog({
           <DialogTitle>Adjust Stock — {itemName}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <Label required>Batch</Label>
+            <Select
+              value={selectedEntryId}
+              onValueChange={setSelectedEntryId}
+              disabled={selectDisabled}
+            >
+              <SelectTrigger aria-invalid={!selectedEntryId && !selectDisabled}>
+                <SelectValue
+                  placeholder={
+                    entriesLoading
+                      ? "Loading batches…"
+                      : batches.length === 0
+                        ? "No batches for this item"
+                        : "Select batch"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {batches.map((entry) => (
+                  <SelectItem key={entry.id} value={String(entry.id)}>
+                    {stockBatchSelectLabel(entry)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Adjustments are posted to one batch. Choose the batch whose on-hand quantity should
+              change.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label required>Quantity</Label>
             <Input
@@ -108,7 +185,16 @@ export default function AdjustStockDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || mutation.isPending}>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                mutation.isPending ||
+                !selectedEntryId ||
+                entriesLoading ||
+                batches.length === 0
+              }
+            >
               {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Adjust Stock
             </Button>

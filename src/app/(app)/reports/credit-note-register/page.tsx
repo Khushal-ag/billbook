@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { LinkedInvoiceLink } from "@/components/invoices/LinkedInvoiceLink";
 import DateRangePicker from "@/components/DateRangePicker";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
@@ -94,12 +94,11 @@ export default function CreditNoteRegisterPage() {
                     <td className="px-3 py-2">{cn.partyName ?? "—"}</td>
                     <td className="px-3 py-2">
                       {cn.invoiceId ? (
-                        <Link
-                          href={`/invoices/${cn.invoiceId}`}
+                        <LinkedInvoiceLink
+                          invoiceId={cn.invoiceId}
+                          invoiceNumber={cn.invoiceNumber}
                           className="text-accent underline-offset-4 hover:underline"
-                        >
-                          {cn.invoiceNumber ?? `#${cn.invoiceId}`}
-                        </Link>
+                        />
                       ) : (
                         "—"
                       )}
