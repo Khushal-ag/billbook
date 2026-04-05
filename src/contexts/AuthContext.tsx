@@ -8,9 +8,11 @@ import type {
   OtpRequestResponse,
   AuthResponse,
   AuthMeResponse,
+  AdminLoginRequest,
 } from "@/types/auth";
 import { AUTH_EXPIRED_EVENT } from "@/constants/auth-events";
-import { api, setAccessToken, setRefreshToken, ApiClientError, getRefreshToken } from "@/api";
+import { LAST_ORGANIZATION_CODE_KEY } from "@/constants/auth-storage";
+import { api, setAccessToken, setRefreshToken, ApiClientError } from "@/api";
 
 interface AuthState {
   user: SessionUser | null;
@@ -23,6 +25,8 @@ interface AuthContextValue extends AuthState {
   verifyLoginOtp: (data: LoginOtpVerifyRequest) => Promise<void>;
   requestSignupOtp: (data: SignupRequest) => Promise<OtpRequestResponse>;
   verifySignupOtp: (data: SignupOtpVerifyRequest) => Promise<void>;
+  adminLogin: (data: AdminLoginRequest) => Promise<void>;
+  refreshSession: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -83,6 +87,30 @@ function toSessionUser(auth: AuthResponse, role: "OWNER" | "STAFF" = "OWNER"): S
   };
 }
 
+function persistLastOrganizationCode(code: string | undefined) {
+  if (typeof window === "undefined") return;
+  const trimmed = code?.trim();
+  if (trimmed) {
+    localStorage.setItem(LAST_ORGANIZATION_CODE_KEY, trimmed.toUpperCase());
+  }
+}
+
+function sessionUserFromMe(me: AuthMeResponse): SessionUser {
+  const { user: meUser, business: meBusiness } = me;
+  return {
+    id: meUser.id,
+    email: meUser.email,
+    firstName: meUser.firstName,
+    lastName: meUser.lastName,
+    role: meUser.role,
+    businessId: meBusiness.id,
+    businessName: meBusiness.name,
+    organizationCode: meBusiness.organizationCode,
+    businessLogoUrl: meBusiness.logoUrl ?? null,
+    validityEnd: meBusiness.validityEnd ?? null,
+  };
+}
+
 function persistSession(sessionUser: SessionUser) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
 }
@@ -119,20 +147,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function restore() {
       try {
         const res = await api.get<AuthMeResponse>("/auth/me");
-        const { user: meUser, business: meBusiness } = res.data;
         if (!cancelled) {
-          const updated: SessionUser = {
-            id: meUser.id,
-            email: meUser.email,
-            firstName: meUser.firstName,
-            lastName: meUser.lastName,
-            role: meUser.role,
-            businessId: meBusiness.id,
-            businessName: meBusiness.name,
-            organizationCode: meBusiness.organizationCode,
-            businessLogoUrl: meBusiness.logoUrl ?? null,
-          };
+          const updated = sessionUserFromMe(res.data);
           persistSession(updated);
+          persistLastOrganizationCode(updated.organizationCode);
           setUser(updated);
         }
       } catch {
@@ -155,26 +173,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(auth.tokens.accessToken);
     setRefreshToken(auth.tokens.refreshToken);
 
-    // Fetch /auth/me to get accurate role (AuthResponse doesn't include role)
+    // Fetch /auth/me to get accurate role, validity, and branding
     try {
       const res = await api.get<AuthMeResponse>("/auth/me");
-      const { user: meUser, business: meBusiness } = res.data;
-      const sessionUser: SessionUser = {
-        id: meUser.id,
-        email: meUser.email,
-        firstName: meUser.firstName,
-        lastName: meUser.lastName,
-        role: meUser.role,
-        businessId: meBusiness.id,
-        businessName: meBusiness.name,
-        organizationCode: meBusiness.organizationCode,
-        businessLogoUrl: meBusiness.logoUrl ?? null,
-      };
+      const sessionUser = sessionUserFromMe(res.data);
       persistSession(sessionUser);
+      persistLastOrganizationCode(sessionUser.organizationCode);
       setUser(sessionUser);
     } catch {
       const sessionUser = toSessionUser(auth);
       persistSession(sessionUser);
+      persistLastOrganizationCode(sessionUser.organizationCode);
       setUser(sessionUser);
     }
     setIsLoading(false);
@@ -204,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           otp: data.otp,
           organizationCode: data.organizationCode,
         });
-        handleAuthSuccess(res.data);
+        await handleAuthSuccess(res.data);
       } catch (error) {
         throw toAuthError(error, "Login verification failed. Please try again.");
       }
@@ -225,7 +234,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (data: SignupOtpVerifyRequest) => {
       try {
         const res = await api.post<AuthResponse>("/auth/signup/verify-otp", data);
-        handleAuthSuccess(res.data);
+        await handleAuthSuccess(res.data);
       } catch (error) {
         throw toAuthError(error, "Signup verification failed. Please try again.");
       }
@@ -233,10 +242,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [handleAuthSuccess],
   );
 
+  const adminLogin = useCallback(
+    async (data: AdminLoginRequest) => {
+      try {
+        const res = await api.post<AuthResponse>("/auth/admin/login", data);
+        await handleAuthSuccess(res.data);
+      } catch (error) {
+        throw toAuthError(error, "Admin login failed. Please try again.");
+      }
+    },
+    [handleAuthSuccess],
+  );
+
+  const refreshSession = useCallback(async () => {
+    try {
+      const res = await api.get<AuthMeResponse>("/auth/me");
+      const sessionUser = sessionUserFromMe(res.data);
+      persistSession(sessionUser);
+      persistLastOrganizationCode(sessionUser.organizationCode);
+      setUser(sessionUser);
+    } catch {
+      clearSession();
+      setUser(null);
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     try {
-      const refreshToken = getRefreshToken();
-      await api.post("/auth/logout", refreshToken ? { refreshToken } : undefined);
+      await api.post("/auth/logout");
     } catch {
       // Ignore logout errors — clear locally regardless
     } finally {
@@ -256,6 +289,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         verifyLoginOtp,
         requestSignupOtp,
         verifySignupOtp,
+        adminLogin,
+        refreshSession,
         logout,
       }}
     >

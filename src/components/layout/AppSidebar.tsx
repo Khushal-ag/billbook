@@ -12,7 +12,6 @@ import {
   BarChart3,
   Receipt,
   FileMinus,
-  CreditCard,
   Settings,
   LogOut,
   PackageCheck,
@@ -73,7 +72,6 @@ const navSections: NavSection[] = [
   {
     title: "Account",
     items: [
-      { label: "Subscription", path: "/subscription", icon: CreditCard },
       {
         label: "Audit Logs",
         path: "/audit-logs",

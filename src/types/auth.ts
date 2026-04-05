@@ -1,4 +1,4 @@
-export type Role = "OWNER" | "STAFF";
+export type Role = "OWNER" | "STAFF" | "ADMIN";
 
 export type TaxType = "GST" | "NON_GST";
 
@@ -133,6 +133,7 @@ export interface AuthMeUser {
   email: string;
   firstName: string | null;
   lastName: string | null;
+  /** OWNER/STAFF for business users; ADMIN for platform admin login */
   role: Role;
 }
 
@@ -144,6 +145,8 @@ export interface AuthMeBusiness {
   signatureUrl?: string | null;
   logoUrl?: string | null;
   email?: string | null;
+  /** ISO date-time; when set, used for trial messaging and client-side guards */
+  validityEnd?: string | null;
 }
 
 /** Returned by GET /auth/me (API response data) */
@@ -157,7 +160,14 @@ export interface LoginRequest {
   password: string;
 }
 
-/** POST /auth/login/request-otp – password required (backend validates before sending OTP) */
+/** POST /auth/admin/login — password-based admin access (no OTP). */
+export interface AdminLoginRequest {
+  email: string;
+  password: string;
+  organizationCode: string;
+}
+
+/** POST /auth/login/request-otp — backend may require password before sending OTP */
 export interface LoginOtpRequest {
   email: string;
   organizationCode: string;
@@ -188,6 +198,8 @@ export interface OtpRequestResponse {
   message: string;
   email: string;
   expiresIn: number;
+  /** When false, UI should not prompt for email OTP (e.g. org uses a different login path). */
+  requiresOtp?: boolean;
 }
 
 /** POST /auth/password/request-otp */
@@ -237,4 +249,6 @@ export interface SessionUser {
   organizationCode?: string;
   /** Business logo URL from /auth/me; used in header when available */
   businessLogoUrl?: string | null;
+  /** From GET /auth/me — trial / plan validity end (ISO string), null if open-ended */
+  validityEnd?: string | null;
 }

@@ -22,6 +22,7 @@ import {
 import { usePagination } from "@/hooks/use-pagination";
 import { usePermissions } from "@/hooks/use-permissions";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/trial";
 
 const PAGE_SIZE = 20;
 
@@ -50,6 +51,7 @@ export default function CreditNotes() {
       await finalizeMutation.mutateAsync(id);
       showSuccessToast("Credit note finalized");
     } catch (err) {
+      if (maybeShowTrialExpiredToast(err)) return;
       showErrorToast(err, "Failed to finalize");
     } finally {
       setFinalizingId(null);

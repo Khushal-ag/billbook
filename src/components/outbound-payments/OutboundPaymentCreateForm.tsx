@@ -25,6 +25,7 @@ import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 import { OUTBOUND_CATEGORY_OPTIONS } from "@/constants/outbound-payment";
 import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/trial";
 import type { Party } from "@/types/party";
 import type { PaymentMethod } from "@/types/invoice";
 import type { OutboundPaymentCategory } from "@/types/outbound-payment";
@@ -154,6 +155,7 @@ export function OutboundPaymentCreateForm() {
       showSuccessToast("Outbound payment recorded");
       router.push("/payments/outbound");
     } catch (e) {
+      if (maybeShowTrialExpiredToast(e)) return;
       showErrorToast(e, "Failed to record payment");
     }
   };

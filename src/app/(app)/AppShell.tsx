@@ -6,15 +6,18 @@ import { Loader2 } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import AppSidebar from "@/components/layout/AppSidebar";
 import TopBar from "@/components/layout/TopBar";
+import { TrialBanner } from "@/components/trial/TrialBanner";
+import { TrialExpiredOverlay } from "@/components/trial/TrialExpiredOverlay";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 export default function AppShell({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, refreshSession } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const safePathname = pathname ?? "";
+  const [refreshingTrial, setRefreshingTrial] = useState(false);
 
   const [collapsed, setCollapsed] = useState(false);
   const isMobile = useIsMobile();
@@ -34,6 +37,22 @@ export default function AppShell({ children }: { children: ReactNode }) {
     router.replace(`/?auth=login&from=${encodeURIComponent(from)}`);
   }, [isAuthenticated, isLoading, router, safePathname]);
 
+  useEffect(() => {
+    if (isLoading || !user) return;
+    if (user.role === "ADMIN") {
+      router.replace("/admin/businesses");
+    }
+  }, [user, isLoading, router]);
+
+  const handleRefreshTrial = async () => {
+    setRefreshingTrial(true);
+    try {
+      await refreshSession();
+    } finally {
+      setRefreshingTrial(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -43,6 +62,23 @@ export default function AppShell({ children }: { children: ReactNode }) {
   }
 
   if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (user?.role === "ADMIN") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Authenticated business user (OWNER/STAFF) — trial UI does not apply to ADMIN (handled above).
+  if (!user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -84,11 +120,20 @@ export default function AppShell({ children }: { children: ReactNode }) {
             sidebarCollapsed={collapsed}
             isMobile={isMobile}
           />
+          <TrialBanner
+            validityEnd={user.validityEnd}
+            onRefresh={handleRefreshTrial}
+            refreshing={refreshingTrial}
+          />
         </div>
-        <main ref={mainRef} className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+        <main
+          ref={mainRef}
+          className="relative min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden"
+        >
           {children}
         </main>
       </div>
+      <TrialExpiredOverlay validityEnd={user.validityEnd} />
     </div>
   );
 }

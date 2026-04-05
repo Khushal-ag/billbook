@@ -27,6 +27,7 @@ import { useCreateCreditNote } from "@/hooks/use-credit-notes";
 import { useInvoices } from "@/hooks/use-invoices";
 import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/trial";
 
 const schema = z.object({
   invoiceId: z.coerce.number().min(1, "Select an invoice"),
@@ -99,6 +100,7 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
       showSuccessToast("Credit note created");
       onOpenChange(false);
     } catch (err) {
+      if (maybeShowTrialExpiredToast(err)) return;
       showErrorToast(err, "Failed to create credit note");
     }
   };

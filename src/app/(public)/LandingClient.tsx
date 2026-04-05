@@ -21,15 +21,17 @@ interface LandingClientProps {
 }
 
 export default function LandingClient({ redirectTo, isLoggingOut }: LandingClientProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
 
+  // Send business users to the app; platform admins can stay on the marketing home (`/`).
   useEffect(() => {
     if (isLoading) return;
     if (!isAuthenticated) return;
     if (isLoggingOut) return;
+    if (user?.role === "ADMIN") return;
     router.replace("/dashboard");
-  }, [isAuthenticated, isLoading, isLoggingOut, router]);
+  }, [isAuthenticated, isLoading, isLoggingOut, user?.role, router]);
 
   return (
     <div className="min-h-screen bg-background">

@@ -190,9 +190,8 @@ export const queryKeys = {
     detail: (creditNoteId: number | undefined) => ["credit-notes", "detail", creditNoteId] as const,
   },
 
-  subscription: {
-    current: () => ["subscription"] as const,
-    plans: () => ["plans"] as const,
+  admin: {
+    businesses: (limit: number, offset: number) => ["admin", "businesses", limit, offset] as const,
   },
 
   business: {

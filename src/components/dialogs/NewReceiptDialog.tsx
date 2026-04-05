@@ -32,6 +32,7 @@ import type { PaymentMethod } from "@/types/invoice";
 import type { Party } from "@/types/party";
 import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/trial";
 import { isEventFromNestedPortal } from "@/lib/dialog-nested-portal";
 
 const schema = z.object({
@@ -116,6 +117,7 @@ export function NewReceiptDialog({ open, onOpenChange }: NewReceiptDialogProps) 
       showSuccessToast("Receipt created");
       handleClose(false);
     } catch (e) {
+      if (maybeShowTrialExpiredToast(e)) return;
       showErrorToast(e, "Failed to create receipt");
     }
   };

@@ -37,6 +37,7 @@ import {
 } from "@/lib/invoice";
 import { withInvoiceQuantityErrorDetails } from "@/lib/invoice-quantity-error-details";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/trial";
 import { ApiClientError } from "@/api/error";
 
 export default function InvoiceDetail() {
@@ -79,17 +80,8 @@ export default function InvoiceDetail() {
       await finalizeMutation.mutateAsync(invoiceId);
       showSuccessToast("Invoice finalized");
     } catch (err) {
-      const isSubscriptionError =
-        err instanceof ApiClientError &&
-        (err.status === 403 || err.status === 404) &&
-        /subscription/i.test(err.message);
-
-      if (isSubscriptionError) {
-        showErrorToast(
-          "Your subscription is inactive or missing — please renew to finalize invoices.",
-          "Subscription required",
-        );
-      } else if (err instanceof ApiClientError && err.status === 409) {
+      if (maybeShowTrialExpiredToast(err)) return;
+      if (err instanceof ApiClientError && err.status === 409) {
         showErrorToast(withInvoiceQuantityErrorDetails(err), "Insufficient stock");
       } else if (err instanceof ApiClientError && err.status === 400) {
         showErrorToast(withInvoiceQuantityErrorDetails(err), "Cannot finalize");

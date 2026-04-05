@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { LAST_ORGANIZATION_CODE_KEY } from "@/constants/auth-storage";
+import { isReservedAdminOrganizationCode } from "@/lib/organization-code";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FieldError, Label } from "@/components/ui/label";
@@ -39,21 +41,23 @@ export default function LoginCard({
   onRequestSignup,
   onRequestForgot,
 }: LoginCardProps) {
-  const { requestLoginOtp, verifyLoginOtp } = useAuth();
+  const { requestLoginOtp, verifyLoginOtp, adminLogin } = useAuth();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
-  const [otpRequested, setOtpRequested] = useState(false);
+  /** After first step: whether to show the email OTP field (false for reserved admin org codes or API). */
+  const [showOtpField, setShowOtpField] = useState(false);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const otpInputRef = useRef<HTMLInputElement | null>(null);
+  const prefilledOrg = useRef(false);
 
   useEffect(() => {
-    if (otpRequested) {
+    if (showOtpField) {
       const id = requestAnimationFrame(() => otpInputRef.current?.focus());
       return () => cancelAnimationFrame(id);
     }
-  }, [otpRequested]);
+  }, [showOtpField]);
 
   const {
     register,
@@ -71,6 +75,16 @@ export default function LoginCard({
 
   const { ref: otpFormRef, ...otpRegisterRest } = register("otp");
 
+  useEffect(() => {
+    if (prefilledOrg.current) return;
+    if (typeof window === "undefined") return;
+    const saved = localStorage.getItem(LAST_ORGANIZATION_CODE_KEY);
+    if (saved?.trim()) {
+      setValue("organizationCode", saved.trim().toUpperCase());
+      prefilledOrg.current = true;
+    }
+  }, [setValue]);
+
   const handleResendOtp = async () => {
     setError(null);
     setInfo(null);
@@ -86,6 +100,13 @@ export default function LoginCard({
         organizationCode: organizationCode.trim().toUpperCase(),
         password: pwd,
       });
+      if (resp.requiresOtp === false) {
+        setShowOtpField(false);
+        setError(
+          "Email OTP is not enabled for this organization. Confirm your organization code or contact support.",
+        );
+        return;
+      }
       setInfo(resp.message || "OTP resent. Please check your email.");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to resend OTP.");
@@ -98,19 +119,40 @@ export default function LoginCard({
     setError(null);
     setInfo(null);
     try {
-      if (!otpRequested) {
+      if (!showOtpField) {
         const pwd = data.password?.trim();
         if (!pwd) {
-          setError("Password is required to receive an OTP.");
+          setError("Password is required.");
           return;
         }
-        await requestLoginOtp({
+
+        const org = data.organizationCode.trim().toUpperCase();
+
+        if (isReservedAdminOrganizationCode(org)) {
+          await adminLogin({
+            email: data.email,
+            password: pwd,
+            organizationCode: org,
+          });
+          router.replace(redirectTo || "/dashboard");
+          return;
+        }
+
+        const resp = await requestLoginOtp({
           email: data.email,
-          organizationCode: data.organizationCode,
+          organizationCode: org,
           password: pwd,
         });
-        setInfo("OTP sent. Please check your email.");
-        setOtpRequested(true);
+
+        if (resp.requiresOtp === false) {
+          setError(
+            "Email OTP is not enabled for this organization. Confirm your organization code or contact support.",
+          );
+          return;
+        }
+
+        setInfo(resp.message || "OTP sent. Please check your email.");
+        setShowOtpField(true);
         return;
       }
 
@@ -137,14 +179,16 @@ export default function LoginCard({
     }
   };
 
+  const adminOrgHint = isReservedAdminOrganizationCode(organizationCode?.trim() ?? "");
+
   return (
     <Card className="border-border/50 shadow-lg backdrop-blur-sm">
       <CardHeader className="pb-4 text-center">
         <CardTitle className="text-xl">Welcome back</CardTitle>
         <CardDescription>
-          {otpRequested
+          {showOtpField
             ? "Enter the 6-digit OTP sent to your email"
-            : "Enter your email, password, and organization code to receive an OTP"}
+            : "Enter your email, password, and organization code to continue"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -168,7 +212,7 @@ export default function LoginCard({
               id="email"
               type="email"
               placeholder="you@company.com"
-              disabled={otpRequested}
+              disabled={showOtpField}
               aria-invalid={!!errors.email}
               {...register("email")}
             />
@@ -182,7 +226,7 @@ export default function LoginCard({
             <Input
               id="organizationCode"
               placeholder="ABC123"
-              disabled={otpRequested}
+              disabled={showOtpField}
               maxLength={6}
               className="uppercase"
               aria-invalid={!!errors.organizationCode}
@@ -191,7 +235,7 @@ export default function LoginCard({
             {errors.organizationCode && <FieldError>{errors.organizationCode.message}</FieldError>}
           </div>
 
-          {!otpRequested && (
+          {!showOtpField && (
             <div className="space-y-2">
               <Label htmlFor="password" required>
                 Password
@@ -200,7 +244,7 @@ export default function LoginCard({
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Required to receive OTP"
+                  placeholder="Required to continue"
                   autoComplete="current-password"
                   className="pr-9"
                   aria-invalid={!!errors.password}
@@ -225,7 +269,7 @@ export default function LoginCard({
             </div>
           )}
 
-          {otpRequested && (
+          {showOtpField && (
             <>
               <div className="space-y-2">
                 <Label htmlFor="otp" required>
@@ -252,7 +296,7 @@ export default function LoginCard({
                   <button
                     type="button"
                     onClick={() => {
-                      setOtpRequested(false);
+                      setShowOtpField(false);
                       setValue("otp", "");
                       setInfo(null);
                     }}
@@ -277,7 +321,7 @@ export default function LoginCard({
 
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {otpRequested ? "Verify OTP & Sign in" : "Send OTP"}
+            {showOtpField ? "Verify OTP & Sign in" : adminOrgHint ? "Sign in" : "Send OTP"}
           </Button>
 
           <div className="text-center text-sm text-muted-foreground">
@@ -297,7 +341,7 @@ export default function LoginCard({
           </div>
 
           <div className="text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             {onRequestSignup ? (
               <button
                 type="button"

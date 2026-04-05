@@ -27,6 +27,7 @@ import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 import type { PaymentMethod } from "@/types/invoice";
 import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/trial";
 import { formatCurrency } from "@/lib/utils";
 import type { RecordInvoicePaymentData } from "@/types/receipt";
 
@@ -104,6 +105,7 @@ export default function PaymentDialog({ open, onOpenChange, invoiceId, balanceDu
         handleClose(false);
       }
     } catch (err) {
+      if (maybeShowTrialExpiredToast(err)) return;
       showErrorToast(err, "Failed to record payment");
     }
   };
