@@ -8,11 +8,13 @@ import PageHeader from "@/components/PageHeader";
 import { ReportBackLink } from "@/components/reports/ReportBackLink";
 import { ReportCsvButton } from "@/components/reports/ReportCsvButton";
 import { ReportLimitInput } from "@/components/reports/ReportLimitInput";
+import { ReportRegisterFilterCard } from "@/components/reports/report-register-ui";
 import { ReceivablesAgingSection } from "@/components/reports/ReceivablesAgingSection";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { useReceivablesAging } from "@/hooks/use-reports";
 import { parseISODateString, toISODateString } from "@/lib/date";
 import { DEFAULT_REPORT_LIMIT } from "@/constants";
+import { reportInvoiceAging } from "@/lib/report-labels";
 
 export default function ReceivablesAgingPage() {
   const [asOf, setAsOf] = useState(() => toISODateString(new Date()));
@@ -25,42 +27,46 @@ export default function ReceivablesAgingPage() {
     <div className="page-container animate-fade-in">
       <ReportBackLink />
       <PageHeader
-        title="Receivables aging"
-        description="Open invoice lines by aging bucket"
+        title={reportInvoiceAging.title}
+        description={reportInvoiceAging.description}
         action={
           <ReportCsvButton
             reportPath="/reports/receivables-aging"
             query={{ asOf, limit }}
-            filename="receivables-aging.csv"
+            filename={reportInvoiceAging.csvFilename}
             disabled={!asOfValid}
           />
         }
       />
 
-      <ErrorBanner error={error} fallbackMessage="Failed to load receivables aging" />
+      <ErrorBanner error={error} fallbackMessage={reportInvoiceAging.loadError} />
 
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="as-of" className="text-muted-foreground">
-            Report as of
-          </Label>
-          <Input
-            id="as-of"
-            type="date"
-            className="w-full sm:w-44"
-            value={asOf}
-            onChange={(e) => setAsOf(e.target.value)}
-          />
+      <ReportRegisterFilterCard>
+        <div className="flex w-full flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="as-of" className="text-sm text-muted-foreground">
+              As of date
+            </Label>
+            <Input
+              id="as-of"
+              type="date"
+              className="w-full sm:w-44"
+              value={asOf}
+              onChange={(e) => setAsOf(e.target.value)}
+            />
+          </div>
+          <ReportLimitInput value={limit} onChange={setLimit} />
         </div>
-        <ReportLimitInput value={limit} onChange={setLimit} />
-      </div>
+      </ReportRegisterFilterCard>
 
       {isPending ? (
-        <ReportTabSkeleton height="h-96" />
+        <ReportTabSkeleton layout="aging" />
       ) : data ? (
         <ReceivablesAgingSection data={data} />
       ) : (
-        <p className="py-8 text-center text-sm text-muted-foreground">Enter a valid as-of date.</p>
+        <p className="rounded-xl border border-dashed border-border bg-muted/20 py-10 text-center text-sm text-muted-foreground">
+          Enter a valid as-of date.
+        </p>
       )}
     </div>
   );

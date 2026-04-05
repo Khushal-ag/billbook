@@ -12,6 +12,13 @@ import type {
   ReceivablesAgingData,
   ReceivablesAgingLine,
 } from "@/types/report";
+import { reportInvoiceAging } from "@/lib/report-labels";
+import {
+  ReportRegisterEmptyRow,
+  ReportRegisterResultBar,
+  ReportRegisterTableScroll,
+  rr,
+} from "@/components/reports/report-register-ui";
 import Link from "next/link";
 
 const BUCKET_LABEL: Record<ReceivablesAgingBucket, string> = {
@@ -70,19 +77,22 @@ export function ReceivablesAgingSection({ data }: { data: ReceivablesAgingData }
     return data.lines.filter((l) => l.agingBucket === bucketFilter);
   }, [data.lines, bucketFilter]);
 
+  const lineCount = data.lines.length;
+
   return (
     <div className="space-y-6">
-      <p className="text-sm text-muted-foreground">
-        Report as of{" "}
-        <span className="font-medium text-foreground">{formatISODateDisplay(data.asOf)}</span>
+      <div className="rounded-xl border border-border bg-muted/20 px-4 py-3 text-sm text-muted-foreground shadow-sm">
+        As of <span className="font-medium text-foreground">{formatISODateDisplay(data.asOf)}</span>
         {" · "}
-        Total due{" "}
-        <span className="font-medium text-foreground">{formatCurrency(data.summary.totalDue)}</span>
-      </p>
+        {reportInvoiceAging.asOfLineOutstandingPrefix}{" "}
+        <span className="font-medium tabular-nums text-foreground">
+          {formatCurrency(data.summary.totalDue)}
+        </span>
+      </div>
 
-      <Card>
+      <Card className="rounded-xl border shadow-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Aging by bucket</CardTitle>
+          <CardTitle className="text-base">{reportInvoiceAging.chartTitle}</CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           <ChartContainer config={{}} className="h-[220px] w-full">
@@ -108,14 +118,14 @@ export function ReceivablesAgingSection({ data }: { data: ReceivablesAgingData }
         </CardContent>
       </Card>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-3 shadow-sm">
         {BUCKET_CHIPS.map((c) => (
           <button
             key={c.id}
             type="button"
             onClick={() => setBucketFilter(c.id)}
             className={cn(
-              "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+              "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
               bucketFilter === c.id
                 ? "border-primary bg-primary/10 text-foreground"
                 : "border-border bg-background text-muted-foreground hover:bg-muted/50",
@@ -126,27 +136,26 @@ export function ReceivablesAgingSection({ data }: { data: ReceivablesAgingData }
         ))}
       </div>
 
-      <div className="data-table-container overflow-x-auto">
-        <table className="w-full min-w-[960px] text-sm">
-          <thead>
-            <tr className="border-b bg-muted/30">
-              <th className="px-3 py-2 text-left font-medium text-muted-foreground">Invoice</th>
-              <th className="px-3 py-2 text-left font-medium text-muted-foreground">Party</th>
-              <th className="px-3 py-2 text-left font-medium text-muted-foreground">Bucket</th>
-              <th className="px-3 py-2 text-right font-medium text-muted-foreground">Due</th>
-              <th className="px-3 py-2 text-right font-medium text-muted-foreground">
-                Days past due
-              </th>
-              <th className="px-3 py-2 text-left font-medium text-muted-foreground">Due date</th>
+      <ReportRegisterTableScroll>
+        <ReportRegisterResultBar
+          count={filteredLines.length}
+          rowLabel={bucketFilter === "ALL" ? "open invoice lines loaded" : "rows in this age band"}
+          limit={bucketFilter === "ALL" && lineCount >= data.limit ? data.limit : undefined}
+        />
+        <table className={cn(rr.table, "min-w-[960px]")}>
+          <thead className={rr.thead}>
+            <tr>
+              <th className={rr.th}>Invoice</th>
+              <th className={rr.th}>Party</th>
+              <th className={rr.th}>{reportInvoiceAging.tableColumnAge}</th>
+              <th className={rr.thRight}>{reportInvoiceAging.tableColumnOutstanding}</th>
+              <th className={rr.thRight}>Days past due</th>
+              <th className={rr.th}>Due date</th>
             </tr>
           </thead>
           <tbody>
             {filteredLines.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
-                  No lines in this bucket.
-                </td>
-              </tr>
+              <ReportRegisterEmptyRow colSpan={6} message={reportInvoiceAging.emptyBucket} />
             ) : (
               filteredLines.map((line, idx) => (
                 <AgingRow key={`${line.invoiceId}-${idx}`} line={line} />
@@ -154,36 +163,29 @@ export function ReceivablesAgingSection({ data }: { data: ReceivablesAgingData }
             )}
           </tbody>
         </table>
-      </div>
+      </ReportRegisterTableScroll>
     </div>
   );
 }
 
 function AgingRow({ line }: { line: ReceivablesAgingLine }) {
   return (
-    <tr className="border-b last:border-0 hover:bg-muted/20">
-      <td className="px-3 py-2">
-        <Link
-          href={`/invoices/${line.invoiceId}`}
-          className="font-medium text-accent underline-offset-4 hover:underline"
-        >
+    <tr className={rr.tr}>
+      <td className={rr.td}>
+        <Link href={`/invoices/${line.invoiceId}`} className={rr.link}>
           {line.invoiceNumber}
         </Link>
         <span className="ml-2 text-xs text-muted-foreground">{line.invoiceType}</span>
       </td>
-      <td className="px-3 py-2">{line.partyName}</td>
-      <td className="px-3 py-2">
+      <td className={rr.td}>{line.partyName}</td>
+      <td className={rr.td}>
         <Badge variant="outline" className="font-normal">
           {BUCKET_LABEL[line.agingBucket]}
         </Badge>
       </td>
-      <td className="px-3 py-2 text-right font-medium tabular-nums">
-        {formatCurrency(line.dueAmount)}
-      </td>
-      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-        {line.daysPastDue}
-      </td>
-      <td className="px-3 py-2 text-muted-foreground">
+      <td className={cn(rr.tdRight, "font-medium")}>{formatCurrency(line.dueAmount)}</td>
+      <td className={rr.tdRightMuted}>{line.daysPastDue}</td>
+      <td className={rr.tdMuted}>
         {line.dueDate ? formatDate(line.dueDate) : formatDate(line.invoiceDate)}
       </td>
     </tr>

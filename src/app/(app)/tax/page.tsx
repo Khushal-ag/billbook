@@ -113,7 +113,7 @@ export default function Tax() {
 
         <TabsContent value="summary">
           {summaryPending ? (
-            <ReportTabSkeleton height="h-60" />
+            <ReportTabSkeleton layout="simple" height="h-60" />
           ) : gstSummary && (gstSummary.monthlyBreakdown ?? []).length > 0 ? (
             <TaxSummaryTable
               rows={gstSummary.monthlyBreakdown ?? []}
@@ -133,7 +133,7 @@ export default function Tax() {
 
         <TabsContent value="itemized">
           {itemizedPending ? (
-            <ReportTabSkeleton height="h-60" />
+            <ReportTabSkeleton layout="simple" height="h-60" />
           ) : gstItemized && (gstItemized.data ?? []).length > 0 ? (
             <TaxItemizedTable rows={gstItemized.data ?? []} />
           ) : (

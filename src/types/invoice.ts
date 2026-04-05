@@ -147,7 +147,8 @@ export interface InvoiceCommunicationsSummary {
 
 /**
  * Create/update invoice line (`items[]`). Rules are enforced server-side by `invoiceType`.
- * - Sale (`SALE_*`): send `stockEntryId`; do **not** send `itemId` or `sellingPrice`.
+ * - `SALE_INVOICE`: send `stockEntryId`; do **not** send `itemId` or `sellingPrice`.
+ * - `SALE_RETURN` linked to a `SALE_INVOICE` (STOCK lines): send `stockEntryId`, `sourceInvoiceItemId`, and `itemId` matching the source line (omit `itemId` for SERVICE lines).
  * - Purchase (`PURCHASE_INVOICE`): do **not** send `stockEntryId`; send `itemName` + rates; optional `itemId` and `sellingPrice`.
  * - `PURCHASE_RETURN` + catalog **STOCK** line: send `stockEntryId` (batch being returned). Omit for SERVICE lines. Finalize reduces that batch; **400** if missing where required, **409** if not enough in batch.
  * - `SALE_RETURN` with source link: send `stockEntryId` matching the original sale line’s batch so the return books to that batch.
@@ -170,7 +171,8 @@ export interface InvoiceItemInput {
   sgstRate?: string;
   igstRate?: string;
   /**
-   * Purchase only (`PURCHASE_INVOICE`, `PURCHASE_RETURN`): catalog item; use when a stock batch should be created on finalize.
+   * Purchase lines; `PURCHASE_RETURN` STOCK lines; **`SALE_RETURN`** lines linked to a source sale (STOCK only) — must match source `invoice_items.item_id`.
+   * Omit for `SALE_INVOICE` and for SERVICE sale returns.
    */
   itemId?: number;
   /**

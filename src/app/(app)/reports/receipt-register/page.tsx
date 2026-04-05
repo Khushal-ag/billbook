@@ -8,11 +8,19 @@ import PageHeader from "@/components/PageHeader";
 import { ReportBackLink } from "@/components/reports/ReportBackLink";
 import { ReportCsvButton } from "@/components/reports/ReportCsvButton";
 import { ReportLimitInput } from "@/components/reports/ReportLimitInput";
+import {
+  ReportRegisterEmptyRow,
+  ReportRegisterFilterCard,
+  ReportRegisterResultBar,
+  ReportRegisterTableScroll,
+  rr,
+} from "@/components/reports/report-register-ui";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { useReceiptRegister } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { reportReceiptRegister } from "@/lib/report-labels";
+import { capitaliseWords, formatCurrency, formatDate } from "@/lib/utils";
 
 export default function ReceiptRegisterPage() {
   const {
@@ -28,93 +36,93 @@ export default function ReceiptRegisterPage() {
   const [limit, setLimit] = useState(DEFAULT_REPORT_LIMIT);
   const { data, isPending, error } = useReceiptRegister(validStartDate, validEndDate, limit);
 
+  const rows = data?.receipts ?? [];
+  const rowCount = rows.length;
+
   return (
     <div className="page-container animate-fade-in">
       <ReportBackLink />
       <PageHeader
-        title="Receipt register"
-        description="Receipts in the selected period"
+        title={reportReceiptRegister.title}
+        description={reportReceiptRegister.description}
         action={
           <ReportCsvButton
             reportPath="/reports/receipt-register"
             query={{ startDate: validStartDate, endDate: validEndDate, limit }}
-            filename="receipt-register.csv"
+            filename={reportReceiptRegister.csvFilename}
             disabled={!validStartDate || !validEndDate}
           />
         }
       />
 
-      <ErrorBanner error={error} fallbackMessage="Failed to load receipt register" />
+      <ErrorBanner error={error} fallbackMessage={reportReceiptRegister.loadError} />
 
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end lg:justify-between">
-        <DateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-          error={dateRangeError}
-        />
-        <ReportLimitInput value={limit} onChange={setLimit} />
-      </div>
+      <ReportRegisterFilterCard>
+        <div className="flex w-full flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end lg:justify-between">
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            error={dateRangeError}
+          />
+          <ReportLimitInput value={limit} onChange={setLimit} />
+        </div>
+      </ReportRegisterFilterCard>
 
       {isPending ? (
-        <ReportTabSkeleton height="h-80" />
+        <ReportTabSkeleton />
       ) : data ? (
-        <div className="data-table-container overflow-x-auto">
-          <table className="w-full min-w-[880px] text-sm">
-            <thead>
-              <tr className="border-b bg-muted/30">
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Receipt</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Party</th>
-                <th className="px-3 py-2 text-right font-medium text-muted-foreground">Total</th>
-                <th className="px-3 py-2 text-right font-medium text-muted-foreground">
-                  Allocated
-                </th>
-                <th className="px-3 py-2 text-right font-medium text-muted-foreground">
-                  Unallocated
-                </th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Method</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Received</th>
+        <ReportRegisterTableScroll>
+          <ReportRegisterResultBar
+            count={rowCount}
+            rowLabel="receipts in this period"
+            limit={limit}
+          />
+          <table className={rr.table}>
+            <thead className={rr.thead}>
+              <tr>
+                <th className={rr.th}>Receipt</th>
+                <th className={rr.th}>Party</th>
+                <th className={rr.thRight}>Total</th>
+                <th className={rr.thRight}>Allocated</th>
+                <th className={rr.thRight}>Unallocated</th>
+                <th className={rr.th}>Method</th>
+                <th className={rr.th}>Received</th>
               </tr>
             </thead>
             <tbody>
-              {(data.receipts ?? []).length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
-                    No receipts in this period.
-                  </td>
-                </tr>
+              {rowCount === 0 ? (
+                <ReportRegisterEmptyRow
+                  colSpan={7}
+                  message="No receipts in this period. Try widening the date range or record a receipt first."
+                />
               ) : (
-                data.receipts.map((r) => (
-                  <tr key={r.id} className="border-b last:border-0 hover:bg-muted/20">
-                    <td className="px-3 py-2">
-                      <Link
-                        href={`/receipts/${r.id}`}
-                        className="font-medium text-accent underline-offset-4 hover:underline"
-                      >
+                rows.map((r) => (
+                  <tr key={r.id} className={rr.tr}>
+                    <td className={rr.td}>
+                      <Link href={`/receipts/${r.id}`} className={rr.link}>
                         {r.receiptNumber}
                       </Link>
                     </td>
-                    <td className="px-3 py-2">{r.partyName ?? "—"}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {formatCurrency(r.totalAmount)}
+                    <td className={rr.td}>{r.partyName ?? "—"}</td>
+                    <td className={rr.tdRight}>{formatCurrency(r.totalAmount)}</td>
+                    <td className={rr.tdRightMuted}>{formatCurrency(r.allocatedAmount ?? "0")}</td>
+                    <td className={rr.tdRight}>{formatCurrency(r.unallocatedAmount)}</td>
+                    <td className={rr.tdMuted}>
+                      {r.paymentMethod
+                        ? capitaliseWords(String(r.paymentMethod).replace(/_/g, " "))
+                        : "—"}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-                      {formatCurrency(r.allocatedAmount ?? "0")}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {formatCurrency(r.unallocatedAmount)}
-                    </td>
-                    <td className="px-3 py-2 text-muted-foreground">{r.paymentMethod}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{formatDate(r.receivedAt)}</td>
+                    <td className={rr.tdMuted}>{formatDate(r.receivedAt)}</td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
-        </div>
+        </ReportRegisterTableScroll>
       ) : (
-        <p className="py-8 text-center text-sm text-muted-foreground">
+        <p className="rounded-xl border border-dashed border-border bg-muted/20 py-10 text-center text-sm text-muted-foreground">
           Select a valid date range to load data.
         </p>
       )}

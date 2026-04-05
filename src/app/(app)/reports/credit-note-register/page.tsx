@@ -9,12 +9,20 @@ import StatusBadge from "@/components/StatusBadge";
 import { ReportBackLink } from "@/components/reports/ReportBackLink";
 import { ReportCsvButton } from "@/components/reports/ReportCsvButton";
 import { ReportLimitInput } from "@/components/reports/ReportLimitInput";
+import {
+  ReportRegisterEmptyRow,
+  ReportRegisterFilterCard,
+  ReportRegisterResultBar,
+  ReportRegisterTableScroll,
+  rr,
+} from "@/components/reports/report-register-ui";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCreditNoteRegister } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { reportCreditNoteRegister } from "@/lib/report-labels";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
 
 export default function CreditNoteRegisterPage() {
   const {
@@ -30,95 +38,104 @@ export default function CreditNoteRegisterPage() {
   const [limit, setLimit] = useState(DEFAULT_REPORT_LIMIT);
   const { data, isPending, error } = useCreditNoteRegister(validStartDate, validEndDate, limit);
 
+  const rows = data?.creditNotes ?? [];
+  const rowCount = rows.length;
+
   return (
     <div className="page-container animate-fade-in">
       <ReportBackLink />
       <PageHeader
-        title="Credit note register"
-        description="Credit notes created in the selected period"
+        title={reportCreditNoteRegister.title}
+        description={reportCreditNoteRegister.description}
         action={
           <ReportCsvButton
             reportPath="/reports/credit-note-register"
             query={{ startDate: validStartDate, endDate: validEndDate, limit }}
-            filename="credit-note-register.csv"
+            filename={reportCreditNoteRegister.csvFilename}
             disabled={!validStartDate || !validEndDate}
           />
         }
       />
 
-      <ErrorBanner error={error} fallbackMessage="Failed to load credit note register" />
+      <ErrorBanner error={error} fallbackMessage={reportCreditNoteRegister.loadError} />
 
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end lg:justify-between">
-        <DateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onStartDateChange={setStartDate}
-          onEndDateChange={setEndDate}
-          error={dateRangeError}
-        />
-        <ReportLimitInput value={limit} onChange={setLimit} />
-      </div>
+      <ReportRegisterFilterCard>
+        <div className="flex w-full flex-col gap-4 lg:flex-row lg:flex-wrap lg:items-end lg:justify-between">
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            error={dateRangeError}
+          />
+          <ReportLimitInput value={limit} onChange={setLimit} />
+        </div>
+      </ReportRegisterFilterCard>
 
       {isPending ? (
-        <ReportTabSkeleton height="h-80" />
+        <ReportTabSkeleton />
       ) : data ? (
-        <div className="data-table-container overflow-x-auto">
-          <table className="w-full min-w-[880px] text-sm">
-            <thead>
-              <tr className="border-b bg-muted/30">
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">
-                  Credit note
-                </th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Status</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Party</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Invoice</th>
-                <th className="px-3 py-2 text-right font-medium text-muted-foreground">Amount</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Inventory</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Created</th>
+        <ReportRegisterTableScroll>
+          <ReportRegisterResultBar
+            count={rowCount}
+            rowLabel="credit notes in this period"
+            limit={limit}
+          />
+          <table className={rr.table}>
+            <thead className={rr.thead}>
+              <tr>
+                <th className={rr.th}>Credit note</th>
+                <th className={rr.th}>Status</th>
+                <th className={rr.th}>Party</th>
+                <th className={rr.th}>Invoice</th>
+                <th className={rr.thRight}>Amount</th>
+                <th className={rr.th}>Inventory</th>
+                <th className={rr.th}>Created</th>
               </tr>
             </thead>
             <tbody>
-              {(data.creditNotes ?? []).length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-3 py-8 text-center text-muted-foreground">
-                    No credit notes in this period.
-                  </td>
-                </tr>
+              {rowCount === 0 ? (
+                <ReportRegisterEmptyRow
+                  colSpan={7}
+                  message="No credit notes in this period. Adjust dates or create a credit note."
+                />
               ) : (
-                data.creditNotes.map((cn) => (
-                  <tr key={cn.id} className="border-b last:border-0 hover:bg-muted/20">
-                    <td className="px-3 py-2 font-medium">{cn.creditNoteNumber}</td>
-                    <td className="px-3 py-2">
-                      <StatusBadge status={cn.status} />
+                rows.map((cnRow) => (
+                  <tr key={cnRow.id} className={rr.tr}>
+                    <td className={cn(rr.td, "font-medium tabular-nums")}>
+                      {cnRow.creditNoteNumber}
                     </td>
-                    <td className="px-3 py-2">{cn.partyName ?? "—"}</td>
-                    <td className="px-3 py-2">
-                      {cn.invoiceId ? (
+                    <td className={rr.td}>
+                      <StatusBadge status={cnRow.status} />
+                    </td>
+                    <td className={rr.td}>{cnRow.partyName ?? "—"}</td>
+                    <td className={rr.td}>
+                      {cnRow.invoiceId ? (
                         <LinkedInvoiceLink
-                          invoiceId={cn.invoiceId}
-                          invoiceNumber={cn.invoiceNumber}
-                          className="text-accent underline-offset-4 hover:underline"
+                          invoiceId={cnRow.invoiceId}
+                          invoiceNumber={cnRow.invoiceNumber}
+                          className={rr.link}
                         />
                       ) : (
                         "—"
                       )}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {formatCurrency(cn.totalAmount)}
+                    <td className={cn(rr.tdRight, "font-medium")}>
+                      {formatCurrency(cnRow.totalAmount)}
                     </td>
-                    <td className="px-3 py-2 text-muted-foreground">
+                    <td className={rr.tdMuted}>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span className="cursor-default">
-                              {cn.affectsInventory === undefined
+                              {cnRow.affectsInventory === undefined
                                 ? "—"
-                                : cn.affectsInventory
+                                : cnRow.affectsInventory
                                   ? "Yes *"
                                   : "No"}
                             </span>
                           </TooltipTrigger>
-                          {cn.affectsInventory && (
+                          {cnRow.affectsInventory && (
                             <TooltipContent side="top" className="max-w-[220px] text-xs">
                               Coming soon — inventory adjustment is not yet automated.
                             </TooltipContent>
@@ -126,15 +143,15 @@ export default function CreditNoteRegisterPage() {
                         </Tooltip>
                       </TooltipProvider>
                     </td>
-                    <td className="px-3 py-2 text-muted-foreground">{formatDate(cn.createdAt)}</td>
+                    <td className={rr.tdMuted}>{formatDate(cnRow.createdAt)}</td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
-        </div>
+        </ReportRegisterTableScroll>
       ) : (
-        <p className="py-8 text-center text-sm text-muted-foreground">
+        <p className="rounded-xl border border-dashed border-border bg-muted/20 py-10 text-center text-sm text-muted-foreground">
           Select a valid date range to load data.
         </p>
       )}

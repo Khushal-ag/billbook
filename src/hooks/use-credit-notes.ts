@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/api";
+import { api, generateIdempotencyKey } from "@/api";
 import { invalidateQueryKeys } from "@/lib/query";
 import { queryKeys } from "@/lib/query-keys";
 import { buildQueryString } from "@/lib/utils";
@@ -55,7 +55,7 @@ export function useCreateCreditNote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: CreateCreditNoteRequest) => {
-      const res = await api.post<CreditNote>("/credit-notes", data);
+      const res = await api.post<CreditNote>("/credit-notes", data, generateIdempotencyKey());
       return res.data;
     },
     onSuccess: () => invalidateQueryKeys(qc, CREDIT_NOTE_INVALIDATION_KEYS()),
@@ -66,7 +66,11 @@ export function useFinalizeCreditNote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const res = await api.post<CreditNote>(`/credit-notes/${id}/finalize`);
+      const res = await api.post<CreditNote>(
+        `/credit-notes/${id}/finalize`,
+        undefined,
+        generateIdempotencyKey(),
+      );
       return res.data;
     },
     onSuccess: () => invalidateQueryKeys(qc, CREDIT_NOTE_INVALIDATION_KEYS()),

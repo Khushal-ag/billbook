@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Package, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DashboardSectionHeader } from "./dashboard-utils";
 import { formatCurrency, formatQuantity } from "@/lib/utils";
 import type { TopItem, TopCustomer } from "@/types/dashboard";
 
@@ -17,26 +19,30 @@ export function DashboardHighlightsSection({
   const customers = Array.isArray(topCustomers) ? topCustomers : [];
 
   return (
-    <section className="space-y-4">
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">Top items (sales)</CardTitle>
-              <Link href="/items" className="text-xs text-muted-foreground hover:text-foreground">
-                View all →
-              </Link>
+    <section className="space-y-5">
+      <DashboardSectionHeader
+        title="Top performers"
+        description="Best-selling items and customers from sale invoices and returns."
+      />
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-muted/15 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
+          <CardHeader className="pb-3 sm:pb-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="text-base font-semibold">Top items</CardTitle>
+              <Button variant="ghost" size="sm" className="h-8 w-fit shrink-0 px-2 text-xs" asChild>
+                <Link href="/items">View catalog</Link>
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="divide-y divide-border/60">
+            <div className="divide-y divide-border/70">
               {items.length > 0 ? (
                 items.slice(0, 5).map((item, idx) => (
                   <div
                     key={item.itemId}
-                    className="flex items-center gap-3 rounded-xl px-2 py-3 transition-colors hover:bg-background/70"
+                    className="flex items-center gap-3 px-1 py-3 transition-colors first:pt-0 last:pb-0 hover:bg-muted/25 sm:px-2"
                   >
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 text-xs font-semibold text-accent">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold tabular-nums text-primary">
                       {idx + 1}
                     </span>
                     <div className="min-w-0 flex-1">
@@ -70,25 +76,25 @@ export function DashboardHighlightsSection({
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold">Top customers (sales)</CardTitle>
-              <Link href="/parties" className="text-xs text-muted-foreground hover:text-foreground">
-                View all →
-              </Link>
+        <Card className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-muted/15 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
+          <CardHeader className="pb-3 sm:pb-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="text-base font-semibold">Top customers</CardTitle>
+              <Button variant="ghost" size="sm" className="h-8 w-fit shrink-0 px-2 text-xs" asChild>
+                <Link href="/parties">View parties</Link>
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="divide-y divide-border/60">
+            <div className="divide-y divide-border/70">
               {customers.length > 0 ? (
                 customers.slice(0, 5).map((customer) => (
                   <div
                     key={customer.partyId}
-                    className="flex items-center gap-3 rounded-xl px-2 py-3 transition-colors hover:bg-background/70"
+                    className="flex items-center gap-3 px-1 py-3 transition-colors first:pt-0 last:pb-0 hover:bg-muted/25 sm:px-2"
                   >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent/20 to-accent/5 text-sm font-semibold text-accent">
-                      {customer.partyName.charAt(0).toUpperCase()}
+                    <span className="bg-primary/12 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-primary">
+                      {(customer.partyName?.charAt(0) ?? "?").toUpperCase()}
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{customer.partyName}</p>

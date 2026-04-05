@@ -164,6 +164,18 @@ export function buildInvoiceItemInput(
   }
   if (invoiceType === "SALE_RETURN" && line.sourceInvoiceItemId != null) {
     payload.sourceInvoiceItemId = line.sourceInvoiceItemId;
+    /**
+     * Linked sale return (STOCK catalog lines): API validates `itemId` and `stockEntryId` against
+     * the source sale line — same pattern as purchase returns. Omit `itemId` for SERVICE lines.
+     */
+    if (!isDraftLineServiceItem(line)) {
+      if (line.item?.id == null) {
+        throw new Error(
+          "Each stock return line must include itemId matching the source sale line.",
+        );
+      }
+      payload.itemId = line.item.id;
+    }
   }
   return payload;
 }

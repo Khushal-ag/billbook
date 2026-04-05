@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DashboardSectionHeader } from "./dashboard-utils";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
 import { CHART_COLORS, type PaymentStatusItem, type InvoiceStatusItem } from "@/lib/dashboard";
@@ -79,20 +81,24 @@ export function DashboardInsightsSection({
   totalInvoiceStatusAmount,
 }: DashboardInsightsSectionProps) {
   return (
-    <section className="space-y-4">
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm lg:col-span-2">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
+    <section className="space-y-5">
+      <DashboardSectionHeader
+        title="Sales insights"
+        description="Trends and breakdowns for sale-side activity. Purchase bills are tracked separately under purchases."
+      />
+      <div className="grid gap-5 lg:grid-cols-3">
+        <Card className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-muted/20 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04] lg:col-span-2">
+          <CardHeader className="pb-3 sm:pb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <CardTitle className="text-base font-semibold">Sales revenue by month</CardTitle>
-                <p className="mt-1 text-xs font-normal text-muted-foreground">
+                <CardTitle className="text-base font-semibold">Revenue by month</CardTitle>
+                <p className="mt-1 text-xs text-muted-foreground">
                   Sale invoices and sale returns — not purchases.
                 </p>
               </div>
-              <Link href="/reports" className="text-xs text-muted-foreground hover:text-foreground">
-                View reports →
-              </Link>
+              <Button variant="outline" size="sm" className="shrink-0" asChild>
+                <Link href="/reports">Open reports</Link>
+              </Button>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
@@ -140,11 +146,11 @@ export function DashboardInsightsSection({
           </CardContent>
         </Card>
 
-        <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base font-semibold">Sale invoice payment status</CardTitle>
-            <p className="text-xs font-normal text-muted-foreground">
-              Final sale invoices — from paid amount vs total (not ledger allocation).
+        <Card className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-muted/20 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="text-base font-semibold">Payment status</CardTitle>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Final sale invoices — paid vs total on the document (not ledger allocation).
             </p>
           </CardHeader>
           <CardContent className="pt-0">
@@ -212,11 +218,11 @@ export function DashboardInsightsSection({
         </Card>
       </div>
 
-      <Card className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base font-semibold">Sale document status</CardTitle>
-          <p className="text-xs font-normal text-muted-foreground">
-            Counts and amounts for sale invoices and sale returns (draft / final / cancelled, etc.).
+      <Card className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-muted/20 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
+        <CardHeader className="pb-3 sm:pb-4">
+          <CardTitle className="text-base font-semibold">Document status</CardTitle>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Sale invoices and returns by lifecycle — draft, final, cancelled, and more.
           </p>
         </CardHeader>
         <CardContent className="pt-0">
@@ -249,10 +255,10 @@ export function DashboardInsightsSection({
               })}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-muted/60 py-10 text-center">
-              <p className="text-sm text-muted-foreground">No sale documents to show yet.</p>
-              <p className="mt-1 text-xs text-muted-foreground/80">
-                Create a sale invoice to see draft and final breakdown here.
+            <div className="rounded-xl border border-dashed border-border/80 bg-muted/10 py-12 text-center">
+              <p className="text-sm font-medium text-muted-foreground">No sale documents yet</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Create a sale invoice to see status breakdown here.
               </p>
             </div>
           )}

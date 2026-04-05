@@ -60,31 +60,41 @@ export function DashboardHeroSection({ greeting, dashboard }: DashboardHeroSecti
       : "Positive net is what customers owe you on the ledger, net of advances.";
 
   return (
-    <section className="rounded-3xl border bg-gradient-to-br from-muted/40 via-background to-muted/20 p-6 sm:p-8">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
+    <section className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-muted/25 p-6 shadow-sm ring-1 ring-black/[0.04] dark:from-card dark:to-muted/20 dark:ring-white/[0.06] sm:p-8">
+      <div
+        className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/[0.06] blur-3xl"
+        aria-hidden
+      />
+      <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+            Overview
+          </p>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Sales dashboard</h1>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>{greeting}</span>
-            <span className="text-muted-foreground/40" aria-hidden>
-              ·
-            </span>
             <Link
               href="/invoices/purchases"
-              className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+              className="inline-flex items-center rounded-full border border-border bg-background/90 px-3 py-1 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-muted/80"
             >
-              Purchases →
+              Purchase bills →
+            </Link>
+            <Link
+              href="/reports"
+              className="inline-flex items-center rounded-full border border-dashed border-border px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+            >
+              Reports →
             </Link>
           </div>
         </div>
-        <Button asChild size="lg" className="h-11 shrink-0 rounded-full px-6">
+        <Button asChild size="lg" className="h-11 shrink-0 rounded-full px-6 shadow-sm">
           <Link href="/invoices?action=new">
             <span className="mr-1">+</span> New sale invoice
           </Link>
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="relative mt-8 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
         <HeroCard
           title="Net sales revenue"
           value={formatCurrency(netRevenue)}

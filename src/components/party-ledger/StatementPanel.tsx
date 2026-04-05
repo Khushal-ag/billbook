@@ -1,7 +1,9 @@
 import { Download, Loader2, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DateRangePicker from "@/components/DateRangePicker";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { PartyLedgerEntriesTable } from "@/components/party-ledger/PartyLedgerEntriesTable";
+import { partyLedgerBalanceInlineParts } from "@/lib/party-ledger-display";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { StatementJsonData, StatementPdfData } from "@/lib/party-ledger";
 
 interface StatementPanelProps {
@@ -43,7 +45,7 @@ export function StatementPanel({
             onClick={onLoadStatement}
             className="w-full sm:w-auto"
           >
-            <RefreshCcw className="mr-2 h-4 w-4" /> Load Statement
+            <RefreshCcw className="mr-2 h-4 w-4" /> Load
           </Button>
           <Button type="button" onClick={onGeneratePdf} className="w-full sm:w-auto">
             <Download className="mr-2 h-4 w-4" /> PDF
@@ -53,63 +55,15 @@ export function StatementPanel({
 
       {isFetching && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading statement...
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading…
         </div>
       )}
 
       {statement && (
-        <div className="space-y-2">
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Opening:</span>{" "}
-              {formatCurrency(statement.openingBalance)}
-            </div>
-            <div>
-              <span className="text-muted-foreground">Closing:</span>{" "}
-              {formatCurrency(statement.closingBalance)}
-            </div>
-            <div>
-              <span className="text-muted-foreground">Debit:</span>{" "}
-              {formatCurrency(statement.totals.debit)}
-            </div>
-            <div>
-              <span className="text-muted-foreground">Credit:</span>{" "}
-              {formatCurrency(statement.totals.credit)}
-            </div>
-          </div>
+        <div className="space-y-3">
+          <StatementPeriodSummary statement={statement} />
 
-          <div className="overflow-x-auto rounded-md border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-2 text-left font-medium">Date</th>
-                  <th className="px-3 py-2 text-left font-medium">Type</th>
-                  <th className="px-3 py-2 text-right font-medium">Debit</th>
-                  <th className="px-3 py-2 text-right font-medium">Credit</th>
-                  <th className="px-3 py-2 text-right font-medium">Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {statement.entries.map((entry, idx) => (
-                  <tr key={`${entry.entryType}-${idx}`} className="border-t">
-                    <td className="px-3 py-2 text-muted-foreground">
-                      {formatDate(entry.entryDate ?? entry.createdAt)}
-                    </td>
-                    <td className="px-3 py-2">{entry.entryType}</td>
-                    <td className="px-3 py-2 text-right">
-                      {entry.debitAmount ? formatCurrency(entry.debitAmount) : "—"}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      {entry.creditAmount ? formatCurrency(entry.creditAmount) : "—"}
-                    </td>
-                    <td className="px-3 py-2 text-right font-medium">
-                      {formatCurrency(entry.runningBalance)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <PartyLedgerEntriesTable entries={statement.entries} variant="statement" />
         </div>
       )}
 
@@ -121,7 +75,7 @@ export function StatementPanel({
               {pdf.downloadUrl && (
                 <Button asChild size="sm" variant="outline">
                   <a href={pdf.downloadUrl} target="_blank" rel="noreferrer">
-                    Download PDF
+                    Download
                   </a>
                 </Button>
               )}
@@ -131,6 +85,53 @@ export function StatementPanel({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function StatementPeriodSummary({ statement }: { statement: StatementJsonData }) {
+  const opening = partyLedgerBalanceInlineParts(statement.openingBalance);
+  const closing = partyLedgerBalanceInlineParts(statement.closingBalance);
+
+  return (
+    <div className="rounded-md border border-border bg-muted/10 px-3 py-3 text-sm" role="note">
+      <dl className="grid gap-4 sm:grid-cols-3 sm:gap-6">
+        <div className="min-w-0">
+          <dt className="text-xs font-medium text-muted-foreground">Opening</dt>
+          <dd className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="shrink-0 font-semibold tabular-nums text-foreground">
+              {opening.amountStr}
+            </span>
+            <span className={cn("min-w-0 shrink", opening.labelClassName)}>{opening.label}</span>
+          </dd>
+        </div>
+        <div className="min-w-0">
+          <dt className="text-xs font-medium text-muted-foreground">Closing</dt>
+          <dd className="mt-1 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="shrink-0 font-semibold tabular-nums text-foreground">
+              {closing.amountStr}
+            </span>
+            <span className={cn("min-w-0 shrink", closing.labelClassName)}>{closing.label}</span>
+          </dd>
+        </div>
+        <div className="min-w-0 sm:border-l sm:border-border sm:pl-6">
+          <dt className="text-xs font-medium text-muted-foreground">Movement this period</dt>
+          <dd className="mt-1 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+            <span className="inline-flex flex-wrap items-baseline gap-x-1.5 tabular-nums">
+              <span className="text-xs font-medium text-muted-foreground">Debits</span>
+              <span className="font-semibold text-red-600 dark:text-red-400">
+                {formatCurrency(statement.totals.debit)}
+              </span>
+            </span>
+            <span className="inline-flex flex-wrap items-baseline gap-x-1.5 tabular-nums">
+              <span className="text-xs font-medium text-muted-foreground">Credits</span>
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                {formatCurrency(statement.totals.credit)}
+              </span>
+            </span>
+          </dd>
+        </div>
+      </dl>
     </div>
   );
 }

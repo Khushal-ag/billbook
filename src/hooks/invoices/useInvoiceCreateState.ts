@@ -438,6 +438,14 @@ export function useInvoiceCreateState(
       }
 
       if (isSalesFamily(invoiceType)) {
+        if (
+          invoiceType === "SALE_RETURN" &&
+          line.sourceInvoiceItemId != null &&
+          !isDraftLineServiceItem(line) &&
+          line.item?.id == null
+        ) {
+          return false;
+        }
         return Boolean(line.item && line.stockEntryId != null);
       }
       return (
@@ -701,6 +709,10 @@ export function useInvoiceCreateState(
 
       resolvedItem = mergeItemFromInvoiceLine(resolvedItem, invoiceItem);
 
+      if (invoiceItem.itemId != null) {
+        resolvedItem = { ...resolvedItem, id: invoiceItem.itemId };
+      }
+
       const label = invoiceItem.itemName?.trim();
       const extraItemName = label && label !== resolvedItem.name.trim() ? label : "";
 
@@ -962,6 +974,10 @@ export function useInvoiceCreateState(
       }
 
       resolvedItem = mergeItemFromInvoiceLine(resolvedItem, invoiceItem);
+
+      if (invoiceItem.itemId != null) {
+        resolvedItem = { ...resolvedItem, id: invoiceItem.itemId };
+      }
 
       const editLabel = invoiceItem.itemName?.trim();
       const editExtraItemName =

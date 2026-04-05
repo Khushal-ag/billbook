@@ -47,8 +47,11 @@ export function formatInvoiceQuantityErrorDetails(details: unknown): string {
   return parts.length ? parts.join(" · ") : "";
 }
 
-/** Structured 400s when purchase return lines do not match the source purchase (item/batch/link). */
-export function formatPurchaseReturnSourceMismatchDetails(details: unknown): string {
+/**
+ * Structured 400s when linked return / inventory lines do not match the source invoice
+ * (item id, stock batch) — sale returns, purchase returns, or similar validations.
+ */
+export function formatReturnInventoryMismatchDetails(details: unknown): string {
   if (!details || typeof details !== "object") return "";
   const d = details as Record<string, unknown>;
   const nested =
@@ -63,7 +66,7 @@ export function formatPurchaseReturnSourceMismatchDetails(details: unknown): str
   const gotItem = pick("itemId") ?? pick("actualItemId");
   if (expItem != null && gotItem != null && String(expItem) !== String(gotItem)) {
     parts.push(
-      `Item id must match the source purchase line (expected ${String(expItem)}, got ${String(gotItem)}).`,
+      `Item id must match the source invoice line (expected ${String(expItem)}, got ${String(gotItem)}).`,
     );
   }
 
@@ -103,7 +106,7 @@ export function formatPurchaseReturnSourceMismatchDetails(details: unknown): str
 export function withInvoiceQuantityErrorDetails(err: unknown): unknown {
   if (!(err instanceof ApiClientError)) return err;
   const qty = formatInvoiceQuantityErrorDetails(err.details);
-  const pr = formatPurchaseReturnSourceMismatchDetails(err.details);
+  const pr = formatReturnInventoryMismatchDetails(err.details);
   const extra = [qty, pr].filter(Boolean).join("\n");
   if (!extra) return err;
   return new ApiClientError(`${err.message}\n${extra}`, err.status, err.details, err.requestId);

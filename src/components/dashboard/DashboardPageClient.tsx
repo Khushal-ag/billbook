@@ -43,7 +43,7 @@ export default function DashboardPageClient() {
     <div className="page-container animate-fade-in">
       <ErrorBanner error={error} fallbackMessage="Failed to load dashboard data." />
 
-      <div className="space-y-10">
+      <div className="space-y-8 sm:space-y-10">
         <DashboardHeroSection greeting={greeting} dashboard={data} />
         <DashboardQuickStatsSection dashboard={data} />
         <DashboardInsightsSection

@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/utils";
 import type { LedgerEntry } from "@/lib/party-ledger";
+import { PartyLedgerEntriesTable } from "@/components/party-ledger/PartyLedgerEntriesTable";
 
 interface LedgerEntriesTableProps {
   isPending: boolean;
@@ -24,38 +24,5 @@ export function LedgerEntriesTable({ isPending, entries }: LedgerEntriesTablePro
     );
   }
 
-  return (
-    <div className="overflow-x-auto rounded-md border">
-      <table className="w-full min-w-[280px] text-sm">
-        <thead className="bg-muted/40 text-muted-foreground">
-          <tr>
-            <th className="px-3 py-2 text-left font-medium">Date</th>
-            <th className="px-3 py-2 text-left font-medium">Type</th>
-            <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">Debit</th>
-            <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">Credit</th>
-            <th className="px-3 py-2 text-right font-medium">Balance</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((entry, idx) => (
-            <tr key={`${entry.entryType}-${idx}`} className="border-t">
-              <td className="px-3 py-2 text-muted-foreground">
-                {formatDate(entry.entryDate ?? entry.createdAt)}
-              </td>
-              <td className="px-3 py-2">{entry.entryType}</td>
-              <td className="hidden px-3 py-2 text-right sm:table-cell">
-                {entry.debitAmount ? formatCurrency(entry.debitAmount) : "—"}
-              </td>
-              <td className="hidden px-3 py-2 text-right sm:table-cell">
-                {entry.creditAmount ? formatCurrency(entry.creditAmount) : "—"}
-              </td>
-              <td className="px-3 py-2 text-right font-medium tabular-nums">
-                {formatCurrency(entry.runningBalance)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+  return <PartyLedgerEntriesTable entries={entries} variant="ledger" />;
 }

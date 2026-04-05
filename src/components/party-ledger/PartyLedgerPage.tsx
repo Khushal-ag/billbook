@@ -1,18 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams, usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import {
-  useParty,
-  usePartyLedger,
-  usePartyBalance,
-  usePartyStatement,
-  useRecordPartyAdvancePayment,
-} from "@/hooks/use-parties";
+import { useParty, usePartyLedger, usePartyBalance, usePartyStatement } from "@/hooks/use-parties";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PageHeader from "@/components/PageHeader";
@@ -21,25 +13,7 @@ import PartyLedgerSkeleton from "@/components/skeletons/PartyLedgerSkeleton";
 import { BalanceSummaryCards } from "@/components/party-ledger/BalanceSummaryCards";
 import { LedgerEntriesTable } from "@/components/party-ledger/LedgerEntriesTable";
 import { StatementPanel } from "@/components/party-ledger/StatementPanel";
-import { AdvancePaymentForm } from "@/components/party-ledger/AdvancePaymentForm";
-import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
-import { PAYMENT_METHOD_OPTIONS } from "@/constants";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import type { PaymentMethod } from "@/types/invoice";
-
-const advanceSchema = z.object({
-  amount: requiredPriceString,
-  paymentMethod: z.enum(["CASH", "CHEQUE", "UPI", "BANK_TRANSFER", "CARD"]),
-  referenceNumber: optionalString,
-  notes: optionalString,
-});
-
-type AdvanceFormData = {
-  amount: string;
-  paymentMethod: PaymentMethod;
-  referenceNumber?: string;
-  notes?: string;
-};
+import { showErrorToast } from "@/lib/toast-helpers";
 
 export default function PartyLedgerPage() {
   const router = useRouter();
@@ -76,28 +50,11 @@ export default function PartyLedgerPage() {
     enabled: false,
   });
 
-  const advanceMutation = useRecordPartyAdvancePayment(numPartyId ?? 0);
-
-  const form = useForm<AdvanceFormData>({
-    resolver: zodResolver(advanceSchema),
-    defaultValues: {
-      amount: "",
-      paymentMethod: "CASH",
-      referenceNumber: "",
-      notes: "",
-    },
-  });
-  const {
-    reset,
-    formState: { isSubmitting },
-  } = form;
-
   useEffect(() => {
     setTab("ledger");
     setStartDate("");
     setEndDate("");
-    reset({ amount: "", paymentMethod: "CASH", referenceNumber: "", notes: "" });
-  }, [partyIdParam, reset]);
+  }, [partyIdParam]);
 
   const balanceSummary = useMemo(() => {
     return {
@@ -120,29 +77,6 @@ export default function PartyLedgerPage() {
       await statementPdf.refetch();
     } catch (err) {
       showErrorToast(err, "Failed to generate PDF");
-    }
-  };
-
-  const onAdvanceSubmit = async (data: AdvanceFormData) => {
-    if (!numPartyId) return;
-    try {
-      const res = await advanceMutation.mutateAsync({
-        amount: data.amount,
-        paymentMethod: data.paymentMethod,
-        referenceNumber: data.referenceNumber || undefined,
-        notes: data.notes || undefined,
-      });
-      const receiptNo = res.receipt?.receiptNumber ?? res.receiptNumber ?? null;
-      showSuccessToast(
-        receiptNo
-          ? `Receipt ${receiptNo} recorded — allocate this payment from the Receipts page.`
-          : "Advance payment recorded",
-      );
-      reset({ amount: "", paymentMethod: "CASH", referenceNumber: "", notes: "" });
-      ledgerQuery.refetch();
-      balanceQuery.refetch();
-    } catch (err) {
-      showErrorToast(err, "Failed to record payment");
     }
   };
 
@@ -181,11 +115,15 @@ export default function PartyLedgerPage() {
   const backTo = party.type === "SUPPLIER" ? "/vendors" : "/parties";
   const backLabel = party.type === "SUPPLIER" ? "Back to Vendors" : "Back to Customers";
 
+  const paymentHref =
+    party.type === "CUSTOMER" ? "/receipts?openNewReceipt=1" : "/payments/outbound/new";
+  const paymentLabel = party.type === "CUSTOMER" ? "New receipt" : "Outbound payment";
+
   return (
     <div className="page-container animate-fade-in">
       <PageHeader
-        title={`${partyLabelTitle} Ledger - ${party.name}`}
-        description={`Accounting details for this ${partyLabel}`}
+        title={`${partyLabelTitle} ledger — ${party.name}`}
+        description={`Activity and balance for this ${partyLabel}`}
         action={
           <Button variant="ghost" onClick={() => router.push(backTo)} className="mr-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -201,11 +139,21 @@ export default function PartyLedgerPage() {
 
       <BalanceSummaryCards summary={balanceSummary} partyType={party.type} />
 
-      <Tabs value={tab} onValueChange={setTab} className="mt-6">
-        <TabsList>
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium text-red-600 dark:text-red-400">Debit</span> and{" "}
+          <span className="font-medium text-emerald-600 dark:text-emerald-400">Credit</span> show
+          which way the balance runs; the rupee figure is always positive.
+        </p>
+        <Button variant="outline" size="sm" className="shrink-0 self-start sm:self-auto" asChild>
+          <Link href={paymentHref}>{paymentLabel}</Link>
+        </Button>
+      </div>
+
+      <Tabs value={tab} onValueChange={setTab} className="mt-5">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="ledger">Ledger</TabsTrigger>
           <TabsTrigger value="statement">Statement</TabsTrigger>
-          <TabsTrigger value="advance">Advance Payment</TabsTrigger>
         </TabsList>
 
         <TabsContent value="ledger" className="mt-4">
@@ -228,16 +176,6 @@ export default function PartyLedgerPage() {
               statementJson.data && "entries" in statementJson.data ? statementJson.data : null
             }
             pdf={statementPdf.data && "format" in statementPdf.data ? statementPdf.data : null}
-          />
-        </TabsContent>
-
-        <TabsContent value="advance" className="mt-4">
-          <AdvancePaymentForm
-            form={form}
-            paymentMethods={PAYMENT_METHOD_OPTIONS}
-            isSubmitting={isSubmitting}
-            isSaving={advanceMutation.isPending}
-            onSubmit={onAdvanceSubmit}
           />
         </TabsContent>
       </Tabs>

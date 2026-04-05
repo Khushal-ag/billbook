@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,10 +24,12 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info, Loader2 } from "lucide-react";
 import { useCreateCreditNote } from "@/hooks/use-credit-notes";
-import { useInvoices } from "@/hooks/use-invoices";
+import { useInvoices, useInvoice } from "@/hooks/use-invoices";
 import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
+import { withInvoiceQuantityErrorDetails } from "@/lib/invoice-quantity-error-details";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import { maybeShowTrialExpiredToast } from "@/lib/trial";
+import type { InvoiceItem } from "@/types/invoice";
 
 const schema = z.object({
   invoiceId: z.coerce.number().min(1, "Select an invoice"),
@@ -42,6 +44,11 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultInvoiceId?: number;
+}
+
+/** Sale invoices only: at least one catalog line linked to a stock batch (required for inventory credit). */
+function invoiceHasStockBatchLinesForInventoryCredit(items: InvoiceItem[] | undefined): boolean {
+  return items?.some((line) => line.itemId != null && line.stockEntryId != null) ?? false;
 }
 
 export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId }: Props) {
@@ -66,6 +73,20 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
     },
   });
 
+  const watchedInvoiceId = watch("invoiceId");
+  const { data: invoiceDetail, isPending: invoiceDetailPending } = useInvoice(
+    watchedInvoiceId > 0 ? watchedInvoiceId : undefined,
+  );
+
+  const detailReady =
+    watchedInvoiceId > 0 && !invoiceDetailPending && invoiceDetail?.id === watchedInvoiceId;
+
+  const isSaleInvoice = detailReady && invoiceDetail?.invoiceType === "SALE_INVOICE";
+  const canAdjustInventory = useMemo(
+    () => isSaleInvoice && invoiceHasStockBatchLinesForInventoryCredit(invoiceDetail?.items),
+    [isSaleInvoice, invoiceDetail?.items],
+  );
+
   useEffect(() => {
     if (open) {
       reset({
@@ -77,7 +98,14 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
     }
   }, [open, defaultInvoiceId, reset]);
 
-  const selectedInvoice = invoices.find((inv) => inv.id === watch("invoiceId"));
+  useEffect(() => {
+    if (!open) return;
+    if (!canAdjustInventory) {
+      setValue("affectsInventory", false);
+    }
+  }, [open, canAdjustInventory, setValue]);
+
+  const selectedInvoice = invoices.find((inv) => inv.id === watchedInvoiceId);
   const invoiceTotal = parseFloat(selectedInvoice?.totalAmount ?? "0") || 0;
   const invoicePaid = parseFloat(selectedInvoice?.paidAmount ?? "0") || 0;
   const invoiceDue = Math.max(0, invoiceTotal - invoicePaid);
@@ -90,20 +118,53 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
       );
       return;
     }
+
+    const affectsInventoryEffective =
+      detailReady &&
+      invoiceDetail?.invoiceType === "SALE_INVOICE" &&
+      invoiceHasStockBatchLinesForInventoryCredit(invoiceDetail.items) &&
+      data.affectsInventory === true;
+
     try {
       await mutation.mutateAsync({
         invoiceId: data.invoiceId,
         amount: data.amount,
         reason: data.reason || undefined,
-        affectsInventory: data.affectsInventory,
+        affectsInventory: affectsInventoryEffective,
       });
       showSuccessToast("Credit note created");
       onOpenChange(false);
     } catch (err) {
       if (maybeShowTrialExpiredToast(err)) return;
-      showErrorToast(err, "Failed to create credit note");
+      showErrorToast(withInvoiceQuantityErrorDetails(err), "Failed to create credit note");
     }
   };
+
+  const inventoryTooltip = (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info
+            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+            aria-label="How inventory credit works"
+          />
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[280px] space-y-2 text-xs leading-snug">
+          <p>
+            When you finalize this credit note with this option on, stock is increased using RETURN
+            movements on the underlying sale batches (no extra fields on finalize).
+          </p>
+          <p className="text-muted-foreground">
+            Quantity per stock line is proportional to the credit: roughly{" "}
+            <span className="font-mono text-foreground">
+              creditAmount × lineQuantity ÷ invoiceTotal
+            </span>{" "}
+            (by line, not a separate monetary split per line).
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,27 +217,50 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
             <Textarea rows={2} {...register("reason")} />
           </div>
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="affectsInventory"
-              checked={watch("affectsInventory")}
-              onCheckedChange={(v) => setValue("affectsInventory", !!v)}
-            />
-            <Label htmlFor="affectsInventory" className="cursor-pointer font-normal">
-              Affects inventory (reverses stock changes)
-            </Label>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[220px] text-xs">
-                  Coming soon — inventory adjustment is not yet automated. This flag is saved but
-                  stock will not be reversed automatically.
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+          {watchedInvoiceId > 0 && invoiceDetailPending ? (
+            <p className="text-xs text-muted-foreground">Loading invoice details…</p>
+          ) : null}
+
+          {detailReady && invoiceDetail.invoiceType !== "SALE_INVOICE" ? (
+            <p className="text-xs text-muted-foreground">
+              Inventory adjustment applies only to sales invoices. This document is not a sale, so
+              stock will not be changed.
+            </p>
+          ) : null}
+
+          {isSaleInvoice ? (
+            canAdjustInventory ? (
+              <div className="space-y-2 rounded-lg border border-border bg-muted/20 px-3 py-2.5">
+                <div className="flex items-start gap-2">
+                  <Checkbox
+                    id="affectsInventory"
+                    checked={watch("affectsInventory")}
+                    onCheckedChange={(v) => setValue("affectsInventory", !!v)}
+                    disabled={!canAdjustInventory}
+                  />
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="affectsInventory" className="cursor-pointer font-normal">
+                        Increase stock when finalized (linked sale batches)
+                      </Label>
+                      {inventoryTooltip}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Only available for finalized sales that include at least one catalog stock
+                      line with a batch. Finalize runs RETURN movements automatically when this was
+                      enabled on create.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                This sale has no catalog stock lines with a stock batch, so inventory cannot be
+                increased from this credit note. Create the credit without stock impact, or pick
+                another invoice.
+              </p>
+            )
+          ) : null}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

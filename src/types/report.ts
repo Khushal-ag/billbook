@@ -151,13 +151,24 @@ export interface CreditNoteRegisterData {
 
 export interface PayoutRegisterRowDto {
   id: number;
+  /** Current API: e.g. PAY-000001 */
+  paymentNumber?: string;
+  /** Legacy name if backend still sends it */
   payoutNumber?: string;
-  category: string;
+  financialYear?: string;
+  /** Current API: e.g. SALE_RETURN_REFUND */
+  paymentCategory?: string;
+  /** Legacy name if backend still sends it */
+  category?: string;
   partyId?: number | null;
   partyName?: string | null;
+  invoiceId?: number | null;
+  payeeName?: string | null;
+  expenseCategory?: string | null;
   amount: string;
   paymentMethod?: string;
   referenceNumber?: string | null;
+  notes?: string | null;
   paidAt?: string | null;
   createdAt: string;
 }

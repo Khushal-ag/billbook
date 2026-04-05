@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { BusinessIdentity } from "@/components/BusinessIdentity";
+import { reportCreditNoteRegister, reportInvoiceAging } from "@/lib/report-labels";
 
 interface NavItem {
   label: string;
@@ -92,8 +93,8 @@ const invoiceNavItems = [
 ];
 
 const reportNavItems = [
-  { label: "Credit note register", path: "/reports/credit-note-register" },
-  { label: "Receivables aging", path: "/reports/receivables-aging" },
+  { label: reportCreditNoteRegister.title, path: "/reports/credit-note-register" },
+  { label: reportInvoiceAging.navLabel, path: "/reports/receivables-aging" },
 ];
 
 export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
