@@ -1,7 +1,7 @@
 {
   "name": "BillBook",
   "short_name": "BillBook",
-  "description": "Simple yet powerful invoicing, billing, and inventory management for small businesses",
+  "description": "GST invoicing, credit notes, stock, report CSVs, and GST / Tax export for small businesses in India",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

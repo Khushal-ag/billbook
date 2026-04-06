@@ -81,9 +81,9 @@ const TABLE_ROWS = [
 ];
 
 const CAPTIONS = [
-  "Create, edit, and send invoices in seconds with auto-calculated tax.",
-  "Track payment status and overdue amounts across all parties.",
-  "Record partial payments and see the exact balance due per invoice.",
+  "Create sale, purchase, and return invoices with line-level GST and party snapshots.",
+  "Lists mirror the app: separate hubs for sales, purchases, and returns with status badges.",
+  "Record receipts and payouts; balance due updates on the invoice detail view.",
 ];
 
 export function InvoicingTab() {
@@ -93,7 +93,7 @@ export function InvoicingTab() {
         <div className="flex items-center justify-between border-b bg-muted/40 px-6 py-4">
           <div>
             <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Invoices</p>
-            <h3 className="text-lg font-semibold text-foreground">All Invoices</h3>
+            <h3 className="text-lg font-semibold text-foreground">Sales &amp; purchases</h3>
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden rounded-lg border bg-background px-3 py-1.5 text-xs text-muted-foreground sm:block">

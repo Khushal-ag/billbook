@@ -7,14 +7,14 @@ import { ComplianceTab } from "@/components/landing/ComplianceTab";
 
 const TAB_ITEMS = [
   { value: "invoicing", label: "Invoicing", Icon: FileText },
-  { value: "inventory", label: "Inventory", Icon: Package },
+  { value: "inventory", label: "Stock", Icon: Package },
   { value: "reports", label: "Reports", Icon: BarChart3 },
-  { value: "compliance", label: "Compliance", Icon: ShieldCheck },
+  { value: "compliance", label: "GST / Tax", Icon: ShieldCheck },
 ];
 
 export function LandingFeatureTabs() {
   return (
-    <section className="bg-muted/30">
+    <section id="features" className="scroll-mt-24 bg-muted/30">
       <div className="mx-auto max-w-7xl px-6 py-20 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary">
@@ -24,7 +24,8 @@ export function LandingFeatureTabs() {
             Your entire business, one platform
           </h2>
           <p className="mt-4 text-base text-muted-foreground">
-            From first invoice to compliance report — see exactly what you get before you sign up.
+            From first invoice to GST / Tax and report CSVs — the same areas you will use in the
+            app.
           </p>
         </div>
 

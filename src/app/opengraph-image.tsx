@@ -60,7 +60,7 @@ export default function OgImage() {
 
       {/* Subtext */}
       <div style={{ fontSize: "26px", color: "#94a3b8", maxWidth: "800px" }}>
-        GST-ready invoicing, compliance exports &amp; audit trails — all in one platform.
+        GST-ready invoicing, report CSVs, Tax / GST export &amp; audit trails — one workspace.
       </div>
 
       {/* Badges */}

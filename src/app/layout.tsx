@@ -3,6 +3,9 @@ import type { Metadata, Viewport } from "next";
 import "../index.css";
 import Providers from "./providers";
 import { siteConfig } from "@/lib/site-config";
+import { defaultOgImages, defaultTwitterImageUrl } from "@/lib/seo-metadata";
+
+const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -37,12 +40,15 @@ export const metadata: Metadata = {
     url: "/",
     siteName: siteConfig.name,
     locale: siteConfig.locale,
+    images: defaultOgImages(),
   },
   twitter: {
     card: "summary_large_image",
     title: siteConfig.title,
     description: siteConfig.description,
+    images: [defaultTwitterImageUrl()],
   },
+  ...(googleSiteVerification ? { verification: { google: googleSiteVerification } } : {}),
 };
 
 export const viewport: Viewport = {
@@ -53,7 +59,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en-IN">
       <body>
         <Providers>{children}</Providers>
       </body>

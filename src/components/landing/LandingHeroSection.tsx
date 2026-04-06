@@ -23,8 +23,8 @@ export function LandingHeroSection() {
             Make billing feel <span className="gradient-text">effortless</span>.
           </h1>
           <p className="animation-delay-400 mt-4 text-pretty text-base text-muted-foreground motion-safe:animate-fade-in sm:text-lg">
-            Create invoices, manage parties and products, track credit notes, and generate tax-ready
-            reports — fast, clean, and consistent.
+            Create invoices, manage customers and vendors, track credit notes, receipts, and stock —
+            then open Reports and GST / Tax for the same CSV and HTML exports you get in the app.
           </p>
 
           <div className="animation-delay-400 mt-8 flex flex-col gap-3 motion-safe:animate-fade-in sm:flex-row">
@@ -165,10 +165,10 @@ export function LandingHeroSection() {
 
                     <Card className="border-dashed">
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Customize templates</CardTitle>
+                        <CardTitle className="text-sm">Branded invoice PDFs</CardTitle>
                       </CardHeader>
                       <CardContent className="text-xs text-muted-foreground">
-                        Keep formats consistent across your team.
+                        Finalized invoices get a downloadable PDF with your business identity.
                       </CardContent>
                     </Card>
 

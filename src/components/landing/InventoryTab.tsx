@@ -80,7 +80,7 @@ export function InventoryTab() {
       <div className="overflow-hidden rounded-3xl border bg-background shadow-lg ring-1 ring-border/60">
         <div className="flex items-center justify-between border-b bg-muted/40 px-6 py-4">
           <div>
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Inventory</p>
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Stock</p>
             <h3 className="text-lg font-semibold text-foreground">Stock Overview</h3>
           </div>
           <div className="flex items-center gap-3">

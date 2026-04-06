@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import AuthModal from "@/components/AuthModal";
 import {
   LandingPromoBar,
@@ -20,9 +20,35 @@ interface LandingClientProps {
   isLoggingOut: boolean;
 }
 
+const SECTION_HASH_IDS = new Set(["features", "faq"]);
+
 export default function LandingClient({ redirectTo, isLoggingOut }: LandingClientProps) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Next.js client navigation to `/#features` or `/#faq` does not always scroll; align with the hash.
+  useEffect(() => {
+    if (pathname !== "/") return;
+
+    const scrollToHash = () => {
+      const id = window.location.hash.replace(/^#/, "");
+      if (!SECTION_HASH_IDS.has(id)) return;
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
+    const run = () => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(scrollToHash);
+      });
+    };
+
+    run();
+    window.addEventListener("hashchange", scrollToHash);
+    return () => window.removeEventListener("hashchange", scrollToHash);
+  }, [pathname]);
 
   // Send business users to the app; platform admins can stay on the marketing home (`/`).
   useEffect(() => {

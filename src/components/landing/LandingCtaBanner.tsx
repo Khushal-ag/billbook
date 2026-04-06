@@ -27,12 +27,12 @@ export function LandingCtaBanner() {
             </Link>
           </Button>
           <Button asChild size="lg" variant="outline">
-            <Link href="/?auth=signup">Book a demo</Link>
+            <Link href="/contact">Talk to us</Link>
           </Button>
         </div>
 
         <p className="mt-4 text-xs text-muted-foreground">
-          No credit card required · Cancel anytime · GST-ready from day 1
+          No credit card to sign up · GST-ready workflows · Reports &amp; tax export like in the app
         </p>
       </div>
     </section>

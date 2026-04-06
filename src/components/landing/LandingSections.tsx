@@ -6,3 +6,4 @@ export { LandingValueGrid } from "./LandingValueGrid";
 export { LandingFaq } from "./LandingFaq";
 export { LandingCtaBanner } from "./LandingCtaBanner";
 export { LandingFooter } from "./LandingFooter";
+export { PublicMarketingShell } from "./PublicMarketingShell";

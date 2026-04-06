@@ -54,9 +54,9 @@ const OUTSTANDING_ROWS = [
 ];
 
 const CAPTIONS = [
-  "Sales trend charts broken down by month — no setup needed.",
-  "Party outstanding report shows who owes what at a glance.",
-  "Item-wise sales report for your accountant and tax filing.",
+  "Period KPIs for customer receipts, sales & purchase invoices, and payments out — same hub as Reports.",
+  "Outstanding receivables and payables use live party balances, independent of the date filter.",
+  "Invoice aging, credit note register, and each report’s CSV download match what you get in the app.",
 ];
 
 export function ReportsTab() {
@@ -66,14 +66,14 @@ export function ReportsTab() {
         <div className="flex items-center justify-between border-b bg-muted/40 px-6 py-4">
           <div>
             <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Reports</p>
-            <h3 className="text-lg font-semibold text-foreground">Business Analytics</h3>
+            <h3 className="text-lg font-semibold text-foreground">Reports hub</h3>
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden rounded-lg border bg-background px-3 py-1.5 text-xs text-muted-foreground sm:block">
               Jan 2026 – Mar 2026
             </span>
             <span className="rounded-full border bg-background px-4 py-1.5 text-xs font-medium">
-              Export
+              CSV
             </span>
           </div>
         </div>

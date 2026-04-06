@@ -18,7 +18,7 @@ export function LandingValueGrid() {
           {[
             { value: "₹0", label: "Free to start" },
             { value: "< 2 min", label: "First invoice" },
-            { value: "5+", label: "Export formats" },
+            { value: "8+", label: "Report registers" },
             { value: "100%", label: "Audit-tracked" },
           ].map((stat) => (
             <div
@@ -34,9 +34,9 @@ export function LandingValueGrid() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
-              title: "Multi-language ready",
+              title: "Built for India",
               icon: Globe,
-              desc: "Keep usage accessible across teams.",
+              desc: "Rupee formatting, en-IN dates, and GST-oriented flows by default.",
             },
             {
               title: "Responsive support",
@@ -59,9 +59,9 @@ export function LandingValueGrid() {
               desc: "Reports that are easy to reconcile and review.",
             },
             {
-              title: "Easy import/export",
+              title: "Registers & tax export",
               icon: Upload,
-              desc: "Move data in and out when needed.",
+              desc: "CSV downloads per report plus an HTML GST pack from Tax / GST.",
             },
           ].map((item) => (
             <Card key={item.title} className="hover-lift">

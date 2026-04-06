@@ -11,9 +11,10 @@ export function LandingFooter() {
           <div className="lg:col-span-4">
             <Logo className="h-9 w-9" />
             <p className="mt-3 text-sm text-muted-foreground">
-              A clean billing and GST workflow for day-to-day operations.
+              Invoicing, stock, reports, and GST / Tax — the same modules you use after sign-in,
+              marketed honestly.
             </p>
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               <Button asChild size="sm">
                 <Link href="/?auth=signup">Start free</Link>
               </Button>
@@ -28,37 +29,27 @@ export function LandingFooter() {
               <p className="text-sm font-semibold text-foreground">Product</p>
               <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <Link className="hover:text-foreground" href="/?auth=signup">
-                    Invoicing
+                  <Link className="hover:text-foreground" href="/#features">
+                    Features
                   </Link>
                 </li>
                 <li>
-                  <Link className="hover:text-foreground" href="/?auth=signup">
-                    Reports
-                  </Link>
-                </li>
-                <li>
-                  <Link className="hover:text-foreground" href="/?auth=signup">
-                    Audit logs
+                  <Link className="hover:text-foreground" href="/help">
+                    Help centre
                   </Link>
                 </li>
               </ul>
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">Company</p>
+              <p className="text-sm font-semibold text-foreground">Legal</p>
               <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <Link className="hover:text-foreground" href="/?auth=signup">
-                    Pricing
-                  </Link>
-                </li>
-                <li>
-                  <Link className="hover:text-foreground" href="/?auth=signup">
+                  <Link className="hover:text-foreground" href="/terms">
                     Terms
                   </Link>
                 </li>
                 <li>
-                  <Link className="hover:text-foreground" href="/?auth=signup">
+                  <Link className="hover:text-foreground" href="/privacy">
                     Privacy
                   </Link>
                 </li>
@@ -68,18 +59,13 @@ export function LandingFooter() {
               <p className="text-sm font-semibold text-foreground">Support</p>
               <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                 <li>
-                  <Link className="hover:text-foreground" href="/?auth=signup">
-                    Help centre
-                  </Link>
-                </li>
-                <li>
-                  <Link className="hover:text-foreground" href="/?auth=signup">
+                  <Link className="hover:text-foreground" href="/contact">
                     Contact
                   </Link>
                 </li>
                 <li>
-                  <Link className="hover:text-foreground" href="/?auth=signup">
-                    Book a demo
+                  <Link className="hover:text-foreground" href="/#faq">
+                    FAQ
                   </Link>
                 </li>
               </ul>
@@ -91,7 +77,7 @@ export function LandingFooter() {
 
         <div className="flex flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <span>© {new Date().getFullYear()} BillBook</span>
-          <span>Professional, minimal, and built for B2B.</span>
+          <span>Built for B2B billing in India — CSV registers, Tax / GST HTML, audit trails.</span>
         </div>
       </div>
     </footer>

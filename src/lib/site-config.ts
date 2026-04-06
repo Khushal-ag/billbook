@@ -1,4 +1,4 @@
-const defaultSiteUrl = "https://billbook-hench.vercel.app";
+const defaultSiteUrl = "https://billbook-henchsolutions.vercel.app";
 
 const normalizedEnvUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
 
@@ -7,29 +7,26 @@ export const siteConfig = {
   shortName: "BillBook",
   title: "BillBook \u2013 Invoicing & Billing Management",
   description:
-    "BillBook is a simple yet powerful invoicing, billing, and inventory management app for small businesses. Create GST invoices, manage parties, track payments, and more.",
+    "BillBook is invoicing and billing software for small businesses in India: GST invoices, credit notes, receipts, stock, party ledgers, CSV reports, GST / Tax HTML export, and audit logs.",
   url: normalizedEnvUrl && normalizedEnvUrl.length > 0 ? normalizedEnvUrl : defaultSiteUrl,
   keywords: [
-    "invoice",
-    "billing",
-    "GST invoice",
-    "GST billing software",
-    "GST invoice software India",
-    "online invoicing India",
-    "billing software for small business",
-    "inventory management",
-    "small business accounting",
-    "free invoicing software India",
-    "credit notes",
-    "payment tracking",
-    "party management",
-    "tax invoice",
     "BillBook",
-    "audit logs",
-    "business reports",
-    "e-invoice",
+    "GST invoice software India",
+    "billing software India",
+    "invoicing software small business",
+    "online invoicing India",
+    "credit notes",
+    "GST reports",
     "accounts receivable",
-    "GST return",
+    "accounts payable",
+    "invoice PDF",
+    "party ledger",
+    "stock management",
+    "receipts and payments",
+    "invoice register CSV",
+    "GST tax summary",
+    "audit logs",
+    "small business billing",
   ],
   authors: [{ name: "BillBook" }],
   creator: "BillBook",
@@ -37,3 +34,14 @@ export const siteConfig = {
   locale: "en_IN",
   ogImage: "/logo.svg",
 };
+
+/**
+ * Public marketing contact (mailto on /contact). Set `NEXT_PUBLIC_CONTACT_EMAIL`
+ * in production; otherwise a sensible default for the Hench Solutions org.
+ */
+const MARKETING_CONTACT_FALLBACK = "it@henchsolutions.com";
+
+export function marketingContactEmail(): string {
+  const v = process.env.NEXT_PUBLIC_CONTACT_EMAIL?.trim();
+  return v && v.length > 0 ? v : MARKETING_CONTACT_FALLBACK;
+}
