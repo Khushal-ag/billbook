@@ -537,10 +537,20 @@ export function BusinessProfileForm({
                       <Input
                         id="phone"
                         placeholder="9876543210"
-                        inputMode="tel"
-                        {...register("phone")}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={10}
+                        aria-invalid={!!errors.phone}
+                        {...register("phone", {
+                          onChange: (e) => {
+                            e.target.value = String(e.target.value ?? "")
+                              .replace(/\D/g, "")
+                              .slice(0, 10);
+                          },
+                        })}
                       />
                     </div>
+                    {errors.phone && <FieldError>{errors.phone.message}</FieldError>}
                   </div>
                 </CardContent>
               </Card>

@@ -94,10 +94,7 @@ const optionalPhoneDigits = z
   .string()
   .trim()
   .refine((val) => val === "" || /^\d+$/.test(val), "Phone can only contain digits")
-  .refine(
-    (val) => val === "" || (val.length >= 10 && val.length <= 15),
-    "Phone number must have between 10 and 15 digits",
-  );
+  .refine((val) => val === "" || val.length === 10, "Phone number must be exactly 10 digits");
 
 const consigneeSchema = z.object({
   label: optionalString,
@@ -232,6 +229,13 @@ function ConsigneeEditorDialog({
       setError("consigneeName", { type: "manual", message: "Contact name is required" });
       return;
     }
+    if (partyType === "CUSTOMER" && !/^\d{10}$/.test(data.consigneeName.trim())) {
+      setError("consigneeName", {
+        type: "manual",
+        message: "Contact at delivery must be exactly 10 digits",
+      });
+      return;
+    }
     if (!data.address.trim()) {
       setError("address", { type: "manual", message: "Address is required" });
       return;
@@ -253,6 +257,7 @@ function ConsigneeEditorDialog({
   };
 
   const pending = createMutation.isPending || updateMutation.isPending;
+  const isCustomer = partyType === "CUSTOMER";
 
   const handleConsigneeFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     // Prevent submit bubbling into parent PartyDialog form.
@@ -275,7 +280,21 @@ function ConsigneeEditorDialog({
             </div>
             <div className="space-y-2">
               <Label required>{L.contactFieldLabel}</Label>
-              <Input {...register("consigneeName")} aria-invalid={!!errors.consigneeName} />
+              <Input
+                {...register("consigneeName", {
+                  onChange: isCustomer
+                    ? (e) => {
+                        e.target.value = String(e.target.value ?? "")
+                          .replace(/\D/g, "")
+                          .slice(0, 10);
+                      }
+                    : undefined,
+                })}
+                aria-invalid={!!errors.consigneeName}
+                inputMode={isCustomer ? "numeric" : undefined}
+                pattern={isCustomer ? "[0-9]*" : undefined}
+                maxLength={isCustomer ? 10 : undefined}
+              />
               {errors.consigneeName && <FieldError>{errors.consigneeName.message}</FieldError>}
             </div>
           </div>
@@ -293,13 +312,13 @@ function ConsigneeEditorDialog({
                   onChange: (e) => {
                     e.target.value = String(e.target.value ?? "")
                       .replace(/\D/g, "")
-                      .slice(0, 15);
+                      .slice(0, 10);
                   },
                 })}
                 inputMode="numeric"
                 pattern="[0-9]*"
                 autoComplete="tel"
-                maxLength={15}
+                maxLength={10}
               />
               {errors.phone && <FieldError>{errors.phone.message}</FieldError>}
             </div>
