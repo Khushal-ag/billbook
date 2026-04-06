@@ -57,6 +57,8 @@ type FormState = {
   paymentPrefix: string;
   paymentSequenceStart: string;
   defaultDueDays: string;
+  /** Purchase: default margin % when lines omit selling price (decimal string, empty = clear). */
+  defaultSellingPriceMarginPercent: string;
   fyMode: "profile" | string;
 };
 
@@ -75,6 +77,7 @@ function toFormState(d: BusinessSettingsData): FormState {
     paymentPrefix: d.paymentPrefix,
     paymentSequenceStart: String(d.paymentSequenceStart),
     defaultDueDays: d.defaultDueDays == null ? "" : String(d.defaultDueDays),
+    defaultSellingPriceMarginPercent: d.defaultSellingPriceMarginPercent?.trim() ?? "",
     fyMode:
       d.financialYearStartMonthSource === "business_profile"
         ? "profile"
@@ -96,6 +99,7 @@ const FORM_KEYS: (keyof FormState)[] = [
   "paymentPrefix",
   "paymentSequenceStart",
   "defaultDueDays",
+  "defaultSellingPriceMarginPercent",
   "fyMode",
 ];
 
@@ -119,6 +123,17 @@ function buildPayload(f: FormState): UpdateBusinessSettingsRequest {
     }
     defaultDueDays = n;
   }
+  const marginRaw = f.defaultSellingPriceMarginPercent.trim();
+  let defaultSellingPriceMarginPercent: string | null;
+  if (marginRaw === "") {
+    defaultSellingPriceMarginPercent = null;
+  } else {
+    const n = Number(marginRaw);
+    if (!Number.isFinite(n) || n < 0) {
+      throw new Error("Default selling margin (%) must be a non-negative number.");
+    }
+    defaultSellingPriceMarginPercent = marginRaw;
+  }
   return {
     invoicePrefix: trimOrNull(f.invoicePrefix),
     invoiceSequenceStart: seq(f.invoiceSequenceStart),
@@ -133,6 +148,7 @@ function buildPayload(f: FormState): UpdateBusinessSettingsRequest {
     paymentPrefix: trimOrNull(f.paymentPrefix),
     paymentSequenceStart: seq(f.paymentSequenceStart),
     defaultDueDays,
+    defaultSellingPriceMarginPercent,
     financialYearStartMonth: f.fyMode === "profile" ? null : parseInt(f.fyMode, 10),
   };
 }
@@ -157,7 +173,10 @@ export function DocumentNumberingCard({ embedded = false }: DocumentNumberingCar
       setPatch({});
       showSuccessToast("Business settings saved");
     } catch (e) {
-      if (e instanceof Error && e.message.includes("Due days")) {
+      if (
+        e instanceof Error &&
+        (e.message.includes("Due days") || e.message.includes("Default selling margin"))
+      ) {
         showErrorToast(e.message);
         return;
       }
@@ -460,6 +479,22 @@ export function DocumentNumberingCard({ embedded = false }: DocumentNumberingCar
             />
             <p className="text-xs text-muted-foreground">
               If set, drafts without a due date get invoice date + N days. Empty = off.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label>Default selling margin (%)</Label>
+            <Input
+              className={fieldClass}
+              type="text"
+              inputMode="decimal"
+              placeholder="e.g. 20"
+              value={form.defaultSellingPriceMarginPercent}
+              onChange={(e) => setField("defaultSellingPriceMarginPercent", e.target.value)}
+              disabled={readOnly}
+            />
+            <p className="text-xs text-muted-foreground">
+              Applied when a purchase line has no selling price: selling = cost + margin%. Empty
+              clears the default (server uses no auto margin from settings).
             </p>
           </div>
           <div className="space-y-2">

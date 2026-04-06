@@ -39,7 +39,7 @@ interface PartyAndDatesCardsProps {
   onInvoiceDateChange: (value: string) => void;
   dueDate: string;
   onDueDateChange: (value: string) => void;
-  /** Purchase invoice: margin on purchase rate to suggest selling price per line. */
+  /** Purchase invoice / purchase return: margin % on cost (required). */
   sellingPriceMarginPercent?: string;
   onSellingPriceMarginChange?: (value: string) => void;
   /** Vendor bill metadata (purchase invoice only). */
@@ -49,6 +49,10 @@ interface PartyAndDatesCardsProps {
   onOriginalBillDateChange?: (value: string) => void;
   paymentTermsDays?: string;
   onPaymentTermsDaysChange?: (value: string) => void;
+  /** Inline validation under party search. */
+  partyErrorText?: string | null;
+  /** Inline validation under selling margin (purchase types). */
+  sellingMarginErrorText?: string | null;
 }
 
 export function PartyAndDatesCards({
@@ -74,6 +78,8 @@ export function PartyAndDatesCards({
   onOriginalBillDateChange,
   paymentTermsDays,
   onPaymentTermsDaysChange,
+  partyErrorText,
+  sellingMarginErrorText,
 }: PartyAndDatesCardsProps) {
   const copy = getInvoiceTypeCreateCopy(invoiceType);
   const todayIso = toISODateString(new Date());
@@ -87,7 +93,7 @@ export function PartyAndDatesCards({
     onPaymentTermsDaysChange;
   const invoiceDateLabel = "Invoice date";
   const showSellingPriceMargin =
-    invoiceType === "PURCHASE_INVOICE" &&
+    (invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN") &&
     sellingPriceMarginPercent !== undefined &&
     onSellingPriceMarginChange;
   const primaryAddressOptionLabel = "Primary Address";
@@ -116,7 +122,7 @@ export function PartyAndDatesCards({
           <CardTitle className="text-base">{copy.partyCardTitle}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="space-y-2">
+          <div id="invoice-create-party-field" className="space-y-2">
             <Label required>{copy.partyLabel}</Label>
             <PartyAutocomplete
               value={party}
@@ -126,6 +132,8 @@ export function PartyAndDatesCards({
               placeholder={`Search ${copy.partyPlaceholder}...`}
               addLabel={copy.addPartyLabel}
               onAddParty={onAddParty}
+              inputId="invoice-create-party-input"
+              errorText={partyErrorText}
             />
           </div>
           <div className="space-y-2">
@@ -150,14 +158,14 @@ export function PartyAndDatesCards({
                       ) : null}
                     </>
                   ) : (
-                    <SelectValue placeholder="Select party first" />
+                    <SelectValue placeholder={`Select ${copy.partyLabel.toLowerCase()} first`} />
                   )}
                 </div>
               </SelectTrigger>
               <SelectContent>
                 {!party ? (
                   <SelectItem value={NO_PARTY_VALUE} disabled>
-                    Select party first
+                    {`Select ${copy.partyLabel.toLowerCase()} first`}
                   </SelectItem>
                 ) : (
                   <>
@@ -237,7 +245,7 @@ export function PartyAndDatesCards({
               )}
               {showSellingPriceMargin && (
                 <Label htmlFor="selling-price-margin" className="leading-snug" required>
-                  Selling price margin (%)
+                  Selling margin (%)
                 </Label>
               )}
               {showVendorBillFields && (
@@ -253,16 +261,41 @@ export function PartyAndDatesCards({
                 />
               )}
               {showSellingPriceMargin && (
-                <Input
-                  id="selling-price-margin"
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="e.g. 20"
-                  value={sellingPriceMarginPercent}
-                  onChange={(e) => onSellingPriceMarginChange(e.target.value)}
-                  className="tabular-nums"
-                  autoComplete="off"
-                />
+                <div className="space-y-1.5">
+                  <Input
+                    id="selling-price-margin"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="e.g. 20"
+                    value={sellingPriceMarginPercent}
+                    onChange={(e) => onSellingPriceMarginChange(e.target.value)}
+                    aria-invalid={Boolean(sellingMarginErrorText)}
+                    aria-describedby={
+                      sellingMarginErrorText ? "selling-price-margin-error" : undefined
+                    }
+                    className={cn(
+                      "tabular-nums",
+                      sellingMarginErrorText &&
+                        "border-destructive focus-visible:ring-destructive/40",
+                    )}
+                    autoComplete="off"
+                  />
+                  {sellingMarginErrorText ? (
+                    <p
+                      id="selling-price-margin-error"
+                      role="alert"
+                      className="text-sm text-destructive"
+                    >
+                      {sellingMarginErrorText}
+                    </p>
+                  ) : null}
+                </div>
+              )}
+              {showSellingPriceMargin && (
+                <p className="text-xs text-muted-foreground sm:col-span-2">
+                  Required. Prefilled from business settings when a default is saved. Used when a
+                  line has no selling price; after save, the invoice shows the effective margin.
+                </p>
               )}
             </div>
           )}

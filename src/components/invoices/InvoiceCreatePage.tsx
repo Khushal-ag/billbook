@@ -106,11 +106,17 @@ export function InvoiceCreatePage({
         dueDate={state.dueDate}
         onDueDateChange={state.setDueDate}
         sellingPriceMarginPercent={
-          initialType === "PURCHASE_INVOICE" ? state.sellingPriceMarginPercent : undefined
+          initialType === "PURCHASE_INVOICE" || initialType === "PURCHASE_RETURN"
+            ? state.sellingPriceMarginPercent
+            : undefined
         }
         onSellingPriceMarginChange={
-          initialType === "PURCHASE_INVOICE" ? state.handleSellingPriceMarginChange : undefined
+          initialType === "PURCHASE_INVOICE" || initialType === "PURCHASE_RETURN"
+            ? state.handleSellingPriceMarginChange
+            : undefined
         }
+        partyErrorText={state.submitFieldErrors.party}
+        sellingMarginErrorText={state.submitFieldErrors.sellingMargin}
         originalBillNumber={
           isPurchaseVendorBillMetaType(initialType) ? state.originalBillNumber : undefined
         }

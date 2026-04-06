@@ -195,7 +195,7 @@ export interface CreateInvoiceRequest {
   discountAmount?: string;
   discountPercent?: string;
   roundOffAmount?: string;
-  /** Optional; non-negative decimal string; stored on the invoice (purchase invoice UI). */
+  /** Purchase invoice/return: non-negative decimal string (UI requires a value; often prefilled from business settings). */
   sellingPriceMarginPercent?: string;
   /** `SALE_RETURN` / `PURCHASE_RETURN`: original invoice id (optional; enables cumulative return caps). */
   sourceInvoiceId?: number;
@@ -218,7 +218,8 @@ export interface UpdateInvoiceRequest {
   discountAmount?: string;
   discountPercent?: string;
   roundOffAmount?: string;
-  sellingPriceMarginPercent?: string;
+  /** Purchase documents: set `null` to clear document-level margin override. */
+  sellingPriceMarginPercent?: string | null;
   /** Return types: set `null` to clear linkage. */
   sourceInvoiceId?: number | null;
   /** `PURCHASE_INVOICE` / `PURCHASE_RETURN` only; `null` clears. Omit for sale types. */

@@ -85,8 +85,12 @@ export function useInvoiceCreateState(
   const [selectedConsigneeId, setSelectedConsigneeId] = useState<number | null>(null);
   const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState("");
-  /** PURCHASE_INVOICE: margin on cost for default selling price per line. */
+  /** PURCHASE_INVOICE / PURCHASE_RETURN: margin on cost for default selling price per line (required). */
   const [sellingPriceMarginPercent, setSellingPriceMarginPercent] = useState("");
+  const [submitFieldErrors, setSubmitFieldErrors] = useState<{
+    party?: string;
+    sellingMargin?: string;
+  }>({});
   const [originalBillNumber, setOriginalBillNumber] = useState("");
   const [originalBillDate, setOriginalBillDate] = useState("");
   const [paymentTermsDays, setPaymentTermsDays] = useState("");
@@ -442,8 +446,9 @@ export function useInvoiceCreateState(
     return "Returns can only be created from a finalised invoice. Finalise the source invoice first.";
   }, [editInvoiceId, invoiceType, sourceInvoiceId, sourceInvoice]);
 
-  const purchaseSellingMarginOk =
-    invoiceType !== "PURCHASE_INVOICE" ||
+  /** Purchase documents: selling margin required; must be a non‑negative number. */
+  const purchaseMarginFieldValid =
+    (invoiceType !== "PURCHASE_INVOICE" && invoiceType !== "PURCHASE_RETURN") ||
     (() => {
       const t = sellingPriceMarginPercent.trim();
       if (t === "") return false;
@@ -500,6 +505,57 @@ export function useInvoiceCreateState(
       return prev;
     });
   }, [editInvoiceId, invoiceType, paymentTermsDays, businessSettings?.defaultDueDays, invoiceDate]);
+
+  /**
+   * New purchase bill: when business settings load, prefill the margin field from the default so the
+   * control matches what the server uses, and backfill selling price on lines that have cost but no sell
+   * (e.g. unit price entered before settings finished loading).
+   */
+  useEffect(() => {
+    if (editInvoiceId) return;
+    if (invoiceType !== "PURCHASE_INVOICE" && invoiceType !== "PURCHASE_RETURN") return;
+    const d = businessSettings?.defaultSellingPriceMarginPercent?.trim() ?? "";
+    if (d === "") return;
+
+    setSellingPriceMarginPercent((prevMargin) => {
+      if (prevMargin.trim() !== "") return prevMargin;
+      queueMicrotask(() => {
+        setLines((prevLines) =>
+          prevLines.map((line) => {
+            const purchase = line.unitPrice.trim();
+            if (purchase === "") return line;
+            if ((line.sellingPrice ?? "").trim() !== "") return line;
+            return {
+              ...line,
+              sellingPrice: sellingPriceFromPurchaseAndMargin(purchase, d),
+            };
+          }),
+        );
+      });
+      return d;
+    });
+  }, [editInvoiceId, invoiceType, businessSettings?.defaultSellingPriceMarginPercent]);
+
+  /** After a failed save, focus and scroll the first field with an inline error. */
+  useEffect(() => {
+    const pe = submitFieldErrors.party;
+    const me = submitFieldErrors.sellingMargin;
+    if (!pe && !me) return;
+    const run = () => {
+      if (pe) {
+        document.getElementById("invoice-create-party-input")?.focus();
+        document.getElementById("invoice-create-party-field")?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+        return;
+      }
+      const marginEl = document.getElementById("selling-price-margin");
+      marginEl?.focus();
+      marginEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+    };
+    requestAnimationFrame(run);
+  }, [submitFieldErrors]);
 
   useEffect(() => {
     const sourceConfigByReturnType: Record<
@@ -1073,32 +1129,47 @@ export function useInvoiceCreateState(
   const handleSellingPriceMarginChange = useCallback(
     (value: string) => {
       setSellingPriceMarginPercent(value);
-      if (invoiceType !== "PURCHASE_INVOICE") return;
-      const trimmed = value.trim();
-      if (trimmed === "") return;
+      setSubmitFieldErrors((prev) => ({ ...prev, sellingMargin: undefined }));
+      if (invoiceType !== "PURCHASE_INVOICE" && invoiceType !== "PURCHASE_RETURN") return;
+      const doc = value.trim();
+      const margin =
+        doc !== "" ? doc : (businessSettings?.defaultSellingPriceMarginPercent?.trim() ?? "");
+      if (margin === "") return;
       setLines((prev) =>
         prev.map((line) => {
           const purchase = line.unitPrice.trim();
           if (purchase === "") return line;
           return {
             ...line,
-            sellingPrice: sellingPriceFromPurchaseAndMargin(purchase, trimmed),
+            sellingPrice: sellingPriceFromPurchaseAndMargin(purchase, margin),
           };
         }),
       );
     },
-    [invoiceType],
+    [invoiceType, businessSettings?.defaultSellingPriceMarginPercent],
   );
 
   const handlePurchaseUnitPriceChange = useCallback(
     (lineId: string, value: string) => {
       const patch: Partial<InvoiceLineDraft> = { unitPrice: value };
-      if (invoiceType === "PURCHASE_INVOICE" && sellingPriceMarginPercent.trim() !== "") {
-        patch.sellingPrice = sellingPriceFromPurchaseAndMargin(value, sellingPriceMarginPercent);
+      const marginForLine =
+        sellingPriceMarginPercent.trim() ||
+        businessSettings?.defaultSellingPriceMarginPercent?.trim() ||
+        "";
+      if (
+        (invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN") &&
+        marginForLine !== ""
+      ) {
+        patch.sellingPrice = sellingPriceFromPurchaseAndMargin(value, marginForLine);
       }
       updateLine(lineId, patch);
     },
-    [invoiceType, sellingPriceMarginPercent, updateLine],
+    [
+      invoiceType,
+      sellingPriceMarginPercent,
+      businessSettings?.defaultSellingPriceMarginPercent,
+      updateLine,
+    ],
   );
 
   const handlePurchaseCatalogItemSelect = useCallback(
@@ -1137,12 +1208,13 @@ export function useInvoiceCreateState(
         : (choice.entry.sellingPrice ?? "");
       const purchaseStr = String(defaultUnitPrice ?? "").trim();
       let sellingForPurchase = "";
+      const marginForLine =
+        sellingPriceMarginPercent.trim() ||
+        businessSettings?.defaultSellingPriceMarginPercent?.trim() ||
+        "";
       if (invoiceType === "PURCHASE_INVOICE") {
-        if (sellingPriceMarginPercent.trim() !== "") {
-          sellingForPurchase = sellingPriceFromPurchaseAndMargin(
-            purchaseStr,
-            sellingPriceMarginPercent,
-          );
+        if (marginForLine !== "") {
+          sellingForPurchase = sellingPriceFromPurchaseAndMargin(purchaseStr, marginForLine);
         } else {
           const existing = choice.entry.sellingPrice?.trim() ?? "";
           sellingForPurchase = existing !== "" && toNum(existing) > 0 ? existing : purchaseStr;
@@ -1171,7 +1243,13 @@ export function useInvoiceCreateState(
       setStockSearchText("");
       clearUnitPriceFloorWarning();
     },
-    [clearUnitPriceFloorWarning, invoiceType, updateLine, sellingPriceMarginPercent],
+    [
+      clearUnitPriceFloorWarning,
+      invoiceType,
+      updateLine,
+      sellingPriceMarginPercent,
+      businessSettings?.defaultSellingPriceMarginPercent,
+    ],
   );
 
   const handleAddStockForItem = useCallback(
@@ -1548,25 +1626,36 @@ export function useInvoiceCreateState(
   const handleCreate = useCallback(async () => {
     if (submitGuardRef.current || createInvoice.isPending || updateDraftInvoice.isPending) return;
     submitGuardRef.current = true;
+    setSubmitFieldErrors({});
 
+    const nextFieldErrors: { party?: string; sellingMargin?: string } = {};
     if (!party) {
+      nextFieldErrors.party =
+        partyType === "CUSTOMER" ? "Please select a customer." : "Please select a vendor.";
+    }
+    if (
+      (invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN") &&
+      !purchaseMarginFieldValid
+    ) {
+      nextFieldErrors.sellingMargin =
+        sellingPriceMarginPercent.trim() === ""
+          ? "Selling margin is required."
+          : "Selling margin must be a non-negative number.";
+    }
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setSubmitFieldErrors(nextFieldErrors);
       submitGuardRef.current = false;
-      showErrorToast(null, "Please select a party");
+      return;
+    }
+
+    if (party == null) {
+      submitGuardRef.current = false;
       return;
     }
 
     if (returnLinkedSourceBlockedReason) {
       submitGuardRef.current = false;
       showErrorToast(null, returnLinkedSourceBlockedReason);
-      return;
-    }
-
-    if (invoiceType === "PURCHASE_INVOICE" && !purchaseSellingMarginOk) {
-      submitGuardRef.current = false;
-      showErrorToast(
-        null,
-        "Enter selling price margin (%) — required for purchase invoices so sale prices can be suggested on lines.",
-      );
       return;
     }
 
@@ -1694,7 +1783,7 @@ export function useInvoiceCreateState(
           discountAmount: discountAmount.trim() ? discountAmount : undefined,
           discountPercent: discountPercent.trim() ? discountPercent : undefined,
           roundOffAmount: roundOffForApi,
-          ...(invoiceType === "PURCHASE_INVOICE" && sellingPriceMarginPercent.trim() !== ""
+          ...(invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN"
             ? { sellingPriceMarginPercent: sellingPriceMarginPercent.trim() }
             : {}),
           ...(isPurchaseVendorBillMetaType(invoiceType)
@@ -1735,7 +1824,7 @@ export function useInvoiceCreateState(
         discountAmount: discountAmount || undefined,
         discountPercent: discountPercent || undefined,
         roundOffAmount: roundOffForApi,
-        ...(invoiceType === "PURCHASE_INVOICE" && sellingPriceMarginPercent.trim() !== ""
+        ...(invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN"
           ? { sellingPriceMarginPercent: sellingPriceMarginPercent.trim() }
           : {}),
         ...(isPurchaseVendorBillMetaType(invoiceType)
@@ -1801,7 +1890,8 @@ export function useInvoiceCreateState(
     editingDraftInvoice?.sourceInvoiceId,
     sourceInvoiceId,
     returnLinkedSourceBlockedReason,
-    purchaseSellingMarginOk,
+    purchaseMarginFieldValid,
+    partyType,
   ]);
 
   useEffect(() => {
@@ -1829,11 +1919,13 @@ export function useInvoiceCreateState(
     setParty(createdParty);
     setSelectedConsigneeId(null);
     setPendingPartyName("");
+    setSubmitFieldErrors((prev) => ({ ...prev, party: undefined }));
   }, []);
 
   const handlePartyChange = useCallback((nextParty: Party | null) => {
     setParty(nextParty);
     setSelectedConsigneeId(null);
+    setSubmitFieldErrors((prev) => ({ ...prev, party: undefined }));
   }, []);
 
   const handleAddItemClick = useCallback(() => {
@@ -1867,6 +1959,7 @@ export function useInvoiceCreateState(
     setPaymentTermsDays,
     sellingPriceMarginPercent,
     handleSellingPriceMarginChange,
+    submitFieldErrors,
     handlePurchaseUnitPriceChange,
     notes,
     setNotes,

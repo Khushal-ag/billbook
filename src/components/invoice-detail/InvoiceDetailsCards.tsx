@@ -109,7 +109,7 @@ export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
                 Purchase pricing
               </p>
               <div className="rounded-md border bg-muted/15 px-3 py-2.5">
-                <DetailRow label="Selling price margin">
+                <DetailRow label="Selling margin (effective)">
                   <span className="tabular-nums">
                     {String(invoice.sellingPriceMarginPercent).trim()}%
                   </span>

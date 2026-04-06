@@ -37,6 +37,10 @@ interface PartyAutocompleteProps {
   serverSearch?: boolean;
   /** Narrows GET /parties when serverSearch is on. */
   partiesQueryType?: PartyType;
+  /** Sets `id` on the input (e.g. for focus management on validation). */
+  inputId?: string;
+  /** Inline validation: destructive border + message below the field. */
+  errorText?: string | null;
 }
 
 const ADD_PARTY_VALUE = "__add_party__" as const;
@@ -61,6 +65,8 @@ export function PartyAutocomplete({
   autoFocus = false,
   serverSearch = false,
   partiesQueryType,
+  inputId,
+  errorText,
 }: PartyAutocompleteProps) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -134,6 +140,9 @@ export function PartyAutocomplete({
     inputValue.trim() !== debouncedSearch.trim() &&
     inputValue.trim() !== "";
 
+  const errorDescId =
+    errorText && inputId ? `${inputId}-error` : errorText ? "party-autocomplete-error" : undefined;
+
   useEffect(() => {
     if (!open && value) setInputValue(value.name);
     if (!open && !value) setInputValue("");
@@ -199,122 +208,136 @@ export function PartyAutocomplete({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={false}>
-      <PopoverAnchor asChild>
-        <div className="block w-full cursor-text">
-          <Input
-            ref={inputRef}
-            type="text"
-            value={displayValue}
-            onChange={handleInputChange}
-            onFocus={() => {
-              setOpen(true);
-              setInputValue(value ? value.name : "");
-            }}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={disabled}
-            className={cn("w-full font-normal", className)}
-            autoComplete="off"
-            autoFocus={autoFocus}
-          />
-        </div>
-      </PopoverAnchor>
-      <PopoverContent
-        className={cn(
-          "w-[min(24rem,calc(100vw-1rem))] min-w-[var(--radix-popover-trigger-width)] p-0",
-          inDialog && "z-[200]",
-        )}
-        align="start"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-        onCloseAutoFocus={(e) => e.preventDefault()}
-      >
-        {serverSearch && (isFetching || typingAhead) && (
-          <div className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-            {typingAhead ? "Searching…" : "Loading parties…"}
-          </div>
-        )}
-        <Command
-          shouldFilter={false}
-          value={
-            showAdd && highlightedIndex === addIndex
-              ? ADD_PARTY_VALUE
-              : filtered[highlightedIndex]
-                ? String(filtered[highlightedIndex].id)
-                : "__none__"
-          }
-        >
-          <CommandList ref={listRef}>
-            <CommandEmpty className="flex flex-col items-center justify-center gap-2 px-4 py-8">
-              <Users className="h-9 w-9 text-muted-foreground/60" />
-              <p className="text-center text-sm font-medium text-foreground">
-                {serverSearch && isFetching && filtered.length === 0
-                  ? "Loading parties…"
-                  : inputValue.trim()
-                    ? "No matching party"
-                    : "Type to search"}
-              </p>
-              {serverSearch &&
-                !isFetching &&
-                !typingAhead &&
-                inputValue.trim() &&
-                filtered.length === 0 && (
-                  <p className="text-center text-xs text-muted-foreground">
-                    Try phone, GSTIN, or part of the name
-                  </p>
-                )}
-            </CommandEmpty>
-            <CommandGroup>
-              {filtered.map((party, index) => (
-                <CommandItem
-                  key={party.id}
-                  value={String(party.id)}
-                  onSelect={() => handleSelect(party)}
-                  data-highlight-index={index}
-                  className="group cursor-pointer"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate">{party.name}</div>
-                    {formatPartyAddress(party) && (
-                      <div className="truncate text-xs text-foreground/70 group-data-[selected=true]:text-accent-foreground/95">
-                        {formatPartyAddress(party)}
-                      </div>
-                    )}
-                  </div>
-                  <Check
-                    className={cn(
-                      "h-4 w-4 shrink-0",
-                      value?.id === party.id
-                        ? "text-foreground opacity-100 group-data-[selected=true]:text-accent-foreground"
-                        : "opacity-0",
-                    )}
-                  />
-                </CommandItem>
-              ))}
-              {showAdd && (
-                <CommandItem
-                  value={ADD_PARTY_VALUE}
-                  onSelect={() => {
-                    onAddParty?.((party) => {
-                      onValueChange(party);
-                      setOpen(false);
-                    }, trimmedInput);
-                  }}
-                  data-highlight-index={addIndex}
-                  className="group mt-1 cursor-pointer border-t border-border pt-1"
-                >
-                  <Plus className="mr-2 h-4 w-4 text-muted-foreground group-data-[selected=true]:text-accent-foreground" />
-                  <span className="truncate text-muted-foreground group-data-[selected=true]:text-accent-foreground">
-                    {addLabel}
-                    {trimmedInput ? ` "${trimmedInput}"` : ""}
-                  </span>
-                </CommandItem>
+    <div className="w-full space-y-1.5">
+      <Popover open={open} onOpenChange={setOpen} modal={false}>
+        <PopoverAnchor asChild>
+          <div className="block w-full cursor-text">
+            <Input
+              ref={inputRef}
+              id={inputId}
+              type="text"
+              value={displayValue}
+              onChange={handleInputChange}
+              onFocus={() => {
+                setOpen(true);
+                setInputValue(value ? value.name : "");
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholder}
+              disabled={disabled}
+              aria-invalid={Boolean(errorText)}
+              aria-describedby={errorDescId}
+              className={cn(
+                "w-full font-normal",
+                errorText && "border-destructive focus-visible:ring-destructive/40",
+                className,
               )}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+              autoComplete="off"
+              autoFocus={autoFocus}
+            />
+          </div>
+        </PopoverAnchor>
+        <PopoverContent
+          className={cn(
+            "w-[min(24rem,calc(100vw-1rem))] min-w-[var(--radix-popover-trigger-width)] p-0",
+            inDialog && "z-[200]",
+          )}
+          align="start"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
+          {serverSearch && (isFetching || typingAhead) && (
+            <div className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+              {typingAhead ? "Searching…" : "Loading parties…"}
+            </div>
+          )}
+          <Command
+            shouldFilter={false}
+            value={
+              showAdd && highlightedIndex === addIndex
+                ? ADD_PARTY_VALUE
+                : filtered[highlightedIndex]
+                  ? String(filtered[highlightedIndex].id)
+                  : "__none__"
+            }
+          >
+            <CommandList ref={listRef}>
+              <CommandEmpty className="flex flex-col items-center justify-center gap-2 px-4 py-8">
+                <Users className="h-9 w-9 text-muted-foreground/60" />
+                <p className="text-center text-sm font-medium text-foreground">
+                  {serverSearch && isFetching && filtered.length === 0
+                    ? "Loading parties…"
+                    : inputValue.trim()
+                      ? "No matching party"
+                      : "Type to search"}
+                </p>
+                {serverSearch &&
+                  !isFetching &&
+                  !typingAhead &&
+                  inputValue.trim() &&
+                  filtered.length === 0 && (
+                    <p className="text-center text-xs text-muted-foreground">
+                      Try phone, GSTIN, or part of the name
+                    </p>
+                  )}
+              </CommandEmpty>
+              <CommandGroup>
+                {filtered.map((party, index) => (
+                  <CommandItem
+                    key={party.id}
+                    value={String(party.id)}
+                    onSelect={() => handleSelect(party)}
+                    data-highlight-index={index}
+                    className="group cursor-pointer"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate">{party.name}</div>
+                      {formatPartyAddress(party) && (
+                        <div className="truncate text-xs text-foreground/70 group-data-[selected=true]:text-accent-foreground/95">
+                          {formatPartyAddress(party)}
+                        </div>
+                      )}
+                    </div>
+                    <Check
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        value?.id === party.id
+                          ? "text-foreground opacity-100 group-data-[selected=true]:text-accent-foreground"
+                          : "opacity-0",
+                      )}
+                    />
+                  </CommandItem>
+                ))}
+                {showAdd && (
+                  <CommandItem
+                    value={ADD_PARTY_VALUE}
+                    onSelect={() => {
+                      onAddParty?.((party) => {
+                        onValueChange(party);
+                        setOpen(false);
+                      }, trimmedInput);
+                    }}
+                    data-highlight-index={addIndex}
+                    className="group mt-1 cursor-pointer border-t border-border pt-1"
+                  >
+                    <Plus className="mr-2 h-4 w-4 text-muted-foreground group-data-[selected=true]:text-accent-foreground" />
+                    <span className="truncate text-muted-foreground group-data-[selected=true]:text-accent-foreground">
+                      {addLabel}
+                      {trimmedInput ? ` "${trimmedInput}"` : ""}
+                    </span>
+                  </CommandItem>
+                )}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {errorText ? (
+        <p id={errorDescId} role="alert" className="text-sm text-destructive">
+          {errorText}
+        </p>
+      ) : null}
+    </div>
   );
 }
