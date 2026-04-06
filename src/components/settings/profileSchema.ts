@@ -10,7 +10,10 @@ export const profileSchema = z.object({
   name: z.string().trim().min(1, "Business name is required").max(200),
   country: z.string().trim().max(100).optional().or(z.literal("")),
   email: z.string().trim().email("Invalid email").max(255).optional().or(z.literal("")),
-  phone: z.string().trim().max(20).optional().or(z.literal("")),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
   businessType: z.string().trim().max(100).optional().or(z.literal("")),
   industryType: z.string().trim().max(100).optional().or(z.literal("")),
   registrationType: z.string().trim().max(100).optional().or(z.literal("")),
