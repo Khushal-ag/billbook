@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { FieldError, Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -24,13 +25,16 @@ import { Loader2 } from "lucide-react";
 import { useAdjustStock, useStockEntries } from "@/hooks/use-items";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import { stockBatchSelectLabel } from "@/lib/stock-entry-labels";
+import { formatStockQuantity } from "@/lib/utils";
 import { isServiceType } from "@/types/item";
 
 const schema = z.object({
-  quantity: z
+  direction: z.enum(["add", "remove"]),
+  amount: z
     .string()
-    .regex(/^-?\d+(\.\d{1,2})?$/, "Enter a valid quantity (can be negative)")
-    .refine((v) => parseFloat(v) !== 0, "Quantity cannot be zero"),
+    .min(1, "Enter a quantity")
+    .regex(/^\d+(\.\d{1,2})?$/, "Enter a valid quantity")
+    .refine((v) => parseFloat(v) > 0, "Quantity must be greater than zero"),
   reason: z.string().min(1, "Reason is required"),
 });
 
@@ -66,17 +70,21 @@ export default function AdjustStockDialog({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { quantity: "", reason: "" },
+    defaultValues: { direction: "add", amount: "", reason: "" },
   });
+
+  const direction = watch("direction");
 
   useEffect(() => {
     if (!open) return;
-    reset({ quantity: "", reason: "" });
+    reset({ direction: "add", amount: "", reason: "" });
     setSelectedEntryId(
       initialStockEntryId != null && Number.isFinite(initialStockEntryId)
         ? String(initialStockEntryId)
@@ -97,16 +105,28 @@ export default function AdjustStockDialog({
     }
   }, [open, entriesLoading, batches, selectedEntryId]);
 
+  const selectedBatch = useMemo(() => {
+    const id = Number.parseInt(selectedEntryId, 10);
+    if (!Number.isFinite(id)) return null;
+    return batches.find((b) => b.id === id) ?? null;
+  }, [batches, selectedEntryId]);
+
+  const onHandHint =
+    selectedBatch != null
+      ? formatStockQuantity(selectedBatch.actualQuantity ?? selectedBatch.quantity)
+      : null;
+
   const onSubmit = async (data: FormData) => {
     const sid = Number.parseInt(selectedEntryId, 10);
     if (!Number.isFinite(sid)) {
       showErrorToast(null, "Select a stock batch.");
       return;
     }
+    const quantity = data.direction === "add" ? data.amount : `-${data.amount}`;
     try {
       await mutation.mutateAsync({
         stockEntryId: sid,
-        quantity: data.quantity,
+        quantity,
         reason: data.reason,
       });
       showSuccessToast("Stock adjusted");
@@ -158,16 +178,61 @@ export default function AdjustStockDialog({
           </div>
 
           <div className="space-y-2">
-            <Label required>Quantity</Label>
-            <Input
-              placeholder="e.g. 10 or -5"
-              {...register("quantity")}
-              aria-invalid={!!errors.quantity}
+            <Label>Adjustment</Label>
+            <Controller
+              name="direction"
+              control={control}
+              render={({ field }) => (
+                <RadioGroup
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  className="grid gap-2 sm:grid-cols-2"
+                >
+                  <label
+                    htmlFor="adjust-stock-add"
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition-colors ${
+                      field.value === "add"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:bg-muted/40"
+                    }`}
+                  >
+                    <RadioGroupItem value="add" id="adjust-stock-add" />
+                    <span className="font-medium leading-snug">Add to stock</span>
+                  </label>
+                  <label
+                    htmlFor="adjust-stock-remove"
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition-colors ${
+                      field.value === "remove"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:bg-muted/40"
+                    }`}
+                  >
+                    <RadioGroupItem value="remove" id="adjust-stock-remove" />
+                    <span className="font-medium leading-snug">Remove from stock</span>
+                  </label>
+                </RadioGroup>
+              )}
             />
-            {errors.quantity && <FieldError>{errors.quantity.message}</FieldError>}
-            <p className="text-xs text-muted-foreground">
-              Positive to add stock, negative to remove.
-            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label required>
+              {direction === "remove" ? "Quantity to remove" : "Quantity to add"}
+            </Label>
+            <Input
+              inputMode="decimal"
+              placeholder={direction === "remove" ? "e.g. 5" : "e.g. 10"}
+              {...register("amount")}
+              aria-invalid={!!errors.amount}
+            />
+            {errors.amount && <FieldError>{errors.amount.message}</FieldError>}
+            {direction === "remove" && onHandHint != null ? (
+              <p className="text-xs text-muted-foreground">On hand for this batch: {onHandHint}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Enter units only; use the options above for add vs remove.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

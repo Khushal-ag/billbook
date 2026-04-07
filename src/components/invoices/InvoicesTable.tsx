@@ -97,7 +97,6 @@ export function InvoicesTable({ invoices, invoiceType }: InvoicesTableProps) {
                   inv.isOverdue && "border-l-2 border-l-amber-400",
                 )}
               >
-                {/* Mobile: single-cell card-like row */}
                 <td className="block px-4 py-3 sm:hidden" colSpan={mobileColSpan}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
@@ -150,7 +149,6 @@ export function InvoicesTable({ invoices, invoiceType }: InvoicesTableProps) {
                   </div>
                 </td>
 
-                {/* Desktop: normal table cells */}
                 <td className="hidden px-4 py-3 sm:table-cell sm:px-6">
                   <span className="font-medium text-accent group-hover:underline">
                     {inv.invoiceNumber}

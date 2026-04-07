@@ -79,7 +79,6 @@ const schema = z
     otherTaxRate: percentString,
   })
   .superRefine((data, ctx) => {
-    // For STOCK items, min stock threshold is required
     if (data.type === "STOCK" && !(data.minStockThreshold ?? "").trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -99,7 +98,6 @@ const schema = z
       }
     }
 
-    // If taxable is true, validate tax fields
     if (data.isTaxable) {
       if (!data.taxType) {
         ctx.addIssue({
@@ -110,7 +108,6 @@ const schema = z
       }
 
       if (data.taxType === "GST") {
-        // For GST, at least one rate must be provided
         if (!data.cgstRate && !data.sgstRate && !data.igstRate) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -119,7 +116,6 @@ const schema = z
           });
         }
       } else if (data.taxType === "OTHER") {
-        // For OTHER tax, name and rate are required
         if (!data.otherTaxName) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -264,7 +260,6 @@ export default function ItemDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- omit categories so adding a category does not reset form
   }, [open, item, reset, initialName]);
 
-  // IGST % = CGST % + SGST % whenever the user edits CGST or SGST (GST items).
   useEffect(() => {
     if (!open || !isTaxableW || taxTypeW !== "GST") return;
     const c = (cgstRateW ?? "").trim();
@@ -288,7 +283,6 @@ export default function ItemDialog({
   };
 
   const onSubmit = async (data: FormData) => {
-    // Validate category is selected
     if (!category || !category.id || category.id <= 0) {
       setShowCategoryError(true);
       showErrorToast(null, "Category is required");
@@ -353,7 +347,6 @@ export default function ItemDialog({
       return;
     }
 
-    // Confirm only when deactivating an already-active existing item.
     if (isEdit && item?.isActive && isItemActive) {
       setDeactivateConfirmOpen(true);
       return;
@@ -402,7 +395,6 @@ export default function ItemDialog({
         <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="flex min-h-0 flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
             <div className="space-y-6">
-              {/* Details */}
               <section className="space-y-4">
                 <h3 className="text-sm font-medium text-muted-foreground">Details</h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -423,7 +415,6 @@ export default function ItemDialog({
                       onValueChange={(v) => {
                         const newType = v as "STOCK" | "SERVICE";
                         setValue("type", newType);
-                        // Clear unit when switching type: set default for new type (nos for STOCK, hr for SERVICE).
                         setValue("unit", newType === "SERVICE" ? "hr" : "nos");
                       }}
                     >
@@ -507,7 +498,6 @@ export default function ItemDialog({
                 </div>
               </section>
 
-              {/* Classification */}
               <section className="space-y-4">
                 <h3 className="text-sm font-medium text-muted-foreground">Classification</h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -532,7 +522,6 @@ export default function ItemDialog({
                 </div>
               </section>
 
-              {/* Tax */}
               <section className="space-y-4">
                 <h3 className="text-sm font-medium text-muted-foreground">Tax</h3>
                 <div className="flex items-center gap-2">

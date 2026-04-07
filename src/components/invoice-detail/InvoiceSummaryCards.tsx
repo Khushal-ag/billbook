@@ -37,7 +37,6 @@ export function InvoiceSummaryCards({
   return (
     <Card className="mb-6 overflow-hidden">
       <CardContent className="p-0">
-        {/* Status accent bar */}
         <div
           className={cn(
             "h-1.5",
@@ -48,7 +47,6 @@ export function InvoiceSummaryCards({
         />
 
         <div className="space-y-5 p-6">
-          {/* Header: Logo + Invoice Number aligned horizontally | Status badge */}
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
               <BusinessIdentity
@@ -70,7 +68,6 @@ export function InvoiceSummaryCards({
 
           <div className="border-t" />
 
-          {/* Party (left) + Dates (right) — single source for identity & dates */}
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
             <div>
               <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -142,7 +139,6 @@ export function InvoiceSummaryCards({
 
           <div className="border-t" />
 
-          {/* Amounts — invoice total + settlement; breakdown lives in bill summary below */}
           <div className="flex flex-wrap justify-end gap-8">
             <div>
               <p className="text-xs text-muted-foreground">Invoice total</p>

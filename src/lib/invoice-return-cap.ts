@@ -1,13 +1,11 @@
-import { formatQty, toNum } from "@/lib/invoice-create";
+import { formatQty, getEntryTotalQty, toNum } from "@/lib/invoice-create";
 import type { InvoiceItem } from "@/types/invoice";
 import type { InvoiceLineDraft } from "@/types/invoice-create";
+import type { StockEntry } from "@/types/item";
 
 type LineCap = Pick<InvoiceLineDraft, "quantity" | "remainingReturnableQty" | "soldQuantity">;
 
-/**
- * When opening a linked return from a source invoice line: default return qty to what’s still
- * returnable (API), not the original sold qty — avoids starting over-cap when partial returns exist.
- */
+/** Prefer API `quantityReturnableRemaining`; otherwise original line quantity. */
 export function defaultLinkedReturnQuantity(
   invoiceItem: Pick<InvoiceItem, "quantity" | "quantityReturnableRemaining">,
 ): string {
@@ -16,7 +14,25 @@ export function defaultLinkedReturnQuantity(
   return invoiceItem.quantity;
 }
 
-/** If current qty exceeds remaining cap string, clamp to cap (formatted). */
+/** Purchase return: min(original qty, API remaining, batch on-hand). */
+export function purchaseReturnMaxReturnableQtyStr(
+  invoiceItem: Pick<InvoiceItem, "quantity" | "quantityReturnableRemaining">,
+  stockEntry: StockEntry | null | undefined,
+): string {
+  const purchaseQty = Math.max(0, toNum(invoiceItem.quantity));
+  let cap = purchaseQty;
+  const apiStr = invoiceItem.quantityReturnableRemaining?.trim();
+  if (apiStr !== undefined && apiStr !== "") {
+    const apiRem = toNum(apiStr);
+    if (Number.isFinite(apiRem) && apiRem >= 0) cap = Math.min(cap, apiRem);
+  }
+  if (stockEntry != null) {
+    const onHand = getEntryTotalQty(stockEntry);
+    if (Number.isFinite(onHand) && onHand >= 0) cap = Math.min(cap, onHand);
+  }
+  return formatQty(cap);
+}
+
 export function clampQuantityToRemainingCap(quantityStr: string, remainingStr: string): string {
   const cap = toNum(remainingStr.trim());
   const q = toNum(quantityStr);
@@ -26,7 +42,6 @@ export function clampQuantityToRemainingCap(quantityStr: string, remainingStr: s
   return formatQty(Math.min(q, cap));
 }
 
-/** Max returnable qty for this line, or null if unknown (no cap client-side). */
 export function getReturnQuantityCap(line: LineCap): number | null {
   const capStr = line.remainingReturnableQty?.trim() || line.soldQuantity?.trim() || "";
   if (capStr === "") return null;

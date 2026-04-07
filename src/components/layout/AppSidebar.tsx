@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -160,7 +159,6 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
         collapsed ? "w-16" : "w-64",
       )}
     >
-      {/* Subscriber business (replaces product logo); name moves to top bar when collapsed */}
       <Link
         href="/dashboard"
         className={cn(
@@ -183,17 +181,14 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
 
       <Separator className="bg-sidebar-border" />
 
-      {/* Navigation */}
       <nav className="min-h-0 flex-1 space-y-4 overflow-y-auto px-2 py-3">
         {getVisibleSections().map((section) => (
           <div key={section.title}>
-            {/* Section Title */}
             {!collapsed && (
               <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
                 {section.title}
               </h3>
             )}
-            {/* Section Items */}
             <div className="space-y-0.5">
               {section.items.map((item) =>
                 item.path === "/invoices" && !collapsed ? (
@@ -303,7 +298,6 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
 
       <Separator className="bg-sidebar-border" />
 
-      {/* Footer */}
       <div className="shrink-0 space-y-1 p-2">
         {!collapsed && (
           <Link
@@ -335,9 +329,19 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
         {!collapsed && (
           <>
             <Separator className="bg-sidebar-border" />
-            <div className="flex items-center gap-2 px-3 pb-1 pt-2 text-left text-sm font-bold leading-snug text-sidebar-foreground/50">
-              <Image src="/logo.png" alt="Hench logo" width={20} height={20} className="h-5 w-5" />
-              <span>Bill Book by Hench</span>
+            <div className="flex w-full flex-nowrap items-center justify-start gap-2 px-2 py-2">
+              <span className="shrink-0 text-xs font-semibold tracking-wide text-white sm:text-sm">
+                Billbook
+              </span>
+              <img
+                src="/hench-logo.png"
+                alt="Hench Solutions"
+                width={560}
+                height={186}
+                className="h-10 max-h-10 w-auto min-w-0 max-w-[70%] shrink object-contain object-left"
+                decoding="async"
+                draggable={false}
+              />
             </div>
           </>
         )}

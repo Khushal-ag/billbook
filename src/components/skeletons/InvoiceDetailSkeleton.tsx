@@ -18,7 +18,6 @@ export default function InvoiceDetailSkeleton() {
         </div>
       </div>
 
-      {/* InvoiceSummaryCards */}
       <div className="mb-6 overflow-hidden rounded-xl border">
         <Skeleton className="h-1.5 w-full rounded-none" />
         <div className="space-y-5 p-6">
@@ -47,14 +46,12 @@ export default function InvoiceDetailSkeleton() {
         </div>
       </div>
 
-      {/* InvoiceDetailsCards — compact grid */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3].map((i) => (
           <Skeleton key={i} className="h-28 rounded-xl" />
         ))}
       </div>
 
-      {/* Line items table */}
       <div className="mb-6 space-y-2">
         <Skeleton className="h-5 w-32" />
         <div className="rounded-xl border p-4">
@@ -70,7 +67,6 @@ export default function InvoiceDetailSkeleton() {
         </div>
       </div>
 
-      {/* Payments + audit */}
       <Skeleton className="mb-6 h-36 rounded-xl" />
       <Skeleton className="h-48 rounded-xl" />
     </div>

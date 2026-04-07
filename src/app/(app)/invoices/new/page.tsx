@@ -1,10 +1,10 @@
 import dynamic from "next/dynamic";
 import type { InvoiceType } from "@/types/invoice";
 
-const InvoiceCreatePage = dynamic(
+const NewInvoiceGate = dynamic(
   () =>
-    import("@/components/invoices/InvoiceCreatePage").then((mod) => ({
-      default: mod.InvoiceCreatePage,
+    import("@/components/invoices/NewInvoiceGate").then((mod) => ({
+      default: mod.NewInvoiceGate,
     })),
   {
     loading: () => (
@@ -38,5 +38,5 @@ export default async function NewInvoicePage({
   const sourceInvoiceId =
     Number.isFinite(sourceInvoiceIdRaw) && sourceInvoiceIdRaw > 0 ? sourceInvoiceIdRaw : undefined;
 
-  return <InvoiceCreatePage initialType={invoiceType} initialSourceInvoiceId={sourceInvoiceId} />;
+  return <NewInvoiceGate initialType={invoiceType} initialSourceInvoiceId={sourceInvoiceId} />;
 }

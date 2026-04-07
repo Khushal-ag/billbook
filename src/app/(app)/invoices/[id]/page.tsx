@@ -218,7 +218,6 @@ export default function InvoiceDetail() {
           <InvoicePaymentsTable payments={invoice.payments} />
           {auditData?.logs && <InvoiceAuditHistory logs={auditData.logs} />}
 
-          {/* Dialogs */}
           {invoice.status === "FINAL" &&
             invoiceId &&
             invoiceTypeSupportsReceiptPayment(invoice.invoiceType) && (

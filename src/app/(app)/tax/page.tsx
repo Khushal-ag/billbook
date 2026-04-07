@@ -43,7 +43,6 @@ export default function Tax() {
     exportRequested,
   );
 
-  // Handle export download when data arrives
   useEffect(() => {
     if (exportData && exportRequested) {
       const htmlContent = generateGSTReportHTML(exportData);

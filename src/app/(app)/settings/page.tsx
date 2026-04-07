@@ -14,7 +14,6 @@ export default function SettingsPage() {
       />
 
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-10">
-        {/* Business settings — primary panel */}
         <section aria-labelledby="org-settings-heading">
           <div className="mb-5 flex items-center gap-3">
             <div

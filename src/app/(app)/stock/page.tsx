@@ -50,7 +50,6 @@ export default function Stock() {
   const debouncedSearch = useDebounce(search, 300);
 
   const { data: itemsData, isPending: itemsPending, error: itemsError } = useItems({ limit: 100 });
-  // Unfiltered fetch for overview cards so they always show overall totals
   const { data: stockDataForCards, isPending: stockCardsPending } = useStockList({ limit: 1 });
   const {
     data: stockData,
@@ -141,7 +140,6 @@ export default function Stock() {
   }, [stockData?.stock, stockEntries]);
   const activeSuppliers = useMemo(() => suppliersData?.parties ?? [], [suppliersData?.parties]);
 
-  // Cards always use overall (unfiltered) summary; list uses filtered data
   const summary = stockDataForCards?.summary ?? stockData?.summary;
   const totalPurchasedValue = summary?.stockValue?.totalPurchasedValue ?? "0";
   const totalItems = summary?.stockValue?.totalItems ?? 0;
@@ -236,7 +234,6 @@ export default function Stock() {
         description="View stock by item or by stock entry, add purchases, and adjust quantities"
       />
 
-      {/* Cards visible on all tabs — always show overall (unfiltered) data */}
       <div className="mb-6">
         {stockCardsPending && !stockDataForCards ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

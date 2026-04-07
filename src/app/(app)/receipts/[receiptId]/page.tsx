@@ -82,7 +82,6 @@ export default function ReceiptDetailPage() {
 
       <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
         <div className="grid lg:grid-cols-[1fr_minmax(280px,340px)] lg:items-stretch">
-          {/* Left: identity & meta */}
           <div className="flex flex-col gap-6 border-b border-border/60 p-6 sm:p-8 lg:border-b-0 lg:border-r lg:border-border/60">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="font-normal">
@@ -156,7 +155,6 @@ export default function ReceiptDetailPage() {
             )}
           </div>
 
-          {/* Right: amount & actions */}
           <div className="flex flex-col justify-between gap-8 bg-muted/25 p-6 sm:p-8">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">

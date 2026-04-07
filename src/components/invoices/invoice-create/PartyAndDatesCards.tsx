@@ -93,7 +93,7 @@ export function PartyAndDatesCards({
     onPaymentTermsDaysChange;
   const invoiceDateLabel = "Invoice date";
   const showSellingPriceMargin =
-    (invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN") &&
+    invoiceType === "PURCHASE_INVOICE" &&
     sellingPriceMarginPercent !== undefined &&
     onSellingPriceMarginChange;
   const primaryAddressOptionLabel = "Primary Address";
@@ -215,7 +215,9 @@ export function PartyAndDatesCards({
           {showVendorBillFields && (
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="original-bill-no">Original bill no.</Label>
+                <Label htmlFor="original-bill-no" required>
+                  Original bill no.
+                </Label>
                 <Input
                   id="original-bill-no"
                   type="text"
@@ -230,6 +232,7 @@ export function PartyAndDatesCards({
                 label="Original bill date"
                 value={originalBillDate}
                 onChange={onOriginalBillDateChange}
+                required
               />
             </div>
           )}

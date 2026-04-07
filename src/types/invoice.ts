@@ -195,11 +195,11 @@ export interface CreateInvoiceRequest {
   discountAmount?: string;
   discountPercent?: string;
   roundOffAmount?: string;
-  /** Purchase invoice/return: non-negative decimal string (UI requires a value; often prefilled from business settings). */
+  /** Purchase invoice: non-negative decimal string (UI requires a value; often prefilled from business settings). */
   sellingPriceMarginPercent?: string;
   /** `SALE_RETURN` / `PURCHASE_RETURN`: original invoice id (optional; enables cumulative return caps). */
   sourceInvoiceId?: number;
-  /** `PURCHASE_INVOICE` / `PURCHASE_RETURN` only; omit for sale types. */
+  /** Purchase invoice only; omit for other types. */
   originalBillNumber?: string;
   originalBillDate?: string;
   paymentTermsDays?: number;

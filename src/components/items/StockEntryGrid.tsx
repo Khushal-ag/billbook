@@ -9,7 +9,7 @@ import { ItemAutocomplete } from "@/components/items/ItemAutocomplete";
 import { VendorAutocomplete } from "@/components/items/VendorAutocomplete";
 import PartyDialog from "@/components/dialogs/PartyDialog";
 import ItemDialog from "@/components/dialogs/ItemDialog";
-import { cn } from "@/lib/utils";
+import { cn, formatStockQuantity } from "@/lib/utils";
 import { parseISODateString, toISODateString, formatISODateDisplay } from "@/lib/date";
 import { showErrorToast } from "@/lib/toast-helpers";
 import { isServiceType } from "@/types/item";
@@ -189,7 +189,7 @@ export function StockEntryGrid({
 
       setRows([defaultRow()]);
     } catch {
-      // Error already shown by parent; keep rows so user can retry
+      // Parent already showed the error toast.
     }
   };
 
@@ -516,7 +516,7 @@ export function StockEntryGrid({
                         : formatISODateDisplay(row.purchaseDate) || "—"}
                     </td>
                     <td className="px-3 py-2.5 text-right tabular-nums">
-                      {formatNumeric(row.quantity)}
+                      {formatStockQuantity(row.quantity)}
                     </td>
                     <td className="px-3 py-2.5 text-right tabular-nums">
                       {formatNumeric(row.sellingPrice)}

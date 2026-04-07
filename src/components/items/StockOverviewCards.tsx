@@ -1,6 +1,6 @@
 import { IndianRupee, AlertTriangle, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrency, formatQuantity } from "@/lib/utils";
+import { formatCurrency, formatStockQuantity } from "@/lib/utils";
 
 interface StockOverviewCardsProps {
   /** Total cost of inventory (summary.stockValue.totalPurchasedValue) */
@@ -11,7 +11,7 @@ interface StockOverviewCardsProps {
   totalQuantity: string;
   /** Number of items below min threshold (summary.lowStock.totalItems) */
   lowStockCount: number;
-  /** Optional: sum of qty for low-stock items (summary.lowStock.totalQuantity) */
+  /** Sum of on-hand qty across items flagged low (summary.lowStock.totalQuantity), not “shortfall”. */
   lowStockQuantity?: string;
   /** Total value at selling price (summary.stockValue.totalAmount) – card 3 */
   totalSellingValue: string;
@@ -25,6 +25,12 @@ export function StockOverviewCards({
   lowStockQuantity,
   totalSellingValue,
 }: StockOverviewCardsProps) {
+  const lowStockUnitsCombined =
+    lowStockQuantity != null && lowStockQuantity.trim() !== ""
+      ? Number.parseFloat(lowStockQuantity.replace(/,/g, ""))
+      : NaN;
+  const hasCombinedUnits = Number.isFinite(lowStockUnitsCombined) && lowStockUnitsCombined >= 0;
+
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <Card className="rounded-2xl border bg-background/70">
@@ -38,7 +44,7 @@ export function StockOverviewCards({
                 {formatCurrency(totalPurchasedValue)}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Total items: {totalItems} · Total quantity: {formatQuantity(totalQuantity)}
+                Total items: {totalItems} · Total quantity: {formatStockQuantity(totalQuantity)}
               </p>
             </div>
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -58,9 +64,21 @@ export function StockOverviewCards({
                 Low stock
               </p>
               <p className="mt-1 text-xl font-semibold tabular-nums">{lowStockCount}</p>
-              {lowStockQuantity != null && lowStockCount > 0 && (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {formatQuantity(lowStockQuantity)} qty below threshold
+              <p className="text-xs text-muted-foreground">
+                {lowStockCount === 0
+                  ? "No items below minimum stock"
+                  : lowStockCount === 1
+                    ? "Item is at or below its minimum level"
+                    : "Items at or below their minimum level"}
+              </p>
+              {lowStockCount > 0 && hasCombinedUnits && (
+                <p className="mt-2 text-xs leading-snug text-muted-foreground">
+                  Combined on-hand stock:{" "}
+                  <span className="font-medium text-foreground">
+                    {formatStockQuantity(lowStockQuantity!)}{" "}
+                    {lowStockUnitsCombined === 1 ? "unit" : "units"}
+                  </span>{" "}
+                  across {lowStockCount === 1 ? "this product" : "these products"}.
                 </p>
               )}
             </div>

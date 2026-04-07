@@ -54,6 +54,7 @@ export interface Party {
   state: string | null;
   postalCode: string | null;
   openingBalance: string | null;
+  currentBalance?: string | null;
   contactPersonName?: string | null;
   contactPersonMobile?: string | null;
   isActive: boolean;

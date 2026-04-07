@@ -29,7 +29,7 @@ export function formatNumber(value: string | number): string {
 
 /**
  * Format a number with decimals only when the value has a decimal part (e.g. 100 → "100", 99.5 → "99.5").
- * Use for quantities, counts, and non-currency numbers. For cost/money use formatCurrency.
+ * Use for invoice quantities and other counts that may be fractional. For inventory on-hand, use `formatStockQuantity`.
  */
 export function formatQuantity(value: string | number): string {
   const num = typeof value === "string" ? parseFloat(value.replace(/,/g, "")) : value;
@@ -38,6 +38,15 @@ export function formatQuantity(value: string | number): string {
     return num.toLocaleString("en-IN", { maximumFractionDigits: 0 });
   }
   return num.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+/**
+ * Inventory / stock quantity: always a whole number (en-IN grouping, no decimal places).
+ */
+export function formatStockQuantity(value: string | number): string {
+  const num = typeof value === "string" ? parseFloat(value.replace(/,/g, "")) : value;
+  if (isNaN(num)) return "0";
+  return Math.round(num).toLocaleString("en-IN", { maximumFractionDigits: 0 });
 }
 
 /**

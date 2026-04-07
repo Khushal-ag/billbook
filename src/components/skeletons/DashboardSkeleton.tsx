@@ -5,7 +5,6 @@ export default function DashboardSkeleton() {
   return (
     <div className="page-container animate-fade-in">
       <div className="space-y-8 sm:space-y-10">
-        {/* DashboardHeroSection */}
         <section className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-muted/25 p-6 shadow-sm sm:p-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
@@ -21,7 +20,6 @@ export default function DashboardSkeleton() {
           </div>
         </section>
 
-        {/* DashboardQuickStatsSection */}
         <section className="rounded-2xl border border-border/80 p-5 shadow-sm sm:p-6">
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
@@ -37,7 +35,6 @@ export default function DashboardSkeleton() {
           </div>
         </section>
 
-        {/* DashboardInsightsSection (advanced layout) */}
         <section className="space-y-5">
           <div className="space-y-2">
             <Skeleton className="h-6 w-40" />
@@ -50,7 +47,6 @@ export default function DashboardSkeleton() {
           <Skeleton className="h-[200px] rounded-2xl" />
         </section>
 
-        {/* DashboardHighlightsSection */}
         <section className="space-y-5">
           <div className="space-y-2">
             <Skeleton className="h-6 w-44" />
@@ -62,7 +58,6 @@ export default function DashboardSkeleton() {
           </div>
         </section>
 
-        {/* DashboardRecentInvoicesSection — card header + bordered inner table */}
         <section>
           <div className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-muted/15 p-5 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04] sm:p-6">
             <div className="flex flex-col gap-4 pb-4 lg:flex-row lg:items-start lg:justify-between">

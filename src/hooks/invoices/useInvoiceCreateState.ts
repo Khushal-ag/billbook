@@ -54,6 +54,7 @@ import {
   clampQuantityToRemainingCap,
   defaultLinkedReturnQuantity,
   isReturnQuantityOverCap,
+  purchaseReturnMaxReturnableQtyStr,
 } from "@/lib/invoice-return-cap";
 import { withInvoiceQuantityErrorDetails } from "@/lib/invoice-quantity-error-details";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
@@ -67,7 +68,6 @@ export function useInvoiceCreateState(
   options?: { sourceInvoiceId?: number; editInvoiceId?: number },
 ) {
   const editInvoiceId = options?.editInvoiceId;
-  /** Create-from-URL: original sale/purchase invoice id for linked returns. */
   const sourceInvoiceId = editInvoiceId ? undefined : options?.sourceInvoiceId;
   const router = useRouter();
   const createInvoice = useCreateInvoice();
@@ -85,7 +85,6 @@ export function useInvoiceCreateState(
   const [selectedConsigneeId, setSelectedConsigneeId] = useState<number | null>(null);
   const [invoiceDate, setInvoiceDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [dueDate, setDueDate] = useState("");
-  /** PURCHASE_INVOICE / PURCHASE_RETURN: margin on cost for default selling price per line (required). */
   const [sellingPriceMarginPercent, setSellingPriceMarginPercent] = useState("");
   const [submitFieldErrors, setSubmitFieldErrors] = useState<{
     party?: string;
@@ -158,7 +157,6 @@ export function useInvoiceCreateState(
     { enabled: stockSearchOpen, staleTime: 30_000 },
   );
   const { data: editingDraftInvoice } = useInvoice(editInvoiceId);
-  /** Fetch source invoice for prefill + per-line return caps (quantityReturnableRemaining). */
   const returnCapSourceId =
     invoiceType === "SALE_RETURN" || invoiceType === "PURCHASE_RETURN"
       ? editInvoiceId
@@ -222,7 +220,6 @@ export function useInvoiceCreateState(
     return map;
   }, [items, stockEntries]);
 
-  /** Linked sale/purchase return: all rows are return lines (no add-item draft row). */
   const linkedReturnLayout = invoiceType === "SALE_RETURN" || invoiceType === "PURCHASE_RETURN";
   const draftLine = linkedReturnLayout ? createLine() : (lines[0] ?? createLine());
   const addedLines = linkedReturnLayout ? lines : lines.slice(1);
@@ -446,9 +443,9 @@ export function useInvoiceCreateState(
     return "Returns can only be created from a finalised invoice. Finalise the source invoice first.";
   }, [editInvoiceId, invoiceType, sourceInvoiceId, sourceInvoice]);
 
-  /** Purchase documents: selling margin required; must be a non‑negative number. */
+  /** Purchase invoice: selling margin required; must be a non‑negative number. */
   const purchaseMarginFieldValid =
-    (invoiceType !== "PURCHASE_INVOICE" && invoiceType !== "PURCHASE_RETURN") ||
+    invoiceType !== "PURCHASE_INVOICE" ||
     (() => {
       const t = sellingPriceMarginPercent.trim();
       if (t === "") return false;
@@ -513,7 +510,7 @@ export function useInvoiceCreateState(
    */
   useEffect(() => {
     if (editInvoiceId) return;
-    if (invoiceType !== "PURCHASE_INVOICE" && invoiceType !== "PURCHASE_RETURN") return;
+    if (invoiceType !== "PURCHASE_INVOICE") return;
     const d = businessSettings?.defaultSellingPriceMarginPercent?.trim() ?? "";
     if (d === "") return;
 
@@ -612,34 +609,52 @@ export function useInvoiceCreateState(
     setSelectedConsigneeId(sourceInvoice.partyConsigneeId ?? null);
 
     if (sourceInvoice.invoiceType === "PURCHASE_INVOICE") {
-      const purchasePrefill: InvoiceLineDraft[] = sourceInvoice.items.map((invoiceItem) => ({
-        id: crypto.randomUUID(),
-        item: invoiceItem.itemId != null ? (itemMap.get(invoiceItem.itemId) ?? null) : null,
-        stockEntryId: invoiceItem.stockEntryId ?? null,
-        itemName: invoiceItem.itemName?.trim() ?? "",
-        hsnCode: invoiceItem.hsnCode?.trim() ?? "",
-        sacCode: invoiceItem.sacCode?.trim() ?? "",
-        quantity:
+      if (invoiceType === "PURCHASE_RETURN") {
+        const anyStockLine = sourceInvoice.items.some((i) => i.stockEntryId != null);
+        if (anyStockLine && !stockEntryMapReady) {
+          return;
+        }
+      }
+      const entryByIdForPurchaseReturn = stockEntryByIdQuery.data ?? {};
+      const purchasePrefill: InvoiceLineDraft[] = sourceInvoice.items.map((invoiceItem) => {
+        const batchEntry =
+          invoiceItem.stockEntryId != null
+            ? entryByIdForPurchaseReturn[invoiceItem.stockEntryId]
+            : undefined;
+        const remainingStr =
           invoiceType === "PURCHASE_RETURN"
-            ? defaultLinkedReturnQuantity(invoiceItem)
-            : invoiceItem.quantity,
-        unitPrice: invoiceItem.unitPrice ?? "",
-        sellingPrice: invoiceItem.sellingPrice?.trim() ?? "",
-        discountPercent: invoiceItem.discountPercent ?? "0",
-        discountAmount: invoiceItem.discountAmount ?? "",
-        cgstRate: pickInvoiceTaxRate(invoiceItem.cgstRate, "0"),
-        sgstRate: pickInvoiceTaxRate(invoiceItem.sgstRate, "0"),
-        igstRate: pickInvoiceTaxRate(invoiceItem.igstRate, "0"),
-        ...(invoiceType === "PURCHASE_RETURN"
-          ? {
-              sourceInvoiceItemId: invoiceItem.id,
-              soldQuantity: invoiceItem.quantity,
-              remainingReturnableQty:
-                invoiceItem.quantityReturnableRemaining?.trim() || invoiceItem.quantity,
-              selectedForReturn: true,
-            }
-          : {}),
-      }));
+            ? invoiceItem.stockEntryId != null
+              ? batchEntry
+                ? purchaseReturnMaxReturnableQtyStr(invoiceItem, batchEntry)
+                : defaultLinkedReturnQuantity(invoiceItem)
+              : purchaseReturnMaxReturnableQtyStr(invoiceItem, null)
+            : "";
+
+        return {
+          id: crypto.randomUUID(),
+          item: invoiceItem.itemId != null ? (itemMap.get(invoiceItem.itemId) ?? null) : null,
+          stockEntryId: invoiceItem.stockEntryId ?? null,
+          itemName: invoiceItem.itemName?.trim() ?? "",
+          hsnCode: invoiceItem.hsnCode?.trim() ?? "",
+          sacCode: invoiceItem.sacCode?.trim() ?? "",
+          quantity: invoiceType === "PURCHASE_RETURN" ? remainingStr : invoiceItem.quantity,
+          unitPrice: invoiceItem.unitPrice ?? "",
+          sellingPrice: invoiceItem.sellingPrice?.trim() ?? "",
+          discountPercent: invoiceItem.discountPercent ?? "0",
+          discountAmount: invoiceItem.discountAmount ?? "",
+          cgstRate: pickInvoiceTaxRate(invoiceItem.cgstRate, "0"),
+          sgstRate: pickInvoiceTaxRate(invoiceItem.sgstRate, "0"),
+          igstRate: pickInvoiceTaxRate(invoiceItem.igstRate, "0"),
+          ...(invoiceType === "PURCHASE_RETURN"
+            ? {
+                sourceInvoiceItemId: invoiceItem.id,
+                soldQuantity: invoiceItem.quantity,
+                remainingReturnableQty: remainingStr,
+                selectedForReturn: true,
+              }
+            : {}),
+        };
+      });
       if (purchasePrefill.length > 0) {
         setLines(purchasePrefill);
       }
@@ -764,7 +779,6 @@ export function useInvoiceCreateState(
     notes,
   ]);
 
-  /** Edit linked return: fill `remainingReturnableQty` when source invoice (with caps) loads after draft lines. */
   useEffect(() => {
     if (!editInvoiceId || !editingDraftInvoice) return;
     if (editingDraftInvoice.status !== "DRAFT") return;
@@ -776,12 +790,26 @@ export function useInvoiceCreateState(
     }
     if (!editingDraftInvoice.sourceInvoiceId || !sourceInvoice) return;
     if (sourceInvoice.id !== editingDraftInvoice.sourceInvoiceId) return;
-    const byLineId = new Map(
-      sourceInvoice.items.map((it) => [
-        it.id,
-        it.quantityReturnableRemaining?.trim() || it.quantity,
-      ]),
-    );
+
+    if (editingDraftInvoice.invoiceType === "PURCHASE_RETURN") {
+      const anyStock = sourceInvoice.items.some((i) => i.stockEntryId != null);
+      if (anyStock && !stockEntryMapReady) return;
+    }
+
+    const entryById = stockEntryByIdQuery.data ?? {};
+    const byLineId = new Map<number, string>();
+    for (const it of sourceInvoice.items) {
+      const rem =
+        editingDraftInvoice.invoiceType === "PURCHASE_RETURN"
+          ? it.stockEntryId != null
+            ? entryById[it.stockEntryId]
+              ? purchaseReturnMaxReturnableQtyStr(it, entryById[it.stockEntryId])
+              : it.quantityReturnableRemaining?.trim() || it.quantity
+            : purchaseReturnMaxReturnableQtyStr(it, null)
+          : it.quantityReturnableRemaining?.trim() || it.quantity;
+      byLineId.set(it.id, rem);
+    }
+
     setLines((prev) =>
       prev.map((line) => {
         const sid = line.sourceInvoiceItemId;
@@ -795,7 +823,13 @@ export function useInvoiceCreateState(
         };
       }),
     );
-  }, [editInvoiceId, editingDraftInvoice, sourceInvoice]);
+  }, [
+    editInvoiceId,
+    editingDraftInvoice,
+    sourceInvoice,
+    stockEntryMapReady,
+    stockEntryByIdQuery.data,
+  ]);
 
   useEffect(() => {
     if (!editInvoiceId || !editingDraftInvoice) return;
@@ -842,6 +876,11 @@ export function useInvoiceCreateState(
     setDiscountPercent(editingDraftInvoice.discountPercent ?? "");
 
     if (!isSalesFamily(editingDraftInvoice.invoiceType)) {
+      if (editingDraftInvoice.invoiceType === "PURCHASE_RETURN") {
+        const anyStockLine = editingDraftInvoice.items.some((i) => i.stockEntryId != null);
+        if (anyStockLine && !stockEntryMapReady) return;
+      }
+      const entryByIdPurchaseEdit = stockEntryByIdQuery.data ?? {};
       const purchaseEditPrefill: InvoiceLineDraft[] = editingDraftInvoice.items.map(
         (invoiceItem) => ({
           id: crypto.randomUUID(),
@@ -865,7 +904,14 @@ export function useInvoiceCreateState(
                   : {}),
                 selectedForReturn: true,
                 remainingReturnableQty:
-                  invoiceItem.quantityReturnableRemaining?.trim() || invoiceItem.quantity,
+                  invoiceItem.stockEntryId != null
+                    ? entryByIdPurchaseEdit[invoiceItem.stockEntryId]
+                      ? purchaseReturnMaxReturnableQtyStr(
+                          invoiceItem,
+                          entryByIdPurchaseEdit[invoiceItem.stockEntryId],
+                        )
+                      : defaultLinkedReturnQuantity(invoiceItem)
+                    : purchaseReturnMaxReturnableQtyStr(invoiceItem, null),
               }
             : {}),
         }),
@@ -1130,7 +1176,7 @@ export function useInvoiceCreateState(
     (value: string) => {
       setSellingPriceMarginPercent(value);
       setSubmitFieldErrors((prev) => ({ ...prev, sellingMargin: undefined }));
-      if (invoiceType !== "PURCHASE_INVOICE" && invoiceType !== "PURCHASE_RETURN") return;
+      if (invoiceType !== "PURCHASE_INVOICE") return;
       const doc = value.trim();
       const margin =
         doc !== "" ? doc : (businessSettings?.defaultSellingPriceMarginPercent?.trim() ?? "");
@@ -1156,10 +1202,7 @@ export function useInvoiceCreateState(
         sellingPriceMarginPercent.trim() ||
         businessSettings?.defaultSellingPriceMarginPercent?.trim() ||
         "";
-      if (
-        (invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN") &&
-        marginForLine !== ""
-      ) {
+      if (invoiceType === "PURCHASE_INVOICE" && marginForLine !== "") {
         patch.sellingPrice = sellingPriceFromPurchaseAndMargin(value, marginForLine);
       }
       updateLine(lineId, patch);
@@ -1294,7 +1337,6 @@ export function useInvoiceCreateState(
         return;
       }
 
-      // Auto-compute discount amount from percentage
       const qty = Math.max(0, toNum(line.quantity));
       const unitPrice = Math.max(0, toNum(line.unitPrice));
       const gross = qty * unitPrice;
@@ -1342,7 +1384,6 @@ export function useInvoiceCreateState(
         return;
       }
 
-      // Auto-compute discount percentage from amount
       const computedPercent = gross > 0 ? (safeAmount / gross) * 100 : 0;
 
       updateLine(lineId, { discountAmount: value, discountPercent: computedPercent.toFixed(2) });
@@ -1633,10 +1674,7 @@ export function useInvoiceCreateState(
       nextFieldErrors.party =
         partyType === "CUSTOMER" ? "Please select a customer." : "Please select a vendor.";
     }
-    if (
-      (invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN") &&
-      !purchaseMarginFieldValid
-    ) {
+    if (invoiceType === "PURCHASE_INVOICE" && !purchaseMarginFieldValid) {
       nextFieldErrors.sellingMargin =
         sellingPriceMarginPercent.trim() === ""
           ? "Selling margin is required."
@@ -1783,13 +1821,13 @@ export function useInvoiceCreateState(
           discountAmount: discountAmount.trim() ? discountAmount : undefined,
           discountPercent: discountPercent.trim() ? discountPercent : undefined,
           roundOffAmount: roundOffForApi,
-          ...(invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN"
+          ...(invoiceType === "PURCHASE_INVOICE"
             ? { sellingPriceMarginPercent: sellingPriceMarginPercent.trim() }
             : {}),
           ...(isPurchaseVendorBillMetaType(invoiceType)
             ? {
-                originalBillNumber: originalBillNumber.trim().slice(0, 100) || null,
-                originalBillDate: originalBillDate.trim().slice(0, 10) || null,
+                originalBillNumber: originalBillNumber.trim().slice(0, 100),
+                originalBillDate: originalBillDate.trim().slice(0, 10),
                 paymentTermsDays:
                   paymentTermsDays.trim() === ""
                     ? null
@@ -1824,17 +1862,13 @@ export function useInvoiceCreateState(
         discountAmount: discountAmount || undefined,
         discountPercent: discountPercent || undefined,
         roundOffAmount: roundOffForApi,
-        ...(invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN"
+        ...(invoiceType === "PURCHASE_INVOICE"
           ? { sellingPriceMarginPercent: sellingPriceMarginPercent.trim() }
           : {}),
         ...(isPurchaseVendorBillMetaType(invoiceType)
           ? {
-              ...(originalBillNumber.trim().slice(0, 100)
-                ? { originalBillNumber: originalBillNumber.trim().slice(0, 100) }
-                : {}),
-              ...(originalBillDate.trim().slice(0, 10)
-                ? { originalBillDate: originalBillDate.trim().slice(0, 10) }
-                : {}),
+              originalBillNumber: originalBillNumber.trim().slice(0, 100),
+              originalBillDate: originalBillDate.trim().slice(0, 10),
               ...(paymentTermsDays.trim() !== ""
                 ? { paymentTermsDays: Number.parseInt(paymentTermsDays.trim(), 10) }
                 : {}),
@@ -1940,7 +1974,6 @@ export function useInvoiceCreateState(
   }, []);
 
   return {
-    // Form state
     party,
     setParty: handlePartyChange,
     selectedConsigneeId,
@@ -1974,7 +2007,6 @@ export function useInvoiceCreateState(
     lines,
     draftLine,
     addedLines,
-    // Dialogs
     addPartyDialogOpen,
     setAddPartyDialogOpen,
     pendingPartyName,
@@ -1987,7 +2019,6 @@ export function useInvoiceCreateState(
     setAddItemDialogOpen,
     pendingItemName,
     setPendingItemName,
-    // Derived
     stockEntries,
     stockChoices,
     filteredStockChoices,
@@ -2007,7 +2038,6 @@ export function useInvoiceCreateState(
     returnQtyBlockReason,
     returnQtySubmitShortHint,
     returnLinkedSourceBlockedReason,
-    // Handlers
     updateLine,
     handleStockChoiceSelect,
     handlePurchaseCatalogItemSelect,
@@ -2026,7 +2056,6 @@ export function useInvoiceCreateState(
     handleAddItemClick,
     handleItemCreated,
     isLineValid,
-    // Meta & copy
     partyType,
     pageMeta,
     nextInvoiceNumber,

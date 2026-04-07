@@ -2,7 +2,15 @@ import Link from "next/link";
 import { History, SlidersHorizontal, Layers, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrency, formatDateCompact, formatQuantity, cn } from "@/lib/utils";
+import { formatCurrency, formatDateCompact, formatStockQuantity, cn } from "@/lib/utils";
+import {
+  STOCK_TABLE_OUTBOUND_COLUMN_TITLE,
+  stockTableThClass,
+  stockTableThRight,
+  stockTableTdClass,
+  stockTableTdRight,
+  formatStockAdjustmentDelta,
+} from "@/lib/stock-table-display";
 import { StockEntrySourceBadge } from "@/components/items/StockEntrySourceBadge";
 import type { StockEntry } from "@/types/item";
 import type { Item } from "@/types/item";
@@ -34,23 +42,6 @@ function getSupplierDisplay(entry: StockEntry): {
   return { label: "Unknown vendor", isInactive: false };
 }
 
-const thClass = "px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
-const thRight = thClass + " text-right";
-const tdClass = "px-3 py-2.5 align-middle";
-const tdRight = tdClass + " text-right tabular-nums";
-
-/** Same helper text as pre–API-rename `Outbound` column (see git origin/main). */
-const OUTBOUND_COLUMN_TITLE = "Sold and returned to supplier (combined outbound)" as const;
-
-function adjustedQtyDisplay(value: string | null): string {
-  if (value == null || value === "") return "—";
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return "—";
-  const rounded = Math.round(numeric);
-  if (rounded === 0) return "0";
-  return rounded > 0 ? `+${rounded}` : String(rounded);
-}
-
 export function StockEntriesTable({
   entries,
   items,
@@ -80,32 +71,38 @@ export function StockEntriesTable({
         <table className="w-full min-w-[1080px] text-sm" role="table" aria-label="Stock by batch">
           <thead>
             <tr className="border-b border-border bg-muted/50">
-              <th className={cn(thClass, "min-w-[120px] px-3 text-left sm:px-4")}>Item</th>
-              <th className={cn(thClass, "min-w-[120px] text-left")}>Source</th>
-              <th className={cn(thClass, "min-w-[140px] text-left")}>Vendor/Category</th>
-              <th className={cn(thClass, "min-w-[88px] text-left")}>Date</th>
+              <th className={cn(stockTableThClass, "min-w-[120px] px-3 text-left sm:px-4")}>
+                Item
+              </th>
+              <th className={cn(stockTableThClass, "min-w-[120px] text-left")}>Source</th>
+              <th className={cn(stockTableThClass, "min-w-[140px] text-left")}>Vendor/Category</th>
+              <th className={cn(stockTableThClass, "min-w-[88px] text-left")}>Date</th>
               <th
-                className={cn(thRight, "hidden min-w-[72px] md:table-cell")}
+                className={cn(stockTableThRight, "hidden min-w-[72px] md:table-cell")}
                 title="Original purchase quantity for this batch (not current on-hand stock)"
               >
                 Purchased qty
               </th>
-              <th className={cn(thRight, "hidden min-w-[72px] md:table-cell")}>Adjusted</th>
+              <th className={cn(stockTableThRight, "hidden min-w-[72px] md:table-cell")}>
+                Adjusted
+              </th>
               <th
-                className={cn(thRight, "hidden min-w-[88px] md:table-cell")}
-                title={OUTBOUND_COLUMN_TITLE}
+                className={cn(stockTableThRight, "hidden min-w-[88px] md:table-cell")}
+                title={STOCK_TABLE_OUTBOUND_COLUMN_TITLE}
               >
                 Outbound
               </th>
               <th
-                className={cn(thRight, "min-w-[72px]")}
+                className={cn(stockTableThRight, "min-w-[72px]")}
                 title="On-hand quantity for this batch (ledger / actualQuantity)"
               >
                 On hand
               </th>
-              <th className={cn(thRight, "min-w-[80px]")}>Selling Price</th>
-              <th className={cn(thRight, "hidden min-w-[88px] sm:table-cell")}>Purchase Price</th>
-              <th className={cn(thClass, "min-w-[132px] text-center")}>Actions</th>
+              <th className={cn(stockTableThRight, "min-w-[80px]")}>Selling Price</th>
+              <th className={cn(stockTableThRight, "hidden min-w-[88px] sm:table-cell")}>
+                Purchase Price
+              </th>
+              <th className={cn(stockTableThClass, "min-w-[132px] text-center")}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -149,59 +146,68 @@ export function StockEntriesTable({
                     }
                   }}
                 >
-                  <td className={cn(tdClass, "px-3 text-left font-medium sm:px-4")}>
+                  <td className={cn(stockTableTdClass, "px-3 text-left font-medium sm:px-4")}>
                     {itemName}
                     {unit && (
                       <span className="ml-1.5 font-normal text-muted-foreground">({unit})</span>
                     )}
                   </td>
-                  <td className={cn(tdClass, "whitespace-nowrap text-left")}>
+                  <td className={cn(stockTableTdClass, "whitespace-nowrap text-left")}>
                     {isService ? (
                       <span className="text-muted-foreground">—</span>
                     ) : (
                       <StockEntrySourceBadge entrySource={entry.entrySource} />
                     )}
                   </td>
-                  <td className={cn(tdClass, "whitespace-nowrap text-left")}>
+                  <td className={cn(stockTableTdClass, "whitespace-nowrap text-left")}>
                     <span className={cn(vendor.isInactive && "font-medium text-destructive")}>
                       {vendor.label}
                     </span>
                     {category ? <span className="text-muted-foreground"> ({category})</span> : null}
                   </td>
-                  <td className={cn(tdClass, "whitespace-nowrap text-left text-muted-foreground")}>
+                  <td
+                    className={cn(
+                      stockTableTdClass,
+                      "whitespace-nowrap text-left text-muted-foreground",
+                    )}
+                  >
                     {isService ? "—" : formatDateCompact(entry.purchaseDate)}
                   </td>
-                  <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>
-                    {isService ? "—" : formatQuantity(purchased)}
+                  <td
+                    className={cn(stockTableTdRight, "hidden text-muted-foreground md:table-cell")}
+                  >
+                    {isService ? "—" : formatStockQuantity(purchased)}
                   </td>
                   <td
                     className={cn(
-                      tdRight,
+                      stockTableTdRight,
                       "hidden md:table-cell",
                       isService ? "text-muted-foreground" : adjustedTextClass,
                     )}
                   >
-                    {isService ? "—" : adjustedQtyDisplay(adjusted)}
+                    {isService ? "—" : formatStockAdjustmentDelta(adjusted)}
                   </td>
-                  <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>
-                    {isService ? "—" : formatQuantity(sold)}
+                  <td
+                    className={cn(stockTableTdRight, "hidden text-muted-foreground md:table-cell")}
+                  >
+                    {isService ? "—" : formatStockQuantity(sold)}
                   </td>
-                  <td className={cn(tdRight, "font-semibold")}>
-                    {isService ? "—" : formatQuantity(actualStr)}
+                  <td className={cn(stockTableTdRight, "font-semibold")}>
+                    {isService ? "—" : formatStockQuantity(actualStr)}
                   </td>
-                  <td className={tdRight}>
+                  <td className={stockTableTdRight}>
                     {entry.sellingPrice != null && entry.sellingPrice !== ""
                       ? formatCurrency(entry.sellingPrice)
                       : "—"}
                   </td>
-                  <td className={cn(tdRight, "hidden sm:table-cell")}>
+                  <td className={cn(stockTableTdRight, "hidden sm:table-cell")}>
                     {isService
                       ? "—"
                       : entry.purchasePrice != null && entry.purchasePrice !== ""
                         ? formatCurrency(entry.purchasePrice)
                         : "—"}
                   </td>
-                  <td className={cn(tdClass, "w-[132px] text-left")}>
+                  <td className={cn(stockTableTdClass, "w-[132px] text-left")}>
                     <div className="inline-flex min-h-8 items-center gap-1 whitespace-nowrap">
                       {!isService ? (
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" asChild>

@@ -7,7 +7,6 @@ import type { AuditLogListResponse } from "@/types/audit-log";
 export function useAuditLogs(params: { page?: number; pageSize?: number; action?: string } = {}) {
   const { page = 1, pageSize = 20, action } = params;
 
-  // Build query string with both pagination and action filter
   const qs = action
     ? buildQueryString({ page, pageSize, action })
     : buildQueryString({ page, pageSize });

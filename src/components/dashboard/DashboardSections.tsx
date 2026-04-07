@@ -1,4 +1,3 @@
-// Barrel exports for dashboard section components
 export { DashboardHeroSection } from "./DashboardHeroSection";
 export { DashboardQuickStatsSection } from "./DashboardQuickStatsSection";
 export { DashboardInsightsSection } from "./DashboardInsightsSection";

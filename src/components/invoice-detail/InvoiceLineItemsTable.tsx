@@ -33,6 +33,7 @@ export function InvoiceLineItemsTable({
 }: InvoiceLineItemsTableProps) {
   const totalLineAmount = items.reduce((sum, item) => sum + parseLineMoney(item.lineTotal), 0);
   const isPurchaseBill = invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN";
+  const showSellingPriceColumn = invoiceType === "PURCHASE_INVOICE";
 
   return (
     <Card className="mb-6">
@@ -58,7 +59,7 @@ export function InvoiceLineItemsTable({
                   <th className="px-3 py-3 text-right font-medium text-muted-foreground">
                     {isPurchaseBill ? "Purchase ₹" : "Unit price"}
                   </th>
-                  {isPurchaseBill ? (
+                  {showSellingPriceColumn ? (
                     <th className="px-3 py-3 text-right font-medium text-muted-foreground">
                       Selling ₹
                     </th>
@@ -109,7 +110,7 @@ export function InvoiceLineItemsTable({
                       <td className="px-3 py-3 text-right tabular-nums">
                         {formatCurrency(item.unitPrice)}
                       </td>
-                      {isPurchaseBill ? (
+                      {showSellingPriceColumn ? (
                         <td className="px-3 py-3 text-right tabular-nums text-foreground">
                           {item.sellingPrice != null && String(item.sellingPrice).trim() !== ""
                             ? formatCurrency(item.sellingPrice)

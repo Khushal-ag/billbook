@@ -79,7 +79,6 @@ export function VendorAutocomplete({
     if (open) setHighlightedIndex(0);
   }, [open, inputValue]);
 
-  // Clamp highlighted index when options list shrinks (e.g. after typing)
   useEffect(() => {
     if (!open) return;
     setHighlightedIndex((prev) => Math.min(prev, optionsLength - 1));

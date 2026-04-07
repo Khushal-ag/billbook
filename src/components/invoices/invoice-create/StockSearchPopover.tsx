@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatISODateDisplay } from "@/lib/date";
 import { getEntryDateIso } from "@/lib/invoice-create";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, formatStockQuantity } from "@/lib/utils";
 import type { StockChoice } from "@/types/invoice-create";
 import type { Item } from "@/types/item";
 
@@ -160,7 +160,7 @@ export function StockSearchPopover({
                     const statusText = choice.enabledForSelection
                       ? choice.item.type === "SERVICE"
                         ? "Service item"
-                        : `Available ${choice.remainingQty}`
+                        : `Available ${formatStockQuantity(choice.remainingQty)}`
                       : choice.remainingQty <= 0
                         ? "Used up"
                         : "Locked until older batch is used";
@@ -200,7 +200,7 @@ export function StockSearchPopover({
                             {formatCurrency(choice.entry.sellingPrice)}
                             {choice.item.hsnCode ? ` | HSN: ${choice.item.hsnCode}` : ""}
                             {choice.item.type === "STOCK"
-                              ? ` | Remaining: ${choice.remainingQty}`
+                              ? ` | Remaining: ${formatStockQuantity(choice.remainingQty)}`
                               : ""}
                           </div>
                           <div

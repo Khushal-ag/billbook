@@ -2,7 +2,6 @@ import { parseISODateString } from "@/lib/date";
 import { isPurchaseVendorBillMetaType } from "@/lib/invoice";
 import type { InvoiceType } from "@/types/invoice";
 
-/** Validates optional vendor bill metadata on purchase invoices. */
 export function validatePurchaseVendorBillFields(
   invoiceType: InvoiceType,
   originalBillNumber: string,
@@ -10,11 +9,18 @@ export function validatePurchaseVendorBillFields(
   paymentTermsDays: string,
 ): string | null {
   if (!isPurchaseVendorBillMetaType(invoiceType)) return null;
-  if (originalBillNumber.trim().length > 100) {
+  const obn = originalBillNumber.trim();
+  if (obn === "") {
+    return "Original bill no. is required.";
+  }
+  if (obn.length > 100) {
     return "Original bill no. must be at most 100 characters.";
   }
   const obd = originalBillDate.trim().slice(0, 10);
-  if (obd !== "" && !parseISODateString(obd)) {
+  if (obd === "") {
+    return "Original bill date is required.";
+  }
+  if (!parseISODateString(obd)) {
     return "Enter a valid original bill date.";
   }
   const raw = paymentTermsDays.trim();

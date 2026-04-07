@@ -10,7 +10,7 @@ import PageHeader from "@/components/PageHeader";
 import { PageBackLink } from "@/components/PageBackLink";
 import ItemDetailSkeleton from "@/components/skeletons/ItemDetailSkeleton";
 import { useItem, useItemLedger } from "@/hooks/use-items";
-import { cn, formatDate, formatQuantity } from "@/lib/utils";
+import { cn, formatDate, formatStockQuantity } from "@/lib/utils";
 import {
   type LedgerMovementType,
   getItemCategoryDisplay,
@@ -110,7 +110,7 @@ export function ItemDetailView({ id }: { id: number }) {
                   Current Stock
                 </p>
                 <p className="mt-2 text-xl font-semibold tabular-nums">
-                  {formatQuantity(item.currentStock ?? 0)}
+                  {formatStockQuantity(item.currentStock ?? 0)}
                 </p>
               </CardContent>
             </Card>
@@ -231,8 +231,8 @@ export function ItemDetailView({ id }: { id: number }) {
                                 )}
                               >
                                 {m.quantity > 0
-                                  ? `+${formatQuantity(m.quantity)}`
-                                  : formatQuantity(m.quantity)}
+                                  ? `+${formatStockQuantity(m.quantity)}`
+                                  : formatStockQuantity(m.quantity)}
                               </td>
                               <td
                                 className="max-w-[220px] py-3 pl-6 pr-4 text-muted-foreground sm:max-w-[280px]"

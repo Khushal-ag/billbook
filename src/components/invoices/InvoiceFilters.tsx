@@ -12,6 +12,8 @@ import type { Party } from "@/types/party";
 interface InvoiceFiltersProps {
   search: string;
   onSearchChange: (value: string) => void;
+  /** Defaults to "Search invoices..." */
+  searchPlaceholder?: string;
   parties?: Party[];
   partyId?: number;
   onPartyChange?: (partyId?: number) => void;
@@ -24,6 +26,7 @@ interface InvoiceFiltersProps {
 export function InvoiceFilters({
   search,
   onSearchChange,
+  searchPlaceholder = "Search invoices...",
   parties = [],
   partyId,
   onPartyChange,
@@ -37,7 +40,7 @@ export function InvoiceFilters({
       <SearchInput
         value={search}
         onChange={onSearchChange}
-        placeholder="Search invoices..."
+        placeholder={searchPlaceholder}
         className="col-span-1 w-full"
       />
       <div className="col-span-1 w-full">

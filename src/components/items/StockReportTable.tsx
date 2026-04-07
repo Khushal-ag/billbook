@@ -6,34 +6,22 @@ import { SlidersHorizontal, Package } from "lucide-react";
 import type { StockListItem } from "@/types/item";
 import type { Item } from "@/types/item";
 import { isServiceType } from "@/types/item";
-import { formatQuantity, formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
+import {
+  STOCK_TABLE_OUTBOUND_COLUMN_TITLE,
+  stockTableThClass,
+  stockTableThRight,
+  stockTableTdClass,
+  stockTableTdRight,
+  formatStockQtyOrDash,
+  formatStockAdjustmentDelta,
+} from "@/lib/stock-table-display";
 
 interface StockReportTableProps {
   rows: StockListItem[];
   /** Used to detect SERVICE items so cost/stock columns show "—" and adjust is hidden */
   items?: Item[];
   onAdjust?: (itemId: number, itemName: string) => void;
-}
-
-const thClass = "px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground";
-const thRight = thClass + " text-right";
-const tdClass = "px-3 py-2.5 align-middle";
-const tdRight = tdClass + " text-right tabular-nums";
-
-/** Same helper text as pre–API-rename `Outbound` column (see git origin/main). */
-const OUTBOUND_COLUMN_TITLE = "Sold and returned to supplier (combined outbound)" as const;
-
-function qtyDisplay(value: string | null): string {
-  return value != null && value !== "" ? formatQuantity(value) : "—";
-}
-
-function adjustedQtyDisplay(value: string | null): string {
-  if (value == null || value === "") return "—";
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return "—";
-  const rounded = Math.round(numeric);
-  if (rounded === 0) return "0";
-  return rounded > 0 ? `+${rounded}` : String(rounded);
 }
 
 export function StockReportTable({ rows, items, onAdjust }: StockReportTableProps) {
@@ -61,19 +49,24 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
         <table className="w-full min-w-[920px] text-sm" role="table" aria-label="Stock by item">
           <thead>
             <tr className="border-b border-border bg-muted/50">
-              <th className={cn(thClass, "pl-3 text-left sm:pl-4")}>Item</th>
-              <th className={cn(thClass, "hidden text-left sm:table-cell")}>Unit</th>
-              <th className={cn(thRight, "hidden md:table-cell")}>Quantity</th>
-              <th className={cn(thRight, "hidden md:table-cell")}>Adjusted</th>
-              <th className={cn(thRight, "hidden md:table-cell")} title={OUTBOUND_COLUMN_TITLE}>
+              <th className={cn(stockTableThClass, "pl-3 text-left sm:pl-4")}>Item</th>
+              <th className={cn(stockTableThClass, "hidden text-left sm:table-cell")}>Unit</th>
+              <th className={cn(stockTableThRight, "hidden md:table-cell")}>Quantity</th>
+              <th className={cn(stockTableThRight, "hidden md:table-cell")}>Adjusted</th>
+              <th
+                className={cn(stockTableThRight, "hidden md:table-cell")}
+                title={STOCK_TABLE_OUTBOUND_COLUMN_TITLE}
+              >
                 Outbound
               </th>
-              <th className={cn(thRight, "min-w-[72px]")}>Current</th>
-              <th className={cn(thRight, "hidden sm:table-cell")}>Total Value (sell)</th>
-              <th className={cn(thRight, "hidden lg:table-cell")}>Total Value (cost)</th>
-              <th className={cn(thClass, "hidden text-center md:table-cell")}>Status</th>
+              <th className={cn(stockTableThRight, "min-w-[72px]")}>Current</th>
+              <th className={cn(stockTableThRight, "hidden sm:table-cell")}>Total Value (sell)</th>
+              <th className={cn(stockTableThRight, "hidden lg:table-cell")}>Total Value (cost)</th>
+              <th className={cn(stockTableThClass, "hidden text-center md:table-cell")}>Status</th>
               {onAdjust && (
-                <th className={cn(thClass, "min-w-[92px] px-2 text-left sm:px-4")}>Actions</th>
+                <th className={cn(stockTableThClass, "min-w-[92px] px-2 text-left sm:px-4")}>
+                  Actions
+                </th>
               )}
             </tr>
           </thead>
@@ -96,7 +89,7 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
                     i % 2 === 1 && "bg-muted/10",
                   )}
                 >
-                  <td className={cn(tdClass, "pl-3 text-left sm:pl-4")}>
+                  <td className={cn(stockTableTdClass, "pl-3 text-left sm:pl-4")}>
                     <Link
                       href={`/items/${row.itemId}?from=stock`}
                       className="font-medium text-foreground hover:underline"
@@ -109,43 +102,54 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
                     </span>
                   </td>
                   <td
-                    className={cn(tdClass, "hidden text-left text-muted-foreground sm:table-cell")}
+                    className={cn(
+                      stockTableTdClass,
+                      "hidden text-left text-muted-foreground sm:table-cell",
+                    )}
                   >
                     {row.unit || "—"}
                   </td>
-                  <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>
-                    {service ? "—" : qtyDisplay(row.quantityPurchased)}
+                  <td
+                    className={cn(stockTableTdRight, "hidden text-muted-foreground md:table-cell")}
+                  >
+                    {service ? "—" : formatStockQtyOrDash(row.quantityPurchased)}
                   </td>
                   <td
                     className={cn(
-                      tdRight,
+                      stockTableTdRight,
                       "hidden md:table-cell",
                       service ? "text-muted-foreground" : adjustedTextClass,
                     )}
                   >
-                    {service ? "—" : adjustedQtyDisplay(row.quantityAdjusted)}
+                    {service ? "—" : formatStockAdjustmentDelta(row.quantityAdjusted)}
                   </td>
-                  <td className={cn(tdRight, "hidden text-muted-foreground md:table-cell")}>
-                    {service ? "—" : qtyDisplay(row.quantitySold)}
+                  <td
+                    className={cn(stockTableTdRight, "hidden text-muted-foreground md:table-cell")}
+                  >
+                    {service ? "—" : formatStockQtyOrDash(row.quantitySold)}
                   </td>
-                  <td className={cn(tdRight, "font-semibold")}>
-                    {service ? "—" : qtyDisplay(row.actualQuantity)}
+                  <td className={cn(stockTableTdRight, "font-semibold")}>
+                    {service ? "—" : formatStockQtyOrDash(row.actualQuantity)}
                   </td>
-                  <td className={cn(tdRight, "hidden text-muted-foreground sm:table-cell")}>
+                  <td
+                    className={cn(stockTableTdRight, "hidden text-muted-foreground sm:table-cell")}
+                  >
                     {service && row.defaultRate != null
                       ? formatCurrency(row.defaultRate)
                       : row.stockValue != null
                         ? formatCurrency(row.stockValue)
                         : "—"}
                   </td>
-                  <td className={cn(tdRight, "hidden text-muted-foreground lg:table-cell")}>
+                  <td
+                    className={cn(stockTableTdRight, "hidden text-muted-foreground lg:table-cell")}
+                  >
                     {service
                       ? "—"
                       : row.purchasedValue != null
                         ? formatCurrency(row.purchasedValue)
                         : "—"}
                   </td>
-                  <td className={cn(tdClass, "hidden text-center md:table-cell")}>
+                  <td className={cn(stockTableTdClass, "hidden text-center md:table-cell")}>
                     {service ? (
                       <span className="text-xs text-muted-foreground">N/A</span>
                     ) : row.isLowStock === true ? (
@@ -157,7 +161,7 @@ export function StockReportTable({ rows, items, onAdjust }: StockReportTableProp
                     )}
                   </td>
                   {onAdjust && (
-                    <td className={cn(tdClass, "w-[92px] px-2 text-left sm:px-4")}>
+                    <td className={cn(stockTableTdClass, "w-[92px] px-2 text-left sm:px-4")}>
                       <div className="flex min-h-8 items-center">
                         <Button
                           variant="ghost"

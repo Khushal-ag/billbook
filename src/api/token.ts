@@ -1,5 +1,3 @@
-// ── Token management: localStorage + API cookies (token, refreshToken) ────────
-
 import { AUTH_ACCESS_COOKIE_NAME, AUTH_REFRESH_COOKIE_NAME } from "@/constants/auth-cookies";
 
 const ACCESS_TOKEN_KEY = "billbook_access_token";

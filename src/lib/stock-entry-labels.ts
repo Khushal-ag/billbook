@@ -1,6 +1,6 @@
 import { getEntryDateIso } from "@/lib/invoice-create";
 import { formatISODateDisplay } from "@/lib/date";
-import { formatDate, formatQuantity } from "@/lib/utils";
+import { formatDate, formatStockQuantity } from "@/lib/utils";
 import type { StockEntry, StockEntrySource } from "@/types/item";
 
 /** Column / field tooltips aligned with ledger-backed stock APIs */
@@ -37,12 +37,12 @@ export function stockBatchSelectLabel(entry: StockEntry): string {
   const raw =
     entry.actualQuantity ??
     (typeof entry.quantity === "string" ? entry.quantity : String(entry.quantity ?? ""));
-  return `${date} · ${formatQuantity(raw)} on hand`;
+  return `${date} · ${formatStockQuantity(raw)} on hand`;
 }
 
 /** Detail sheet description under the title (no entry ids). */
 export function stockEntrySheetSubtitle(entry: StockEntry, isService: boolean): string {
-  const qty = formatQuantity(entry.actualQuantity ?? entry.quantity);
+  const qty = formatStockQuantity(entry.actualQuantity ?? entry.quantity);
   const unit = entry.unit ? ` ${entry.unit}` : "";
   if (isService) {
     return `${qty}${unit}`;

@@ -29,14 +29,11 @@ export default function Logo({
           </linearGradient>
         </defs>
 
-        {/* Rounded square background */}
         <rect x="4" y="4" width="92" height="92" rx="22" fill={`url(#${gid})`} />
 
-        {/* Document with folded corner */}
         <path d="M28 16 L58 16 L72 30 L72 84 L28 84 Z" fill="white" fillOpacity={0.95} />
         <path d="M58 16 L58 30 L72 30 Z" fill="white" fillOpacity={0.55} />
 
-        {/* Invoice items */}
         <rect
           x="35"
           y="38"
@@ -65,7 +62,6 @@ export default function Logo({
           opacity={0.4}
         />
 
-        {/* Separator */}
         <line
           x1="35"
           y1="66"
@@ -76,7 +72,6 @@ export default function Logo({
           opacity={0.2}
         />
 
-        {/* Total amount */}
         <rect
           x="35"
           y="72"

@@ -19,7 +19,6 @@ export default function OgImage() {
         fontFamily: "sans-serif",
       }}
     >
-      {/* Logo mark */}
       <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "40px" }}>
         <div
           style={{
@@ -41,7 +40,6 @@ export default function OgImage() {
         </span>
       </div>
 
-      {/* Headline */}
       <div
         style={{
           display: "flex",
@@ -58,12 +56,10 @@ export default function OgImage() {
         <span style={{ color: "#60a5fa" }}>effortless.</span>
       </div>
 
-      {/* Subtext */}
       <div style={{ fontSize: "26px", color: "#94a3b8", maxWidth: "800px" }}>
         GST-ready invoicing, report CSVs, Tax / GST export &amp; audit trails — one workspace.
       </div>
 
-      {/* Badges */}
       <div style={{ display: "flex", gap: "16px", marginTop: "40px" }}>
         {["Free to start", "GST-ready", "Audit logs", "Mobile-friendly"].map((badge) => (
           <div

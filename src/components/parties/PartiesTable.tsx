@@ -1,8 +1,14 @@
+"use client";
+
+import { useMemo } from "react";
+import { useQueries } from "@tanstack/react-query";
 import { History, Pencil } from "lucide-react";
+import { api } from "@/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency } from "@/lib/utils";
-import type { Party } from "@/types/party";
+import { LedgerBalanceText } from "@/components/party-ledger/LedgerBalanceText";
+import { queryKeys } from "@/lib/query-keys";
+import type { Party, PartyBalanceResponse } from "@/types/party";
 
 interface PartiesTableProps {
   parties: Party[];
@@ -11,6 +17,34 @@ interface PartiesTableProps {
 }
 
 export function PartiesTable({ parties, onEdit, onLedger }: PartiesTableProps) {
+  const idsToFetch = useMemo(
+    () =>
+      parties
+        .filter((p) => {
+          const c = p.currentBalance?.trim();
+          return c == null || c === "";
+        })
+        .map((p) => p.id),
+    [parties],
+  );
+
+  const idToQueryIndex = useMemo(() => {
+    const m = new Map<number, number>();
+    idsToFetch.forEach((id, i) => m.set(id, i));
+    return m;
+  }, [idsToFetch]);
+
+  const balanceQueries = useQueries({
+    queries: idsToFetch.map((id) => ({
+      queryKey: queryKeys.parties.balance(id),
+      queryFn: async () => {
+        const res = await api.get<PartyBalanceResponse>(`/parties/${id}/balance`);
+        return res.data.currentBalance;
+      },
+      staleTime: 60_000,
+    })),
+  });
+
   return (
     <div className="data-table-container -mx-1 px-1 sm:mx-0 sm:px-0">
       <table className="w-full min-w-[320px] text-sm" role="table" aria-label="Parties list">
@@ -38,7 +72,7 @@ export function PartiesTable({ parties, onEdit, onLedger }: PartiesTableProps) {
               State
             </th>
             <th scope="col" className="px-3 py-3 text-right font-medium text-muted-foreground">
-              Opening Balance
+              Current balance
             </th>
             <th scope="col" className="px-3 py-3 text-center font-medium text-muted-foreground">
               Actions
@@ -46,53 +80,68 @@ export function PartiesTable({ parties, onEdit, onLedger }: PartiesTableProps) {
           </tr>
         </thead>
         <tbody>
-          {parties.map((party) => (
-            <tr
-              key={party.id}
-              className="border-b transition-colors last:border-0 hover:bg-muted/20"
-            >
-              <td className="max-w-[200px] truncate px-4 py-3 font-medium sm:max-w-none sm:px-6">
-                {party.name}
-                {!party.isActive && (
-                  <Badge variant="outline" className="ml-2 text-[10px] font-medium">
-                    Inactive
-                  </Badge>
-                )}
-              </td>
-              <td className="px-3 py-3 text-muted-foreground">{party.phone || "—"}</td>
-              <td className="hidden px-3 py-3 font-mono text-xs text-muted-foreground md:table-cell">
-                {party.gstin || "—"}
-              </td>
-              <td className="hidden px-3 py-3 text-muted-foreground md:table-cell">
-                {party.state || "—"}
-              </td>
-              <td className="px-3 py-3 text-right font-medium">
-                {formatCurrency(party.openingBalance ?? "0")}
-              </td>
-              <td className="px-3 py-3">
-                <div className="flex items-center justify-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onEdit(party)}
-                    title="Edit"
-                    aria-label={`Edit ${party.name}`}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onLedger(party.id)}
-                    title="Account History"
-                    aria-label={`View account history for ${party.name}`}
-                  >
-                    <History className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
+          {parties.map((party) => {
+            const fromList = party.currentBalance?.trim();
+            const qIdx = idToQueryIndex.get(party.id);
+            const q = qIdx != null ? balanceQueries[qIdx] : undefined;
+            const fromFetch = q?.data?.trim();
+            const value = fromList || fromFetch;
+            const loading = !fromList && q?.isPending;
+
+            return (
+              <tr
+                key={party.id}
+                className="border-b transition-colors last:border-0 hover:bg-muted/20"
+              >
+                <td className="max-w-[200px] truncate px-4 py-3 font-medium sm:max-w-none sm:px-6">
+                  {party.name}
+                  {!party.isActive && (
+                    <Badge variant="outline" className="ml-2 text-[10px] font-medium">
+                      Inactive
+                    </Badge>
+                  )}
+                </td>
+                <td className="px-3 py-3 text-muted-foreground">{party.phone || "—"}</td>
+                <td className="hidden px-3 py-3 font-mono text-xs text-muted-foreground md:table-cell">
+                  {party.gstin || "—"}
+                </td>
+                <td className="hidden px-3 py-3 text-muted-foreground md:table-cell">
+                  {party.state || "—"}
+                </td>
+                <td className="px-3 py-3 text-right">
+                  {loading ? (
+                    <span className="text-muted-foreground">…</span>
+                  ) : value ? (
+                    <LedgerBalanceText value={value} size="sm" align="end" tagStyle="abbrev" />
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </td>
+                <td className="px-3 py-3">
+                  <div className="flex items-center justify-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEdit(party)}
+                      title="Edit"
+                      aria-label={`Edit ${party.name}`}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onLedger(party.id)}
+                      title="Account History"
+                      aria-label={`View account history for ${party.name}`}
+                    >
+                      <History className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

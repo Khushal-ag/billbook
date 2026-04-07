@@ -5,12 +5,8 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getInvoiceBillSummary, getInvoiceTypeCreateCopy } from "@/lib/invoice";
 import { cn, formatCurrency, formatDate, formatSignedCurrency, formatTime } from "@/lib/utils";
-import type { InvoiceDetail, InvoiceType } from "@/types/invoice";
+import type { InvoiceDetail } from "@/types/invoice";
 import { useInvoice } from "@/hooks/use-invoices";
-
-function isPurchaseFamily(t: InvoiceType): boolean {
-  return t === "PURCHASE_INVOICE" || t === "PURCHASE_RETURN";
-}
 
 interface InvoiceDetailsCardsProps {
   invoice: InvoiceDetail;
@@ -72,7 +68,6 @@ export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
 
   return (
     <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch">
-      {/* Left: notes, party address (when API provides it), created/updated */}
       <Card className="flex h-full flex-col overflow-hidden">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-foreground">
@@ -101,7 +96,7 @@ export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
             </div>
           ) : null}
 
-          {isPurchaseFamily(invoice.invoiceType) &&
+          {invoice.invoiceType === "PURCHASE_INVOICE" &&
           invoice.sellingPriceMarginPercent != null &&
           String(invoice.sellingPriceMarginPercent).trim() !== "" ? (
             <div className="space-y-2">

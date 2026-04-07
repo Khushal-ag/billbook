@@ -69,16 +69,11 @@ export function InvoicesByTypePage({
     endDate: endDate || undefined,
   });
 
-  /**
-   * Defensive filter: some API responses can include other document types (e.g. returns in a
-   * sale-invoice list). Only show rows that match this page’s `invoiceType`.
-   */
   const invoices = useMemo(() => {
     const raw = data?.invoices ?? [];
     return raw.filter((inv) => inv.invoiceType === invoiceType);
   }, [data?.invoices, invoiceType]);
 
-  /** count = total from API (pagination); may be high if API mixes types — list rows are still filtered above */
   const totalPages = Math.ceil((data?.count ?? 0) / pageSize) || 1;
   const total = data?.count ?? 0;
 

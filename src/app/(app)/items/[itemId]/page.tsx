@@ -61,7 +61,6 @@ export default function Items() {
     setDialogOpen(true);
   }, []);
 
-  // Detail view when itemId in URL (ledger, current stock)
   if (itemId) {
     return (
       <Suspense fallback={<ItemDetailSkeleton />}>

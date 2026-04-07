@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency, formatQuantity, formatDate, cn } from "@/lib/utils";
+import { formatCurrency, formatStockQuantity, formatDate, cn } from "@/lib/utils";
 import { StockEntrySourceBadge } from "@/components/items/StockEntrySourceBadge";
 import { stockEntrySheetSubtitle, stockQuantityTooltips } from "@/lib/stock-entry-labels";
 import { useStockEntry } from "@/hooks/use-items";
@@ -155,7 +155,7 @@ export function StockEntryDetailSheet({
                       className="text-2xl font-semibold tabular-nums text-foreground"
                       title={stockQuantityTooltips.onHand}
                     >
-                      {formatQuantity(entry.actualQuantity ?? entry.quantity)}
+                      {formatStockQuantity(entry.actualQuantity ?? entry.quantity)}
                       {entry.unit && (
                         <span className="ml-1 text-base font-normal text-muted-foreground">
                           {entry.unit}
@@ -168,14 +168,14 @@ export function StockEntryDetailSheet({
                         entry.quantitySold != null) && (
                         <p className="mt-2 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
                           {entry.quantityPurchased != null && (
-                            <span>Purchased {formatQuantity(entry.quantityPurchased)}</span>
+                            <span>Purchased {formatStockQuantity(entry.quantityPurchased)}</span>
                           )}
                           {entry.quantityAdjusted != null && entry.quantityAdjusted !== "0" && (
-                            <span>· Adjusted {formatQuantity(entry.quantityAdjusted)}</span>
+                            <span>· Adjusted {formatStockQuantity(entry.quantityAdjusted)}</span>
                           )}
                           {entry.quantitySold != null && entry.quantitySold !== "0" && (
                             <span title={stockQuantityTooltips.netOut}>
-                              · Net out {formatQuantity(entry.quantitySold)}
+                              · Net out {formatStockQuantity(entry.quantitySold)}
                             </span>
                           )}
                         </p>
@@ -209,7 +209,7 @@ export function StockEntryDetailSheet({
                           )}
                         </p>
                         <p className="mt-0.5 text-xs text-muted-foreground">
-                          {formatQuantity(entry.actualQuantity ?? entry.quantity)} ×{" "}
+                          {formatStockQuantity(entry.actualQuantity ?? entry.quantity)} ×{" "}
                           {formatCurrency(entry.sellingPrice)}
                         </p>
                       </div>
