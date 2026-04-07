@@ -9,7 +9,7 @@ type HeroCardVariant = "default" | "success" | "warning";
 
 type HeroCardProps = {
   title: string;
-  value: string;
+  value: ReactNode;
   subtitle?: string;
   /** Longer accounting context — shown in a tooltip on the title row (keeps the card scannable). */
   titleHint?: string;

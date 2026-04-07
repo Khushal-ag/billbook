@@ -16,15 +16,17 @@ interface PartiesTableProps {
   onLedger: (partyId: number) => void;
 }
 
+/** API may send balances as string or number; never call .trim on unknown types. */
+function coerceBalanceText(v: unknown): string | undefined {
+  if (v == null) return undefined;
+  const s = typeof v === "string" ? v : String(v);
+  const t = s.trim();
+  return t === "" ? undefined : t;
+}
+
 export function PartiesTable({ parties, onEdit, onLedger }: PartiesTableProps) {
   const idsToFetch = useMemo(
-    () =>
-      parties
-        .filter((p) => {
-          const c = p.currentBalance?.trim();
-          return c == null || c === "";
-        })
-        .map((p) => p.id),
+    () => parties.filter((p) => coerceBalanceText(p.currentBalance) == null).map((p) => p.id),
     [parties],
   );
 
@@ -39,7 +41,7 @@ export function PartiesTable({ parties, onEdit, onLedger }: PartiesTableProps) {
       queryKey: queryKeys.parties.balance(id),
       queryFn: async () => {
         const res = await api.get<PartyBalanceResponse>(`/parties/${id}/balance`);
-        return res.data.currentBalance;
+        return res.data;
       },
       staleTime: 60_000,
     })),
@@ -81,12 +83,16 @@ export function PartiesTable({ parties, onEdit, onLedger }: PartiesTableProps) {
         </thead>
         <tbody>
           {parties.map((party) => {
-            const fromList = party.currentBalance?.trim();
+            const fromList = coerceBalanceText(party.currentBalance);
             const qIdx = idToQueryIndex.get(party.id);
             const q = qIdx != null ? balanceQueries[qIdx] : undefined;
-            const fromFetch = q?.data?.trim();
-            const value = fromList || fromFetch;
-            const loading = !fromList && q?.isPending;
+            const fromFetch = coerceBalanceText(
+              q?.data && typeof q.data === "object" && "currentBalance" in q.data
+                ? (q.data as PartyBalanceResponse).currentBalance
+                : undefined,
+            );
+            const value = fromList ?? fromFetch;
+            const loading = fromList == null && q?.isPending;
 
             return (
               <tr

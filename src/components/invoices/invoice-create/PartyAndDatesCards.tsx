@@ -232,6 +232,7 @@ export function PartyAndDatesCards({
                 label="Original bill date"
                 value={originalBillDate}
                 onChange={onOriginalBillDateChange}
+                maxDate={todayIso}
                 required
               />
             </div>

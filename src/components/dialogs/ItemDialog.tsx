@@ -166,6 +166,7 @@ export default function ItemDialog({
     handleSubmit,
     reset,
     setValue,
+    getValues,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
@@ -262,13 +263,14 @@ export default function ItemDialog({
 
   useEffect(() => {
     if (!open || !isTaxableW || taxTypeW !== "GST") return;
-    const c = (cgstRateW ?? "").trim();
-    const s = (sgstRateW ?? "").trim();
+    const { cgstRate: cRaw, sgstRate: sRaw } = getValues();
+    const c = (cRaw ?? "").trim();
+    const s = (sRaw ?? "").trim();
     if (c === "" && s === "") return;
-    setValue("igstRate", formatIgstFromCgstSgst(cgstRateW ?? "", sgstRateW ?? ""), {
+    setValue("igstRate", formatIgstFromCgstSgst(cRaw ?? "", sRaw ?? ""), {
       shouldValidate: true,
     });
-  }, [open, isTaxableW, taxTypeW, cgstRateW, sgstRateW, setValue]);
+  }, [open, isTaxableW, taxTypeW, cgstRateW, sgstRateW, setValue, getValues]);
 
   const handleCreateCategory = async (name: string): Promise<Category | null> => {
     try {

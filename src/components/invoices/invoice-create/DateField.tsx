@@ -11,11 +11,27 @@ interface DateFieldProps {
   value: string;
   onChange: (value: string) => void;
   minDate?: string;
+  maxDate?: string;
   required?: boolean;
 }
 
-export function DateField({ label, value, onChange, minDate, required }: DateFieldProps) {
+function startOfLocalDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+export function DateField({ label, value, onChange, minDate, maxDate, required }: DateFieldProps) {
   const minDateObj = minDate ? parseISODateString(minDate) : undefined;
+  const maxDateObj = maxDate ? parseISODateString(maxDate) : undefined;
+
+  const disabled =
+    minDateObj || maxDateObj
+      ? (date: Date) => {
+          const t = startOfLocalDay(date).getTime();
+          if (minDateObj && t < startOfLocalDay(minDateObj).getTime()) return true;
+          if (maxDateObj && t > startOfLocalDay(maxDateObj).getTime()) return true;
+          return false;
+        }
+      : undefined;
 
   return (
     <div className="space-y-2">
@@ -42,13 +58,7 @@ export function DateField({ label, value, onChange, minDate, required }: DateFie
               if (!date) return;
               onChange(toISODateString(date));
             }}
-            disabled={
-              minDateObj
-                ? (date) =>
-                    date <
-                    new Date(minDateObj.getFullYear(), minDateObj.getMonth(), minDateObj.getDate())
-                : undefined
-            }
+            disabled={disabled}
             initialFocus
           />
         </PopoverContent>

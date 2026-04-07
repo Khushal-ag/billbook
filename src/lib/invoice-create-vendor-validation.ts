@@ -1,4 +1,4 @@
-import { parseISODateString } from "@/lib/date";
+import { parseISODateString, toISODateString } from "@/lib/date";
 import { isPurchaseVendorBillMetaType } from "@/lib/invoice";
 import type { InvoiceType } from "@/types/invoice";
 
@@ -22,6 +22,10 @@ export function validatePurchaseVendorBillFields(
   }
   if (!parseISODateString(obd)) {
     return "Enter a valid original bill date.";
+  }
+  const today = toISODateString(new Date());
+  if (obd > today) {
+    return "Original bill date cannot be in the future.";
   }
   const raw = paymentTermsDays.trim();
   if (raw === "") return null;

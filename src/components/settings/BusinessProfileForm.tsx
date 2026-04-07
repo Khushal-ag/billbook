@@ -567,9 +567,14 @@ export function BusinessProfileForm({
                       id="street"
                       placeholder="123 Main Street"
                       className="min-h-[88px]"
+                      aria-invalid={!!errors.street}
+                      aria-describedby={errors.street ? "street-error" : undefined}
                       {...register("street")}
                       maxLength={500}
                     />
+                    {errors.street && (
+                      <FieldError id="street-error">{errors.street.message}</FieldError>
+                    )}
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">

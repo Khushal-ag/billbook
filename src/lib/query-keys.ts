@@ -117,7 +117,8 @@ export const queryKeys = {
     detail: (id: number | undefined) => ["party", id] as const,
     consignees: (partyId: number | undefined) => ["party-consignees", partyId] as const,
     ledger: (partyId: number | undefined) => ["party-ledger", partyId] as const,
-    balance: (partyId: number | undefined) => ["party-balance", partyId] as const,
+    /** Full GET /parties/:id/balance payload — must match `usePartyBalance` / list prefetch shape. */
+    balance: (partyId: number | undefined) => ["party-balance", "detail", partyId] as const,
     statement: (
       partyId: number | undefined,
       format: string,

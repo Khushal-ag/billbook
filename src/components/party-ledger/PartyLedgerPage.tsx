@@ -127,7 +127,11 @@ export default function PartyLedgerPage() {
         fallbackMessage="Failed to load ledger"
       />
 
-      <BalanceSummaryCards summary={balanceSummary} partyType={party.type} />
+      <BalanceSummaryCards
+        summary={balanceSummary}
+        partyType={party.type}
+        isLoading={!balanceQuery.data && (balanceQuery.isPending || balanceQuery.isFetching)}
+      />
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted-foreground">

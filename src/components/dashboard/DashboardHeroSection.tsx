@@ -1,7 +1,9 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { IndianRupee, Landmark, Scale, FileText } from "lucide-react";
-import { formatCurrency, formatSignedCurrency } from "@/lib/utils";
+import { partyLedgerBalanceInlineParts } from "@/lib/party-ledger-display";
+import { formatCurrency } from "@/lib/utils";
 import { HeroCard } from "./dashboard-utils";
 import type { DashboardData } from "@/types/dashboard";
 
@@ -27,6 +29,21 @@ function computeRevenueTrend(months: DashboardData["revenueByMonth"]): "up" | "d
 
 function netOutstandingAmount(d: DashboardData): number {
   return toNumber(d.netOutstanding ?? d.totalOutstanding);
+}
+
+const OUTSTANDING_EPS = 1e-6;
+
+function netOutstandingValueDisplay(outstanding: number): ReactNode {
+  if (Math.abs(outstanding) < OUTSTANDING_EPS) {
+    return formatCurrency(0);
+  }
+  const { amountStr, label, labelClassName } = partyLedgerBalanceInlineParts(String(outstanding));
+  return (
+    <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+      <span>{amountStr}</span>
+      <span className={labelClassName}>{label}</span>
+    </span>
+  );
 }
 
 export function DashboardHeroSection({ greeting, dashboard }: DashboardHeroSectionProps) {
@@ -115,7 +132,7 @@ export function DashboardHeroSection({ greeting, dashboard }: DashboardHeroSecti
         />
         <HeroCard
           title="Net outstanding (ledger)"
-          value={outstanding < 0 ? formatSignedCurrency(outstanding) : formatCurrency(outstanding)}
+          value={netOutstandingValueDisplay(outstanding)}
           subtitle={
             outstanding < 0
               ? "Party credit balance"

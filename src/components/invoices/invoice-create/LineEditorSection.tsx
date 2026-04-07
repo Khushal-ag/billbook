@@ -581,6 +581,8 @@ export function LineEditorSection({
                       const patch: Partial<InvoiceLineDraft> = { cgstRate };
                       if (cgstRate.trim() !== "" || draftLine.sgstRate.trim() !== "") {
                         patch.igstRate = formatIgstFromCgstSgst(cgstRate, draftLine.sgstRate);
+                      } else {
+                        patch.igstRate = "";
                       }
                       updateLine(draftLine.id, patch);
                     }}
@@ -596,6 +598,8 @@ export function LineEditorSection({
                       const patch: Partial<InvoiceLineDraft> = { sgstRate };
                       if (draftLine.cgstRate.trim() !== "" || sgstRate.trim() !== "") {
                         patch.igstRate = formatIgstFromCgstSgst(draftLine.cgstRate, sgstRate);
+                      } else {
+                        patch.igstRate = "";
                       }
                       updateLine(draftLine.id, patch);
                     }}

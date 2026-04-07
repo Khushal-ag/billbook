@@ -1481,6 +1481,8 @@ export function useInvoiceCreateState(
         return [createLine(), normalizedCurrent, ...prev.slice(1)];
       });
       setStockLineIssues({});
+      setStockSearchText("");
+      setStockSearchOpen(false);
       return;
     }
 
@@ -1559,6 +1561,8 @@ export function useInvoiceCreateState(
       return [createLine(), normalizedCurrent, ...prev.slice(1)];
     });
     setStockLineIssues({});
+    setStockSearchText("");
+    setStockSearchOpen(false);
   }, [
     draftLine,
     formatBasePriceText,
