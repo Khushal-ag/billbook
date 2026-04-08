@@ -6,6 +6,7 @@ import type {
   InvoiceCommunicationChannel,
   InvoiceCommunicationsSummary,
   LegacyInvoicePayment,
+  RecordSupplierPaymentData,
 } from "@/types/invoice";
 import { parseInvoicePaymentResponse, type RecordInvoicePaymentData } from "@/types/receipt";
 
@@ -21,6 +22,22 @@ export function parseRecordPaymentResponse(data: unknown): RecordPaymentResult {
     return { mode: "legacy", payment: o as unknown as LegacyInvoicePayment };
   }
   throw new Error("Unexpected payment response from server");
+}
+
+function isRecordSupplierPaymentData(v: unknown): v is RecordSupplierPaymentData {
+  if (!v || typeof v !== "object") return false;
+  const o = v as Record<string, unknown>;
+  const p = o.payment;
+  if (!p || typeof p !== "object") return false;
+  const pay = p as Record<string, unknown>;
+  return typeof pay.id === "number" && typeof o.allocatedToThisInvoice === "string";
+}
+
+export function parseRecordSupplierPaymentResponse(data: unknown): RecordSupplierPaymentData {
+  if (!isRecordSupplierPaymentData(data)) {
+    throw new Error("Unexpected supplier payment response from server");
+  }
+  return data;
 }
 
 /** Normalize communications API (isToday → today, build latest). */

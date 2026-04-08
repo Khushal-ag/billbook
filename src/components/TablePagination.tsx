@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface TablePaginationProps {
   page: number;
@@ -7,6 +8,7 @@ interface TablePaginationProps {
   total: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  className?: string;
 }
 
 export default function TablePagination({
@@ -15,11 +17,17 @@ export default function TablePagination({
   total,
   totalPages,
   onPageChange,
+  className,
 }: TablePaginationProps) {
   if (totalPages <= 1) return null;
 
   return (
-    <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div
+      className={cn(
+        "mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between",
+        className,
+      )}
+    >
       <p className="text-xs text-muted-foreground sm:text-sm">
         Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}
       </p>

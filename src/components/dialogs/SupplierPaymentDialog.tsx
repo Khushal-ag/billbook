@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,17 +20,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
-import { useRecordPayment } from "@/hooks/use-invoices";
+import { ExternalLink, Loader2 } from "lucide-react";
+import { useRecordSupplierPayment } from "@/hooks/use-invoices";
 import { PAYMENT_METHOD_OPTIONS } from "@/constants";
-import type { PaymentMethod } from "@/types/invoice";
+import type { PaymentMethod, RecordSupplierPaymentData } from "@/types/invoice";
 import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { showErrorToast } from "@/lib/toast-helpers";
 import { maybeShowTrialExpiredToast } from "@/lib/trial";
 import { formatCurrency } from "@/lib/utils";
+import { openSignedPdfFromApiPath } from "@/lib/signed-pdf";
 import { ApiClientError } from "@/api/error";
 import { augmentApiClientErrorForPayment } from "@/lib/payment-errors";
-import type { RecordInvoicePaymentData } from "@/types/receipt";
 
 const schema = z.object({
   amount: requiredPriceString,
@@ -49,9 +48,14 @@ interface Props {
   balanceDue?: string;
 }
 
-export default function PaymentDialog({ open, onOpenChange, invoiceId, balanceDue }: Props) {
-  const mutation = useRecordPayment(invoiceId);
-  const [successReceipt, setSuccessReceipt] = useState<RecordInvoicePaymentData | null>(null);
+export default function SupplierPaymentDialog({
+  open,
+  onOpenChange,
+  invoiceId,
+  balanceDue,
+}: Props) {
+  const mutation = useRecordSupplierPayment(invoiceId);
+  const [successPayload, setSuccessPayload] = useState<RecordSupplierPaymentData | null>(null);
   const wasOpenRef = useRef(false);
 
   const {
@@ -65,22 +69,20 @@ export default function PaymentDialog({ open, onOpenChange, invoiceId, balanceDu
     resolver: zodResolver(schema),
     defaultValues: {
       amount: "",
-      paymentMethod: "CASH",
+      paymentMethod: "BANK_TRANSFER",
       referenceNumber: "",
       notes: "",
     },
   });
 
-  // Only reset when the dialog opens — not when balanceDue changes after submit (invalidation
-  // refetches invoice and would otherwise clear the success screen and show the form again).
   useEffect(() => {
     const justOpened = open && !wasOpenRef.current;
     wasOpenRef.current = open;
     if (justOpened) {
-      setSuccessReceipt(null);
+      setSuccessPayload(null);
       reset({
         amount: balanceDue ?? "",
-        paymentMethod: "CASH",
+        paymentMethod: "BANK_TRANSFER",
         referenceNumber: "",
         notes: "",
       });
@@ -88,7 +90,7 @@ export default function PaymentDialog({ open, onOpenChange, invoiceId, balanceDu
   }, [open, balanceDue, reset]);
 
   const handleClose = (next: boolean) => {
-    if (!next) setSuccessReceipt(null);
+    if (!next) setSuccessPayload(null);
     onOpenChange(next);
   };
 
@@ -100,12 +102,7 @@ export default function PaymentDialog({ open, onOpenChange, invoiceId, balanceDu
         referenceNumber: data.referenceNumber || undefined,
         notes: data.notes || undefined,
       });
-      if (result.mode === "receipt") {
-        setSuccessReceipt(result.data);
-      } else {
-        showSuccessToast("Payment recorded");
-        handleClose(false);
-      }
+      setSuccessPayload(result);
     } catch (err) {
       if (maybeShowTrialExpiredToast(err)) return;
       if (err instanceof ApiClientError) {
@@ -116,41 +113,50 @@ export default function PaymentDialog({ open, onOpenChange, invoiceId, balanceDu
     }
   };
 
-  const unallocated = successReceipt
-    ? parseFloat(successReceipt.receipt.unallocatedAmount || "0") || 0
-    : 0;
+  const payment = successPayload?.payment;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
-        {successReceipt ? (
+        {successPayload && payment ? (
           <>
             <DialogHeader>
               <DialogTitle>Payment recorded</DialogTitle>
             </DialogHeader>
             <div className="space-y-3 text-sm">
               <p>
-                <span className="font-medium">{successReceipt.receipt.receiptNumber}</span> — total{" "}
-                {formatCurrency(successReceipt.receipt.totalAmount)}
+                <span className="font-medium tabular-nums">
+                  {payment.paymentNumber ?? `Payment #${payment.id}`}
+                </span>{" "}
+                — {formatCurrency(payment.amount)}
               </p>
               <p className="text-muted-foreground">
-                Allocated to this invoice:{" "}
+                Applied to this bill:{" "}
                 <span className="font-semibold text-foreground">
-                  {formatCurrency(successReceipt.allocatedToThisInvoice)}
+                  {formatCurrency(successPayload.allocatedToThisInvoice)}
                 </span>
               </p>
-              {unallocated > 0.001 && (
-                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-950">
-                  <p className="font-medium">Party advance on this receipt</p>
-                  <p className="mt-1 tabular-nums">
-                    {formatCurrency(successReceipt.receipt.unallocatedAmount)} unallocated —
-                    allocate to other invoices from the receipt.
-                  </p>
-                  <Button className="mt-3" variant="secondary" size="sm" asChild>
-                    <Link href={`/receipts/${successReceipt.receipt.id}`}>Open receipt</Link>
-                  </Button>
-                </div>
-              )}
+              <p className="text-muted-foreground">
+                Bill paid total after this payment:{" "}
+                <span className="font-semibold tabular-nums text-foreground">
+                  {formatCurrency(successPayload.invoicePaidAmountAfter)}
+                </span>
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="gap-1"
+                onClick={() =>
+                  void openSignedPdfFromApiPath(`/payments/outbound/${payment.id}/pdf`, {
+                    unavailable: "Voucher PDF not available.",
+                    failed: "Failed to open voucher PDF",
+                  })
+                }
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Voucher PDF
+              </Button>
             </div>
             <DialogFooter>
               <Button type="button" onClick={() => handleClose(false)}>
@@ -162,6 +168,9 @@ export default function PaymentDialog({ open, onOpenChange, invoiceId, balanceDu
           <>
             <DialogHeader>
               <DialogTitle>Record Payment</DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                Pays the supplier and updates this purchase bill (outbound voucher).
+              </p>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
@@ -191,7 +200,7 @@ export default function PaymentDialog({ open, onOpenChange, invoiceId, balanceDu
 
               <div className="space-y-2">
                 <Label>Reference Number</Label>
-                <Input placeholder="e.g. cheque / UPI ref" {...register("referenceNumber")} />
+                <Input placeholder="e.g. UPI / bank ref" {...register("referenceNumber")} />
               </div>
 
               <div className="space-y-2">

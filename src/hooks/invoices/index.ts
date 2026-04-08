@@ -1,4 +1,5 @@
 export type { RecordPaymentResult } from "@/lib/invoice-api-helpers";
+export type { RecordSupplierPaymentData } from "@/types/invoice";
 export type { UseNextInvoiceNumberOptions } from "./use-invoice-queries";
 export {
   useNextInvoiceNumber,
@@ -13,6 +14,7 @@ export {
   useFinalizeInvoice,
   useCancelInvoice,
   useRecordPayment,
+  useRecordSupplierPayment,
   useMarkInvoiceSent,
   useMarkInvoiceReminder,
 } from "./use-invoice-mutations";

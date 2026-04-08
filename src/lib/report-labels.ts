@@ -10,13 +10,13 @@ export const reportHub = {
 
 export const reportDashboard = {
   sectionActivity: "In this period",
-  sectionActivityDescription: "Receipts, invoices, and payments out that fall in the range above.",
+  sectionActivityDescription: "Receipts, invoices, and payouts that fall in the range above.",
   sectionBalances: "Money owed",
   sectionBalancesDescription:
     "Current receivables and payables from the party ledger — independent of the date range.",
   kpiReceipts: "Customer receipts",
   kpiInvoices: "Sales & purchases",
-  kpiPayouts: "Payments out",
+  kpiPayouts: "Payouts",
   balanceReceivablesTitle: "Outstanding receivables",
   balanceReceivablesTooltip:
     "Total amount customers and other parties owe you right now (from the ledger).",
@@ -44,10 +44,10 @@ export const reportInvoiceRegister = {
 } as const;
 
 export const reportPayoutRegister = {
-  title: "Payments out",
+  title: "Payouts",
   description:
-    "Payments you recorded in the selected period (vendors, parties, and other categories).",
-  loadError: "Failed to load payments out",
+    "Money you paid out in the selected period — suppliers, parties, refunds on returns, and expenses.",
+  loadError: "Failed to load payouts",
   csvFilename: "payments-out.csv",
 } as const;
 

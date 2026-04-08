@@ -11,7 +11,10 @@ import type {
   InvoiceCommunicationRequest,
   InvoiceCommunicationResponse,
 } from "@/types/invoice";
-import { parseRecordPaymentResponse } from "@/lib/invoice-api-helpers";
+import {
+  parseRecordPaymentResponse,
+  parseRecordSupplierPaymentResponse,
+} from "@/lib/invoice-api-helpers";
 
 export function useCreateInvoice() {
   const qc = useQueryClient();
@@ -89,6 +92,29 @@ export function useRecordPayment(invoiceId: number) {
     },
     onSuccess: () => {
       invalidateQueryKeys(qc, [queryKeys.invoices.detail(invoiceId), queryKeys.invoices.root()]);
+    },
+  });
+}
+
+export function useRecordSupplierPayment(invoiceId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: RecordPaymentRequest) => {
+      const res = await api.post<unknown>(
+        `/invoices/${invoiceId}/supplier-payments`,
+        data,
+        generateIdempotencyKey(),
+      );
+      return parseRecordSupplierPaymentResponse(res.data);
+    },
+    onSuccess: () => {
+      invalidateQueryKeys(qc, [
+        queryKeys.invoices.detail(invoiceId),
+        queryKeys.invoices.root(),
+        queryKeys.outboundPayments.root(),
+        queryKeys.parties.ledgerPrefix(),
+        queryKeys.parties.balancePrefix(),
+      ]);
     },
   });
 }

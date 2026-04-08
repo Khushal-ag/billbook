@@ -1,7 +1,11 @@
-import { Download, Loader2, Pencil, CreditCard, Send, Bell } from "lucide-react";
+import { Download, Loader2, Pencil, CreditCard, Send, Bell, Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { invoiceTypeSupportsReceiptPayment } from "@/lib/invoice";
+import {
+  invoiceTypeSupportsReceiptPayment,
+  invoiceTypeSupportsSaleReturnRefund,
+  invoiceTypeSupportsSupplierPayment,
+} from "@/lib/invoice";
 import { formatCurrency } from "@/lib/utils";
 import type { InvoiceDetail } from "@/types/invoice";
 
@@ -25,6 +29,8 @@ interface InvoiceHeaderActionsProps {
   onCancel: () => void;
   onFinalize: () => void;
   onOpenPayment: () => void;
+  /** Sales return: record customer refund (outbound payout). */
+  onOpenRefund?: () => void;
   onMarkSent: () => void;
   onMarkReminder: () => void;
 }
@@ -46,10 +52,16 @@ export function InvoiceHeaderActions({
   onCancel,
   onFinalize,
   onOpenPayment,
+  onOpenRefund,
   onMarkSent,
   onMarkReminder,
 }: InvoiceHeaderActionsProps) {
-  const showRecordPayment = invoiceTypeSupportsReceiptPayment(invoice.invoiceType);
+  const showRecordPayment =
+    invoiceTypeSupportsReceiptPayment(invoice.invoiceType) ||
+    invoiceTypeSupportsSupplierPayment(invoice.invoiceType);
+  const isSupplierBill = invoiceTypeSupportsSupplierPayment(invoice.invoiceType);
+  const showRecordRefund =
+    invoiceTypeSupportsSaleReturnRefund(invoice.invoiceType) && onOpenRefund != null;
 
   return (
     <div className="flex gap-2">
@@ -87,12 +99,34 @@ export function InvoiceHeaderActions({
           className={balanceDueValue <= 0 ? "cursor-not-allowed opacity-50" : ""}
           title={
             balanceDueValue <= 0
-              ? "Invoice is fully paid. No balance due to record."
-              : `Record payment (Balance due: ${formatCurrency(balanceDue)})`
+              ? isSupplierBill
+                ? "Bill is fully paid. No balance due to record."
+                : "Invoice is fully paid. No balance due to record."
+              : isSupplierBill
+                ? `Record payment to supplier (Balance due: ${formatCurrency(balanceDue)})`
+                : `Record payment (Balance due: ${formatCurrency(balanceDue)})`
           }
         >
           <CreditCard className="mr-2 h-3.5 w-3.5" />
           Record Payment
+        </Button>
+      )}
+
+      {invoice.status === "FINAL" && showRecordRefund && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onOpenRefund}
+          disabled={balanceDueValue <= 0}
+          className={balanceDueValue <= 0 ? "cursor-not-allowed opacity-50" : ""}
+          title={
+            balanceDueValue <= 0
+              ? "Return is fully settled. Nothing left to refund."
+              : `Record refund (Owing to customer: ${formatCurrency(balanceDue)})`
+          }
+        >
+          <Banknote className="mr-2 h-3.5 w-3.5" />
+          Record Refund
         </Button>
       )}
 

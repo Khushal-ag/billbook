@@ -7,6 +7,8 @@ import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import { PageBackLink } from "@/components/PageBackLink";
 import PaymentDialog from "@/components/dialogs/PaymentDialog";
+import SupplierPaymentDialog from "@/components/dialogs/SupplierPaymentDialog";
+import SaleReturnRefundDialog from "@/components/dialogs/SaleReturnRefundDialog";
 import CancelInvoiceDialog from "@/components/dialogs/CancelInvoiceDialog";
 import {
   InvoiceHeaderActions,
@@ -33,6 +35,8 @@ import {
   getInvoiceBalanceDue,
   INVOICE_TYPE_OPTIONS,
   invoiceTypeSupportsReceiptPayment,
+  invoiceTypeSupportsSaleReturnRefund,
+  invoiceTypeSupportsSupplierPayment,
 } from "@/lib/invoice";
 import { withInvoiceQuantityErrorDetails } from "@/lib/invoice-quantity-error-details";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
@@ -49,6 +53,8 @@ export default function InvoiceDetail() {
   const { isOwner } = usePermissions();
 
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [supplierPaymentOpen, setSupplierPaymentOpen] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
   const [cancelConfirm, setCancelConfirm] = useState(false);
 
   const { data: invoice, isPending, error } = useInvoice(invoiceId);
@@ -196,7 +202,16 @@ export default function InvoiceDetail() {
                 onEdit={() => router.push(`/invoices/${invoiceId}/edit`)}
                 onCancel={handleCancel}
                 onFinalize={handleFinalize}
-                onOpenPayment={() => setPaymentOpen(true)}
+                onOpenPayment={() =>
+                  invoice.invoiceType === "PURCHASE_INVOICE"
+                    ? setSupplierPaymentOpen(true)
+                    : setPaymentOpen(true)
+                }
+                onOpenRefund={
+                  invoiceTypeSupportsSaleReturnRefund(invoice.invoiceType)
+                    ? () => setRefundOpen(true)
+                    : undefined
+                }
                 onMarkSent={handleMarkSent}
                 onMarkReminder={handleMarkReminder}
               />
@@ -226,6 +241,29 @@ export default function InvoiceDetail() {
                 onOpenChange={setPaymentOpen}
                 invoiceId={invoiceId}
                 balanceDue={balanceDue}
+              />
+            )}
+
+          {invoice.status === "FINAL" &&
+            invoiceId &&
+            invoiceTypeSupportsSupplierPayment(invoice.invoiceType) && (
+              <SupplierPaymentDialog
+                open={supplierPaymentOpen}
+                onOpenChange={setSupplierPaymentOpen}
+                invoiceId={invoiceId}
+                balanceDue={balanceDue}
+              />
+            )}
+
+          {invoice.status === "FINAL" &&
+            invoiceId &&
+            invoiceTypeSupportsSaleReturnRefund(invoice.invoiceType) && (
+              <SaleReturnRefundDialog
+                open={refundOpen}
+                onOpenChange={setRefundOpen}
+                invoiceId={invoiceId}
+                partyId={invoice.partyId}
+                refundDue={balanceDue}
               />
             )}
 

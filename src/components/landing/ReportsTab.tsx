@@ -54,7 +54,7 @@ const OUTSTANDING_ROWS = [
 ];
 
 const CAPTIONS = [
-  "Period KPIs for customer receipts, sales & purchase invoices, and payments out — same hub as Reports.",
+  "Period KPIs for customer receipts, sales & purchase invoices, and payouts — same hub as Reports.",
   "Outstanding receivables and payables use live party balances, independent of the date filter.",
   "Invoice aging, credit note register, and each report’s CSV download match what you get in the app.",
 ];

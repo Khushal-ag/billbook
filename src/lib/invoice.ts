@@ -63,12 +63,19 @@ export function isPurchaseVendorBillMetaType(type: InvoiceType): boolean {
   return type === "PURCHASE_INVOICE";
 }
 
-/**
- * Inbound receipts record money received from customers and allocate to invoices.
- * Returns and purchase-side documents are not paid this way (use outbound / vendor flows).
- */
+/** Customer payment via receipt allocation (POST …/payments). */
 export function invoiceTypeSupportsReceiptPayment(type: InvoiceType): boolean {
   return type === "SALE_INVOICE";
+}
+
+/** Supplier payment on a purchase bill (POST …/supplier-payments → outbound voucher). */
+export function invoiceTypeSupportsSupplierPayment(type: InvoiceType): boolean {
+  return type === "PURCHASE_INVOICE";
+}
+
+/** Outbound payouts refund money to the customer against a finalized sales return. */
+export function invoiceTypeSupportsSaleReturnRefund(type: InvoiceType): boolean {
+  return type === "SALE_RETURN";
 }
 
 /** UI copy for the invoice create flow — aligns labels and descriptions with each invoice type. */

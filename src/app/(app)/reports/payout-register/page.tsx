@@ -111,7 +111,7 @@ export default function PayoutRegisterPage() {
               {rowCount === 0 ? (
                 <ReportRegisterEmptyRow
                   colSpan={7}
-                  message="No payments out in this period. Widen the range or record a payment."
+                  message="No payouts in this period. Widen the date range or record a payout from Payouts."
                 />
               ) : (
                 rows.map((p) => (

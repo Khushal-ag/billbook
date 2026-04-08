@@ -42,7 +42,7 @@ const navSections: NavSection[] = [
       { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
       { label: "Invoices", path: "/invoices", icon: FileText },
       { label: "Receipts", path: "/receipts", icon: Wallet },
-      { label: "Payments out", path: "/payments/outbound", icon: ArrowDownLeft },
+      { label: "Payouts", path: "/payments/outbound", icon: ArrowDownLeft },
       { label: "Credit Notes", path: "/credit-notes", icon: FileMinus },
     ],
   },

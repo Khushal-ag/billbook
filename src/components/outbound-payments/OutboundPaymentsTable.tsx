@@ -34,6 +34,9 @@ interface OutboundPaymentsTableProps {
   pageSize: number;
   total: number;
   totalPages: number;
+  /** Inclusive row range on this page (for the summary bar). */
+  rangeStart: number;
+  rangeEnd: number;
   onPageChange: (p: number) => void;
   /** Resolve `partyId` → display name when the list API does not return `partyName`. */
   partyNamesById?: ReadonlyMap<number, string>;
@@ -45,12 +48,21 @@ export function OutboundPaymentsTable({
   pageSize,
   total,
   totalPages,
+  rangeStart,
+  rangeEnd,
   onPageChange,
   partyNamesById,
 }: OutboundPaymentsTableProps) {
   return (
-    <Card>
+    <Card className="overflow-hidden border-border/80 shadow-sm">
       <CardContent className="p-0">
+        <div className="border-b border-border bg-muted/30 px-4 py-2.5 text-xs text-muted-foreground">
+          <span className="font-medium tabular-nums text-foreground">
+            {rangeStart}–{rangeEnd}
+          </span>{" "}
+          of <span className="font-medium tabular-nums text-foreground">{total}</span> payout
+          {total === 1 ? "" : "s"}
+        </div>
         <div className="data-table-container overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
@@ -63,7 +75,9 @@ export function OutboundPaymentsTable({
                 </th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Method</th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">Amount</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">PDF</th>
+                <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+                  Voucher PDF
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -84,15 +98,25 @@ export function OutboundPaymentsTable({
                           href={`/invoices/${p.invoiceId}`}
                           className="text-primary hover:underline"
                         >
-                          Return invoice
+                          Sales return
+                        </Link>
+                      </div>
+                    )}
+                    {p.invoiceId != null && p.category === "PARTY_PAYMENT" && (
+                      <div className="mt-0.5 text-xs">
+                        <Link
+                          href={`/invoices/${p.invoiceId}`}
+                          className="text-primary hover:underline"
+                        >
+                          Purchase bill
                         </Link>
                       </div>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-muted-foreground">
+                    <Badge variant="outline" className="font-normal">
                       {PAYMENT_METHOD_LABEL[p.paymentMethod] ?? p.paymentMethod}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="px-4 py-3 text-right font-semibold tabular-nums text-rose-700">
                     {formatCurrency(p.amount)}
@@ -119,9 +143,10 @@ export function OutboundPaymentsTable({
             </tbody>
           </table>
         </div>
-        {totalPages > 1 && (
-          <div className="border-t p-4">
+        {totalPages > 1 ? (
+          <div className="border-t border-border bg-muted/20 px-4 py-3">
             <TablePagination
+              className="mt-0"
               page={page}
               pageSize={pageSize}
               total={total}
@@ -129,7 +154,7 @@ export function OutboundPaymentsTable({
               onPageChange={onPageChange}
             />
           </div>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

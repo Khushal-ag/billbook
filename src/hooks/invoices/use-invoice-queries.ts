@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
 import { ApiClientError } from "@/api/error";
 import { queryKeys } from "@/lib/query-keys";
@@ -53,6 +53,9 @@ export function useInvoices(params: {
   partyId?: number;
   startDate?: string;
   endDate?: string;
+  enabled?: boolean;
+  /** Keeps the previous list visible while search / filters refetch (smoother pickers). */
+  keepPreviousWhileFetching?: boolean;
 }) {
   const {
     page = 1,
@@ -63,6 +66,8 @@ export function useInvoices(params: {
     partyId,
     startDate,
     endDate,
+    enabled = true,
+    keepPreviousWhileFetching = false,
   } = params;
   const hasDateRange = Boolean(startDate && endDate);
   const queryStartDate = hasDateRange ? startDate : undefined;
@@ -80,6 +85,7 @@ export function useInvoices(params: {
   });
 
   return useQuery({
+    enabled,
     queryKey: queryKeys.invoices.list({
       page,
       pageSize,
@@ -94,6 +100,7 @@ export function useInvoices(params: {
       const res = await api.get<InvoiceListResponse>(`/invoices?${qs}`);
       return res.data;
     },
+    placeholderData: keepPreviousWhileFetching ? keepPreviousData : undefined,
   });
 }
 

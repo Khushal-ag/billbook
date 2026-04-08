@@ -300,6 +300,30 @@ export interface RecordPaymentRequest {
   notes?: string;
 }
 
+/** Outbound payment row returned after POST /invoices/:id/supplier-payments */
+export interface SupplierPaymentRecord {
+  id: number;
+  category: "PARTY_PAYMENT";
+  paymentNumber: string | null;
+  partyId: number | null;
+  invoiceId: number | null;
+  amount: string;
+  paymentMethod: string;
+  referenceNumber: string | null;
+  notes: string | null;
+  payeeName: string | null;
+  expenseCategory: string | null;
+  createdAt: string;
+}
+
+/** `data` from POST /invoices/:id/supplier-payments (201) */
+export interface RecordSupplierPaymentData {
+  payment: SupplierPaymentRecord;
+  allocatedToThisInvoice: string;
+  invoicePaidAmountAfter: string;
+  partyId: number;
+}
+
 export interface FinalizeInvoiceResponse {
   id: number;
   invoiceNumber: string;

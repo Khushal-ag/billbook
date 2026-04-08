@@ -434,7 +434,7 @@ export function DocumentNumberingCard({ embedded = false }: DocumentNumberingCar
       <Separator />
 
       <div>
-        <h4 className="mb-3 text-sm font-semibold">Outbound payments (vouchers)</h4>
+        <h4 className="mb-3 text-sm font-semibold">Payout vouchers</h4>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Prefix</Label>

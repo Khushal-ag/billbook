@@ -68,7 +68,7 @@ function buildLandingJsonLd(contactEmail: string) {
         },
         featureList: [
           "GST invoices and credit notes",
-          "Customer receipts and payments out",
+          "Customer receipts and payouts",
           "Items, stock, and party ledgers",
           "Report registers with CSV download",
           "GST and tax summaries with HTML export",

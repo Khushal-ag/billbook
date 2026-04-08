@@ -60,7 +60,7 @@ export const RESOURCE_TYPE_LABELS: Record<string, string> = {
   UNIT: "Unit",
   INVOICE_COMMUNICATION: "Invoice Communication",
   RECEIPT: "Receipt",
-  OUTBOUND_PAYMENT: "Outbound payment",
+  OUTBOUND_PAYMENT: "Payout",
 };
 
 export const IRRELEVANT_UPDATE_KEYS = new Set([

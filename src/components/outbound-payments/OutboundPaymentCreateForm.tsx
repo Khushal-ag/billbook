@@ -19,17 +19,35 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PartyAutocomplete } from "@/components/invoices/PartyAutocomplete";
-import { useInvoices } from "@/hooks/use-invoices";
+import { InvoiceLinkedCombobox } from "@/components/outbound-payments/InvoiceLinkedCombobox";
+import { useInvoice } from "@/hooks/use-invoices";
 import { useCreateOutboundPayment } from "@/hooks/use-outbound-payments";
 import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 import { OUTBOUND_CATEGORY_OPTIONS } from "@/constants/outbound-payment";
 import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import { maybeShowTrialExpiredToast } from "@/lib/trial";
+import { getInvoiceBalanceDue } from "@/lib/invoice";
+import { ApiClientError } from "@/api/error";
+import { augmentApiClientErrorForPayment } from "@/lib/payment-errors";
 import type { Party } from "@/types/party";
-import type { PaymentMethod } from "@/types/invoice";
+import type { Invoice, PaymentMethod } from "@/types/invoice";
 import type { OutboundPaymentCategory } from "@/types/outbound-payment";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
+
+function purchaseInvoiceOptionLabel(inv: Invoice): string {
+  const due = formatCurrency(String(getInvoiceBalanceDue(inv)));
+  const vendorBill = inv.originalBillNumber?.trim();
+  if (vendorBill) {
+    return `${inv.invoiceNumber} · Vendor bill ${vendorBill} · ${due} due`;
+  }
+  return `${inv.invoiceNumber} · ${due} due`;
+}
+
+function saleReturnOptionLabel(inv: Invoice): string {
+  const name = inv.partyName?.trim() ?? "Customer";
+  return `${inv.invoiceNumber} · ${name}`;
+}
 
 const baseSchema = z.object({
   amount: requiredPriceString,
@@ -45,33 +63,29 @@ export function OutboundPaymentCreateForm() {
   const [category, setCategory] = useState<OutboundPaymentCategory>("PARTY_PAYMENT");
   const [party, setParty] = useState<Party | null>(null);
   const [saleReturnId, setSaleReturnId] = useState<string>("");
-  const [returnSearch, setReturnSearch] = useState("");
   const [expensePayee, setExpensePayee] = useState("");
   const [expenseCategory, setExpenseCategory] = useState("");
+  const [purchaseBillId, setPurchaseBillId] = useState<string>("");
 
-  const { data: returnsData, isPending: returnsLoading } = useInvoices({
-    page: 1,
-    pageSize: 100,
-    invoiceType: "SALE_RETURN",
-    status: "FINAL",
-  });
-  const saleReturns = useMemo(() => returnsData?.invoices ?? [], [returnsData?.invoices]);
+  const parsedPurchaseBillId = useMemo(() => {
+    const n = parseInt(purchaseBillId, 10);
+    return Number.isFinite(n) ? n : undefined;
+  }, [purchaseBillId]);
 
-  const filteredReturns = useMemo(() => {
-    const q = returnSearch.trim().toLowerCase();
-    if (!q) return saleReturns;
-    return saleReturns.filter(
-      (inv) =>
-        inv.invoiceNumber.toLowerCase().includes(q) ||
-        (inv.partyName ?? "").toLowerCase().includes(q),
-    );
-  }, [saleReturns, returnSearch]);
+  const { data: purchaseBillDetail, isPending: purchaseBillDetailLoading } = useInvoice(
+    category === "PARTY_PAYMENT" && parsedPurchaseBillId != null ? parsedPurchaseBillId : undefined,
+  );
+  const selectedPurchaseBill = purchaseBillDetail ?? null;
 
-  const selectedReturn = useMemo(() => {
-    const id = parseInt(saleReturnId, 10);
-    if (!Number.isFinite(id)) return null;
-    return saleReturns.find((i) => i.id === id) ?? null;
-  }, [saleReturnId, saleReturns]);
+  const parsedReturnId = useMemo(() => {
+    const n = parseInt(saleReturnId, 10);
+    return Number.isFinite(n) ? n : undefined;
+  }, [saleReturnId]);
+
+  const { data: returnDetail, isPending: returnDetailLoading } = useInvoice(
+    category === "SALE_RETURN_REFUND" && parsedReturnId != null ? parsedReturnId : undefined,
+  );
+  const selectedReturn = returnDetail ?? null;
 
   const createOutbound = useCreateOutboundPayment();
 
@@ -98,12 +112,23 @@ export function OutboundPaymentCreateForm() {
     }
   }, [category, selectedReturn?.id, selectedReturn?.totalAmount, setValue]);
 
+  useEffect(() => {
+    if (category !== "PARTY_PAYMENT" || !selectedPurchaseBill) return;
+    const due = getInvoiceBalanceDue(selectedPurchaseBill);
+    if (due > 0) setValue("amount", String(due));
+  }, [category, selectedPurchaseBill?.id, selectedPurchaseBill, setValue]);
+
+  useEffect(() => {
+    setPurchaseBillId("");
+  }, [party?.id]);
+
   const onCategoryChange = (c: OutboundPaymentCategory) => {
     setCategory(c);
     setParty(null);
     setSaleReturnId("");
     setExpensePayee("");
     setExpenseCategory("");
+    setPurchaseBillId("");
     reset({ amount: "", paymentMethod: "BANK_TRANSFER", referenceNumber: "", notes: "" });
   };
 
@@ -111,7 +136,7 @@ export function OutboundPaymentCreateForm() {
     try {
       if (category === "SALE_RETURN_REFUND") {
         if (!selectedReturn) {
-          showErrorToast("Select a finalized sale return invoice.");
+          showErrorToast("Select a finalized sales return.");
           return;
         }
         await createOutbound.mutateAsync({
@@ -125,12 +150,13 @@ export function OutboundPaymentCreateForm() {
         });
       } else if (category === "PARTY_PAYMENT") {
         if (!party) {
-          showErrorToast("Select a party.");
+          showErrorToast("Select a supplier.");
           return;
         }
         await createOutbound.mutateAsync({
           category: "PARTY_PAYMENT",
           partyId: party.id,
+          ...(parsedPurchaseBillId != null ? { invoiceId: parsedPurchaseBillId } : {}),
           amount: data.amount,
           paymentMethod: data.paymentMethod,
           referenceNumber: data.referenceNumber || undefined,
@@ -152,29 +178,41 @@ export function OutboundPaymentCreateForm() {
           expenseCategory: expenseCategory.trim() || undefined,
         });
       }
-      showSuccessToast("Outbound payment recorded");
+      showSuccessToast("Payout recorded");
       router.push("/payments/outbound");
     } catch (e) {
       if (maybeShowTrialExpiredToast(e)) return;
-      showErrorToast(e, "Failed to record payment");
+      if (e instanceof ApiClientError) {
+        showErrorToast(augmentApiClientErrorForPayment(e), "Failed to record payout");
+      } else {
+        showErrorToast(e, "Failed to record payout");
+      }
     }
   };
 
+  const linkingPurchasePending =
+    category === "PARTY_PAYMENT" && parsedPurchaseBillId != null && purchaseBillDetailLoading;
+
+  const linkingReturnPending =
+    category === "SALE_RETURN_REFUND" && parsedReturnId != null && returnDetailLoading;
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="mx-auto max-w-xl space-y-8">
+    <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-8">
       <div className="space-y-3">
         <Label required>Type</Label>
         <RadioGroup
           value={category}
           onValueChange={(v) => onCategoryChange(v as OutboundPaymentCategory)}
-          className="grid gap-2 sm:grid-cols-3"
+          className="grid gap-3 sm:grid-cols-3"
         >
           {OUTBOUND_CATEGORY_OPTIONS.map((opt) => (
             <label
               key={opt.value}
               className={cn(
-                "flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-sm transition-colors",
-                category === opt.value ? "border-primary bg-primary/5" : "hover:bg-muted/50",
+                "flex cursor-pointer items-center gap-3 rounded-xl border border-border/80 bg-card/50 p-4 text-sm shadow-sm transition-colors",
+                category === opt.value
+                  ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                  : "hover:border-border hover:bg-muted/40",
               )}
             >
               <RadioGroupItem value={opt.value} id={opt.value} />
@@ -186,43 +224,75 @@ export function OutboundPaymentCreateForm() {
 
       {category === "SALE_RETURN_REFUND" && (
         <div className="space-y-3">
-          <Label required>Sale return invoice</Label>
-          <Input
-            placeholder="Search by number or party…"
-            value={returnSearch}
-            onChange={(e) => setReturnSearch(e.target.value)}
-            className="mb-2"
+          <Label required>Sales return</Label>
+          <p className="text-xs text-muted-foreground">
+            Same idea as picking a party on an invoice: click the field, type to search, then choose
+            a row. Searches finalized sales returns on the server by number or customer.
+          </p>
+          <InvoiceLinkedCombobox
+            invoiceType="SALE_RETURN"
+            valueId={saleReturnId}
+            onValueIdChange={setSaleReturnId}
+            formatOption={saleReturnOptionLabel}
+            displayLabel={returnDetail ? saleReturnOptionLabel(returnDetail) : null}
+            placeholder="Search return no. or customer…"
+            inputId="payout-sale-return-invoice"
           />
-          <Select value={saleReturnId} onValueChange={setSaleReturnId} disabled={returnsLoading}>
-            <SelectTrigger>
-              <SelectValue placeholder={returnsLoading ? "Loading…" : "Select sale return…"} />
-            </SelectTrigger>
-            <SelectContent className="max-h-64">
-              {filteredReturns.map((inv) => (
-                <SelectItem key={inv.id} value={String(inv.id)}>
-                  {inv.invoiceNumber}
-                  {inv.partyName ? ` · ${inv.partyName}` : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {selectedReturn && (
+          {selectedReturn ? (
             <p className="text-xs text-muted-foreground">
-              Party ID {selectedReturn.partyId} · Total {selectedReturn.totalAmount}
+              Total <span className="font-semibold tabular-nums">{selectedReturn.totalAmount}</span>
             </p>
-          )}
+          ) : null}
         </div>
       )}
 
       {category === "PARTY_PAYMENT" && (
-        <div className="space-y-2">
-          <Label required>Party</Label>
-          <PartyAutocomplete
-            value={party}
-            onValueChange={setParty}
-            serverSearch
-            placeholder="Search party…"
-          />
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label required>Supplier</Label>
+            <PartyAutocomplete
+              value={party}
+              onValueChange={setParty}
+              serverSearch
+              partiesQueryType="SUPPLIER"
+              placeholder="Search vendor…"
+              inputId="payout-supplier-party"
+            />
+          </div>
+          {party && (
+            <div className="space-y-3">
+              <Label>Purchase invoice (optional)</Label>
+              <p className="text-xs text-muted-foreground">
+                Same as above: open the field, type to search. Only this supplier&apos;s purchase
+                bills appear. Pick <span className="font-medium text-foreground">On account</span>{" "}
+                to pay without linking a bill.
+              </p>
+              <InvoiceLinkedCombobox
+                invoiceType="PURCHASE_INVOICE"
+                partyId={party.id}
+                valueId={purchaseBillId}
+                onValueIdChange={setPurchaseBillId}
+                noneOptionLabel="On account (not linked to a bill)"
+                formatOption={purchaseInvoiceOptionLabel}
+                displayLabel={
+                  purchaseBillDetail ? purchaseInvoiceOptionLabel(purchaseBillDetail) : null
+                }
+                placeholder="Search purchase no. or vendor bill…"
+                inputId="payout-purchase-invoice"
+              />
+              {linkingPurchasePending ? (
+                <p className="text-xs text-muted-foreground">Loading invoice details…</p>
+              ) : null}
+              {selectedPurchaseBill ? (
+                <p className="text-xs text-muted-foreground">
+                  Balance due on this bill:{" "}
+                  <span className="font-semibold tabular-nums text-foreground">
+                    {formatCurrency(String(getInvoiceBalanceDue(selectedPurchaseBill)))}
+                  </span>
+                </p>
+              ) : null}
+            </div>
+          )}
         </div>
       )}
 
@@ -282,13 +352,18 @@ export function OutboundPaymentCreateForm() {
         <Textarea rows={2} {...register("notes")} />
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col-reverse gap-3 border-t border-border/60 pt-6 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" onClick={() => router.push("/payments/outbound")}>
           Cancel
         </Button>
-        <Button type="submit" disabled={createOutbound.isPending}>
-          {createOutbound.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Record payment
+        <Button
+          type="submit"
+          disabled={createOutbound.isPending || linkingPurchasePending || linkingReturnPending}
+        >
+          {(createOutbound.isPending || linkingPurchasePending || linkingReturnPending) && (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          )}
+          Record payout
         </Button>
       </div>
     </form>

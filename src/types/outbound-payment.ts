@@ -39,6 +39,8 @@ export interface CreateSaleReturnRefundRequest extends CreateOutboundPaymentBase
 export interface CreatePartyPaymentRequest extends CreateOutboundPaymentBase {
   category: "PARTY_PAYMENT";
   partyId: number;
+  /** When set: allocate to this finalized purchase bill (same party, amount ≤ due). */
+  invoiceId?: number;
 }
 
 export interface CreateExpensePaymentRequest extends CreateOutboundPaymentBase {
