@@ -12,6 +12,17 @@ import { fileToDataUrl } from "@/lib/file-to-url";
 import { profileSchema, type ProfileForm } from "@/components/settings/profileSchema";
 import { Button } from "@/components/ui/button";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import type { UpdateBusinessProfile } from "@/types/auth";
+
+function trimOrNull(value: string | null | undefined): string | null {
+  const t = (value ?? "").trim();
+  return t === "" ? null : t;
+}
+
+function trimTaxId(value: string | null | undefined): string | null {
+  const t = (value ?? "").trim().toUpperCase();
+  return t === "" ? null : t;
+}
 
 const getProfileFormValues = (business?: {
   name?: string | null;
@@ -97,27 +108,31 @@ export default function Profile() {
           value: (d.value ?? "").trim(),
         }))
         .filter((d) => d.key !== "");
-      await updateProfile.mutateAsync({
-        name: data.name,
-        country: data.country || "India",
-        phone: data.phone || undefined,
-        email: data.email || undefined,
-        businessType: data.businessType || undefined,
-        industryType: data.industryType || undefined,
-        registrationType: data.registrationType || undefined,
-        street: data.street || undefined,
-        area: data.area || undefined,
-        city: data.city || undefined,
-        state: data.state || undefined,
-        pincode: data.pincode || undefined,
-        gstin: data.gstin || undefined,
-        pan: data.pan || undefined,
+      // JSON.stringify drops `undefined` — the API must receive explicit null / [] or fields never update.
+      const payload: UpdateBusinessProfile = {
+        name: data.name.trim(),
+        country: trimOrNull(data.country) ?? "India",
+        phone: trimOrNull(data.phone),
+        email: trimOrNull(data.email),
+        businessType: trimOrNull(data.businessType),
+        industryType: trimOrNull(data.industryType),
+        registrationType: trimOrNull(data.registrationType),
+        street: trimOrNull(data.street),
+        area: trimOrNull(data.area),
+        city: trimOrNull(data.city),
+        state: trimOrNull(data.state),
+        pincode: trimOrNull(data.pincode),
+        gstin: trimTaxId(data.gstin),
+        pan: trimTaxId(data.pan),
         financialYearStart: data.financialYearStart,
-        extraDetails: extraDetails.length ? extraDetails : undefined,
+        extraDetails,
         taxType: data.taxType,
-        logoUrl: data.logoUrl === "" ? null : (data.logoUrl ?? undefined),
-        signatureUrl: data.signatureUrl === "" ? null : (data.signatureUrl ?? undefined),
-      });
+        logoUrl: data.logoUrl === "" || data.logoUrl == null ? null : data.logoUrl,
+        signatureUrl:
+          data.signatureUrl === "" || data.signatureUrl == null ? null : data.signatureUrl,
+      };
+      const updated = await updateProfile.mutateAsync(payload);
+      reset(getProfileFormValues(updated));
       showSuccessToast("Business profile updated");
     } catch (err) {
       showErrorToast(err, "Failed to update");
@@ -155,7 +170,7 @@ export default function Profile() {
               type="submit"
               size="sm"
               form="profile-form"
-              disabled={isSubmitting || updateProfile.isPending}
+              disabled={!isDirty || isSubmitting || updateProfile.isPending}
             >
               Save Changes
             </Button>

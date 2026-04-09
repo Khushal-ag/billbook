@@ -88,6 +88,43 @@ export function buildReceiptAllocationRows(receipt: ReceiptDetail): ReceiptAlloc
   }));
 }
 
+/**
+ * Stable key for inputs to {@link buildReceiptAllocationRows}. When unchanged, a new `receipt`
+ * object reference alone should not reset editor state.
+ */
+export function receiptAllocationInitKey(receipt: ReceiptDetail): string {
+  const open = [...(receipt.openInvoicesForParty ?? [])]
+    .filter((i) => num(i.dueAmount) > 0.001)
+    .sort(
+      (a, b) =>
+        String(a.invoiceDate ?? "").localeCompare(String(b.invoiceDate ?? "")) || a.id - b.id,
+    );
+  const allocPart = [...(receipt.allocations ?? [])]
+    .sort((a, b) => a.invoiceId - b.invoiceId)
+    .map((a) => `${a.invoiceId}:${a.amount}`)
+    .join("|");
+  const openPart = open
+    .map((inv) =>
+      [
+        inv.id,
+        inv.invoiceNumber,
+        inv.invoiceType ?? "",
+        inv.invoiceDate ?? "",
+        inv.totalAmount,
+        inv.paidAmount ?? "",
+        inv.dueAmount,
+      ].join(":"),
+    )
+    .join("|");
+  return [
+    receipt.id,
+    receipt.totalAmount ?? "",
+    receipt.unallocatedAmount ?? "",
+    allocPart,
+    openPart,
+  ].join("\u001e");
+}
+
 /** Payload for PUT: visible rows (&gt;0) + allocations on invoices not shown (0 due, etc.). */
 export function mergeAllocationsForSave(
   rows: ReceiptAllocationRowState[],

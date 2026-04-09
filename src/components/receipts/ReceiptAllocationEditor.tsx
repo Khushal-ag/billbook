@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { FileStack, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
   buildReceiptAllocationRows,
   maxReceiptAllocToInvoice,
   mergeAllocationsForSave,
+  receiptAllocationInitKey,
   receiptAllocationsUnchanged,
   totalAllocatedFromSavePayload,
   type ReceiptAllocationRowState,
@@ -29,15 +30,6 @@ function sanitizeDecimalInput(raw: string): string {
   return v;
 }
 
-function allocFingerprint(receipt: ReceiptDetail): string {
-  const a = receipt.allocations ?? [];
-  const openIds = (receipt.openInvoicesForParty ?? [])
-    .map((i) => i.id)
-    .sort((a, b) => a - b)
-    .join(",");
-  return `${receipt.id}:${a.map((x) => `${x.invoiceId}:${x.amount}`).join("|")}:${openIds}`;
-}
-
 export function ReceiptAllocationEditor({
   receiptId,
   receipt,
@@ -49,12 +41,14 @@ export function ReceiptAllocationEditor({
 }) {
   const updateAlloc = useUpdateReceiptAllocations(receiptId);
   const [rows, setRows] = useState<ReceiptAllocationRowState[]>([]);
+  const receiptRef = useRef(receipt);
+  receiptRef.current = receipt;
 
-  const initKey = useMemo(() => allocFingerprint(receipt), [receipt]);
+  const initKey = useMemo(() => receiptAllocationInitKey(receipt), [receipt]);
 
   useEffect(() => {
-    setRows(buildReceiptAllocationRows(receipt));
-  }, [initKey, receipt]);
+    setRows(buildReceiptAllocationRows(receiptRef.current));
+  }, [initKey]);
 
   const totalReceipt = parseFloat(receipt.totalAmount ?? "0") || 0;
   const savePayload = useMemo(() => mergeAllocationsForSave(rows, receipt), [rows, receipt]);
