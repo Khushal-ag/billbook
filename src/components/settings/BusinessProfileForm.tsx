@@ -6,6 +6,14 @@ import { FieldError, Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -14,24 +22,145 @@ import {
 } from "@/components/ui/select";
 import { Upload, Pencil, Plus, Trash2, X } from "lucide-react";
 import type { ProfileForm } from "@/components/settings/profileSchema";
-import { MONTHS, BUSINESS_TYPES, INDUSTRY_TYPES, REGISTRATION_TYPES, COUNTRIES } from "@/constants";
+import { MONTHS, REGISTRATION_TYPES, COUNTRIES } from "@/constants";
 import { usePincodeAutofill } from "@/hooks/use-pincode-autofill";
 import { showErrorToast } from "@/lib/toast-helpers";
 import { countryCodeToFlagEmoji } from "@/lib/country-flags";
 import { lookupIfscCode } from "@/lib/ifsc";
+import type { BusinessClassificationOption } from "@/types/auth";
+import { ApiClientError } from "@/api/error";
 
 const LOGO_MAX_SIZE_MB = 5;
 const SIGNATURE_MAX_SIZE_MB = 2;
+
+function toCapitalizedLabel(value: string): string {
+  const s = value.trim();
+  if (!s) return "";
+  return s.replace(/(^|[\s\-_/])([a-z])/g, (_, p1: string, p2: string) => {
+    return `${p1}${p2.toUpperCase()}`;
+  });
+}
 
 interface BusinessProfileFormProps {
   form: UseFormReturn<ProfileForm>;
   onSubmit: (data: ProfileForm) => void | Promise<void>;
   isDirty: boolean;
   isSaving: boolean;
+  businessTypeOptions: BusinessClassificationOption[];
+  industryTypeOptions: BusinessClassificationOption[];
+  canManageTypeOptions: boolean;
+  onCreateBusinessType?: (name: string) => Promise<void>;
+  onCreateIndustryType?: (name: string) => Promise<void>;
   /** Upload logo file; returns URL to store. Backend receives only this link on profile save. */
   onLogoUpload?: (file: File) => Promise<string | null>;
   /** Upload signature file; returns URL to store. Backend receives only this link on profile save. */
   onSignatureUpload?: (file: File) => Promise<string | null>;
+}
+
+interface CreatableTypeInputProps {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: BusinessClassificationOption[];
+  placeholder: string;
+  emptyMessage: string;
+  canManageTypeOptions: boolean;
+  createLabel: string;
+  isCreating: boolean;
+  onCreate: (name: string) => Promise<void>;
+}
+
+function CreatableTypeInput({
+  id,
+  value,
+  onChange,
+  options,
+  placeholder,
+  emptyMessage,
+  canManageTypeOptions,
+  createLabel,
+  isCreating,
+  onCreate,
+}: CreatableTypeInputProps) {
+  const [open, setOpen] = useState(false);
+  const normalizedInput = (value ?? "").trim().toLowerCase();
+  const filteredOptions = options.filter((option) => {
+    if (!normalizedInput) return true;
+    return option.name.toLowerCase().includes(normalizedInput);
+  });
+  const hasExactMatch = options.some(
+    (option) => option.name.trim().toLowerCase() === normalizedInput,
+  );
+  const shouldShowCreate = Boolean(normalizedInput) && !hasExactMatch;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
+      <PopoverAnchor asChild>
+        <Input
+          id={id}
+          value={value ?? ""}
+          onChange={(e) => {
+            onChange(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder={placeholder}
+          autoComplete="off"
+          aria-expanded={open}
+          aria-controls={`${id}-options`}
+        />
+      </PopoverAnchor>
+      <PopoverContent
+        align="start"
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <Command shouldFilter={false}>
+          <CommandList id={`${id}-options`} className="max-h-64">
+            <CommandEmpty className="py-4 text-center text-sm text-muted-foreground">
+              {emptyMessage}
+            </CommandEmpty>
+            <CommandGroup>
+              {filteredOptions.map((option) => (
+                <CommandItem
+                  key={`${id}-${option.id}-${option.name}`}
+                  value={option.name}
+                  onSelect={() => {
+                    onChange(toCapitalizedLabel(option.name));
+                    setOpen(false);
+                  }}
+                  className="cursor-pointer"
+                >
+                  {toCapitalizedLabel(option.name)}
+                </CommandItem>
+              ))}
+
+              {shouldShowCreate && (
+                <CommandItem
+                  value={`${id}-create-${normalizedInput}`}
+                  disabled={isCreating}
+                  onSelect={() => {
+                    if (!canManageTypeOptions) {
+                      setOpen(false);
+                      return;
+                    }
+                    void onCreate((value ?? "").trim()).then(() => {
+                      setOpen(false);
+                    });
+                  }}
+                  className="cursor-pointer"
+                >
+                  {canManageTypeOptions
+                    ? `${isCreating ? "Adding…" : createLabel} "${toCapitalizedLabel((value ?? "").trim())}"`
+                    : `Use "${toCapitalizedLabel((value ?? "").trim())}"`}
+                </CommandItem>
+              )}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export function BusinessProfileForm({
@@ -39,6 +168,11 @@ export function BusinessProfileForm({
   onSubmit,
   isDirty,
   isSaving,
+  businessTypeOptions,
+  industryTypeOptions,
+  canManageTypeOptions,
+  onCreateBusinessType,
+  onCreateIndustryType,
   onLogoUpload,
   onSignatureUpload,
 }: BusinessProfileFormProps) {
@@ -67,6 +201,8 @@ export function BusinessProfileForm({
   const [signaturePreviewUrl, setSignaturePreviewUrl] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingSignature, setIsUploadingSignature] = useState(false);
+  const [isCreatingBusinessType, setIsCreatingBusinessType] = useState(false);
+  const [isCreatingIndustryType, setIsCreatingIndustryType] = useState(false);
   const [isEditingBankDetails, setIsEditingBankDetails] = useState(false);
   const [ifscLookupError, setIfscLookupError] = useState<string | null>(null);
   const [ifscSupportedModes, setIfscSupportedModes] = useState<string[]>([]);
@@ -285,6 +421,41 @@ export function BusinessProfileForm({
   }, [ifscCode, setValue]);
 
   usePincodeAutofill(pincode, pincodeCountryCode, getValues, setValue);
+
+  const handleCreateOption = async (
+    kind: "business" | "industry",
+    createFn: ((name: string) => Promise<void>) | undefined,
+    formField: "businessType" | "industryType",
+    rawName: string,
+  ) => {
+    if (!canManageTypeOptions || !createFn) return;
+
+    const name = (rawName ?? "").trim();
+    if (!name) return;
+
+    if (kind === "business") {
+      setIsCreatingBusinessType(true);
+    } else {
+      setIsCreatingIndustryType(true);
+    }
+
+    try {
+      await createFn(name);
+      setValue(formField, name, { shouldDirty: true, shouldValidate: true });
+    } catch (error) {
+      if (error instanceof ApiClientError && error.status === 409) {
+        showErrorToast(`${kind === "business" ? "Business" : "Industry"} type already exists.`);
+        return;
+      }
+      showErrorToast(error, `Failed to create ${kind} type`);
+    } finally {
+      if (kind === "business") {
+        setIsCreatingBusinessType(false);
+      } else {
+        setIsCreatingIndustryType(false);
+      }
+    }
+  };
 
   return (
     <Card className="w-full">
@@ -574,21 +745,25 @@ export function BusinessProfileForm({
                         name="businessType"
                         control={control}
                         render={({ field }) => (
-                          <Select
-                            value={field.value?.trim() ? field.value : undefined}
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger id="businessType">
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {BUSINESS_TYPES.map((item) => (
-                                <SelectItem key={item.value} value={item.value}>
-                                  {item.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <CreatableTypeInput
+                            id="businessType"
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            options={businessTypeOptions}
+                            placeholder="e.g. Retail"
+                            emptyMessage="No matching business types"
+                            canManageTypeOptions={canManageTypeOptions}
+                            createLabel="Add business type"
+                            isCreating={isCreatingBusinessType}
+                            onCreate={async (name) => {
+                              await handleCreateOption(
+                                "business",
+                                onCreateBusinessType,
+                                "businessType",
+                                name,
+                              );
+                            }}
+                          />
                         )}
                       />
                     </div>
@@ -601,21 +776,25 @@ export function BusinessProfileForm({
                         name="industryType"
                         control={control}
                         render={({ field }) => (
-                          <Select
-                            value={field.value?.trim() ? field.value : undefined}
-                            onValueChange={field.onChange}
-                          >
-                            <SelectTrigger id="industryType">
-                              <SelectValue placeholder="Select industry" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {INDUSTRY_TYPES.map((item, idx) => (
-                                <SelectItem key={`${item.value}-${idx}`} value={item.value}>
-                                  {item.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <CreatableTypeInput
+                            id="industryType"
+                            value={field.value ?? ""}
+                            onChange={field.onChange}
+                            options={industryTypeOptions}
+                            placeholder="e.g. IT Services"
+                            emptyMessage="No matching industry types"
+                            canManageTypeOptions={canManageTypeOptions}
+                            createLabel="Add industry type"
+                            isCreating={isCreatingIndustryType}
+                            onCreate={async (name) => {
+                              await handleCreateOption(
+                                "industry",
+                                onCreateIndustryType,
+                                "industryType",
+                                name,
+                              );
+                            }}
+                          />
                         )}
                       />
                     </div>

@@ -7,13 +7,25 @@ import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import SettingsSkeleton from "@/components/skeletons/SettingsSkeleton";
 import { BusinessProfileForm, ProfileCompletionCard } from "@/components/settings/SettingsSections";
-import { useBusinessProfile, useUpdateBusinessProfile } from "@/hooks/use-business";
+import {
+  useBusinessProfile,
+  useUpdateBusinessProfile,
+  useBusinessTypeOptions,
+  useIndustryTypeOptions,
+  useCreateBusinessTypeOption,
+  useCreateIndustryTypeOption,
+} from "@/hooks/use-business";
 import { fileToDataUrl } from "@/lib/file-to-url";
 import { profileSchema, type ProfileForm } from "@/components/settings/profileSchema";
 import { Button } from "@/components/ui/button";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import { getProfileFormValues } from "@/lib/profile-form-values";
-import type { BusinessProfile, UpdateBusinessProfile } from "@/types/auth";
+import type {
+  BusinessProfile,
+  UpdateBusinessProfile,
+  BusinessClassificationOption,
+} from "@/types/auth";
+import { usePermissions } from "@/hooks/use-permissions";
 
 function trimOrNull(value: string | null | undefined): string | null {
   const t = (value ?? "").trim();
@@ -66,8 +78,34 @@ function getComparableProfileSnapshot(values: ProfileForm): string {
   });
 }
 
-function ProfileEditor({ business }: { business: BusinessProfile }) {
+function withFallbackOption(
+  options: BusinessClassificationOption[] | undefined,
+  currentValue: string | null | undefined,
+): BusinessClassificationOption[] {
+  const normalized = (currentValue ?? "").trim();
+  const base = options ?? [];
+  if (!normalized) return base;
+
+  const exists = base.some((option) => option.name.toLowerCase() === normalized.toLowerCase());
+  if (exists) return base;
+
+  return [{ id: -1, name: normalized, isPredefined: false }, ...base];
+}
+
+function ProfileEditor({
+  business,
+  businessTypeOptions,
+  industryTypeOptions,
+  canManageTypeOptions,
+}: {
+  business: BusinessProfile;
+  businessTypeOptions: BusinessClassificationOption[];
+  industryTypeOptions: BusinessClassificationOption[];
+  canManageTypeOptions: boolean;
+}) {
   const updateProfile = useUpdateBusinessProfile();
+  const createBusinessType = useCreateBusinessTypeOption();
+  const createIndustryType = useCreateIndustryTypeOption();
 
   const profileValues = useMemo(() => getProfileFormValues(business), [business]);
 
@@ -170,6 +208,16 @@ function ProfileEditor({ business }: { business: BusinessProfile }) {
     reset(profileValues);
   };
 
+  const handleCreateBusinessType = async (name: string) => {
+    await createBusinessType.mutateAsync(name);
+    showSuccessToast("Business type added");
+  };
+
+  const handleCreateIndustryType = async (name: string) => {
+    await createIndustryType.mutateAsync(name);
+    showSuccessToast("Industry type added");
+  };
+
   return (
     <>
       <PageHeader
@@ -204,6 +252,11 @@ function ProfileEditor({ business }: { business: BusinessProfile }) {
           onSubmit={onSubmit}
           isDirty={isDirty}
           isSaving={updateProfile.isPending}
+          businessTypeOptions={businessTypeOptions}
+          industryTypeOptions={industryTypeOptions}
+          canManageTypeOptions={canManageTypeOptions}
+          onCreateBusinessType={canManageTypeOptions ? handleCreateBusinessType : undefined}
+          onCreateIndustryType={canManageTypeOptions ? handleCreateIndustryType : undefined}
           onLogoUpload={handleLogoUpload}
           onSignatureUpload={handleSignatureUpload}
         />
@@ -213,7 +266,28 @@ function ProfileEditor({ business }: { business: BusinessProfile }) {
 }
 
 export default function Profile() {
-  const { data: business, isPending, error } = useBusinessProfile();
+  const { isOwner } = usePermissions();
+  const {
+    data: business,
+    isPending: isBusinessPending,
+    error: businessError,
+  } = useBusinessProfile();
+  const {
+    data: businessTypes,
+    isPending: isBusinessTypesPending,
+    error: businessTypesError,
+  } = useBusinessTypeOptions();
+  const {
+    data: industryTypes,
+    isPending: isIndustryTypesPending,
+    error: industryTypesError,
+  } = useIndustryTypeOptions();
+
+  const businessTypeOptions = withFallbackOption(businessTypes, business?.businessType);
+  const industryTypeOptions = withFallbackOption(industryTypes, business?.industryType);
+
+  const isPending = isBusinessPending || isBusinessTypesPending || isIndustryTypesPending;
+  const error = businessError ?? businessTypesError ?? industryTypesError;
 
   if (isPending) {
     return <SettingsSkeleton variant="profile" />;
@@ -223,7 +297,12 @@ export default function Profile() {
     <div className="page-container animate-fade-in pb-10">
       <ErrorBanner error={error} fallbackMessage="Failed to load profile" />
       {business ? (
-        <ProfileEditor business={business} />
+        <ProfileEditor
+          business={business}
+          businessTypeOptions={businessTypeOptions}
+          industryTypeOptions={industryTypeOptions}
+          canManageTypeOptions={isOwner}
+        />
       ) : (
         <PageHeader
           title="My Profile"

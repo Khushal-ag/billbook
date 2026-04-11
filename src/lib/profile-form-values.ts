@@ -1,5 +1,5 @@
 import type { ProfileForm } from "@/components/settings/profileSchema";
-import { BUSINESS_TYPES, INDUSTRY_TYPES, REGISTRATION_TYPES } from "@/constants";
+import { REGISTRATION_TYPES } from "@/constants";
 
 /** Map API / free-text values onto known select option values (match value or label, any case). */
 function coalesceToKnownOption(
@@ -61,8 +61,8 @@ export function getProfileFormValues(business?: ProfileFormSource): ProfileForm 
     country: (business?.country ?? "").trim() || "India",
     email: (business?.email ?? "").trim(),
     phone: (business?.phone ?? "").replace(/\D/g, "").slice(0, 10),
-    businessType: coalesceToKnownOption(business?.businessType, BUSINESS_TYPES),
-    industryType: coalesceToKnownOption(business?.industryType, INDUSTRY_TYPES),
+    businessType: (business?.businessType ?? "").trim(),
+    industryType: (business?.industryType ?? "").trim(),
     registrationType: coalesceToKnownOption(business?.registrationType, REGISTRATION_TYPES),
     street: (business?.street ?? "").trim(),
     area: (business?.area ?? "").trim(),

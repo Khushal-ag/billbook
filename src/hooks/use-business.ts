@@ -4,8 +4,42 @@ import { ApiClientError } from "@/api/error";
 import { invalidateQueryKeys } from "@/lib/query";
 import { queryKeys } from "@/lib/query-keys";
 import { normalizeBusinessProfile, normalizeDashboard } from "@/lib/mappers/business";
-import type { BusinessProfile, UpdateBusinessProfile, BusinessUser } from "@/types/auth";
+import type {
+  BusinessProfile,
+  UpdateBusinessProfile,
+  BusinessUser,
+  BusinessClassificationOption,
+} from "@/types/auth";
 import type { DashboardData } from "@/types/dashboard";
+
+type BusinessTypeApiItem = {
+  id?: unknown;
+  name?: unknown;
+  isPredefined?: unknown;
+};
+
+function normalizeBusinessClassificationOption(
+  item: BusinessTypeApiItem,
+): BusinessClassificationOption | null {
+  const id = Number(item.id);
+  const name = typeof item.name === "string" ? item.name.trim() : "";
+
+  if (!Number.isFinite(id) || name === "") return null;
+
+  return {
+    id,
+    name,
+    isPredefined: Boolean(item.isPredefined),
+  };
+}
+
+function toBusinessClassificationOptions(input: unknown): BusinessClassificationOption[] {
+  if (!Array.isArray(input)) return [];
+
+  return input
+    .map((item) => normalizeBusinessClassificationOption((item ?? {}) as Record<string, unknown>))
+    .filter((item): item is BusinessClassificationOption => item !== null);
+}
 
 export function useDashboard() {
   return useQuery({
@@ -27,6 +61,60 @@ export function useBusinessProfile() {
     queryFn: async () => {
       const res = await api.get<BusinessProfile>("/business/profile");
       return normalizeBusinessProfile(res.data as unknown as Record<string, unknown>);
+    },
+  });
+}
+
+export function useBusinessTypeOptions() {
+  return useQuery({
+    queryKey: queryKeys.business.businessTypes(),
+    queryFn: async () => {
+      const res = await api.get<{ businessTypes?: BusinessTypeApiItem[] }>(
+        "/business/business-types",
+      );
+      return toBusinessClassificationOptions(res.data.businessTypes);
+    },
+  });
+}
+
+export function useIndustryTypeOptions() {
+  return useQuery({
+    queryKey: queryKeys.business.industryTypes(),
+    queryFn: async () => {
+      const res = await api.get<{ industryTypes?: BusinessTypeApiItem[] }>(
+        "/business/industry-types",
+      );
+      return toBusinessClassificationOptions(res.data.industryTypes);
+    },
+  });
+}
+
+export function useCreateBusinessTypeOption() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const trimmedName = name.trim();
+      await api.post("/business/business-types", { name: trimmedName });
+      return trimmedName;
+    },
+    onSuccess: () => {
+      invalidateQueryKeys(qc, [queryKeys.business.businessTypes()]);
+    },
+  });
+}
+
+export function useCreateIndustryTypeOption() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const trimmedName = name.trim();
+      await api.post("/business/industry-types", { name: trimmedName });
+      return trimmedName;
+    },
+    onSuccess: () => {
+      invalidateQueryKeys(qc, [queryKeys.business.industryTypes()]);
     },
   });
 }

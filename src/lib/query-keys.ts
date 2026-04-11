@@ -198,6 +198,8 @@ export const queryKeys = {
   business: {
     dashboard: () => ["dashboard"] as const,
     profile: () => ["business-profile"] as const,
+    businessTypes: () => ["business-type-options"] as const,
+    industryTypes: () => ["industry-type-options"] as const,
     users: () => ["business-users"] as const,
     settings: () => ["business-settings"] as const,
   },

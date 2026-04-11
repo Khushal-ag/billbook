@@ -52,6 +52,13 @@ export interface ProfileCompletion {
   canCreateInvoice: boolean;
 }
 
+/** Business classification option from business/industry type APIs. */
+export interface BusinessClassificationOption {
+  id: number;
+  name: string;
+  isPredefined: boolean;
+}
+
 /** Full business profile returned by GET /business/profile */
 export interface BusinessProfile {
   id: number;
