@@ -3,6 +3,7 @@ import { Controller, useFieldArray, type UseFormReturn } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { FieldError, Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -20,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, Loader2, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import type { ProfileForm } from "@/components/settings/profileSchema";
 import { MONTHS, REGISTRATION_TYPES, COUNTRIES } from "@/constants";
 import { usePincodeAutofill } from "@/hooks/use-pincode-autofill";
@@ -29,8 +30,13 @@ import { countryCodeToFlagEmoji } from "@/lib/country-flags";
 import { lookupIfscCode } from "@/lib/ifsc";
 import type { BusinessClassificationOption } from "@/types/auth";
 import { ApiClientError } from "@/api/error";
+import { cn } from "@/lib/utils";
 
 const LOGO_MAX_SIZE_MB = 5;
+
+/** Visual cue that bank inputs are locked until “Edit bank details” is used. */
+const bankInputLockedClass =
+  "cursor-default border-input/80 bg-muted/70 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0";
 const SIGNATURE_MAX_SIZE_MB = 2;
 
 function toCapitalizedLabel(value: string): string {
@@ -209,6 +215,10 @@ export function BusinessProfileForm({
   const [isEditingBankDetails, setIsEditingBankDetails] = useState(false);
   const [ifscLookupError, setIfscLookupError] = useState<string | null>(null);
   const [ifscSupportedModes, setIfscSupportedModes] = useState<string[]>([]);
+  /** Last IFSC lookup succeeded and derived bank fields were filled. */
+  const [ifscLookupOk, setIfscLookupOk] = useState(false);
+  /** Valid IFSC format entered; cleared when lookup finishes or IFSC becomes invalid. */
+  const [ifscLookupPending, setIfscLookupPending] = useState(false);
   const ifscLookupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ifscLookupRequestIdRef = useRef(0);
   const previousIfscCodeRef = useRef<string | null>(null);
@@ -225,7 +235,8 @@ export function BusinessProfileForm({
   const bankAccountNumberValue = watch("bankAccountNumber");
   const confirmAccountNumberValue = watch("confirmAccountNumber");
   const normalizedIfscInput = (ifscCode ?? "").trim().toUpperCase();
-  const showIfscDerivedFields = normalizedIfscInput.length > 0;
+  const ifsc11Valid = /^[A-Z0-9]{11}$/.test(normalizedIfscInput);
+  const ifscDerivedLocked = isEditingBankDetails && ifscLookupOk;
 
   const pincodeDigits = (pincode ?? "").toString().replace(/\D/g, "");
   const lockCityState = pincodeDigits.length === 6 && Boolean(city || state);
@@ -364,7 +375,10 @@ export function BusinessProfileForm({
       setValue("bankCity", "", { shouldDirty: false, shouldValidate: true });
       setValue("bankState", "", { shouldDirty: false, shouldValidate: true });
       setIfscSupportedModes([]);
+      setIfscLookupOk(false);
     }
+
+    setIfscLookupPending(hasValidIfscFormat && Boolean(normalizedIfscCode));
 
     setIfscLookupError(null);
 
@@ -373,11 +387,13 @@ export function BusinessProfileForm({
       void (async () => {
         if (!normalizedIfscCode) {
           setIfscLookupError(null);
+          setIfscLookupPending(false);
           return;
         }
 
         if (normalizedIfscCode.length !== 11 || !/^[A-Z0-9]{11}$/.test(normalizedIfscCode)) {
           setIfscLookupError("IFSC code must be exactly 11 characters");
+          setIfscLookupPending(false);
           return;
         }
 
@@ -385,6 +401,8 @@ export function BusinessProfileForm({
           const result = await lookupIfscCode(normalizedIfscCode);
           if (ifscLookupRequestIdRef.current !== requestId) return;
           setIfscLookupError(null);
+          setIfscLookupPending(false);
+          setIfscLookupOk(true);
           setValue("bankName", result.BANK, { shouldDirty: false, shouldValidate: true });
           setValue("branchName", result.BRANCH, { shouldDirty: false, shouldValidate: true });
           setIfscSupportedModes(
@@ -403,6 +421,8 @@ export function BusinessProfileForm({
         } catch (error) {
           if (ifscLookupRequestIdRef.current !== requestId) return;
           const message = error instanceof Error ? error.message : "Invalid IFSC code";
+          setIfscLookupOk(false);
+          setIfscLookupPending(false);
           setValue("bankName", "", { shouldDirty: false, shouldValidate: true });
           setValue("branchName", "", { shouldDirty: false, shouldValidate: true });
           setValue("bankCity", "", { shouldDirty: false, shouldValidate: true });
@@ -933,33 +953,60 @@ export function BusinessProfileForm({
                 </Card>
 
                 <Card>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
+                  <CardHeader className="space-y-4 pb-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                      <div className="min-w-0 space-y-1">
                         <CardTitle className="text-sm">Bank details</CardTitle>
                         <CardDescription>
                           Add beneficiary, bank, and transfer preferences for payouts
                         </CardDescription>
+                        {!readOnly && !isEditingBankDetails && (
+                          <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">
+                            These fields are read-only. Use{" "}
+                            <span className="text-foreground">Edit bank details</span> when you want
+                            to add or change them.
+                          </p>
+                        )}
                       </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsEditingBankDetails((prev) => !prev)}
-                      >
-                        <Pencil className="mr-2 h-3.5 w-3.5" />
-                        {isEditingBankDetails ? "Done" : "Edit"}
-                      </Button>
+                      {!readOnly && (
+                        <Button
+                          type="button"
+                          variant={isEditingBankDetails ? "outline" : "default"}
+                          size="default"
+                          className="h-10 w-full shrink-0 gap-2 sm:w-auto sm:self-start"
+                          onClick={() => setIsEditingBankDetails((prev) => !prev)}
+                        >
+                          {isEditingBankDetails ? (
+                            <>
+                              <Check className="h-4 w-4 shrink-0" aria-hidden />
+                              Done editing
+                            </>
+                          ) : (
+                            <>
+                              <Pencil className="h-4 w-4 shrink-0" aria-hidden />
+                              Edit bank details
+                            </>
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-5">
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div
+                      className={cn(
+                        "grid gap-4 sm:grid-cols-2",
+                        !readOnly &&
+                          !isEditingBankDetails &&
+                          "rounded-lg border border-dashed border-border/80 bg-muted/20 p-4 sm:p-5",
+                      )}
+                    >
                       <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor="accountHolderName">Account Holder Name</Label>
                         <Input
                           id="accountHolderName"
                           placeholder="Name as per bank account"
                           readOnly={!isEditingBankDetails}
+                          className={cn(!isEditingBankDetails && bankInputLockedClass)}
                           {...register("accountHolderName")}
                           aria-invalid={!!errors.accountHolderName}
                           aria-describedby={
@@ -979,6 +1026,7 @@ export function BusinessProfileForm({
                           inputMode="numeric"
                           placeholder="Enter account number"
                           readOnly={!isEditingBankDetails}
+                          className={cn(!isEditingBankDetails && bankInputLockedClass)}
                           {...register("bankAccountNumber")}
                           aria-invalid={!!errors.bankAccountNumber}
                           aria-describedby={
@@ -1021,6 +1069,7 @@ export function BusinessProfileForm({
                           inputMode="text"
                           maxLength={11}
                           readOnly={!isEditingBankDetails}
+                          className={cn(!isEditingBankDetails && bankInputLockedClass)}
                           {...register("ifscCode", {
                             onChange: (e) => {
                               e.target.value = String(e.target.value ?? "")
@@ -1050,84 +1099,192 @@ export function BusinessProfileForm({
                           </p>
                         ) : null}
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="bankName">Bank Name</Label>
-                        <Input
-                          id="bankName"
-                          placeholder="e.g. HDFC Bank"
-                          readOnly
-                          {...register("bankName")}
-                          aria-invalid={!!errors.bankName}
-                          aria-describedby={errors.bankName ? "bank-name-error" : undefined}
-                        />
-                        {errors.bankName && (
-                          <FieldError id="bank-name-error">{errors.bankName.message}</FieldError>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="branchName">Branch Name</Label>
-                        <Input
-                          id="branchName"
-                          placeholder="e.g. Hauz Khas"
-                          readOnly
-                          {...register("branchName")}
-                          aria-invalid={!!errors.branchName}
-                          aria-describedby={errors.branchName ? "branch-name-error" : undefined}
-                        />
-                        {errors.branchName && (
-                          <FieldError id="branch-name-error">
-                            {errors.branchName.message}
-                          </FieldError>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="bankCity">City</Label>
-                        <Input
-                          id="bankCity"
-                          placeholder="e.g. New Delhi"
-                          readOnly
-                          {...register("bankCity")}
-                          aria-invalid={!!errors.bankCity}
-                          aria-describedby={errors.bankCity ? "bank-city-error" : undefined}
-                        />
-                        {errors.bankCity && (
-                          <FieldError id="bank-city-error">{errors.bankCity.message}</FieldError>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="bankState">State</Label>
-                        <Input
-                          id="bankState"
-                          placeholder="e.g. Delhi"
-                          readOnly
-                          {...register("bankState")}
-                          aria-invalid={!!errors.bankState}
-                          aria-describedby={errors.bankState ? "bank-state-error" : undefined}
-                        />
-                        {errors.bankState && (
-                          <FieldError id="bank-state-error">{errors.bankState.message}</FieldError>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="supportedTransferModes">Transfer Modes</Label>
-                        <div
-                          id="supportedTransferModes"
-                          className="min-h-10 rounded-md border border-input bg-muted px-3 py-2 text-sm"
-                        >
-                          {showIfscDerivedFields && ifscSupportedModes.length > 0 ? (
-                            <div className="flex flex-wrap gap-3">
-                              {ifscSupportedModes.map((mode) => (
-                                <span key={mode} className="inline-flex items-center gap-1">
-                                  <span className="text-green-600">✅</span>
-                                  <span>{mode}</span>
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">
-                              e.g. NEFT, RTGS, IMPS, UPI
-                            </span>
-                          )}
+                      <div className="space-y-3 rounded-lg border border-dashed border-border/80 bg-muted/15 p-4 dark:bg-muted/10 sm:col-span-2">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0 space-y-0.5">
+                            <p className="text-sm font-medium leading-tight">
+                              Branch & bank from IFSC
+                            </p>
+                            <p id="ifsc-derived-hint" className="text-xs text-muted-foreground">
+                              {ifscDerivedLocked
+                                ? "These values were filled from your IFSC. Change the IFSC above if you need a different branch."
+                                : isEditingBankDetails
+                                  ? "Enter a valid 11-character IFSC above to load bank, branch, and supported transfer types."
+                                  : "Shown from your saved IFSC when you edit bank details."}
+                            </p>
+                          </div>
+                          {ifscDerivedLocked ? (
+                            <Badge variant="secondary" className="shrink-0 font-normal">
+                              Auto-filled
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="bankName">Bank name</Label>
+                            <Input
+                              id="bankName"
+                              placeholder="e.g. HDFC Bank"
+                              readOnly
+                              tabIndex={ifscDerivedLocked ? -1 : undefined}
+                              aria-disabled={ifscDerivedLocked}
+                              aria-describedby={
+                                errors.bankName
+                                  ? "bank-name-error"
+                                  : ifscDerivedLocked
+                                    ? "ifsc-derived-hint"
+                                    : undefined
+                              }
+                              className={cn(
+                                !isEditingBankDetails && bankInputLockedClass,
+                                isEditingBankDetails && !ifscDerivedLocked && "bg-background",
+                                ifscDerivedLocked &&
+                                  "pointer-events-none cursor-not-allowed bg-muted/70 text-foreground opacity-95",
+                              )}
+                              {...register("bankName")}
+                              aria-invalid={!!errors.bankName}
+                            />
+                            {errors.bankName && (
+                              <FieldError id="bank-name-error">
+                                {errors.bankName.message}
+                              </FieldError>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="branchName">Branch name</Label>
+                            <Input
+                              id="branchName"
+                              placeholder="e.g. Hauz Khas"
+                              readOnly
+                              tabIndex={ifscDerivedLocked ? -1 : undefined}
+                              aria-disabled={ifscDerivedLocked}
+                              aria-describedby={
+                                errors.branchName
+                                  ? "branch-name-error"
+                                  : ifscDerivedLocked
+                                    ? "ifsc-derived-hint"
+                                    : undefined
+                              }
+                              className={cn(
+                                !isEditingBankDetails && bankInputLockedClass,
+                                isEditingBankDetails && !ifscDerivedLocked && "bg-background",
+                                ifscDerivedLocked &&
+                                  "pointer-events-none cursor-not-allowed bg-muted/70 text-foreground opacity-95",
+                              )}
+                              {...register("branchName")}
+                              aria-invalid={!!errors.branchName}
+                            />
+                            {errors.branchName && (
+                              <FieldError id="branch-name-error">
+                                {errors.branchName.message}
+                              </FieldError>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="bankCity">Bank branch city</Label>
+                            <Input
+                              id="bankCity"
+                              placeholder="e.g. New Delhi"
+                              readOnly
+                              tabIndex={ifscDerivedLocked ? -1 : undefined}
+                              aria-disabled={ifscDerivedLocked}
+                              aria-describedby={
+                                errors.bankCity
+                                  ? "bank-city-error"
+                                  : ifscDerivedLocked
+                                    ? "ifsc-derived-hint"
+                                    : undefined
+                              }
+                              className={cn(
+                                !isEditingBankDetails && bankInputLockedClass,
+                                isEditingBankDetails && !ifscDerivedLocked && "bg-background",
+                                ifscDerivedLocked &&
+                                  "pointer-events-none cursor-not-allowed bg-muted/70 text-foreground opacity-95",
+                              )}
+                              {...register("bankCity")}
+                              aria-invalid={!!errors.bankCity}
+                            />
+                            {errors.bankCity && (
+                              <FieldError id="bank-city-error">
+                                {errors.bankCity.message}
+                              </FieldError>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="bankState">Bank branch state</Label>
+                            <Input
+                              id="bankState"
+                              placeholder="e.g. Delhi"
+                              readOnly
+                              tabIndex={ifscDerivedLocked ? -1 : undefined}
+                              aria-disabled={ifscDerivedLocked}
+                              aria-describedby={
+                                errors.bankState
+                                  ? "bank-state-error"
+                                  : ifscDerivedLocked
+                                    ? "ifsc-derived-hint"
+                                    : undefined
+                              }
+                              className={cn(
+                                !isEditingBankDetails && bankInputLockedClass,
+                                isEditingBankDetails && !ifscDerivedLocked && "bg-background",
+                                ifscDerivedLocked &&
+                                  "pointer-events-none cursor-not-allowed bg-muted/70 text-foreground opacity-95",
+                              )}
+                              {...register("bankState")}
+                              aria-invalid={!!errors.bankState}
+                            />
+                            {errors.bankState && (
+                              <FieldError id="bank-state-error">
+                                {errors.bankState.message}
+                              </FieldError>
+                            )}
+                          </div>
+                        </div>
+                        <div className="space-y-2 border-t border-border/60 pt-4">
+                          <Label htmlFor="supportedTransferModes" className="text-foreground">
+                            Supported transfer types
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            From the IFSC registry for this branch (informational).
+                          </p>
+                          <div
+                            id="supportedTransferModes"
+                            className={cn(
+                              "flex min-h-[2.75rem] flex-wrap items-center gap-2 rounded-md border border-input px-3 py-2.5 text-sm",
+                              isEditingBankDetails ? "bg-background" : "bg-muted/80",
+                            )}
+                          >
+                            {ifscLookupPending ? (
+                              <span className="inline-flex items-center gap-2 text-muted-foreground">
+                                <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+                                Checking IFSC…
+                              </span>
+                            ) : !ifsc11Valid ? (
+                              <span className="text-muted-foreground">
+                                Enter an 11-character IFSC above to see which transfer types this
+                                branch supports.
+                              </span>
+                            ) : ifscLookupError ? (
+                              <span className="text-muted-foreground">
+                                Fix the IFSC to load supported transfer types.
+                              </span>
+                            ) : ifscSupportedModes.length > 0 ? (
+                              ifscSupportedModes.map((mode) => (
+                                <Badge key={mode} variant="secondary" className="font-medium">
+                                  {mode}
+                                </Badge>
+                              ))
+                            ) : ifscLookupOk ? (
+                              <span className="text-muted-foreground">
+                                No transfer-type flags were returned for this IFSC.
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                Waiting for a valid IFSC lookup…
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

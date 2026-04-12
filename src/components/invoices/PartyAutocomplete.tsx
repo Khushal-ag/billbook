@@ -11,6 +11,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import { formatPartyCitySummary } from "@/lib/party-address-display";
 import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useParties } from "@/hooks/use-parties";
@@ -44,13 +45,6 @@ interface PartyAutocompleteProps {
 }
 
 const ADD_PARTY_VALUE = "__add_party__" as const;
-
-function formatPartyAddress(party: Party): string {
-  const parts = [party.address?.trim(), party.city?.trim()].filter((part): part is string =>
-    Boolean(part),
-  );
-  return parts.join(", ");
-}
 
 export function PartyAutocomplete({
   value,
@@ -126,7 +120,7 @@ export function PartyAutocomplete({
   const optionsLength = filtered.length + (showAdd ? 1 : 0);
   const addIndex = showAdd ? filtered.length : -1;
 
-  const selectedAddress = value ? formatPartyAddress(value) : "";
+  const selectedAddress = value ? formatPartyCitySummary(value) : "";
   const selectedDisplayValue = value
     ? selectedAddress
       ? `${value.name} (${selectedAddress})`
@@ -293,9 +287,9 @@ export function PartyAutocomplete({
                   >
                     <div className="min-w-0 flex-1">
                       <div className="truncate">{party.name}</div>
-                      {formatPartyAddress(party) && (
+                      {formatPartyCitySummary(party) && (
                         <div className="truncate text-xs text-foreground/70 group-data-[selected=true]:text-accent-foreground/95">
-                          {formatPartyAddress(party)}
+                          {formatPartyCitySummary(party)}
                         </div>
                       )}
                     </div>

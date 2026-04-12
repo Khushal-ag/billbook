@@ -17,7 +17,7 @@ import {
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { usePayoutRegister } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
-import { cn, capitaliseWords, formatCurrency, formatDate } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, humanizeApiEnum } from "@/lib/utils";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
 import { reportPayoutRegister } from "@/lib/report-labels";
 import type { PayoutRegisterRowDto } from "@/types/report";
@@ -29,12 +29,12 @@ function payoutDisplayNumber(p: PayoutRegisterRowDto) {
 function payoutCategoryLabel(p: PayoutRegisterRowDto) {
   const raw = p.paymentCategory ?? p.category;
   if (!raw) return "—";
-  return capitaliseWords(String(raw).replace(/_/g, " "));
+  return humanizeApiEnum(String(raw)) || "—";
 }
 
 function payoutMethodLabel(method: string | undefined) {
   if (!method) return "—";
-  return capitaliseWords(String(method).replace(/_/g, " "));
+  return humanizeApiEnum(String(method)) || "—";
 }
 
 export default function PayoutRegisterPage() {

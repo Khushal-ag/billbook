@@ -24,7 +24,7 @@ import {
   formatAppDateTimeFromIso,
 } from "@/lib/date";
 import { showErrorToast } from "@/lib/toast-helpers";
-import { cn, humanizeApiEnum } from "@/lib/utils";
+import { cn, formatNumber, humanizeApiEnum } from "@/lib/utils";
 
 /** CSV columns (subset of API; enough for support without internal ids in the sheet). */
 const ADMIN_TRANSACTION_CSV_COLUMNS = [
@@ -45,15 +45,6 @@ const ADMIN_TRANSACTION_CSV_COLUMNS = [
 ] as const;
 
 const DEFAULT_PAGE_LIMIT = 100;
-
-function formatAmount(amount: string): string {
-  const n = parseFloat(amount);
-  if (!Number.isFinite(n)) return amount;
-  return new Intl.NumberFormat("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(n);
-}
 
 function emptyDash(value: string | null | undefined): string {
   if (value === null || value === undefined || String(value).trim() === "") return "—";
@@ -373,7 +364,7 @@ export default function AdminTransactionsPage() {
                               <KindBadge kind={row.kind} />
                             </td>
                             <td className="whitespace-nowrap px-3 py-2 text-right align-middle font-medium tabular-nums text-foreground">
-                              {formatAmount(row.amount)}
+                              {formatNumber(row.amount)}
                             </td>
                             <td className="max-w-[11rem] px-3 py-2 align-middle text-muted-foreground">
                               <span className="line-clamp-2" title={row.partyName}>

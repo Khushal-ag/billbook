@@ -13,16 +13,15 @@ import { DateField } from "@/components/invoices/invoice-create/DateField";
 import { Input } from "@/components/ui/input";
 import { PartyAutocomplete } from "@/components/invoices/PartyAutocomplete";
 import { getInvoiceTypeCreateCopy } from "@/lib/invoice";
+import {
+  formatConsigneeAddressInline,
+  formatPartyAddressInline,
+} from "@/lib/party-address-display";
 import { toISODateString } from "@/lib/date";
 import type { Party, PartyConsignee, PartyType } from "@/types/party";
 import { isPurchaseVendorBillMetaType } from "@/lib/invoice";
 import { cn } from "@/lib/utils";
 import type { InvoiceType } from "@/types/invoice";
-
-function formatConsigneeAddressLine(consignee: PartyConsignee): string {
-  const cityState = [consignee.city, consignee.state].filter(Boolean).join(", ");
-  return [consignee.address, cityState, consignee.postalCode].filter(Boolean).join(" · ");
-}
 
 interface PartyAndDatesCardsProps {
   invoiceType: InvoiceType;
@@ -97,9 +96,7 @@ export function PartyAndDatesCards({
     sellingPriceMarginPercent !== undefined &&
     onSellingPriceMarginChange;
   const primaryAddressOptionLabel = "Primary Address";
-  const primaryAddressLine =
-    [party?.address, party?.city, party?.state, party?.postalCode].filter(Boolean).join(" · ") ||
-    "No address";
+  const primaryAddressLine = formatPartyAddressInline(party) || "No address";
   /** Keeps Radix Select controlled before party loads (`undefined` would flip uncontrolled → controlled). */
   const NO_PARTY_VALUE = "__NO_PARTY__";
   const consigneeSelectValue = !party
@@ -112,7 +109,7 @@ export function PartyAndDatesCards({
     ? selectedConsignee.label?.trim() || selectedConsignee.consigneeName
     : primaryAddressOptionLabel;
   const selectedAddressLine = selectedConsignee
-    ? formatConsigneeAddressLine(selectedConsignee)
+    ? formatConsigneeAddressInline(selectedConsignee)
     : primaryAddressLine;
 
   return (
@@ -180,7 +177,7 @@ export function PartyAndDatesCards({
                         <div className="flex flex-col">
                           <span>{c.label?.trim() || c.consigneeName}</span>
                           <span className="text-xs opacity-80">
-                            {formatConsigneeAddressLine(c) || "No address"}
+                            {formatConsigneeAddressInline(c) || "No address"}
                           </span>
                         </div>
                       </SelectItem>

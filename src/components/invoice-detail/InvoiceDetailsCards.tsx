@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getInvoiceBillSummary, getInvoiceTypeCreateCopy } from "@/lib/invoice";
+import { formatInvoicePartyAddressLines } from "@/lib/party-address-display";
 import { cn, formatCurrency, formatDate, formatSignedCurrency, formatTime } from "@/lib/utils";
 import type { InvoiceDetail } from "@/types/invoice";
 import { useInvoice } from "@/hooks/use-invoices";
@@ -13,18 +14,6 @@ interface InvoiceDetailsCardsProps {
 }
 
 const EPS = 0.000_5;
-
-function formatPartyAddressLines(invoice: InvoiceDetail): string | null {
-  const line1 = invoice.consigneeAddress?.trim() || invoice.partyAddress?.trim();
-  const city = invoice.consigneeCity?.trim() || invoice.partyCity?.trim();
-  const state = invoice.consigneeState?.trim() || invoice.partyState?.trim();
-  const pin = invoice.consigneePostalCode?.trim() || invoice.partyPostalCode?.trim();
-  const cityState = [city, state].filter(Boolean).join(", ");
-  const line2 = [cityState, pin].filter(Boolean).join(" ").trim();
-
-  const lines = [line1, line2].filter((l): l is string => Boolean(l));
-  return lines.length > 0 ? lines.join("\n") : null;
-}
 
 function DetailRow({
   label,
@@ -46,7 +35,7 @@ function DetailRow({
 export function InvoiceDetailsCards({ invoice }: InvoiceDetailsCardsProps) {
   const summaryTitle = getInvoiceTypeCreateCopy(invoice.invoiceType).summaryTitle;
   const bill = getInvoiceBillSummary(invoice);
-  const partyAddressText = formatPartyAddressLines(invoice);
+  const partyAddressText = formatInvoicePartyAddressLines(invoice);
   const addressLabel = invoice.addressRoleLabel || "Party address";
 
   const sourceId = invoice.sourceInvoiceId;

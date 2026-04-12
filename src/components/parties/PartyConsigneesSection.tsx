@@ -85,6 +85,7 @@ function consigneeUiLabels(partyType: PartyType) {
 import { optionalEmail, optionalString } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import { fetchPostalOffice } from "@/lib/pincode";
+import { formatConsigneeAddressInline } from "@/lib/party-address-display";
 
 function sortConsignees(list: PartyConsignee[]): PartyConsignee[] {
   return [...list].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id);
@@ -437,8 +438,7 @@ export function PartyConsigneesSection({
                 </div>
                 <p className="mt-0.5 text-muted-foreground">{c.consigneeName}</p>
                 <p className="mt-1 break-words text-xs text-muted-foreground">
-                  {[c.address, c.city, c.state, c.postalCode].filter(Boolean).join(", ") ||
-                    c.address}
+                  {formatConsigneeAddressInline(c) || c.address}
                 </p>
                 {(c.phone || c.email) && (
                   <p className="mt-1 text-xs text-muted-foreground">
