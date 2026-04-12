@@ -42,3 +42,36 @@ export function formatISODateDisplay(
   if (!dt) return "";
   return dt.toLocaleDateString(locale, options);
 }
+
+/** Shared in-app date display (BillBook default). */
+export const APP_DISPLAY_LOCALE = "en-IN";
+
+export const appDisplayDateOnlyOptions: Intl.DateTimeFormatOptions = {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+};
+
+/** `YYYY-MM-DD` (calendar date) → e.g. 11 Apr 2026 — use for filters / API period fields. */
+export function formatAppDateOnlyFromYmd(isoYmd: string): string {
+  return formatISODateDisplay(isoYmd, APP_DISPLAY_LOCALE, appDisplayDateOnlyOptions);
+}
+
+/** Any parseable ISO timestamp → date only, same style as {@link formatAppDateOnlyFromYmd}. */
+export function formatAppDateFromInstant(iso: string | null | undefined): string {
+  if (iso == null || String(iso).trim() === "") return "—";
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return String(iso);
+  return new Date(t).toLocaleDateString(APP_DISPLAY_LOCALE, appDisplayDateOnlyOptions);
+}
+
+/** ISO datetime (e.g. ledger `createdAt`) → same date style + local time (short). */
+export function formatAppDateTimeFromIso(iso: string): string {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return iso;
+  return new Date(t).toLocaleString(APP_DISPLAY_LOCALE, {
+    ...appDisplayDateOnlyOptions,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}

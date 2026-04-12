@@ -193,6 +193,13 @@ export const queryKeys = {
 
   admin: {
     businesses: (limit: number, offset: number) => ["admin", "businesses", limit, offset] as const,
+    transactions: (
+      startDate: string,
+      endDate: string,
+      limit: number,
+      offset: number,
+      businessId: number | undefined,
+    ) => ["admin", "transactions", startDate, endDate, limit, offset, businessId ?? ""] as const,
   },
 
   business: {

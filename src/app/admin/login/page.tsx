@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Shield } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { siteConfig } from "@/lib/site-config";
+import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FieldError, Label } from "@/components/ui/label";
@@ -91,13 +92,14 @@ export default function AdminLoginPage() {
 
       <div className="relative w-full max-w-md space-y-8">
         <div className="flex flex-col items-center text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
-            <Shield className="h-7 w-7" aria-hidden />
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {siteConfig.name}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Administrator access</p>
+          <Link
+            href="/"
+            className="mb-5 transition-opacity hover:opacity-90"
+            aria-label="BillBook home"
+          >
+            <Logo className="h-12 w-12" textClassName="text-2xl font-bold tracking-tight" />
+          </Link>
+          <p className="text-sm text-muted-foreground">Administrator sign-in</p>
         </div>
 
         <Card className="border-border/80 shadow-xl">

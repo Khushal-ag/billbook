@@ -17,6 +17,26 @@ export function capitaliseWords(value: string): string {
     .join(" ");
 }
 
+const API_ENUM_ACRONYMS = new Set(["GST", "GSTIN", "IMPS", "NEFT", "PAN", "RTGS", "TDS", "UPI"]);
+
+/**
+ * API enums like `SALE_RETURN_REFUND` or `PARTY_PAYMENT` → readable labels ("Sale return refund").
+ * Known payment/tax acronyms stay uppercase (e.g. `UPI`, `NEFT`).
+ */
+export function humanizeApiEnum(value: string | null | undefined): string {
+  if (value == null || String(value).trim() === "") return "";
+  return String(value)
+    .trim()
+    .split("_")
+    .filter(Boolean)
+    .map((segment) => {
+      const upper = segment.toUpperCase();
+      if (API_ENUM_ACRONYMS.has(upper)) return upper;
+      return segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase();
+    })
+    .join(" ");
+}
+
 /**
  * Format a number or numeric string (en-IN locale, 2 decimal places). No currency symbol.
  * Handles comma-separated strings from the API. Use for currency/cost (with formatCurrency).

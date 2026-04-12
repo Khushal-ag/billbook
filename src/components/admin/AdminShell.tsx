@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { type ReactNode } from "react";
-import { LayoutDashboard } from "lucide-react";
 
-import { siteConfig } from "@/lib/site-config";
+import Logo from "@/components/Logo";
+import { adminConsoleHomePath } from "@/lib/admin-nav";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
@@ -24,18 +24,11 @@ export function AdminShell({ children, actions }: AdminShellProps) {
         <div className="mx-auto flex h-[3.25rem] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Link
-              href="/"
-              className="group flex min-w-0 items-center gap-2.5 rounded-md outline-none ring-offset-background transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              href={adminConsoleHomePath}
+              className="flex min-w-0 items-center overflow-hidden rounded-md outline-none ring-offset-background transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              aria-label="BillBook admin home"
             >
-              <span
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm transition-transform group-hover:scale-[1.02]"
-                aria-hidden
-              >
-                <LayoutDashboard className="h-[1.125rem] w-[1.125rem]" />
-              </span>
-              <span className="truncate text-base font-semibold tracking-tight text-foreground">
-                {siteConfig.name}
-              </span>
+              <Logo className="h-9 w-9 shrink-0" />
             </Link>
             <Separator orientation="vertical" className="hidden h-7 sm:block" />
             <Badge variant="secondary" className="hidden font-medium sm:inline-flex">
