@@ -2,15 +2,17 @@
 
 import { Building2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
-import { BusinessUsersCard, DocumentNumberingCard } from "@/components/settings/SettingsSections";
-import { Separator } from "@/components/ui/separator";
+import { DocumentNumberingCard } from "@/components/settings/SettingsSections";
+import { usePermissions } from "@/hooks/use-permissions";
 
 export default function SettingsPage() {
+  const { isOwner } = usePermissions();
+
   return (
     <div className="page-container animate-fade-in">
       <PageHeader
         title="Business settings"
-        description="Configure document numbering, defaults, and team access for your organization."
+        description="Configure document numbering and defaults for your organization. Owners manage team access from Team in the sidebar."
       />
 
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-10">
@@ -33,8 +35,9 @@ export default function SettingsPage() {
                 </span>
               </h2>
               <p className="text-sm text-muted-foreground">
-                Applies to everyone in this business. Only <strong>owners</strong> can update
-                document numbering and default settings.
+                Applies to everyone in this business. Only <strong>owners</strong> can change
+                document numbering and defaults.{" "}
+                {!isOwner && "You can review prefixes and sequences below."}
               </p>
             </div>
           </div>
@@ -42,10 +45,6 @@ export default function SettingsPage() {
           <div className="rounded-2xl border border-border/80 bg-card shadow-sm ring-1 ring-black/5 dark:ring-white/10">
             <div className="p-6 sm:p-8">
               <DocumentNumberingCard embedded />
-            </div>
-            <Separator />
-            <div className="p-6 sm:p-8">
-              <BusinessUsersCard embedded />
             </div>
           </div>
         </section>

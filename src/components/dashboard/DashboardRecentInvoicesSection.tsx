@@ -8,11 +8,14 @@ import type { RecentInvoice } from "@/types/dashboard";
 
 interface DashboardRecentInvoicesSectionProps {
   recentInvoices: RecentInvoice[];
+  canCreateInvoice?: boolean;
 }
 
 export function DashboardRecentInvoicesSection({
   recentInvoices,
+  canCreateInvoice = true,
 }: DashboardRecentInvoicesSectionProps) {
+  const allowNewSaleInvoice = canCreateInvoice === true;
   return (
     <section>
       <Card className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-muted/15 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
@@ -117,10 +120,27 @@ export function DashboardRecentInvoicesSection({
                           <p className="text-xs text-muted-foreground">
                             Create your first sale invoice to see it here.
                           </p>
+                          {!allowNewSaleInvoice ? (
+                            <p className="text-xs text-muted-foreground">
+                              Finish your profile or renew access.{" "}
+                              <Link
+                                href="/profile"
+                                className="font-medium text-primary underline underline-offset-2"
+                              >
+                                Profile
+                              </Link>
+                            </p>
+                          ) : null}
                         </div>
-                        <Button size="sm" asChild>
-                          <Link href="/invoices?action=new">New sale invoice</Link>
-                        </Button>
+                        {allowNewSaleInvoice ? (
+                          <Button size="sm" asChild>
+                            <Link href="/invoices/new?type=SALE_INVOICE">New sale invoice</Link>
+                          </Button>
+                        ) : (
+                          <Button size="sm" type="button" disabled>
+                            New sale invoice
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

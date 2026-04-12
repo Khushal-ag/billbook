@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
-import { AlertTriangle, ArrowLeft, FileText } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ArrowLeft, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/EmptyState";
 import ErrorBanner from "@/components/ErrorBanner";
@@ -14,7 +13,8 @@ import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import { InvoiceFilters } from "@/components/invoices/InvoiceFilters";
 import { useInvoices, useInvoicesListFilters } from "@/hooks/invoices";
 import { useParties } from "@/hooks/use-parties";
-import { useBusinessProfile } from "@/hooks/use-business";
+import { useCanCreateInvoice } from "@/hooks/use-can-create-invoice";
+import { BusinessProfileGateAlert } from "@/components/business/BusinessProfileGateAlert";
 import { INVOICE_TYPE_OPTIONS } from "@/lib/invoice";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { Invoice, InvoiceType } from "@/types/invoice";
@@ -53,10 +53,9 @@ export function ReturnSourceInvoicePicker({ returnType }: ReturnSourceInvoicePic
   } = useInvoicesListFilters({ defaultStatus: "FINAL", defaultPageSize: 20 });
 
   const { data: partiesData } = useParties({ type: partyQueryType, includeInactive: false });
-  const { data: businessProfile } = useBusinessProfile();
+  const { canCreateInvoice, businessProfile } = useCanCreateInvoice();
   const parties = (partiesData?.parties ?? []).filter((p) => p.isActive);
-  const profileCompletion = businessProfile?.profileCompletion;
-  const canCreateInvoice = profileCompletion?.canCreateInvoice ?? true;
+  const allowCreate = canCreateInvoice === true;
 
   const { data, isPending, error } = useInvoices({
     page,
@@ -93,20 +92,11 @@ export function ReturnSourceInvoicePicker({ returnType }: ReturnSourceInvoicePic
         description={`Choose a finalised ${sourceLabel} to record a return. Only finalised bills can be returned against.`}
       />
 
-      {!canCreateInvoice && (
-        <Alert className="mb-4 border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/25 dark:text-amber-100">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle className="text-sm">Complete your profile to create invoices</AlertTitle>
-          <AlertDescription className="text-xs">
-            Required: profile completion at least 75%, complete address (street, city, state,
-            pincode), and complete bank details in{" "}
-            <Link href="/profile" className="font-medium underline underline-offset-2">
-              profile settings
-            </Link>
-            .
-          </AlertDescription>
-        </Alert>
-      )}
+      {canCreateInvoice === false ? (
+        <div className="mb-4">
+          <BusinessProfileGateAlert businessProfile={businessProfile} />
+        </div>
+      ) : null}
 
       <InvoiceFilters
         search={search}
@@ -147,7 +137,7 @@ export function ReturnSourceInvoicePicker({ returnType }: ReturnSourceInvoicePic
           <ReturnSourceTable
             invoices={invoices}
             showVendorBill={sourceInvoiceType === "PURCHASE_INVOICE"}
-            canSelect={canCreateInvoice}
+            canSelect={allowCreate}
             onSelect={(id) => router.push(`/invoices/new?type=${returnType}&sourceInvoiceId=${id}`)}
           />
 

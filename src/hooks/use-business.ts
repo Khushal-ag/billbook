@@ -9,6 +9,8 @@ import type {
   UpdateBusinessProfile,
   BusinessUser,
   BusinessClassificationOption,
+  CreateStaffRequest,
+  UpdateStaffMembershipRequest,
 } from "@/types/auth";
 import type { DashboardData } from "@/types/dashboard";
 
@@ -143,5 +145,42 @@ export function useBusinessUsers() {
       return (data as { users?: BusinessUser[] }).users ?? [];
     },
     retry: false,
+  });
+}
+
+export function useCreateStaffMember() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: CreateStaffRequest) => {
+      const email = body.email.trim().toLowerCase();
+      const payload: Record<string, string> = { email };
+      const fn = body.firstName?.trim();
+      const ln = body.lastName?.trim();
+      if (fn) payload.firstName = fn;
+      if (ln) payload.lastName = ln;
+      const pwd = body.password?.trim();
+      if (pwd) payload.password = pwd;
+      const res = await api.post<BusinessUser>("/business/users", payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      invalidateQueryKeys(qc, [queryKeys.business.users()]);
+    },
+  });
+}
+
+export function useUpdateStaffMembership() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: UpdateStaffMembershipRequest & { businessUserId: number }) => {
+      const { businessUserId, isActive } = vars;
+      const res = await api.patch<BusinessUser>(`/business/users/${businessUserId}`, {
+        isActive,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      invalidateQueryKeys(qc, [queryKeys.business.users()]);
+    },
   });
 }

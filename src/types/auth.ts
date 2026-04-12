@@ -47,8 +47,11 @@ export interface ProfileCompletion {
     address?: ProfileCompletionSection;
     phone?: ProfileCompletionSection;
     logo?: ProfileCompletionSection;
+    /** Bank slice (e.g. 15% weight); API marks complete when all invoice-required bank fields are set. */
+    bank?: ProfileCompletionSection;
     otherDetails?: ProfileCompletionSection;
   };
+  /** Authoritative gate for creating invoices — mirrors server rules (≥75%, address, bank slice, etc.). */
   canCreateInvoice: boolean;
 }
 
@@ -95,6 +98,8 @@ export interface BusinessProfile {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Trial / plan end from GET /business/profile; null or empty = no fixed end. */
+  validityEnd?: string | null;
   /** Profile completion; present when API returns it */
   profileCompletion?: ProfileCompletion;
 }
@@ -143,6 +148,19 @@ export interface BusinessUser {
   role: Role;
   isActive: boolean;
   createdAt: string;
+}
+
+/** POST /business/users — owner adds staff (see API docs for password rules). */
+export interface CreateStaffRequest {
+  email: string;
+  password?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+/** PATCH /business/users/:businessUserId */
+export interface UpdateStaffMembershipRequest {
+  isActive: boolean;
 }
 
 export interface AuthTokens {

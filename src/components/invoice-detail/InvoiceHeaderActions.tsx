@@ -93,28 +93,32 @@ export function InvoiceHeaderActions({
 
   return (
     <div className="flex gap-2">
-      {invoice.status === "DRAFT" && isOwner && (
+      {invoice.status === "DRAFT" && (
         <>
           <Button variant="outline" size="sm" onClick={onEdit}>
             <Pencil className="mr-2 h-3.5 w-3.5" />
             Edit
           </Button>
-          <Button variant="outline" size="sm" onClick={onCancel} disabled={isCancelPending}>
-            Cancel Invoice
-          </Button>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex">
-                <Button size="sm" onClick={onFinalize} disabled={isFinalizePending}>
-                  {isFinalizePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Finalize
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-sm text-left text-xs leading-snug">
-              {FINALIZE_INVENTORY_HELP}
-            </TooltipContent>
-          </Tooltip>
+          {isOwner && (
+            <>
+              <Button variant="outline" size="sm" onClick={onCancel} disabled={isCancelPending}>
+                Cancel Invoice
+              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex">
+                    <Button size="sm" onClick={onFinalize} disabled={isFinalizePending}>
+                      {isFinalizePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Finalize
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-sm text-left text-xs leading-snug">
+                  {FINALIZE_INVENTORY_HELP}
+                </TooltipContent>
+              </Tooltip>
+            </>
+          )}
         </>
       )}
 

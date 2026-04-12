@@ -31,10 +31,12 @@ import type { CreateStockEntryRequest, StockEntry, UpdateStockEntryRequest } fro
 import type { Party } from "@/types/party";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/use-permissions";
 
 type ListViewMode = "item" | "stock";
 
 export default function Stock() {
+  const { isOwner } = usePermissions();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [listViewMode, setListViewMode] = useState<ListViewMode>("stock");
@@ -332,13 +334,17 @@ export default function Stock() {
               {listPending ? (
                 <TableSkeleton rows={5} />
               ) : listViewMode === "item" ? (
-                <StockReportTable rows={stockList} items={items} onAdjust={openAdjustStock} />
+                <StockReportTable
+                  rows={stockList}
+                  items={items}
+                  onAdjust={isOwner ? openAdjustStock : undefined}
+                />
               ) : (
                 <StockEntriesTable
                   entries={stockEntries}
                   items={items}
                   onView={handleViewEntry}
-                  onAdjust={openAdjustStock}
+                  onAdjust={isOwner ? openAdjustStock : undefined}
                   onEditEntry={openEditStockEntry}
                 />
               )}

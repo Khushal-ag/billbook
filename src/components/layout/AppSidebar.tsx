@@ -16,6 +16,7 @@ import {
   PackageCheck,
   Wallet,
   ArrowDownLeft,
+  UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,12 @@ const navSections: NavSection[] = [
   {
     title: "Account",
     items: [
+      {
+        label: "Team",
+        path: "/team",
+        icon: UserCog,
+        ownerOnly: true,
+      },
       {
         label: "Audit Logs",
         path: "/audit-logs",

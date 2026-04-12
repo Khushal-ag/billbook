@@ -1,9 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import type { ProfileCompletion } from "@/types/auth";
+import type { ProfileCompletion, ProfileCompletionSection } from "@/types/auth";
 import { CheckCircle2, CircleDashed } from "lucide-react";
-
-const PROFILE_REQUIRED_FOR_INVOICE = 75;
+import { INVOICE_PROFILE_MIN_PERCENT } from "@/lib/business-document-gate";
 
 interface ProfileCompletionCardProps {
   profileCompletion: ProfileCompletion;
@@ -28,20 +27,60 @@ function isFilled(value: string | null | undefined) {
   return (value ?? "").trim() !== "";
 }
 
-export function ProfileCompletionCard({ profileCompletion, business }: ProfileCompletionCardProps) {
-  const { percentage, canCreateInvoice } = profileCompletion;
-  const registrationMissing: string[] = [];
-  const addressMissing: string[] = [];
-  const bankMissing: string[] = [];
+function sectionComplete(
+  section: ProfileCompletionSection | undefined,
+  fieldFallback: boolean,
+): boolean {
+  if (section) return section.complete;
+  return fieldFallback;
+}
 
+function missingOrHint(missing: string[], hint: string) {
+  return missing.length > 0 ? missing : [hint];
+}
+
+function ChecklistRow({
+  complete,
+  label,
+  missing,
+}: {
+  complete: boolean;
+  label: string;
+  missing: string[];
+}) {
+  return (
+    <li className="text-sm">
+      <div className="flex items-start gap-2">
+        {complete ? (
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+        ) : (
+          <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+        )}
+        <div className="min-w-0">
+          <p className="font-medium">{label}</p>
+          {!complete && missing.length > 0 ? (
+            <p className="text-xs text-muted-foreground">{missing.join(" · ")}</p>
+          ) : null}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+export function ProfileCompletionCard({ profileCompletion, business }: ProfileCompletionCardProps) {
+  const { percentage, canCreateInvoice, breakdown = {} } = profileCompletion;
+
+  const registrationMissing: string[] = [];
   if (!isFilled(business?.name)) registrationMissing.push("Business name");
   if (!isFilled(business?.country)) registrationMissing.push("Country");
 
-  if (!isFilled(business?.street)) addressMissing.push("Address line 1");
+  const addressMissing: string[] = [];
+  if (!isFilled(business?.street)) addressMissing.push("Street");
   if (!isFilled(business?.city)) addressMissing.push("City");
   if (!isFilled(business?.state)) addressMissing.push("State");
   if (!isFilled(business?.pincode)) addressMissing.push("Pincode");
 
+  const bankMissing: string[] = [];
   if (!isFilled(business?.accountHolderName)) bankMissing.push("Account holder name");
   if (!isFilled(business?.bankAccountNumber)) bankMissing.push("Bank account number");
   if (!isFilled(business?.bankName)) bankMissing.push("Bank name");
@@ -50,72 +89,70 @@ export function ProfileCompletionCard({ profileCompletion, business }: ProfileCo
   if (!isFilled(business?.bankCity)) bankMissing.push("Bank city");
   if (!isFilled(business?.bankState)) bankMissing.push("Bank state");
 
-  const checklist = [
+  const weightedOk = percentage >= INVOICE_PROFILE_MIN_PERCENT;
+  const regComplete = sectionComplete(breakdown.registration, registrationMissing.length === 0);
+  const addrComplete = sectionComplete(breakdown.address, addressMissing.length === 0);
+  const bankComplete = sectionComplete(breakdown.bank, bankMissing.length === 0);
+
+  const gateRows = [
     {
-      label: `Profile completion is at least ${PROFILE_REQUIRED_FOR_INVOICE}%`,
-      complete: percentage >= PROFILE_REQUIRED_FOR_INVOICE,
-      missing: percentage >= PROFILE_REQUIRED_FOR_INVOICE ? [] : [`Current: ${percentage}%`],
+      label: `Overall score (at least ${INVOICE_PROFILE_MIN_PERCENT}%)`,
+      complete: weightedOk,
+      missing: weightedOk ? [] : [`Currently ${percentage}%`],
     },
     {
-      label:
-        registrationMissing.length === 0
-          ? "Registration basics are complete"
-          : "Complete registration basics",
-      complete: registrationMissing.length === 0,
-      missing: registrationMissing,
+      label: "Business name and country",
+      complete: regComplete,
+      missing: regComplete ? [] : missingOrHint(registrationMissing, "Review name and country"),
     },
     {
-      label:
-        addressMissing.length === 0 ? "Address section is complete" : "Complete address section",
-      complete: addressMissing.length === 0,
-      missing: addressMissing,
+      label: "Address — street, city, state, pincode (area optional)",
+      complete: addrComplete,
+      missing: addrComplete ? [] : missingOrHint(addressMissing, "Review address"),
     },
     {
-      label: bankMissing.length === 0 ? "Bank section is complete" : "Complete bank section",
-      complete: bankMissing.length === 0,
-      missing: bankMissing,
+      label: "Bank — holder, account, bank name, branch, IFSC, bank city, bank state",
+      complete: bankComplete,
+      missing: bankComplete ? [] : missingOrHint(bankMissing, "Review bank details"),
     },
-  ];
+  ] as const;
 
   return (
     <Card className="w-full">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Profile completeness</CardTitle>
+        <CardTitle className="text-lg">Invoices and your profile</CardTitle>
         <CardDescription>
-          At least {PROFILE_REQUIRED_FOR_INVOICE}% required to create invoices.
-          {canCreateInvoice
-            ? " Your profile meets this requirement."
-            : " Complete the details below to unlock invoice creation."}
+          Invoices need enough overall completion (including name and country), a full address, and
+          full bank details. Fill anything still open below.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3 pt-0">
+      <CardContent className="space-y-4 pt-0">
         <div className="flex items-center gap-4">
           <Progress value={percentage} className="h-2 flex-1" />
           <span className="text-sm font-medium tabular-nums">{percentage}%</span>
         </div>
+
+        <div className="flex items-start gap-2 rounded-md border bg-muted/20 px-3 py-2.5">
+          {canCreateInvoice ? (
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+          ) : (
+            <CircleDashed className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          )}
+          <div>
+            <p className="text-sm font-medium">
+              {canCreateInvoice ? "You can create invoices" : "You cannot create invoices yet"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Use the checklist below for score, address, and bank.
+            </p>
+          </div>
+        </div>
+
         <div className="rounded-md border bg-muted/30 p-3">
-          <p className="mb-2 text-xs font-medium text-muted-foreground">
-            Invoice creation checklist
-          </p>
+          <p className="mb-2 text-sm font-medium text-foreground">Checklist</p>
           <ul className="space-y-2">
-            {checklist.map((item) => (
-              <li key={item.label} className="text-sm">
-                <div className="flex items-start gap-2">
-                  {item.complete ? (
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
-                  ) : (
-                    <CircleDashed className="mt-0.5 h-4 w-4 text-amber-600" />
-                  )}
-                  <div>
-                    <p className="font-medium">{item.label}</p>
-                    {!item.complete && item.missing.length > 0 ? (
-                      <p className="text-xs text-muted-foreground">
-                        Missing: {item.missing.join(", ")}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              </li>
+            {gateRows.map((item) => (
+              <ChecklistRow key={item.label} {...item} />
             ))}
           </ul>
         </div>

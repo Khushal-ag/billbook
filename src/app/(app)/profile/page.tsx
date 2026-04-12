@@ -97,11 +97,14 @@ function ProfileEditor({
   businessTypeOptions,
   industryTypeOptions,
   canManageTypeOptions,
+  canEditProfile,
 }: {
   business: BusinessProfile;
   businessTypeOptions: BusinessClassificationOption[];
   industryTypeOptions: BusinessClassificationOption[];
   canManageTypeOptions: boolean;
+  /** OWNER — can PUT /business/profile; STAFF is read-only. */
+  canEditProfile: boolean;
 }) {
   const updateProfile = useUpdateBusinessProfile();
   const createBusinessType = useCreateBusinessTypeOption();
@@ -222,21 +225,27 @@ function ProfileEditor({
     <>
       <PageHeader
         title="My Profile"
-        description="Manage your business settings and profile details"
+        description={
+          canEditProfile
+            ? "Manage your business settings and profile details"
+            : "Business profile (read-only for team members)"
+        }
         action={
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={handleCancel}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              form="profile-form"
-              disabled={!hasUserChanges || isSubmitting || updateProfile.isPending}
-            >
-              Save Changes
-            </Button>
-          </div>
+          canEditProfile ? (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                form="profile-form"
+                disabled={!hasUserChanges || isSubmitting || updateProfile.isPending}
+              >
+                Save Changes
+              </Button>
+            </div>
+          ) : undefined
         }
       />
 
@@ -259,6 +268,7 @@ function ProfileEditor({
           onCreateIndustryType={canManageTypeOptions ? handleCreateIndustryType : undefined}
           onLogoUpload={handleLogoUpload}
           onSignatureUpload={handleSignatureUpload}
+          readOnly={!canEditProfile}
         />
       </div>
     </>
@@ -302,6 +312,7 @@ export default function Profile() {
           businessTypeOptions={businessTypeOptions}
           industryTypeOptions={industryTypeOptions}
           canManageTypeOptions={isOwner}
+          canEditProfile={isOwner}
         />
       ) : (
         <PageHeader

@@ -30,9 +30,11 @@ const DashboardInsightsSection = dynamic(
 );
 import { buildPaymentStatusData, buildInvoiceStatusData, EMPTY_DASHBOARD } from "@/lib/dashboard";
 import { useDashboard } from "@/hooks/use-business";
+import { useCanCreateInvoice } from "@/hooks/use-can-create-invoice";
 
 export default function DashboardPageClient() {
   const { data: dashboard, isPending, error } = useDashboard();
+  const { canCreateInvoice } = useCanCreateInvoice();
 
   if (isPending) {
     return <DashboardSkeleton />;
@@ -63,7 +65,11 @@ export default function DashboardPageClient() {
       <ErrorBanner error={error} fallbackMessage="Failed to load dashboard data." />
 
       <div className="space-y-8 sm:space-y-10">
-        <DashboardHeroSection greeting={greeting} dashboard={data} />
+        <DashboardHeroSection
+          greeting={greeting}
+          dashboard={data}
+          canCreateInvoice={canCreateInvoice}
+        />
         <DashboardQuickStatsSection dashboard={data} />
         <DashboardInsightsSection
           revenueByMonth={data.revenueByMonth ?? []}
@@ -76,7 +82,10 @@ export default function DashboardPageClient() {
           topItems={data.topItems ?? []}
           topCustomers={data.topCustomers ?? []}
         />
-        <DashboardRecentInvoicesSection recentInvoices={data.recentInvoices ?? []} />
+        <DashboardRecentInvoicesSection
+          recentInvoices={data.recentInvoices ?? []}
+          canCreateInvoice={canCreateInvoice}
+        />
       </div>
     </div>
   );

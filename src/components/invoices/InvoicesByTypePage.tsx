@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { Plus, FileText, AlertTriangle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +15,8 @@ import { InvoiceFilters, InvoicesTable } from "@/components/invoices/InvoiceSect
 import { useInvoices } from "@/hooks/use-invoices";
 import { useInvoicesListFilters } from "@/hooks/invoices";
 import { useParties } from "@/hooks/use-parties";
-import { useBusinessProfile } from "@/hooks/use-business";
+import { useCanCreateInvoice } from "@/hooks/use-can-create-invoice";
+import { BusinessProfileGateAlert } from "@/components/business/BusinessProfileGateAlert";
 import { getInvoiceBalanceDue, isSalesFamily } from "@/lib/invoice";
 import { formatCurrency } from "@/lib/utils";
 import type { InvoiceType } from "@/types/invoice";
@@ -53,10 +53,9 @@ export function InvoicesByTypePage({
 
   const partyType = isSalesFamily(invoiceType) ? "CUSTOMER" : "SUPPLIER";
   const { data: partiesData } = useParties({ type: partyType, includeInactive: false });
-  const { data: businessProfile } = useBusinessProfile();
+  const { canCreateInvoice, businessProfile } = useCanCreateInvoice();
   const parties = (partiesData?.parties ?? []).filter((p) => p.isActive);
-  const profileCompletion = businessProfile?.profileCompletion;
-  const canCreateInvoice = profileCompletion?.canCreateInvoice ?? true;
+  const allowCreate = canCreateInvoice === true;
 
   const { data, isPending, error } = useInvoices({
     page,
@@ -97,7 +96,7 @@ export function InvoicesByTypePage({
         title={title}
         description={description}
         action={
-          canCreateInvoice ? (
+          allowCreate ? (
             <Button asChild>
               <Link href={`/invoices/new?type=${invoiceType}`}>
                 <Plus className="mr-2 h-4 w-4" />
@@ -112,23 +111,11 @@ export function InvoicesByTypePage({
           )
         }
       />
-      {!canCreateInvoice && (
-        <Alert className="mb-4 border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/25 dark:text-amber-100">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle className="text-sm">Complete your profile to create invoices</AlertTitle>
-          <AlertDescription className="text-xs">
-            Required: profile completion at least 75%, complete address (street, city, state,
-            pincode), and complete bank details in{" "}
-            <Link href="/profile" className="font-medium underline underline-offset-2">
-              profile settings
-            </Link>
-            .
-            {typeof profileCompletion?.percentage === "number"
-              ? ` Current completion: ${profileCompletion.percentage}%.`
-              : ""}
-          </AlertDescription>
-        </Alert>
-      )}
+      {canCreateInvoice === false ? (
+        <div className="mb-4">
+          <BusinessProfileGateAlert businessProfile={businessProfile} />
+        </div>
+      ) : null}
 
       <Tabs value={statusFilter} onValueChange={handleStatusChange} className="mb-4">
         <TabsList className="h-9">
@@ -207,7 +194,7 @@ export function InvoicesByTypePage({
               : `Create your first ${title.toLowerCase()} to get started.`
           }
           action={
-            !debouncedSearch && canCreateInvoice ? (
+            !debouncedSearch && allowCreate ? (
               <Button size="sm" asChild>
                 <Link href={`/invoices/new?type=${invoiceType}`}>
                   <Plus className="mr-2 h-4 w-4" />

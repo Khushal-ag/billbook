@@ -44,6 +44,22 @@ export default function AppShell({ children }: { children: ReactNode }) {
     }
   }, [user, isLoading, router]);
 
+  useEffect(() => {
+    if (isLoading || !user || user.role === "ADMIN") return;
+
+    const syncRole = () => {
+      if (document.visibilityState !== "visible") return;
+      void refreshSession();
+    };
+
+    document.addEventListener("visibilitychange", syncRole);
+    window.addEventListener("focus", syncRole);
+    return () => {
+      document.removeEventListener("visibilitychange", syncRole);
+      window.removeEventListener("focus", syncRole);
+    };
+  }, [isLoading, user, refreshSession]);
+
   const handleRefreshTrial = async () => {
     setRefreshingTrial(true);
     try {

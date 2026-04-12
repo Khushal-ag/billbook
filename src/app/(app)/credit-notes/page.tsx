@@ -21,6 +21,8 @@ import {
 } from "@/hooks/use-credit-notes";
 import { usePagination } from "@/hooks/use-pagination";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useCanCreateInvoice } from "@/hooks/use-can-create-invoice";
+import { BusinessProfileGateAlert } from "@/components/business/BusinessProfileGateAlert";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 import { maybeShowTrialExpiredToast } from "@/lib/trial";
 
@@ -39,6 +41,8 @@ export default function CreditNotes() {
   const finalizeMutation = useFinalizeCreditNote();
   const deleteMutation = useDeleteCreditNote();
   const { isOwner } = usePermissions();
+  const { canCreateInvoice, businessProfile } = useCanCreateInvoice();
+  const allowNewCreditNote = canCreateInvoice === true;
   const [finalizingId, setFinalizingId] = useState<number | null>(null);
 
   const creditNotes = data?.creditNotes ?? [];
@@ -87,12 +91,25 @@ export default function CreditNotes() {
         title="Credit Notes"
         description="Issue and manage credit notes against finalized invoices"
         action={
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Credit Note
-          </Button>
+          allowNewCreditNote ? (
+            <Button onClick={() => setDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Credit Note
+            </Button>
+          ) : (
+            <Button type="button" disabled>
+              <Plus className="mr-2 h-4 w-4" />
+              New Credit Note
+            </Button>
+          )
         }
       />
+
+      {canCreateInvoice === false ? (
+        <div className="mb-4">
+          <BusinessProfileGateAlert businessProfile={businessProfile} context="credit-notes" />
+        </div>
+      ) : null}
 
       <ErrorBanner error={error} fallbackMessage="Failed to load credit notes" />
 
@@ -104,10 +121,12 @@ export default function CreditNotes() {
           title="No credit notes"
           description="Credit notes will appear here once created against finalized invoices."
           action={
-            <Button size="sm" onClick={() => setDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Credit Note
-            </Button>
+            allowNewCreditNote ? (
+              <Button size="sm" onClick={() => setDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Credit Note
+              </Button>
+            ) : undefined
           }
         />
       ) : (

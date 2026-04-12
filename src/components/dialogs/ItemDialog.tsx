@@ -142,6 +142,8 @@ interface ItemDialogProps {
   item?: Item | null;
   initialName?: string;
   onSuccess?: (item: Item) => void;
+  /** POST /items/units is owner-only; hide “add unit” for STAFF. */
+  canManageUnits?: boolean;
 }
 
 export default function ItemDialog({
@@ -150,6 +152,7 @@ export default function ItemDialog({
   item,
   initialName,
   onSuccess,
+  canManageUnits = true,
 }: ItemDialogProps) {
   const isEdit = !!item;
   const createMutation = useCreateItem();
@@ -458,7 +461,11 @@ export default function ItemDialog({
                       onValueChange={(v) => setValue("unit", v ?? defaultUnitForType(productType))}
                       units={units}
                       unitsLoading={unitsLoading}
-                      onCreateUnit={(value, label) => handleCreateUnit(value, label, productType)}
+                      onCreateUnit={
+                        canManageUnits
+                          ? (value, label) => handleCreateUnit(value, label, productType)
+                          : undefined
+                      }
                       placeholder="Select unit"
                     />
                     {errors.unit && <FieldError>{errors.unit.message}</FieldError>}

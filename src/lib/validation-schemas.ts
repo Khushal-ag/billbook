@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+/** Same rules as signup / staff create (≥8, upper, lower, digit). */
+export const strongPasswordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .max(128)
+  .regex(/[A-Z]/, "Must contain an uppercase letter")
+  .regex(/[a-z]/, "Must contain a lowercase letter")
+  .regex(/[0-9]/, "Must contain a digit");
+
 export const signedPriceString = z
   .string()
   .regex(/^$|^-?[0-9]+(\.[0-9]{1,2})?$/, "Invalid price/amount")

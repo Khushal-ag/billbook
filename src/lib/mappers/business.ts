@@ -60,6 +60,7 @@ export function normalizeBusinessProfile(raw: Record<string, unknown>): Business
     registrationType: r.registrationType ?? null,
     extraDetails: Array.isArray(r.extraDetails) ? r.extraDetails : null,
     financialYearStart: typeof r.financialYearStart === "number" ? r.financialYearStart : 4,
+    validityEnd: (r as { validityEnd?: string | null }).validityEnd ?? null,
     profileCompletion: r.profileCompletion ?? undefined,
   } as BusinessProfile;
 }

@@ -24,8 +24,10 @@ import { useItems, useCategories } from "@/hooks/use-items";
 import { useDebounce } from "@/hooks/use-debounce";
 import type { Item } from "@/types/item";
 import { Switch } from "@/components/ui/switch";
+import { usePermissions } from "@/hooks/use-permissions";
 
 export default function ItemsPage() {
+  const { isOwner } = usePermissions();
   const router = useRouter();
   const params = useParams<{ itemId?: string | string[] }>();
   const itemId = Array.isArray(params?.itemId) ? params.itemId[0] : params?.itemId;
@@ -139,7 +141,12 @@ export default function ItemsPage() {
         />
       )}
 
-      <ItemDialog open={dialogOpen} onOpenChange={setDialogOpen} item={editItem} />
+      <ItemDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        item={editItem}
+        canManageUnits={isOwner}
+      />
     </div>
   );
 }

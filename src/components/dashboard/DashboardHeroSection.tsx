@@ -10,6 +10,8 @@ import type { DashboardData } from "@/types/dashboard";
 interface DashboardHeroSectionProps {
   greeting: string;
   dashboard: DashboardData;
+  /** From GET /business/profile → profileCompletion.canCreateInvoice; false/undefined disables CTA. */
+  canCreateInvoice?: boolean;
 }
 
 function toNumber(v: string | number | undefined | null): number {
@@ -46,7 +48,12 @@ function netOutstandingValueDisplay(outstanding: number): ReactNode {
   );
 }
 
-export function DashboardHeroSection({ greeting, dashboard }: DashboardHeroSectionProps) {
+export function DashboardHeroSection({
+  greeting,
+  dashboard,
+  canCreateInvoice = true,
+}: DashboardHeroSectionProps) {
+  const allowNewSaleInvoice = canCreateInvoice === true;
   const netRevenue = toNumber(dashboard.totalRevenueNet ?? dashboard.totalRevenue);
   const gross =
     dashboard.totalInvoicedGross != null ? toNumber(dashboard.totalInvoicedGross) : undefined;
@@ -104,11 +111,30 @@ export function DashboardHeroSection({ greeting, dashboard }: DashboardHeroSecti
             </Link>
           </div>
         </div>
-        <Button asChild size="lg" className="h-11 shrink-0 rounded-full px-6 shadow-sm">
-          <Link href="/invoices?action=new">
-            <span className="mr-1">+</span> New Sales Invoice
-          </Link>
-        </Button>
+        <div className="flex shrink-0 flex-col items-stretch gap-1 sm:items-end">
+          {allowNewSaleInvoice ? (
+            <Button asChild size="lg" className="h-11 rounded-full px-6 shadow-sm">
+              <Link href="/invoices/new?type=SALE_INVOICE">
+                <span className="mr-1">+</span> New Sales Invoice
+              </Link>
+            </Button>
+          ) : (
+            <Button type="button" size="lg" className="h-11 rounded-full px-6 shadow-sm" disabled>
+              <span className="mr-1">+</span> New Sales Invoice
+            </Button>
+          )}
+          {!allowNewSaleInvoice ? (
+            <p className="max-w-[220px] text-right text-[11px] text-muted-foreground">
+              Finish your profile or renew access.{" "}
+              <Link
+                href="/profile"
+                className="font-medium text-primary underline underline-offset-2"
+              >
+                Profile
+              </Link>
+            </p>
+          ) : null}
+        </div>
       </div>
 
       <div className="relative mt-8 grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
