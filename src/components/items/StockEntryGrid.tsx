@@ -95,12 +95,14 @@ export function StockEntryGrid({
   const [pendingItemName, setPendingItemName] = useState("");
   const [addVendorDialogOpen, setAddVendorDialogOpen] = useState(false);
   const [pendingVendorName, setPendingVendorName] = useState("");
+  const [purchaseDatePopoverRowId, setPurchaseDatePopoverRowId] = useState<string | null>(null);
   const pendingItemCreatedRef = useRef<((item: Item) => void) | null>(null);
   const pendingItemRowIdRef = useRef<string | null>(null);
   const pendingVendorCreatedRef = useRef<((party: Party) => void) | null>(null);
   const pendingVendorRowIdRef = useRef<string | null>(null);
 
   const removeRow = useCallback((id: string) => {
+    setPurchaseDatePopoverRowId((cur) => (cur === id ? null : cur));
     setRows((prev) => (prev.length <= 1 ? [defaultRow()] : prev.filter((r) => r.id !== id)));
   }, []);
 
@@ -337,7 +339,10 @@ export function StockEntryGrid({
                       —
                     </div>
                   ) : (
-                    <Popover>
+                    <Popover
+                      open={purchaseDatePopoverRowId === row.id}
+                      onOpenChange={(next) => setPurchaseDatePopoverRowId(next ? row.id : null)}
+                    >
                       <PopoverTrigger asChild>
                         <Button
                           type="button"
@@ -360,6 +365,7 @@ export function StockEntryGrid({
                           onSelect={(date) => {
                             if (date) {
                               updateRow(row.id, { purchaseDate: toISODateString(date) });
+                              setPurchaseDatePopoverRowId(null);
                             }
                           }}
                           initialFocus

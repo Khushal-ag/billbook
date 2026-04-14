@@ -23,7 +23,8 @@ export function useCreateInvoice() {
       const res = await api.post<Invoice>("/invoices", data, generateIdempotencyKey());
       return res.data;
     },
-    onSuccess: () => invalidateQueryKeys(qc, [queryKeys.invoices.root()]),
+    onSuccess: () =>
+      invalidateQueryKeys(qc, [queryKeys.invoices.root(), queryKeys.invoices.nextNumberRoot()]),
   });
 }
 
@@ -55,6 +56,7 @@ export function useFinalizeInvoice() {
       invalidateQueryKeys(qc, [
         queryKeys.invoices.root(),
         queryKeys.invoices.detail(id),
+        queryKeys.invoices.nextNumberRoot(),
         /** Purchase finalize creates/updates stock batches — refresh lists and entries. */
         queryKeys.items.root(),
         queryKeys.items.stockEntriesRoot(),
@@ -76,6 +78,7 @@ export function useCancelInvoice() {
       invalidateQueryKeys(qc, [
         queryKeys.invoices.root(),
         queryKeys.invoices.detail(invoiceId),
+        queryKeys.invoices.nextNumberRoot(),
         queryKeys.items.root(),
         queryKeys.items.stockEntriesRoot(),
       ]);

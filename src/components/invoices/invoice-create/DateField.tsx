@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -20,6 +21,7 @@ function startOfLocalDay(d: Date): Date {
 }
 
 export function DateField({ label, value, onChange, minDate, maxDate, required }: DateFieldProps) {
+  const [open, setOpen] = useState(false);
   const minDateObj = minDate ? parseISODateString(minDate) : undefined;
   const maxDateObj = maxDate ? parseISODateString(maxDate) : undefined;
 
@@ -36,7 +38,7 @@ export function DateField({ label, value, onChange, minDate, maxDate, required }
   return (
     <div className="space-y-2">
       <Label required={required}>{label}</Label>
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             type="button"
@@ -57,6 +59,7 @@ export function DateField({ label, value, onChange, minDate, maxDate, required }
             onSelect={(date) => {
               if (!date) return;
               onChange(toISODateString(date));
+              setOpen(false);
             }}
             disabled={disabled}
             initialFocus

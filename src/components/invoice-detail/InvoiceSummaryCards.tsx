@@ -22,10 +22,12 @@ export function InvoiceSummaryCards({
   businessLogoUrl,
   businessName,
 }: InvoiceSummaryCardsProps) {
-  const balanceDueValue = getInvoiceBalanceDue(invoice);
+  const isCancelled = invoice.status === "CANCELLED";
+  const balanceDueValue = isCancelled ? 0 : getInvoiceBalanceDue(invoice);
   const typeLabel =
     INVOICE_TYPE_OPTIONS.find((o) => o.type === invoice.invoiceType)?.label ?? invoice.invoiceType;
-  const isFullyPaid = balanceDueValue <= 0 && invoice.status === "FINAL";
+  const isFullyPaid = !isCancelled && balanceDueValue <= 0 && invoice.status === "FINAL";
+  const showOverdueOnDates = Boolean(invoice.dueDate && invoice.isOverdue && !isCancelled);
   const purchaseBillMeta = isPurchaseVendorBillMetaType(invoice.invoiceType);
   const invoiceDateLabel = "Invoice date";
   const obn = invoice.originalBillNumber?.trim();
@@ -47,6 +49,15 @@ export function InvoiceSummaryCards({
         />
 
         <div className="space-y-5 p-6">
+          {isCancelled ? (
+            <div className="rounded-md border border-muted-foreground/25 bg-muted/40 px-4 py-3 text-sm">
+              <p className="font-medium text-foreground">This document was cancelled.</p>
+              {invoice.cancellationReason?.trim() ? (
+                <p className="mt-1.5 text-muted-foreground">{invoice.cancellationReason.trim()}</p>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
               <BusinessIdentity
@@ -114,19 +125,16 @@ export function InvoiceSummaryCards({
                   className={cn(
                     "font-medium",
                     invoice.dueDate ? "" : "text-muted-foreground",
-                    invoice.dueDate && invoice.isOverdue && "text-destructive",
+                    showOverdueOnDates && "text-destructive",
                   )}
                 >
                   {invoice.dueDate ? formatDate(invoice.dueDate) : "—"}
                 </span>
-                {invoice.dueDate &&
-                  invoice.isOverdue &&
-                  invoice.overdueDays &&
-                  invoice.overdueDays > 0 && (
-                    <span className="ml-1 text-xs text-destructive">
-                      ({invoice.overdueDays}d overdue)
-                    </span>
-                  )}
+                {showOverdueOnDates && invoice.overdueDays && invoice.overdueDays > 0 && (
+                  <span className="ml-1 text-xs text-destructive">
+                    ({invoice.overdueDays}d overdue)
+                  </span>
+                )}
               </div>
               {invoice.financialYear && (
                 <div>
@@ -157,10 +165,16 @@ export function InvoiceSummaryCards({
               <p
                 className={cn(
                   "text-base font-semibold tabular-nums",
-                  isFullyPaid ? "text-emerald-600" : invoice.isOverdue ? "text-destructive" : "",
+                  isFullyPaid ? "text-emerald-600" : "",
+                  !isCancelled && !isFullyPaid && invoice.isOverdue ? "text-destructive" : "",
+                  isCancelled && "font-medium text-muted-foreground",
                 )}
               >
-                {isFullyPaid ? "Paid in full" : formatCurrency(balanceDue)}
+                {isCancelled
+                  ? "Not owed — cancelled"
+                  : isFullyPaid
+                    ? "Paid in full"
+                    : formatCurrency(balanceDue)}
               </p>
             </div>
           </div>

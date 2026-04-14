@@ -9,6 +9,8 @@ export interface Invoice {
   invoiceNumber: string;
   financialYear: string | null;
   status: InvoiceStatus;
+  /** Present on list/detail when status is `CANCELLED`. */
+  cancellationReason?: string | null;
   invoiceType: InvoiceType;
   partyId: number;
   invoiceDate: string;

@@ -17,7 +17,7 @@ import { useInvoicesListFilters } from "@/hooks/invoices";
 import { useParties } from "@/hooks/use-parties";
 import { useCanCreateInvoice } from "@/hooks/use-can-create-invoice";
 import { BusinessProfileGateAlert } from "@/components/business/BusinessProfileGateAlert";
-import { getInvoiceBalanceDue, isSalesFamily } from "@/lib/invoice";
+import { getInvoiceBalanceDue, getInvoiceListStatsLabels, isSalesFamily } from "@/lib/invoice";
 import { formatCurrency } from "@/lib/utils";
 import type { InvoiceType } from "@/types/invoice";
 
@@ -76,6 +76,8 @@ export function InvoicesByTypePage({
   const totalPages = Math.ceil((data?.count ?? 0) / pageSize) || 1;
   const total = data?.count ?? 0;
 
+  const statLabels = useMemo(() => getInvoiceListStatsLabels(invoiceType), [invoiceType]);
+
   const stats = useMemo(() => {
     const totalValue = invoices.reduce(
       (sum, inv) => sum + (parseFloat(inv.totalAmount ?? "0") || 0),
@@ -85,8 +87,13 @@ export function InvoicesByTypePage({
       (sum, inv) => sum + (parseFloat(inv.paidAmount ?? "0") || 0),
       0,
     );
-    const outstanding = invoices.reduce((sum, inv) => sum + getInvoiceBalanceDue(inv), 0);
-    const overdueCount = invoices.filter((inv) => inv.isOverdue).length;
+    const outstanding = invoices.reduce(
+      (sum, inv) => sum + (inv.status === "CANCELLED" ? 0 : getInvoiceBalanceDue(inv)),
+      0,
+    );
+    const overdueCount = invoices.filter(
+      (inv) => inv.isOverdue && inv.status !== "CANCELLED",
+    ).length;
     return { totalValue, collected, outstanding, overdueCount };
   }, [invoices]);
 
@@ -130,13 +137,13 @@ export function InvoicesByTypePage({
         <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Card>
             <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">Total Invoices</p>
+              <p className="text-xs text-muted-foreground">{statLabels.countHeading}</p>
               <p className="mt-1 text-xl font-semibold tabular-nums">{total}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">Invoiced Value</p>
+              <p className="text-xs text-muted-foreground">{statLabels.valueHeading}</p>
               <p className="mt-1 text-xl font-semibold tabular-nums">
                 {formatCurrency(stats.totalValue)}
               </p>
@@ -144,7 +151,7 @@ export function InvoicesByTypePage({
           </Card>
           <Card>
             <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">Collected</p>
+              <p className="text-xs text-muted-foreground">{statLabels.paidHeading}</p>
               <p className="mt-1 text-xl font-semibold tabular-nums text-emerald-600">
                 {formatCurrency(stats.collected)}
               </p>
@@ -152,7 +159,7 @@ export function InvoicesByTypePage({
           </Card>
           <Card>
             <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground">Outstanding</p>
+              <p className="text-xs text-muted-foreground">{statLabels.balanceHeading}</p>
               <p
                 className={`mt-1 text-xl font-semibold tabular-nums ${
                   stats.overdueCount > 0 ? "text-destructive" : ""
@@ -161,7 +168,9 @@ export function InvoicesByTypePage({
                 {formatCurrency(stats.outstanding)}
               </p>
               {stats.overdueCount > 0 && (
-                <p className="mt-0.5 text-xs text-destructive">{stats.overdueCount} overdue</p>
+                <p className="mt-0.5 text-xs text-destructive">
+                  {stats.overdueCount} {statLabels.balanceAttentionWord}
+                </p>
               )}
             </CardContent>
           </Card>

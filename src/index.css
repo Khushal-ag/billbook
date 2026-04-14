@@ -43,8 +43,9 @@
     --status-draft-bg: 220 14% 93%;
     --status-overdue: 0 72% 51%;
     --status-overdue-bg: 0 72% 96%;
-    --status-cancelled: 0 0% 55%;
-    --status-cancelled-bg: 0 0% 93%;
+    /* Distinct from draft (slate gray): cancelled reads as destructive / voided */
+    --status-cancelled: 0 72% 42%;
+    --status-cancelled-bg: 0 80% 96%;
     --status-final: 217 91% 55%;
     --status-final-bg: 217 91% 95%;
 
@@ -96,6 +97,10 @@
     --sidebar-border: 222 35% 13%;
     --sidebar-ring: 217 84% 54%;
     --sidebar-muted: 215 16% 55%;
+
+    /* Cancelled: red family on dark surfaces (draft stays slate in :root only — redefine if needed) */
+    --status-cancelled: 0 65% 72%;
+    --status-cancelled-bg: 0 32% 18%;
   }
 }
 

@@ -67,8 +67,10 @@ export function InvoicesTable({ invoices, invoiceType }: InvoicesTableProps) {
         </thead>
         <tbody>
           {invoices.map((inv) => {
-            const balanceDue = getInvoiceBalanceDue(inv);
-            const isFullyPaid = balanceDue <= 0 && inv.status === "FINAL";
+            const isCancelled = inv.status === "CANCELLED";
+            const balanceDue = isCancelled ? 0 : getInvoiceBalanceDue(inv);
+            const isFullyPaid = !isCancelled && balanceDue <= 0 && inv.status === "FINAL";
+            const showOverdueChrome = Boolean(inv.isOverdue && !isCancelled);
 
             return (
               <tr
@@ -76,7 +78,8 @@ export function InvoicesTable({ invoices, invoiceType }: InvoicesTableProps) {
                 onClick={() => router.push(`/invoices/${inv.id}`)}
                 className={cn(
                   "group cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/20",
-                  inv.isOverdue && "border-l-2 border-l-amber-400",
+                  showOverdueChrome && "border-l-2 border-l-amber-400",
+                  isCancelled && "opacity-90",
                 )}
               >
                 <td className="block px-4 py-3 sm:hidden" colSpan={mobileColSpan}>
@@ -96,7 +99,7 @@ export function InvoicesTable({ invoices, invoiceType }: InvoicesTableProps) {
                       ) : null}
                       <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                         <span>{formatDate(inv.invoiceDate)}</span>
-                        {inv.isOverdue && inv.overdueDays && inv.overdueDays > 0 && (
+                        {showOverdueChrome && inv.overdueDays && inv.overdueDays > 0 && (
                           <span className="text-destructive">Overdue {inv.overdueDays}d</span>
                         )}
                       </div>
@@ -105,10 +108,13 @@ export function InvoicesTable({ invoices, invoiceType }: InvoicesTableProps) {
                       <div className="font-semibold tabular-nums">
                         {formatCurrency(inv.totalAmount ?? "0")}
                       </div>
-                      {!isFullyPaid && balanceDue > 0 && (
+                      {!isCancelled && !isFullyPaid && balanceDue > 0 && (
                         <div className="mt-0.5 text-xs text-muted-foreground">
                           Due {formatCurrency(balanceDue)}
                         </div>
+                      )}
+                      {isCancelled && (
+                        <div className="mt-0.5 text-xs text-muted-foreground">Cancelled</div>
                       )}
                       {isFullyPaid && <div className="mt-0.5 text-xs text-emerald-600">Paid</div>}
                     </div>
@@ -132,7 +138,7 @@ export function InvoicesTable({ invoices, invoiceType }: InvoicesTableProps) {
                 <td className="hidden px-3 py-3 text-muted-foreground md:table-cell">
                   <div className="flex flex-col">
                     <span>{formatDate(inv.dueDate)}</span>
-                    {inv.isOverdue && inv.overdueDays !== undefined && inv.overdueDays > 0 && (
+                    {showOverdueChrome && inv.overdueDays !== undefined && inv.overdueDays > 0 && (
                       <span className="text-xs text-destructive">Overdue {inv.overdueDays}d</span>
                     )}
                   </div>
@@ -144,10 +150,11 @@ export function InvoicesTable({ invoices, invoiceType }: InvoicesTableProps) {
                   className={cn(
                     "hidden px-3 py-3 text-right font-medium tabular-nums md:table-cell",
                     isFullyPaid && "text-emerald-600",
-                    inv.isOverdue && "text-destructive",
+                    showOverdueChrome && "text-destructive",
+                    isCancelled && "text-muted-foreground",
                   )}
                 >
-                  {isFullyPaid ? "Paid" : formatCurrency(balanceDue)}
+                  {isCancelled ? "—" : isFullyPaid ? "Paid" : formatCurrency(balanceDue)}
                 </td>
                 <td className="hidden px-3 py-3 text-center sm:table-cell">
                   <StatusBadge status={inv.status} />

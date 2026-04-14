@@ -54,6 +54,55 @@ export const INVOICE_TYPE_OPTIONS: Array<{
   },
 ];
 
+/** Summary strip on `/invoices/...` list pages — headings match document economics (AR vs AP vs returns). */
+export interface InvoiceListStatsLabels {
+  countHeading: string;
+  valueHeading: string;
+  paidHeading: string;
+  balanceHeading: string;
+  /** Used after the count, e.g. "3 overdue" vs "3 past due". */
+  balanceAttentionWord: string;
+}
+
+export function getInvoiceListStatsLabels(type: InvoiceType): InvoiceListStatsLabels {
+  switch (type) {
+    case "SALE_INVOICE":
+      return {
+        countHeading: "Sales invoices",
+        valueHeading: "Billed to customers",
+        paidHeading: "Collected",
+        balanceHeading: "Outstanding receivable",
+        balanceAttentionWord: "overdue",
+      };
+    case "PURCHASE_INVOICE":
+      return {
+        countHeading: "Purchase bills",
+        valueHeading: "Vendor bill totals",
+        paidHeading: "Paid to vendors",
+        balanceHeading: "Still payable",
+        balanceAttentionWord: "past due",
+      };
+    case "SALE_RETURN":
+      return {
+        countHeading: "Sales returns",
+        valueHeading: "Return totals",
+        paidHeading: "Refunded to customers",
+        balanceHeading: "Owing to customers",
+        balanceAttentionWord: "unsettled",
+      };
+    case "PURCHASE_RETURN":
+      return {
+        countHeading: "Purchase returns",
+        valueHeading: "Return totals",
+        paidHeading: "Credited by vendors",
+        balanceHeading: "Vendor credit due",
+        balanceAttentionWord: "pending",
+      };
+    default:
+      return getInvoiceListStatsLabels("SALE_INVOICE");
+  }
+}
+
 export function isSalesFamily(type: InvoiceType): boolean {
   return type === "SALE_INVOICE" || type === "SALE_RETURN";
 }

@@ -89,7 +89,9 @@ export function InvoiceHeaderActions({
     invoiceTypeSupportsSaleReturnRefund(invoice.invoiceType) && onOpenRefund != null;
   const showWhatsAppLog = invoiceTypeSupportsDocumentShareLog(invoice.invoiceType);
   const showBalanceEmail =
-    balanceDueValue > 0 && invoiceTypeSupportsBalanceReminderEmail(invoice.invoiceType);
+    invoice.status !== "CANCELLED" &&
+    balanceDueValue > 0 &&
+    invoiceTypeSupportsBalanceReminderEmail(invoice.invoiceType);
 
   return (
     <div className="flex gap-2">

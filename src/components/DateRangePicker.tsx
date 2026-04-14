@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Calendar as CalendarIcon } from "lucide-react";
 import ErrorBanner from "./ErrorBanner";
@@ -40,6 +41,8 @@ export default function DateRangePicker({
   displayLocale = DEFAULT_DISPLAY_LOCALE,
   displayDateOptions = DEFAULT_DISPLAY_DATE_OPTIONS,
 }: DateRangePickerProps) {
+  const [fromOpen, setFromOpen] = useState(false);
+  const [toOpen, setToOpen] = useState(false);
   const labelCls = compact
     ? "mb-0 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground"
     : "mb-1 block text-xs text-muted-foreground";
@@ -67,7 +70,7 @@ export default function DateRangePicker({
           )}
         >
           <Label className={labelCls}>From</Label>
-          <Popover>
+          <Popover open={fromOpen} onOpenChange={setFromOpen}>
             <PopoverTrigger asChild>
               <Button
                 type="button"
@@ -89,6 +92,7 @@ export default function DateRangePicker({
                 onSelect={(date) => {
                   if (!date) return;
                   onStartDateChange(toISODateString(date));
+                  setFromOpen(false);
                 }}
                 initialFocus
               />
@@ -103,7 +107,7 @@ export default function DateRangePicker({
           )}
         >
           <Label className={labelCls}>To</Label>
-          <Popover>
+          <Popover open={toOpen} onOpenChange={setToOpen}>
             <PopoverTrigger asChild>
               <Button
                 type="button"
@@ -125,6 +129,7 @@ export default function DateRangePicker({
                 onSelect={(date) => {
                   if (!date) return;
                   onEndDateChange(toISODateString(date));
+                  setToOpen(false);
                 }}
                 initialFocus
               />

@@ -127,6 +127,7 @@ export default function InvoiceDetail() {
   const handleMarkReminder = async () => {
     if (!invoiceId || !invoice) return;
     if (
+      invoice.status === "CANCELLED" ||
       !invoiceTypeSupportsBalanceReminderEmail(invoice.invoiceType) ||
       getInvoiceBalanceDue(invoice) <= 0
     ) {
