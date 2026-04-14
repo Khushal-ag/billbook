@@ -110,9 +110,15 @@ export default function AdminLoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form
+              name="admin-login"
+              method="post"
+              autoComplete="on"
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-4"
+            >
               {error && (
-                <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
+                <div className="whitespace-pre-line rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
                   {error}
                 </div>
               )}
@@ -123,10 +129,14 @@ export default function AdminLoginPage() {
                 <Input
                   id="admin-email"
                   type="email"
-                  autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   className="h-10"
                   aria-invalid={!!errors.email}
                   {...register("email")}
+                  autoComplete="email"
                 />
                 {errors.email && <FieldError>{errors.email.message}</FieldError>}
               </div>
@@ -137,10 +147,10 @@ export default function AdminLoginPage() {
                 <Input
                   id="admin-password"
                   type="password"
-                  autoComplete="current-password"
                   className="h-10"
                   aria-invalid={!!errors.password}
                   {...register("password")}
+                  autoComplete="current-password"
                 />
                 {errors.password && <FieldError>{errors.password.message}</FieldError>}
               </div>
@@ -150,9 +160,16 @@ export default function AdminLoginPage() {
                 </Label>
                 <Input
                   id="admin-org"
+                  maxLength={6}
                   className="h-10 font-mono uppercase tracking-wide"
                   aria-invalid={!!errors.organizationCode}
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  data-1p-ignore="true"
+                  data-lpignore="true"
+                  data-bwignore="true"
                   {...register("organizationCode")}
+                  autoComplete="off"
                 />
                 {errors.organizationCode && (
                   <FieldError>{errors.organizationCode.message}</FieldError>

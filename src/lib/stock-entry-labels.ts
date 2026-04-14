@@ -3,13 +3,13 @@ import { formatISODateDisplay } from "@/lib/date";
 import { formatDate, formatStockQuantity } from "@/lib/utils";
 import type { StockEntry, StockEntrySource } from "@/types/item";
 
-/** Column / field tooltips aligned with ledger-backed stock APIs */
+/** Column / field tooltips for stock tables */
 export const stockQuantityTooltips = {
   /** actualQuantity */
-  onHand: "On hand for this batch: quantity from stock ledger (available in this batch).",
+  onHand: "How many units of this batch you have available right now.",
   /** quantitySold */
   netOut:
-    "Net out from this batch: opening plus adjustments minus on hand (sales, returns, and other movements net).",
+    "Total units that have left this batch (sales, returns to supplier, and similar), after purchases and adjustments.",
 } as const;
 
 /** Table / compact display */

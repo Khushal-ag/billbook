@@ -27,6 +27,7 @@ import { useInvoices, useInvoice } from "@/hooks/use-invoices";
 import type { Invoice } from "@/types/invoice";
 import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
 import { withInvoiceQuantityErrorDetails } from "@/lib/invoice-quantity-error-details";
+import { formatCurrency } from "@/lib/utils";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import { maybeShowTrialExpiredToast } from "@/lib/trial";
 
@@ -55,19 +56,28 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultInvoiceId?: number;
+  /** When set (e.g. refund generation from a sales return), source document is fixed to this invoice only. */
+  lockedInvoiceId?: number;
 }
 
-export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId }: Props) {
+export default function CreditNoteDialog({
+  open,
+  onOpenChange,
+  defaultInvoiceId,
+  lockedInvoiceId,
+}: Props) {
   const router = useRouter();
   const mutation = useCreateCreditNote();
   const lastPrefilledInvoiceId = useRef<number | null>(null);
+
+  const isLocked = lockedInvoiceId != null && lockedInvoiceId > 0;
 
   const { data: returnInvoicesData, isPending: returnInvoicesPending } = useInvoices({
     status: "FINAL",
     invoiceType: "SALE_RETURN",
     page: 1,
     pageSize: 200,
-    enabled: open,
+    enabled: open && !isLocked,
   });
 
   const { data: saleInvoicesData, isPending: saleInvoicesPending } = useInvoices({
@@ -75,14 +85,14 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
     invoiceType: "SALE_INVOICE",
     page: 1,
     pageSize: 200,
-    enabled: open,
+    enabled: open && !isLocked,
   });
 
-  const { data: existingCreditNotesData, isPending: creditNotesListPending } = useCreditNotes({
-    page: 1,
-    pageSize: 500,
-    enabled: open,
-  });
+  const { data: existingCreditNotesData, isPending: creditNotesListPending } = useCreditNotes(
+    isLocked
+      ? { invoiceId: lockedInvoiceId, page: 1, pageSize: 200, enabled: open }
+      : { page: 1, pageSize: 500, enabled: open },
+  );
 
   const invoices = useMemo(() => {
     const m = new Map<number, Invoice>();
@@ -109,7 +119,7 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      invoiceId: defaultInvoiceId ?? 0,
+      invoiceId: lockedInvoiceId ?? defaultInvoiceId ?? 0,
       amount: "",
       reason: "",
     },
@@ -122,6 +132,15 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
 
   useEffect(() => {
     if (!open) return;
+    if (isLocked) {
+      reset({
+        invoiceId: lockedInvoiceId,
+        amount: "",
+        reason: "",
+      });
+      lastPrefilledInvoiceId.current = null;
+      return;
+    }
     const defaultId = defaultInvoiceId ?? 0;
     const pick =
       defaultId > 0 && invoices.some((i) => i.id === defaultId)
@@ -133,9 +152,12 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
       reason: "",
     });
     lastPrefilledInvoiceId.current = null;
-  }, [open, defaultInvoiceId, reset, invoices]);
+  }, [open, defaultInvoiceId, lockedInvoiceId, isLocked, reset, invoices]);
 
-  const selectedInvoice = invoices.find((inv) => inv.id === watchedInvoiceId);
+  const selectedInvoice =
+    isLocked && invoiceDetail && invoiceDetail.id === lockedInvoiceId
+      ? invoiceDetail
+      : invoices.find((inv) => inv.id === watchedInvoiceId);
   const invoiceTotal = parseFloat(selectedInvoice?.totalAmount ?? "0") || 0;
   const invoicePaid = parseFloat(selectedInvoice?.paidAmount ?? "0") || 0;
   const invoiceDue = Math.max(0, invoiceTotal - invoicePaid);
@@ -174,9 +196,7 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
   const onSubmit = async (data: FormData) => {
     const amt = parseFloat(data.amount) || 0;
     if (selectedInvoice && amt > maxNewAmount + 0.01) {
-      showErrorToast(
-        `Amount cannot exceed remaining headroom on this document (${maxNewAmount.toFixed(2)}); existing final credit notes already total ${existingOnSource.toFixed(2)} against ${selectedInvoice.totalAmount}.`,
-      );
+      showErrorToast(`Maximum amount is ${formatCurrency(String(maxNewAmount))}.`);
       return;
     }
 
@@ -195,76 +215,104 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
     }
   };
 
-  const listPending = returnInvoicesPending || saleInvoicesPending || creditNotesListPending;
+  const listPending = isLocked
+    ? creditNotesListPending
+    : returnInvoicesPending || saleInvoicesPending || creditNotesListPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New credit note</DialogTitle>
+          <DialogTitle>{isLocked ? "Credit note" : "New credit note"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label required>Source document</Label>
-            <Select
-              value={watch("invoiceId") > 0 ? String(watch("invoiceId")) : ""}
-              onValueChange={(v) => {
-                lastPrefilledInvoiceId.current = null;
-                setValue("invoiceId", Number(v));
-              }}
-            >
-              <SelectTrigger disabled={invoices.length === 0 || listPending}>
-                <SelectValue
-                  placeholder={
-                    listPending
-                      ? "Loading…"
-                      : invoices.length === 0
-                        ? "No eligible documents"
-                        : "Select invoice or return"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {invoices.length === 0 ? (
-                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                    No final sale invoices or sales returns found. Create and finalise a document
-                    first.
-                  </div>
+            {isLocked ? <Label>Return</Label> : <Label required>Source document</Label>}
+            {isLocked ? (
+              <div className="rounded-md border border-border bg-muted/30 px-3 py-2.5 text-sm">
+                {invoiceDetailPending ? (
+                  <p className="text-muted-foreground">Loading…</p>
+                ) : invoiceDetail && invoiceDetail.id === lockedInvoiceId ? (
+                  <p>
+                    <span className="font-medium text-foreground">
+                      {invoiceDetail.invoiceNumber}
+                    </span>
+                    <span className="text-muted-foreground"> · </span>
+                    <span>{invoiceDetail.partyName?.trim() || "Customer"}</span>
+                  </p>
                 ) : (
-                  invoices.map((inv) => (
-                    <SelectItem key={inv.id} value={String(inv.id)}>
-                      {inv.invoiceNumber} — {inv.invoiceType === "SALE_RETURN" ? "Return" : "Sale"}{" "}
-                      — {inv.partyName?.trim() || "Unknown party"}
-                    </SelectItem>
-                  ))
+                  <p className="text-muted-foreground">Couldn’t load this return.</p>
                 )}
-              </SelectContent>
-            </Select>
+              </div>
+            ) : (
+              <Select
+                value={watch("invoiceId") > 0 ? String(watch("invoiceId")) : ""}
+                onValueChange={(v) => {
+                  lastPrefilledInvoiceId.current = null;
+                  setValue("invoiceId", Number(v));
+                }}
+              >
+                <SelectTrigger disabled={invoices.length === 0 || listPending}>
+                  <SelectValue
+                    placeholder={
+                      listPending
+                        ? "Loading…"
+                        : invoices.length === 0
+                          ? "No eligible documents"
+                          : "Select invoice or return"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {invoices.length === 0 ? (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      No final sale invoices or sales returns found. Create and finalise a document
+                      first.
+                    </div>
+                  ) : (
+                    invoices.map((inv) => (
+                      <SelectItem key={inv.id} value={String(inv.id)}>
+                        {inv.invoiceNumber} —{" "}
+                        {inv.invoiceType === "SALE_RETURN" ? "Return" : "Sale"} —{" "}
+                        {inv.partyName?.trim() || "Unknown party"}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            )}
             {errors.invoiceId && <FieldError>{errors.invoiceId.message}</FieldError>}
           </div>
 
           <div className="space-y-2">
             <Label required>Amount</Label>
-            <Input placeholder="0.00" {...register("amount")} aria-invalid={!!errors.amount} />
+            <Input
+              placeholder="0.00"
+              inputMode="decimal"
+              {...register("amount")}
+              aria-invalid={!!errors.amount}
+            />
             {errors.amount && <FieldError>{errors.amount.message}</FieldError>}
             {selectedInvoice && (
               <p className="text-xs text-muted-foreground">
-                Document total: {selectedInvoice.totalAmount}
-                {selectedInvoice.invoiceType === "SALE_INVOICE" &&
-                  ` — Balance due: ${invoiceDue.toFixed(2)}`}
-                {" — "}
-                Final credit notes already on this document: {existingOnSource.toFixed(2)}. Max this
-                note: {maxNewAmount.toFixed(2)}.
+                Max {formatCurrency(String(maxNewAmount))}
+                {existingOnSource > 0.001 ? (
+                  <> ({formatCurrency(String(existingOnSource))} on other notes)</>
+                ) : null}
+                {selectedInvoice.invoiceType === "SALE_INVOICE" && !isLocked ? (
+                  <> · Unpaid on this bill ~{formatCurrency(String(invoiceDue))}</>
+                ) : null}
+                .
               </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label>Reason</Label>
-            <Textarea rows={2} {...register("reason")} />
+            <Label>Reason (optional)</Label>
+            <Textarea rows={2} placeholder="Optional" {...register("reason")} />
           </div>
 
-          {watchedInvoiceId > 0 && invoiceDetailPending ? (
+          {!isLocked && watchedInvoiceId > 0 && invoiceDetailPending ? (
             <p className="text-xs text-muted-foreground">Loading document details…</p>
           ) : null}
 
@@ -278,7 +326,8 @@ export default function CreditNoteDialog({ open, onOpenChange, defaultInvoiceId 
                 isSubmitting ||
                 mutation.isPending ||
                 watch("invoiceId") <= 0 ||
-                invoices.length === 0
+                (!isLocked && invoices.length === 0) ||
+                (isLocked && (!invoiceDetail || invoiceDetail.id !== lockedInvoiceId))
               }
             >
               {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

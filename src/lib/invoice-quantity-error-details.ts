@@ -102,7 +102,7 @@ export function formatReturnInventoryMismatchDetails(details: unknown): string {
   return parts.length ? parts.join("\n") : "";
 }
 
-/** Combine server message with structured invoice validation details for toasts (keeps request id). */
+/** Combine server message with structured invoice validation details for toasts. */
 export function withInvoiceQuantityErrorDetails(err: unknown): unknown {
   if (!(err instanceof ApiClientError)) return err;
   const qty = formatInvoiceQuantityErrorDetails(err.details);

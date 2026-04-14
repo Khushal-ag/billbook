@@ -227,7 +227,7 @@ export function OutboundPaymentCreateForm() {
           <Label required>Sales return</Label>
           <p className="text-xs text-muted-foreground">
             Same idea as picking a party on an invoice: click the field, type to search, then choose
-            a row. Searches finalized sales returns on the server by number or customer.
+            a row. Finds finalized sales returns by return number or customer name.
           </p>
           <InvoiceLinkedCombobox
             invoiceType="SALE_RETURN"

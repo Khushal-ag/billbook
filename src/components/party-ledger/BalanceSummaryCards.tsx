@@ -49,8 +49,9 @@ export function BalanceSummaryCards({
         </div>
       </div>
       <p className="text-[11px] leading-snug text-muted-foreground">
-        Totals come from the balance API (ledger-backed). Do not add party openingBalance on top of
-        these figures — opening is already reflected in receivable / advance.
+        These amounts are calculated from this party’s invoices, receipts, credits, and opening
+        balance. If you entered an opening balance when creating the party, it is already part of
+        receivable or advance—do not add it again separately.
       </p>
     </div>
   );

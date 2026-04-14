@@ -196,14 +196,20 @@ export default function ForgotPasswordCard({ onBackToLogin }: ForgotPasswordCard
         <CardDescription>{subtitle}</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          name="forgot-password"
+          method="post"
+          autoComplete="on"
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-4"
+        >
           {error && (
-            <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="whitespace-pre-line rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
               {error}
             </div>
           )}
           {info && (
-            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+            <div className="whitespace-pre-line rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
               {info}
             </div>
           )}
@@ -215,10 +221,15 @@ export default function ForgotPasswordCard({ onBackToLogin }: ForgotPasswordCard
             <Input
               id="email"
               type="email"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="you@company.com"
               disabled={stage !== "request"}
               aria-invalid={!!errors.email}
               {...register("email")}
+              autoComplete="email"
             />
             {errors.email && <FieldError>{errors.email.message}</FieldError>}
           </div>
@@ -234,7 +245,13 @@ export default function ForgotPasswordCard({ onBackToLogin }: ForgotPasswordCard
               maxLength={6}
               className="uppercase"
               aria-invalid={!!errors.organizationCode}
+              autoCapitalize="characters"
+              autoCorrect="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
+              data-bwignore="true"
               {...register("organizationCode")}
+              autoComplete="off"
             />
             {errors.organizationCode && <FieldError>{errors.organizationCode.message}</FieldError>}
           </div>
@@ -247,6 +264,8 @@ export default function ForgotPasswordCard({ onBackToLogin }: ForgotPasswordCard
                 </Label>
                 <Input
                   id="otp"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="123456"
                   maxLength={6}
                   aria-invalid={!!errors.otp}
@@ -255,6 +274,7 @@ export default function ForgotPasswordCard({ onBackToLogin }: ForgotPasswordCard
                     otpInputRef.current = el;
                   }}
                   {...otpRegisterRest}
+                  autoComplete="one-time-code"
                 />
                 {errors.otp && <FieldError>{errors.otp.message}</FieldError>}
               </div>
@@ -294,7 +314,6 @@ export default function ForgotPasswordCard({ onBackToLogin }: ForgotPasswordCard
                 <Input
                   id="newPassword"
                   type="password"
-                  autoComplete="new-password"
                   placeholder="At least 8 characters"
                   aria-invalid={!!errors.newPassword}
                   ref={(el) => {
@@ -302,6 +321,7 @@ export default function ForgotPasswordCard({ onBackToLogin }: ForgotPasswordCard
                     passwordInputRef.current = el;
                   }}
                   {...pwdRegisterRest}
+                  autoComplete="new-password"
                 />
                 {errors.newPassword && <FieldError>{errors.newPassword.message}</FieldError>}
               </div>
@@ -312,10 +332,10 @@ export default function ForgotPasswordCard({ onBackToLogin }: ForgotPasswordCard
                 <Input
                   id="confirmPassword"
                   type="password"
-                  autoComplete="new-password"
                   placeholder="Repeat password"
                   aria-invalid={!!errors.confirmPassword}
                   {...register("confirmPassword")}
+                  autoComplete="new-password"
                 />
                 {errors.confirmPassword && (
                   <FieldError>{errors.confirmPassword.message}</FieldError>

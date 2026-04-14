@@ -13,16 +13,16 @@ export const reportDashboard = {
   sectionActivityDescription: "Receipts, invoices, and payouts that fall in the range above.",
   sectionBalances: "Money owed",
   sectionBalancesDescription:
-    "Current receivables and payables from the party ledger — independent of the date range.",
+    "Current receivables and payables from each party’s account—independent of the date range above.",
   kpiReceipts: "Customer receipts",
   kpiInvoices: "Sales & purchases",
   kpiPayouts: "Payouts",
   balanceReceivablesTitle: "Outstanding receivables",
   balanceReceivablesTooltip:
-    "Total amount customers and other parties owe you right now (from the ledger).",
+    "Total amount customers and other parties owe you right now, from their running balances.",
   balancePayablesTitle: "Outstanding payables",
   balancePayablesTooltip:
-    "Total amount you owe vendors and other parties right now (from the ledger).",
+    "Total amount you owe vendors and other parties right now, from their running balances.",
   receivablesMeta: (count: number) =>
     `${count} ${count === 1 ? "party" : "parties"} with a balance`,
   payablesMeta: (count: number) => `${count} ${count === 1 ? "party" : "parties"} you owe`,
@@ -53,7 +53,7 @@ export const reportPayoutRegister = {
 
 export const reportDebtRegister = {
   title: "Outstanding receivables",
-  description: "How much each party still owes you (current ledger balance).",
+  description: "How much each party still owes you (their current balance).",
   loadError: "Failed to load outstanding receivables",
   csvFilename: "outstanding-receivables.csv",
   summaryTotalLabel: "Total owed to you",
@@ -63,7 +63,7 @@ export const reportDebtRegister = {
 
 export const reportPayablesRegister = {
   title: "Outstanding payables",
-  description: "How much you owe each party (current ledger balance).",
+  description: "How much you owe each party (their current balance).",
   loadError: "Failed to load outstanding payables",
   csvFilename: "outstanding-payables.csv",
   summaryTotalLabel: "Total you owe",

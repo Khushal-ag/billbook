@@ -94,7 +94,7 @@ export function StockEntriesTable({
               </th>
               <th
                 className={cn(stockTableThRight, "min-w-[72px]")}
-                title="On-hand quantity for this batch (ledger / actualQuantity)"
+                title="Units available in this batch right now"
               >
                 On hand
               </th>
@@ -214,8 +214,8 @@ export function StockEntriesTable({
                           <Link
                             href={`/items/${entry.itemId}?from=stock#stock-ledger`}
                             onClick={(e) => e.stopPropagation()}
-                            title="Stock ledger"
-                            aria-label={`Stock ledger for ${itemName}`}
+                            title="Stock movement history"
+                            aria-label={`Stock movement history for ${itemName}`}
                           >
                             <History className="h-4 w-4" />
                           </Link>

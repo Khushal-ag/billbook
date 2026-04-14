@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api, generateIdempotencyKey } from "@/api";
 import { invalidateQueryKeys } from "@/lib/query";
 import { queryKeys } from "@/lib/query-keys";
@@ -65,13 +65,26 @@ export function useCreditNote(creditNoteId: number | undefined) {
   });
 }
 
-const CREDIT_NOTE_INVALIDATION_KEYS = () => [
-  queryKeys.creditNotes.root(),
+/** Invoices & party balances affected by credit notes */
+const CREDIT_NOTE_RELATED_KEYS = () => [
   queryKeys.invoices.detailPrefix(),
   queryKeys.invoices.root(),
   queryKeys.parties.ledgerPrefix(),
   queryKeys.parties.balancePrefix(),
 ];
+
+/**
+ * List + detail credit-note queries go inactive while viewing a single note. Default
+ * invalidateQueries only refetches active queries, so the list stayed stale until staleTime
+ * elapsed. refetchType "all" refreshes inactive list caches too (e.g. after allocate).
+ */
+async function invalidateCreditNoteCaches(queryClient: QueryClient) {
+  await queryClient.invalidateQueries({
+    queryKey: queryKeys.creditNotes.root(),
+    refetchType: "all",
+  });
+  invalidateQueryKeys(queryClient, CREDIT_NOTE_RELATED_KEYS());
+}
 
 export function useCreateCreditNote() {
   const qc = useQueryClient();
@@ -80,7 +93,7 @@ export function useCreateCreditNote() {
       const res = await api.post<CreditNoteDetail>("/credit-notes", data, generateIdempotencyKey());
       return res.data;
     },
-    onSuccess: () => invalidateQueryKeys(qc, CREDIT_NOTE_INVALIDATION_KEYS()),
+    onSuccess: () => void invalidateCreditNoteCaches(qc),
   });
 }
 
@@ -94,12 +107,7 @@ export function useUpdateCreditNoteAllocations(creditNoteId: number) {
       );
       return res.data;
     },
-    onSuccess: () => {
-      invalidateQueryKeys(qc, [
-        ...CREDIT_NOTE_INVALIDATION_KEYS(),
-        queryKeys.creditNotes.detail(creditNoteId),
-      ]);
-    },
+    onSuccess: () => void invalidateCreditNoteCaches(qc),
   });
 }
 
@@ -109,6 +117,6 @@ export function useDeleteCreditNote() {
     mutationFn: async (id: number) => {
       await api.delete(`/credit-notes/${id}`);
     },
-    onSuccess: () => invalidateQueryKeys(qc, CREDIT_NOTE_INVALIDATION_KEYS()),
+    onSuccess: () => void invalidateCreditNoteCaches(qc),
   });
 }

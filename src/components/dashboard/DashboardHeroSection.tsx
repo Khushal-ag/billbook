@@ -75,13 +75,13 @@ export function DashboardHeroSection({
   }
 
   const paymentHint = showPaymentReconcile
-    ? `Ledger totals all money-in on parties (receipts, opening advances, supplier-side flows). Finalized sale invoices only show paid amounts from receipt allocations — finalizing does not pull from party opening/advance. Invoice “Paid” here: ${formatCurrency(invoiceFieldPaid!)} · ledger payments: ${formatCurrency(ledgerPaid)}.`
-    : "Ledger sums party payment credits (receipts, advances, supplier payments). Invoice paid amounts change when you allocate receipts or record payments — not automatically when you finalize.";
+    ? `“Paid on invoices” (${formatCurrency(invoiceFieldPaid!)}) is only what you have matched to bills. “All payments recorded” (${formatCurrency(ledgerPaid)}) includes every receipt and similar credit—even amounts not yet applied to a specific invoice. They differ until you allocate receipts or record payments.`
+    : "This total is all customer money recorded in the system (receipts, advances, and similar). The Paid column on each invoice updates when you link a receipt or record a payment—not simply when you finalize the invoice.";
 
   const outstandingHint =
     outstanding < 0
-      ? "Negative net means balance in favour of parties (e.g. advances or prepayments), not overdue customer debt."
-      : "Positive net is what customers owe you on the ledger, net of advances.";
+      ? "A negative figure means customers overall are in credit (for example advances or prepayments)—not that they owe you more."
+      : "A positive figure is roughly what customers still owe you after advances and credits.";
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-muted/25 p-6 shadow-sm ring-1 ring-black/[0.04] dark:from-card dark:to-muted/20 dark:ring-white/[0.06] sm:p-8">
@@ -147,17 +147,19 @@ export function DashboardHeroSection({
           href="/reports"
         />
         <HeroCard
-          title="Payments (ledger)"
+          title="Payments recorded"
           value={formatCurrency(ledgerPaid)}
           subtitle={
-            showPaymentReconcile ? `Invoices: ${formatCurrency(invoiceFieldPaid!)}` : undefined
+            showPaymentReconcile
+              ? `Paid on invoices: ${formatCurrency(invoiceFieldPaid!)}`
+              : undefined
           }
           titleHint={paymentHint}
           icon={<Landmark className="h-5 w-5" />}
           variant="success"
         />
         <HeroCard
-          title="Net outstanding (ledger)"
+          title="Net balance outstanding"
           value={netOutstandingValueDisplay(outstanding)}
           subtitle={
             outstanding < 0

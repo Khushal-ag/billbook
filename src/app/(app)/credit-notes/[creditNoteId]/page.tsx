@@ -69,8 +69,8 @@ export default function CreditNoteDetailPage() {
       if (maybeShowTrialExpiredToast(err)) return;
       if (err instanceof ApiClientError && err.status === 409) {
         showErrorToast(
-          "This credit note still has amounts allocated to invoices. Save an empty allocation list first, then try again.",
-          "Cannot delete yet",
+          "This credit note is still applied to invoices. Clear allocations first (save with nothing allocated), then try again.",
+          "Can’t delete while allocated",
         );
       } else {
         showErrorToast(err, "Failed to delete");
@@ -245,22 +245,15 @@ export default function CreditNoteDetailPage() {
 
             <Separator className="bg-border/60 lg:hidden" />
 
-            <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
-              <Button variant="outline" className="min-w-0 flex-1" asChild>
-                <Link href={`/credit-notes/${creditNoteId}#credit-note-allocate`}>
-                  Jump to allocate
-                </Link>
-              </Button>
-              <Button variant="outline" className="min-w-0 flex-1" asChild>
-                <Link
-                  href="/credit-notes"
-                  className="inline-flex min-w-0 items-center justify-center"
-                >
-                  <List className="mr-2 h-4 w-4 shrink-0" />
-                  <span className="truncate">All credit notes</span>
-                </Link>
-              </Button>
-            </div>
+            <Button variant="outline" className="w-full min-w-0 sm:w-auto" asChild>
+              <Link
+                href="/credit-notes"
+                className="inline-flex min-w-0 items-center justify-center"
+              >
+                <List className="mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">All credit notes</span>
+              </Link>
+            </Button>
           </div>
         </div>
       </div>
@@ -323,8 +316,8 @@ export default function CreditNoteDetailPage() {
       {isOwner && (
         <div className="min-w-0 rounded-xl border border-border/60 bg-muted/10 p-4 sm:p-6">
           <p className="text-sm leading-relaxed text-muted-foreground">
-            Delete removes the ledger credit and archives this note. You can only delete when
-            nothing is allocated — clear allocations first if needed.
+            Deleting removes this credit from the customer’s account and archives the note. You can
+            only delete when it isn’t applied to invoices — clear allocations first if needed.
           </p>
           <Button
             type="button"
@@ -339,7 +332,7 @@ export default function CreditNoteDetailPage() {
           </Button>
           {!canDelete && creditNote.deletedAt == null && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Save an empty allocation list before delete is available.
+              Save with no amounts allocated to invoices before you can delete.
             </p>
           )}
         </div>
@@ -350,7 +343,7 @@ export default function CreditNoteDetailPage() {
         onOpenChange={setDeleteConfirmOpen}
         onConfirm={() => void confirmDelete()}
         title="Delete credit note"
-        description="This removes the ledger credit and archives the credit note. You can only delete when nothing is allocated to customer invoices."
+        description="This removes the customer credit and archives the credit note. You can only delete when it isn’t applied to any sale invoices."
         confirmText="Delete"
         variant="destructive"
       />

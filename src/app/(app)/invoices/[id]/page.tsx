@@ -91,11 +91,11 @@ export default function InvoiceDetail() {
       const type = invoice?.invoiceType;
       const paymentHint =
         type === "SALE_INVOICE"
-          ? " Allocate customer receipts (including any opening-advance receipt) to reduce balance due — not applied on finalize."
+          ? " To reduce what the customer owes, allocate receipts (including any opening advance receipt)—finalizing the invoice does not do that by itself."
           : type === "PURCHASE_INVOICE"
-            ? " Record supplier payments to reduce payables — finalize does not pay the bill from opening or advance."
+            ? " To reduce what you owe the supplier, record supplier payments—finalizing the bill does not pay it from opening balance or advance."
             : type === "SALE_RETURN" || type === "PURCHASE_RETURN"
-              ? " Use Record payment / refund on this document to settle amounts — finalize alone does not move money."
+              ? " Use Record payment or refund on this document to move money—finalizing alone does not pay or collect."
               : "";
       showSuccessToast(`Invoice finalized.${paymentHint}`);
     } catch (err) {
@@ -312,7 +312,7 @@ export default function InvoiceDetail() {
             <CreditNoteDialog
               open={creditNoteOpen}
               onOpenChange={setCreditNoteOpen}
-              defaultInvoiceId={invoiceId}
+              lockedInvoiceId={invoiceId}
             />
           )}
         </>

@@ -191,10 +191,7 @@ export default function Stock() {
         showSuccessToast("Stock entry updated");
         return updated;
       } catch (err) {
-        showErrorToast(
-          err,
-          "Failed to update stock entry. If API is missing, please add update endpoint.",
-        );
+        showErrorToast(err, "Couldn’t save this stock change. Please try again.");
         throw err;
       }
     },

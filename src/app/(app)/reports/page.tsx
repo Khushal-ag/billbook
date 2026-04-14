@@ -39,8 +39,8 @@ export default function ReportsPage() {
           error={dateRangeError}
         />
         <p className="text-pretty text-[11px] leading-relaxed text-muted-foreground sm:min-w-0 sm:max-w-[20rem] sm:flex-1 sm:self-center lg:max-w-md">
-          Max {MAX_REPORT_DATE_RANGE_MONTHS} months. KPIs use this range; money owed uses the live
-          ledger.
+          Max {MAX_REPORT_DATE_RANGE_MONTHS} months. Totals in this section use the dates you pick;
+          money owed uses each party’s current balance (always up to date).
         </p>
       </div>
 

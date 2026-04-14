@@ -87,8 +87,8 @@ export default function PartyLedgerPage() {
     return (
       <div className="page-container">
         <PageHeader
-          title="Ledger"
-          description="View account details"
+          title="Party account"
+          description="View balance and activity"
           backHref={fallbackBackTo}
           backLabel={fallbackBackLabel}
         />
@@ -116,15 +116,15 @@ export default function PartyLedgerPage() {
   return (
     <div className="page-container animate-fade-in">
       <PageHeader
-        title={`${partyLabelTitle} ledger — ${party.name}`}
-        description={`Activity and balance for this ${partyLabel}`}
+        title={`${partyLabelTitle} account — ${party.name}`}
+        description={`Bills, receipts, and balance for this ${partyLabel}`}
         backHref={backTo}
         backLabel={backLabel}
       />
 
       <ErrorBanner
         error={ledgerQuery.error ?? balanceQuery.error}
-        fallbackMessage="Failed to load ledger"
+        fallbackMessage="Failed to load account activity"
       />
 
       <BalanceSummaryCards
@@ -135,17 +135,17 @@ export default function PartyLedgerPage() {
 
       {party.type === "CUSTOMER" && (
         <p className="mt-2 text-xs text-muted-foreground">
-          Customer credit at opening creates an{" "}
+          If you started with customer credit (advance), the system creates an{" "}
           <Link
             href="/receipts"
             className="font-medium text-primary underline-offset-2 hover:underline"
           >
             opening receipt
-          </Link>{" "}
-          — keep it unallocated until you{" "}
-          <span className="font-medium text-foreground">Allocate to invoices</span> (same as other
-          receipts). Ledger lines show OPENING_BALANCE; there is no separate cash payment for that
-          leg.
+          </Link>
+          . Leave it unallocated until you use{" "}
+          <span className="font-medium text-foreground">Allocate to invoices</span>, like any other
+          receipt. You will not see a separate cash line for that opening amount—only the opening
+          entry in the list below.
         </p>
       )}
 
@@ -153,7 +153,8 @@ export default function PartyLedgerPage() {
         <p className="text-xs text-muted-foreground">
           <span className="font-medium text-red-600 dark:text-red-400">Debit</span> and{" "}
           <span className="font-medium text-emerald-600 dark:text-emerald-400">Credit</span> show
-          which way the balance runs; the rupee figure is always positive.
+          whether the party owes you or you owe them; the amount shown is always a positive rupee
+          value.
         </p>
         <Button variant="outline" size="sm" className="shrink-0 self-start sm:self-auto" asChild>
           <Link href={paymentHref}>{paymentLabel}</Link>
@@ -162,7 +163,7 @@ export default function PartyLedgerPage() {
 
       <Tabs value={tab} onValueChange={setTab} className="mt-5">
         <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="ledger">Ledger</TabsTrigger>
+          <TabsTrigger value="ledger">Transactions</TabsTrigger>
           <TabsTrigger value="statement">Statement</TabsTrigger>
         </TabsList>
 

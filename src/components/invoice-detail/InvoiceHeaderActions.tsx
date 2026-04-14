@@ -24,20 +24,20 @@ import type { InvoiceDetail } from "@/types/invoice";
 const FINALIZE_INVENTORY_HELP: ReactNode = (
   <div className="space-y-2 text-xs leading-snug">
     <p>
-      Finalizing updates inventory: it can deduct stock (sales), add stock back (sale returns),
-      create batches (purchase invoices), or remove quantity from batches (purchase returns),
-      depending on this document. If the request fails, you can retry safely — an already finalized
-      invoice returns success without duplicating stock effects.
+      Finalizing updates stock: it can reduce quantity on sales, put quantity back on sale returns,
+      add batches from purchase bills, or reduce batches on purchase returns, depending on this
+      document. If something went wrong, you can try again—a bill that is already finalized will not
+      change stock twice.
     </p>
     <p className="border-t border-border/60 pt-2 text-muted-foreground">
       <span className="font-medium text-foreground">Payments:</span> Finalizing does{" "}
-      <span className="font-medium text-foreground">not</span> apply party opening balance or
-      advances to this document. For <strong>sales</strong>, use{" "}
-      <span className="text-foreground">Record payment</span> / allocate receipts (including opening
-      advance receipts). For <strong>purchases</strong>, use{" "}
-      <span className="text-foreground">Record supplier payment</span> —{" "}
-      <span className="font-medium text-foreground">paid</span> on the bill stays at whatever it was
-      until you post those payments.
+      <span className="font-medium text-foreground">not</span> take opening balances or customer
+      advances off the bill. For <strong>sales</strong>, use{" "}
+      <span className="text-foreground">Record payment</span> or allocate receipts (including
+      opening advance receipts). For <strong>purchases</strong>, use{" "}
+      <span className="text-foreground">Record supplier payment</span>—the{" "}
+      <span className="font-medium text-foreground">Paid</span> amount on the bill only changes when
+      you record those payments.
     </p>
   </div>
 );
@@ -199,7 +199,7 @@ export function InvoiceHeaderActions({
               variant="outline"
               size="sm"
               onClick={onOpenRefundCreditNote}
-              title="Create a credit note linked to this sales return (customer ledger credit; allocate from Credit notes)."
+              title="Create a credit note for this return. Apply it to the customer’s account from Credit notes when ready."
             >
               <FileMinus className="mr-2 h-3.5 w-3.5" />
               Refund generation

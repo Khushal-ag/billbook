@@ -7,7 +7,7 @@ export const siteConfig = {
   shortName: "BillBook",
   title: "BillBook \u2013 Invoicing & Billing Management",
   description:
-    "BillBook is invoicing and billing software for small businesses in India: GST invoices, credit notes, receipts, stock, party ledgers, CSV reports, GST / Tax HTML export, and audit logs.",
+    "BillBook is invoicing and billing software for small businesses in India: GST invoices, credit notes, receipts, stock, customer and vendor balances, CSV reports, GST / Tax HTML export, and audit logs.",
   url: normalizedEnvUrl && normalizedEnvUrl.length > 0 ? normalizedEnvUrl : defaultSiteUrl,
   keywords: [
     "BillBook",
@@ -20,7 +20,7 @@ export const siteConfig = {
     "accounts receivable",
     "accounts payable",
     "invoice PDF",
-    "party ledger",
+    "customer accounts",
     "stock management",
     "receipts and payments",
     "invoice register CSV",

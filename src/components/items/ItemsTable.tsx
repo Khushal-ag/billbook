@@ -106,8 +106,8 @@ export function ItemsTable({ items, onEdit, onViewLedger }: ItemsTableProps) {
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => onViewLedger(item.id)}
-                      title="View ledger"
-                      aria-label={`View ledger for ${item.name}`}
+                      title="Stock movement history"
+                      aria-label={`Stock movement history for ${item.name}`}
                     >
                       <History className="h-3.5 w-3.5" />
                     </Button>

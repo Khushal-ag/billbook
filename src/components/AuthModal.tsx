@@ -46,7 +46,20 @@ export default function AuthModal({ redirectTo }: AuthModalProps) {
         if (!nextOpen) setMode(null);
       }}
     >
-      <DialogContent className="w-[calc(100%-2rem)] max-w-md p-0 sm:rounded-xl">
+      <DialogContent
+        className="w-[calc(100%-2rem)] max-w-md p-0 sm:rounded-xl"
+        onOpenAutoFocus={(e) => {
+          const target = e.currentTarget;
+          if (!target || !(target instanceof HTMLElement)) return;
+          const email = target.querySelector<HTMLInputElement>(
+            'input[type="email"]:not([disabled])',
+          );
+          if (email) {
+            e.preventDefault();
+            email.focus({ preventScroll: true });
+          }
+        }}
+      >
         <DialogTitle className="sr-only">
           {mode === "signup" ? "Sign up" : mode === "forgot" ? "Reset password" : "Log in"}
         </DialogTitle>

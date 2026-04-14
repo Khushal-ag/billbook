@@ -150,7 +150,7 @@ export function DashboardInsightsSection({
           <CardHeader className="pb-3 sm:pb-4">
             <CardTitle className="text-base font-semibold">Payment status</CardTitle>
             <p className="mt-1 text-xs text-muted-foreground">
-              Final sale invoices — paid vs total on the document (not ledger allocation).
+              Final sale invoices only—paid amount vs total on each bill (not receipt allocation).
             </p>
           </CardHeader>
           <CardContent className="pt-0">

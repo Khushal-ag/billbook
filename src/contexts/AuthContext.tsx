@@ -61,7 +61,7 @@ function toAuthError(error: unknown, fallbackMessage: string): Error {
   if (error instanceof ApiClientError) {
     const code = getAuthErrorCode(error);
     const idNote = error.requestId
-      ? ` (Request ID: ${error.requestId} — share with support if needed.)`
+      ? `\n\nSupport reference: ${error.requestId}\n(Share this if you contact support.)`
       : "";
     if (code) return new Error(AUTH_ERROR_MESSAGES[code] + idNote);
     return new Error((error.message || fallbackMessage) + idNote);

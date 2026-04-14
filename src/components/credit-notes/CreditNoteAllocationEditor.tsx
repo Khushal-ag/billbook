@@ -377,7 +377,8 @@ export function CreditNoteAllocationEditor({
             )}
           </div>
           <p className="min-w-0 max-w-full text-pretty text-xs leading-relaxed text-muted-foreground sm:max-w-md sm:text-right">
-            Saving sends these rows plus any amounts already on invoices not listed (fully paid).
+            Saving updates this list and keeps any amounts on invoices that are fully paid (those
+            invoices don’t appear here).
           </p>
         </div>
       </CardContent>

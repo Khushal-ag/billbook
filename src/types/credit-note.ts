@@ -11,6 +11,10 @@ export interface CreditNoteSummary {
   invoiceNumber?: string | null;
   creditNoteNumber: string;
   amount: string;
+  /** Total applied to invoices (when API sends it, e.g. list endpoint). */
+  allocatedAmount?: string | null;
+  /** Remaining credit not applied to invoices; if omitted, UI can derive from amount − allocatedAmount. */
+  unallocatedAmount?: string;
   reason: string | null;
   /** Present on legacy rows only; new credit notes do not use inventory from this API flow. */
   affectsInventory?: boolean;

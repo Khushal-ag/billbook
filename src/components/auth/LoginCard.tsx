@@ -188,18 +188,25 @@ export default function LoginCard({
         <CardDescription>
           {showOtpField
             ? "Enter the 6-digit OTP sent to your email"
-            : "Enter your email, password, and organization code to continue"}
+            : "Enter your email and password, then your 6-character organization code"}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="space-y-4">
+        <form
+          name="login"
+          method="post"
+          autoComplete="on"
+          onSubmit={handleSubmit(onSubmit)}
+          onKeyDown={handleKeyDown}
+          className="space-y-4"
+        >
           {error && (
-            <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="whitespace-pre-line rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
               {error}
             </div>
           )}
           {info && (
-            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+            <div className="whitespace-pre-line rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
               {info}
             </div>
           )}
@@ -211,28 +218,17 @@ export default function LoginCard({
             <Input
               id="email"
               type="email"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="you@company.com"
               disabled={showOtpField}
               aria-invalid={!!errors.email}
               {...register("email")}
+              autoComplete="email"
             />
             {errors.email && <FieldError>{errors.email.message}</FieldError>}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="organizationCode" required>
-              Organization code
-            </Label>
-            <Input
-              id="organizationCode"
-              placeholder="ABC123"
-              disabled={showOtpField}
-              maxLength={6}
-              className="uppercase"
-              aria-invalid={!!errors.organizationCode}
-              {...register("organizationCode")}
-            />
-            {errors.organizationCode && <FieldError>{errors.organizationCode.message}</FieldError>}
           </div>
 
           {!showOtpField && (
@@ -245,10 +241,10 @@ export default function LoginCard({
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Required to continue"
-                  autoComplete="current-password"
                   className="pr-9"
                   aria-invalid={!!errors.password}
                   {...register("password")}
+                  autoComplete="current-password"
                 />
                 <Button
                   type="button"
@@ -269,6 +265,33 @@ export default function LoginCard({
             </div>
           )}
 
+          {!showOtpField && (
+            <div className="space-y-2">
+              <Label htmlFor="organizationCode" required>
+                Organization code
+              </Label>
+              <Input
+                id="organizationCode"
+                placeholder="ABC123"
+                disabled={showOtpField}
+                maxLength={6}
+                className="uppercase"
+                aria-invalid={!!errors.organizationCode}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                data-1p-ignore="true"
+                data-lpignore="true"
+                data-bwignore="true"
+                {...register("organizationCode")}
+                autoComplete="off"
+              />
+              {errors.organizationCode && (
+                <FieldError>{errors.organizationCode.message}</FieldError>
+              )}
+            </div>
+          )}
+
           {showOtpField && (
             <>
               <div className="space-y-2">
@@ -277,6 +300,8 @@ export default function LoginCard({
                 </Label>
                 <Input
                   id="otp"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="123456"
                   maxLength={6}
                   aria-invalid={!!errors.otp}
@@ -285,6 +310,7 @@ export default function LoginCard({
                     otpInputRef.current = el;
                   }}
                   {...otpRegisterRest}
+                  autoComplete="one-time-code"
                 />
                 {errors.otp && <FieldError>{errors.otp.message}</FieldError>}
               </div>

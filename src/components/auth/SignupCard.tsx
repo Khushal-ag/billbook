@@ -140,14 +140,21 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="space-y-4">
+        <form
+          name="signup"
+          method="post"
+          autoComplete="on"
+          onSubmit={handleSubmit(onSubmit)}
+          onKeyDown={handleKeyDown}
+          className="space-y-4"
+        >
           {error && (
-            <div className="rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="whitespace-pre-line rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
               {error}
             </div>
           )}
           {info && (
-            <div className="rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+            <div className="whitespace-pre-line rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
               {info}
             </div>
           )}
@@ -163,6 +170,7 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
                 disabled={otpRequested}
                 aria-invalid={!!errors.firstName}
                 {...register("firstName")}
+                autoComplete="given-name"
               />
               {errors.firstName && <FieldError>{errors.firstName.message}</FieldError>}
             </div>
@@ -176,6 +184,7 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
                 disabled={otpRequested}
                 aria-invalid={!!errors.lastName}
                 {...register("lastName")}
+                autoComplete="family-name"
               />
               {errors.lastName && <FieldError>{errors.lastName.message}</FieldError>}
             </div>
@@ -188,10 +197,15 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
             <Input
               id="email"
               type="email"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="you@company.com"
               disabled={otpRequested}
               aria-invalid={!!errors.email}
               {...register("email")}
+              autoComplete="email"
             />
             {errors.email && <FieldError>{errors.email.message}</FieldError>}
           </div>
@@ -209,6 +223,7 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
                 className="pr-10"
                 aria-invalid={!!errors.password}
                 {...register("password")}
+                autoComplete="new-password"
               />
               <button
                 type="button"
@@ -233,6 +248,7 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
               disabled={otpRequested}
               aria-invalid={!!errors.businessName}
               {...register("businessName")}
+              autoComplete="organization"
             />
             {errors.businessName && <FieldError>{errors.businessName.message}</FieldError>}
           </div>
@@ -245,6 +261,8 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
                 </Label>
                 <Input
                   id="otp"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="123456"
                   maxLength={6}
                   aria-invalid={!!errors.otp}
@@ -253,6 +271,7 @@ export default function SignupCard({ redirectTo, onRequestLogin }: SignupCardPro
                     otpInputRef.current = el;
                   }}
                   {...otpRegisterRest}
+                  autoComplete="one-time-code"
                 />
                 {errors.otp && <FieldError>{errors.otp.message}</FieldError>}
               </div>

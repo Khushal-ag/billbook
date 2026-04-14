@@ -35,10 +35,15 @@ export default function ErrorBanner({
         <div className="min-w-0 space-y-1">
           <p>{message}</p>
           {requestId ? (
-            <p className="text-xs opacity-90">
-              Request ID: <code className="rounded bg-destructive/15 px-1 py-0.5">{requestId}</code>{" "}
-              — share with support if you report this issue.
-            </p>
+            <div className="space-y-1 border-t border-destructive/20 pt-2 text-xs text-destructive/90">
+              <p className="font-medium">Support reference</p>
+              <code className="block break-all rounded bg-destructive/15 px-1.5 py-0.5 font-mono text-[11px]">
+                {requestId}
+              </code>
+              <p className="text-[11px] leading-snug opacity-90">
+                Share this code if you contact support about this error.
+              </p>
+            </div>
           ) : null}
         </div>
       </div>
