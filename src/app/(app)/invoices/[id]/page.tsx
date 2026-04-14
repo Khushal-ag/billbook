@@ -28,7 +28,6 @@ import {
   useMarkInvoiceReminder,
   useInvoiceCommunications,
 } from "@/hooks/use-invoices";
-import { useCreditNotes } from "@/hooks/use-credit-notes";
 import { useStockEntriesByIds } from "@/hooks/use-items";
 import { useBusinessProfile } from "@/hooks/use-business";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -64,14 +63,6 @@ export default function InvoiceDetail() {
   const [cancelConfirm, setCancelConfirm] = useState(false);
 
   const { data: invoice, isPending, error } = useInvoice(invoiceId);
-  const { data: creditNotesForReturn } = useCreditNotes({
-    invoiceId: invoice?.invoiceType === "SALE_RETURN" && invoiceId != null ? invoiceId : undefined,
-    page: 1,
-    pageSize: 50,
-    enabled: !!invoice && invoice.invoiceType === "SALE_RETURN" && invoiceId != null,
-  });
-  const returnCreditNoteExists =
-    (creditNotesForReturn?.creditNotes ?? []).filter((cn) => cn.deletedAt == null).length > 0;
   const { data: businessProfile } = useBusinessProfile();
   const stockEntryIds =
     invoice?.items
@@ -255,7 +246,6 @@ export default function InvoiceDetail() {
                     ? () => setCreditNoteOpen(true)
                     : undefined
                 }
-                returnCreditNoteExists={returnCreditNoteExists}
                 onMarkSent={handleMarkSent}
                 onMarkReminder={handleMarkReminder}
               />

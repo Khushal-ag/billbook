@@ -86,8 +86,6 @@ interface InvoiceHeaderActionsProps {
   onOpenRefund?: () => void;
   /** Sales return: open credit note dialog for this return (refund generation). */
   onOpenRefundCreditNote?: () => void;
-  /** When true, a credit note already exists for this sales return. */
-  returnCreditNoteExists?: boolean;
   onMarkSent: () => void;
   onMarkReminder: () => void;
 }
@@ -111,7 +109,6 @@ export function InvoiceHeaderActions({
   onOpenPayment,
   onOpenRefund,
   onOpenRefundCreditNote,
-  returnCreditNoteExists = false,
   onMarkSent,
   onMarkReminder,
 }: InvoiceHeaderActionsProps) {
@@ -202,13 +199,7 @@ export function InvoiceHeaderActions({
               variant="outline"
               size="sm"
               onClick={onOpenRefundCreditNote}
-              disabled={returnCreditNoteExists}
-              className={returnCreditNoteExists ? "cursor-not-allowed opacity-50" : ""}
-              title={
-                returnCreditNoteExists
-                  ? "A credit note already exists for this sales return."
-                  : "Create a credit note linked to this sales return (refund generation)."
-              }
+              title="Create a credit note linked to this sales return (customer ledger credit; allocate from Credit notes)."
             >
               <FileMinus className="mr-2 h-3.5 w-3.5" />
               Refund generation

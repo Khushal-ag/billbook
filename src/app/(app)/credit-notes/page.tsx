@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, FileMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/EmptyState";
@@ -10,57 +11,35 @@ import TablePagination from "@/components/TablePagination";
 import TableSkeleton from "@/components/skeletons/TableSkeleton";
 import CreditNoteDialog from "@/components/dialogs/CreditNoteDialog";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
-import {
-  CreditNotesTable,
-  CreditNoteDetailSheet,
-} from "@/components/credit-notes/CreditNoteSections";
-import {
-  useCreditNotes,
-  useFinalizeCreditNote,
-  useDeleteCreditNote,
-} from "@/hooks/use-credit-notes";
+import { CreditNotesTable } from "@/components/credit-notes/CreditNoteSections";
+import { useCreditNotes, useDeleteCreditNote } from "@/hooks/use-credit-notes";
 import { usePagination } from "@/hooks/use-pagination";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useCanCreateInvoice } from "@/hooks/use-can-create-invoice";
 import { BusinessProfileGateAlert } from "@/components/business/BusinessProfileGateAlert";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 import { maybeShowTrialExpiredToast } from "@/lib/trial";
+import { ApiClientError } from "@/api/error";
 
 const PAGE_SIZE = 20;
 
 export default function CreditNotes() {
+  const router = useRouter();
   const { page, setPage } = usePagination();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
-  const [selectedCreditNoteId, setSelectedCreditNoteId] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: number | null }>({
     open: false,
     id: null,
   });
   const { data, isPending, error } = useCreditNotes({ page, pageSize: PAGE_SIZE });
-  const finalizeMutation = useFinalizeCreditNote();
   const deleteMutation = useDeleteCreditNote();
   const { isOwner } = usePermissions();
   const { canCreateInvoice, businessProfile } = useCanCreateInvoice();
   const allowNewCreditNote = canCreateInvoice === true;
-  const [finalizingId, setFinalizingId] = useState<number | null>(null);
 
   const creditNotes = data?.creditNotes ?? [];
   const total = data?.count ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
-
-  const handleFinalize = async (id: number) => {
-    setFinalizingId(id);
-    try {
-      await finalizeMutation.mutateAsync(id);
-      showSuccessToast("Credit note finalized");
-    } catch (err) {
-      if (maybeShowTrialExpiredToast(err)) return;
-      showErrorToast(err, "Failed to finalize");
-    } finally {
-      setFinalizingId(null);
-    }
-  };
 
   const handleDelete = (id: number) => {
     setDeleteConfirm({ open: true, id });
@@ -72,24 +51,32 @@ export default function CreditNotes() {
       await deleteMutation.mutateAsync(deleteConfirm.id);
       showSuccessToast("Credit note deleted");
       setDeleteConfirm({ open: false, id: null });
-      setDetailSheetOpen(false);
-      setSelectedCreditNoteId(null);
     } catch (err) {
-      showErrorToast(err, "Failed to delete");
+      if (maybeShowTrialExpiredToast(err)) return;
+      if (err instanceof ApiClientError && err.status === 409) {
+        showErrorToast(
+          "This credit note still has amounts allocated to invoices. Open it, save an empty allocation list, then try again.",
+          "Cannot delete yet",
+        );
+      } else {
+        showErrorToast(err, "Failed to delete");
+      }
       setDeleteConfirm({ open: false, id: null });
     }
   };
 
   const handleView = (id: number) => {
-    setSelectedCreditNoteId(id);
-    setDetailSheetOpen(true);
+    router.push(`/credit-notes/${id}`);
   };
+
+  const deletePendingId =
+    deleteMutation.isPending && deleteConfirm.id != null ? deleteConfirm.id : null;
 
   return (
     <div className="page-container animate-fade-in">
       <PageHeader
         title="Credit Notes"
-        description="Create credit notes for finalized sales returns (one per return). Pay refunds separately from the return."
+        description="Issue credit notes against final sale invoices or sales returns. The customer ledger is credited immediately; open a note to allocate it to open sale invoices."
         action={
           allowNewCreditNote ? (
             <Button onClick={() => setDialogOpen(true)}>
@@ -119,7 +106,7 @@ export default function CreditNotes() {
         <EmptyState
           icon={<FileMinus className="h-5 w-5" />}
           title="No credit notes"
-          description="Create a credit note from a finalized sales return that does not already have one."
+          description="Create a credit note from a final sale invoice or sales return, then open it to allocate to the customer’s open sale invoices if needed."
           action={
             allowNewCreditNote ? (
               <Button size="sm" onClick={() => setDialogOpen(true)}>
@@ -134,10 +121,8 @@ export default function CreditNotes() {
           <CreditNotesTable
             creditNotes={creditNotes}
             isOwner={isOwner}
-            finalizePendingId={finalizingId}
-            deletePendingId={deleteConfirm.id}
+            deletePendingId={deletePendingId}
             onView={handleView}
-            onFinalize={handleFinalize}
             onDelete={handleDelete}
           />
           <TablePagination
@@ -152,21 +137,12 @@ export default function CreditNotes() {
 
       <CreditNoteDialog open={dialogOpen} onOpenChange={setDialogOpen} />
 
-      <CreditNoteDetailSheet
-        creditNoteId={selectedCreditNoteId}
-        open={detailSheetOpen}
-        onOpenChange={(open) => {
-          setDetailSheetOpen(open);
-          if (!open) setSelectedCreditNoteId(null);
-        }}
-      />
-
       <ConfirmDialog
         open={deleteConfirm.open}
-        onOpenChange={(open) => setDeleteConfirm({ open, id: deleteConfirm.id })}
+        onOpenChange={(open) => setDeleteConfirm((prev) => ({ open, id: open ? prev.id : null }))}
         onConfirm={confirmDelete}
-        title="Delete Credit Note"
-        description="Are you sure you want to delete this credit note? This action cannot be undone."
+        title="Delete credit note"
+        description="This removes the ledger credit and archives the credit note. You can only delete when nothing is allocated to customer invoices."
         confirmText="Delete"
         variant="destructive"
       />

@@ -4,9 +4,10 @@ import { invalidateQueryKeys } from "@/lib/query";
 import { queryKeys } from "@/lib/query-keys";
 import { buildQueryString } from "@/lib/utils";
 import type {
-  CreditNote,
+  CreditNoteDetail,
   CreditNoteListResponse,
   CreateCreditNoteRequest,
+  PutCreditNoteAllocationsRequest,
 } from "@/types/credit-note";
 
 export function useCreditNotes(
@@ -33,12 +34,32 @@ export function useCreditNotes(
   });
 }
 
+function normalizeCreditNoteDetail(raw: CreditNoteDetail): CreditNoteDetail {
+  const allocations = raw.allocations ?? [];
+  const fromLines = allocations.reduce((s, a) => s + (parseFloat(a.amount) || 0), 0);
+  const allocatedAmount = raw.allocatedAmount ?? fromLines.toFixed(2);
+  const allocNum = parseFloat(allocatedAmount) || 0;
+  const unallocatedAmount =
+    raw.unallocatedAmount ??
+    (() => {
+      const total = parseFloat(raw.amount) || 0;
+      return Math.max(0, total - allocNum).toFixed(2);
+    })();
+  return {
+    ...raw,
+    allocations,
+    openInvoicesForParty: raw.openInvoicesForParty ?? [],
+    allocatedAmount,
+    unallocatedAmount,
+  };
+}
+
 export function useCreditNote(creditNoteId: number | undefined) {
   return useQuery({
     queryKey: queryKeys.creditNotes.detail(creditNoteId),
     queryFn: async () => {
-      const res = await api.get<CreditNote>(`/credit-notes/${creditNoteId}`);
-      return res.data;
+      const res = await api.get<CreditNoteDetail>(`/credit-notes/${creditNoteId}`);
+      return normalizeCreditNoteDetail(res.data);
     },
     enabled: !!creditNoteId,
   });
@@ -56,25 +77,29 @@ export function useCreateCreditNote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: CreateCreditNoteRequest) => {
-      const res = await api.post<CreditNote>("/credit-notes", data, generateIdempotencyKey());
+      const res = await api.post<CreditNoteDetail>("/credit-notes", data, generateIdempotencyKey());
       return res.data;
     },
     onSuccess: () => invalidateQueryKeys(qc, CREDIT_NOTE_INVALIDATION_KEYS()),
   });
 }
 
-export function useFinalizeCreditNote() {
+export function useUpdateCreditNoteAllocations(creditNoteId: number) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: number) => {
-      const res = await api.post<CreditNote>(
-        `/credit-notes/${id}/finalize`,
-        undefined,
-        generateIdempotencyKey(),
+    mutationFn: async (body: PutCreditNoteAllocationsRequest) => {
+      const res = await api.put<CreditNoteDetail>(
+        `/credit-notes/${creditNoteId}/allocations`,
+        body,
       );
       return res.data;
     },
-    onSuccess: () => invalidateQueryKeys(qc, CREDIT_NOTE_INVALIDATION_KEYS()),
+    onSuccess: () => {
+      invalidateQueryKeys(qc, [
+        ...CREDIT_NOTE_INVALIDATION_KEYS(),
+        queryKeys.creditNotes.detail(creditNoteId),
+      ]);
+    },
   });
 }
 

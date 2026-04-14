@@ -1,31 +1,27 @@
-import { CheckCircle, Eye, Trash2 } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
 import { LinkedInvoiceLink } from "@/components/invoices/LinkedInvoiceLink";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "@/components/StatusBadge";
 import { formatCurrency } from "@/lib/utils";
-import type { CreditNote } from "@/types/credit-note";
+import type { CreditNoteSummary } from "@/types/credit-note";
 
 interface CreditNotesTableProps {
-  creditNotes: CreditNote[];
+  creditNotes: CreditNoteSummary[];
   isOwner: boolean;
-  finalizePendingId: number | null;
   deletePendingId: number | null;
   onView: (id: number) => void;
-  onFinalize: (id: number) => void;
   onDelete: (id: number) => void;
 }
 
 export function CreditNotesTable({
   creditNotes,
   isOwner,
-  finalizePendingId,
   deletePendingId,
   onView,
-  onFinalize,
   onDelete,
 }: CreditNotesTableProps) {
   return (
-    <div className="data-table-container">
+    <div className="data-table-container -mx-1 px-1 sm:mx-0 sm:px-0">
       <table className="w-full text-sm" role="table" aria-label="Credit notes list">
         <thead>
           <tr className="border-b bg-muted/30">
@@ -103,41 +99,26 @@ export function CreditNotesTable({
                       e.stopPropagation();
                       onView(cn.id);
                     }}
-                    title="View details"
-                    aria-label={`View credit note ${cn.creditNoteNumber}`}
+                    title="Open credit note"
+                    aria-label={`Open credit note ${cn.creditNoteNumber}`}
                   >
                     <Eye className="h-3.5 w-3.5" />
                   </Button>
-                  {isOwner && cn.status === "DRAFT" && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onFinalize(cn.id);
-                        }}
-                        disabled={finalizePendingId === cn.id}
-                        title="Finalize"
-                        aria-label={`Finalize credit note ${cn.creditNoteNumber}`}
-                      >
-                        <CheckCircle className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(cn.id);
-                        }}
-                        disabled={deletePendingId === cn.id}
-                        title="Delete"
-                        aria-label={`Delete credit note ${cn.creditNoteNumber}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </>
+                  {isOwner && cn.deletedAt == null && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(cn.id);
+                      }}
+                      disabled={deletePendingId === cn.id}
+                      title="Delete (only succeeds when nothing is allocated)"
+                      aria-label={`Delete credit note ${cn.creditNoteNumber}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   )}
                 </div>
               </td>
