@@ -2,6 +2,10 @@ import Link from "next/link";
 import { LinkedInvoiceLink } from "@/components/invoices/LinkedInvoiceLink";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
+import {
+  creditNotePartyNameDisplay,
+  creditNoteSourceInvoiceLinkProps,
+} from "@/lib/credit-note-display";
 import type { CreditNoteSummary } from "@/types/credit-note";
 
 interface CreditNotesTableProps {
@@ -45,6 +49,12 @@ export function CreditNotesTable({ creditNotes, onView }: CreditNotesTableProps)
               scope="col"
               className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell"
             >
+              Customer
+            </th>
+            <th
+              scope="col"
+              className="hidden px-3 py-3 text-left font-medium text-muted-foreground md:table-cell"
+            >
               Linked invoice
             </th>
             <th
@@ -74,6 +84,8 @@ export function CreditNotesTable({ creditNotes, onView }: CreditNotesTableProps)
           {creditNotes.map((cn) => {
             const allocate = canAllocateCreditNote(cn);
             const unalloc = resolvedUnallocated(cn);
+            const partyLabel = creditNotePartyNameDisplay(cn);
+            const sourceInvoiceProps = creditNoteSourceInvoiceLinkProps(cn);
             return (
               <tr
                 key={cn.id}
@@ -83,24 +95,37 @@ export function CreditNotesTable({ creditNotes, onView }: CreditNotesTableProps)
                 onClick={() => onView(cn.id)}
                 onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onView(cn.id)}
               >
-                <td className="px-4 py-3 font-medium sm:px-6">
-                  <button
-                    type="button"
-                    className="text-left text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onView(cn.id);
-                    }}
-                  >
-                    {cn.creditNoteNumber}
-                  </button>
+                <td className="min-w-0 max-w-[min(100vw-4rem,28rem)] px-4 py-3 font-medium sm:max-w-none sm:px-6">
+                  <div className="flex min-w-0 flex-nowrap items-baseline gap-x-2 md:block">
+                    <button
+                      type="button"
+                      className="shrink-0 text-left text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onView(cn.id);
+                      }}
+                    >
+                      {cn.creditNoteNumber}
+                    </button>
+                    <span
+                      className="min-w-0 flex-1 truncate text-xs font-normal text-muted-foreground md:hidden"
+                      title={partyLabel}
+                    >
+                      <span aria-hidden className="text-muted-foreground/70">
+                        ·{" "}
+                      </span>
+                      {partyLabel}
+                    </span>
+                  </div>
+                </td>
+                <td
+                  className="hidden max-w-[200px] truncate px-3 py-3 text-muted-foreground md:table-cell"
+                  title={partyLabel}
+                >
+                  {partyLabel}
                 </td>
                 <td className="hidden px-3 py-3 md:table-cell">
-                  <LinkedInvoiceLink
-                    invoiceId={cn.invoiceId}
-                    invoiceNumber={cn.invoiceNumber}
-                    onClick={(e) => e.stopPropagation()}
-                  />
+                  <LinkedInvoiceLink {...sourceInvoiceProps} onClick={(e) => e.stopPropagation()} />
                 </td>
                 <td className="hidden max-w-[200px] truncate px-3 py-3 text-muted-foreground lg:table-cell">
                   {cn.reason ?? "—"}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Calendar, FileMinus, FileText, List, Trash2 } from "lucide-react";
+import { Calendar, FileMinus, FileText, List, Trash2, User } from "lucide-react";
 import { LinkedInvoiceLink } from "@/components/invoices/LinkedInvoiceLink";
 import PageHeader from "@/components/PageHeader";
 import { PageBackLink } from "@/components/PageBackLink";
@@ -21,6 +21,10 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { ApiClientError } from "@/api/error";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import { maybeShowTrialExpiredToast } from "@/lib/trial";
+import {
+  creditNoteSourceInvoiceLinkProps,
+  resolvedCreditNotePartyId,
+} from "@/lib/credit-note-display";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 
 function isFullyUnallocated(allocated: string | undefined): boolean {
@@ -111,6 +115,11 @@ export default function CreditNoteDetailPage() {
     (a) => (parseFloat(a.amount) || 0) > 0.001,
   );
 
+  const partyLedgerId = resolvedCreditNotePartyId(creditNote);
+  const partyNameForLink = creditNote.party?.partyName?.trim() ?? "";
+  const partyLabel = partyNameForLink || "—";
+  const canLinkPartyLedger = partyLedgerId != null && partyNameForLink !== "";
+
   const canDelete =
     isOwner && creditNote.deletedAt == null && isFullyUnallocated(creditNote.allocatedAmount);
 
@@ -165,13 +174,31 @@ export default function CreditNoteDetailPage() {
                 </div>
                 <div className="flex items-start gap-2.5">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    <User className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 break-words text-sm leading-relaxed">
+                    <span className="text-muted-foreground">Customer </span>
+                    {canLinkPartyLedger ? (
+                      <Link
+                        href={`/parties/${partyLedgerId}/ledger`}
+                        className="font-semibold text-primary hover:underline"
+                      >
+                        {partyNameForLink}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-foreground">{partyLabel}</span>
+                    )}
+                  </span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
                     <FileText className="h-4 w-4" />
                   </span>
-                  <span className="min-w-0 break-words">
-                    Source:{" "}
+                  <span className="min-w-0 break-words text-sm">
+                    <span className="text-muted-foreground">Issued against </span>
                     <LinkedInvoiceLink
-                      invoiceId={creditNote.invoiceId}
-                      invoiceNumber={creditNote.invoiceNumber}
+                      {...creditNoteSourceInvoiceLinkProps(creditNote)}
+                      className="font-medium"
                     />
                   </span>
                 </div>

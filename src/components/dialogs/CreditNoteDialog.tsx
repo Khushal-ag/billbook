@@ -24,6 +24,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { useCreateCreditNote, useCreditNotes } from "@/hooks/use-credit-notes";
 import { useInvoices, useInvoice } from "@/hooks/use-invoices";
+import type { CreditNoteSummary } from "@/types/credit-note";
 import type { Invoice } from "@/types/invoice";
 import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
 import { withInvoiceQuantityErrorDetails } from "@/lib/invoice-quantity-error-details";
@@ -39,13 +40,10 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-function sumFinalCreditOnInvoice(
-  creditNotes: { invoiceId: number; amount: string; status: string; deletedAt: string | null }[],
-  invoiceId: number,
-): number {
+function sumFinalCreditOnInvoice(creditNotes: CreditNoteSummary[], invoiceId: number): number {
   let s = 0;
   for (const cn of creditNotes) {
-    if (cn.invoiceId !== invoiceId || cn.deletedAt != null) continue;
+    if (cn.invoiceId == null || cn.invoiceId !== invoiceId || cn.deletedAt != null) continue;
     if (cn.status !== "FINAL") continue;
     s += parseFloat(cn.amount) || 0;
   }

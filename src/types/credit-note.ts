@@ -2,13 +2,29 @@ import type { OpenInvoiceForParty } from "@/types/receipt";
 
 export type CreditNoteStatus = "DRAFT" | "FINAL";
 
+/** Embedded party summary on credit note list/detail (API: CreditNotePartySummary). */
+export interface CreditNotePartySummary {
+  partyId?: number | null;
+  partyName?: string | null;
+  partyCode?: string | null;
+  partyGstin?: string | null;
+  partyPhone?: string | null;
+}
+
 /** List row / summary (no allocation breakdown). */
 export interface CreditNoteSummary {
   id: number;
   businessId: number;
-  invoiceId: number;
-  /** When API embeds it: linked invoice display number. */
+  /** Source sale invoice id; may be absent on some responses (e.g. stripped joins). */
+  invoiceId?: number | null;
+  /** Human-readable number for the source invoice (preferred over invoiceNumber when both exist). */
+  sourceInvoiceNumber?: string | null;
+  /** When API embeds it: linked invoice display number (legacy / alias for source). */
   invoiceNumber?: string | null;
+  /** Party row from API; may be null after delete or edge responses. */
+  party?: CreditNotePartySummary | null;
+  /** When the party object is omitted but the id is known. */
+  partyId?: number | null;
   creditNoteNumber: string;
   amount: string;
   /** Total applied to invoices (when API sends it, e.g. list endpoint). */
