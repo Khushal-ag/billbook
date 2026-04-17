@@ -487,7 +487,7 @@ export function BusinessProfileForm({
         <CardDescription>
           {readOnly
             ? "View-only for team members. Ask the business owner to change these details."
-            : "Update your business details and compliance settings"}
+            : "Update your business details used on invoices, payments, and compliance records."}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
@@ -497,6 +497,27 @@ export function BusinessProfileForm({
           className="min-w-0"
         >
           <fieldset disabled={readOnly} className="min-w-0 space-y-6 border-0 p-0">
+            {!readOnly && (
+              <div className="rounded-lg border border-border/70 bg-muted/25 p-4">
+                <p className="text-sm font-medium text-foreground">Quick setup</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Start with business name and address, then complete bank details for payouts.
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <Badge variant="secondary" className="font-normal">
+                    1. Business & contact
+                  </Badge>
+                  <Badge variant="secondary" className="font-normal">
+                    2. Address
+                  </Badge>
+                  <Badge variant="secondary" className="font-normal">
+                    3. Bank details
+                  </Badge>
+                  <span>Save changes from the top-right button.</span>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
               <div className="space-y-4">
                 <div className="rounded-lg border-2 border-dashed border-border/60 p-4 text-center">
@@ -690,7 +711,8 @@ export function BusinessProfileForm({
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm">Business & contact</CardTitle>
                     <CardDescription>
-                      Key details used across invoices and reports. Classification is optional.
+                      Key details used across invoices and reports. Fields marked required should be
+                      completed first.
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -880,6 +902,9 @@ export function BusinessProfileForm({
                           })}
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Enter digits only. Country code is selected separately.
+                      </p>
                       {errors.phone && <FieldError>{errors.phone.message}</FieldError>}
                     </div>
                   </CardContent>
@@ -888,7 +913,10 @@ export function BusinessProfileForm({
                 <Card>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm">Address</CardTitle>
-                    <CardDescription>Used for compliance and document headers</CardDescription>
+                    <CardDescription>
+                      Used for compliance and document headers. Pincode can auto-fill city and
+                      state.
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
@@ -958,7 +986,8 @@ export function BusinessProfileForm({
                       <div className="min-w-0 space-y-1">
                         <CardTitle className="text-sm">Bank details</CardTitle>
                         <CardDescription>
-                          Add beneficiary, bank, and transfer preferences for payouts
+                          Add beneficiary and account details for payouts. IFSC auto-fills bank and
+                          branch fields.
                         </CardDescription>
                         {!readOnly && !isEditingBankDetails && (
                           <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">

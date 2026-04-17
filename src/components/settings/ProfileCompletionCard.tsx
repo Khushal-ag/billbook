@@ -106,12 +106,13 @@ export function ProfileCompletionCard({ profileCompletion, business }: ProfileCo
       missing: regComplete ? [] : missingOrHint(registrationMissing, "Review name and country"),
     },
     {
-      label: "Address — street, city, state, pincode (area optional)",
+      label: "Address — Street · City · State · Pincode (Area optional)",
       complete: addrComplete,
       missing: addrComplete ? [] : missingOrHint(addressMissing, "Review address"),
     },
     {
-      label: "Bank — holder, account, bank name, branch, IFSC, bank city, bank state",
+      label:
+        "Bank — Account holder name · Bank account number · Bank name · Branch name · IFSC code · Bank city · Bank state",
       complete: bankComplete,
       missing: bankComplete ? [] : missingOrHint(bankMissing, "Review bank details"),
     },

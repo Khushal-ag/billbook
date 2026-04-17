@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -249,6 +250,7 @@ export function DocumentNumberingCard({ embedded = false }: DocumentNumberingCar
   const form = { ...toFormState(data), ...patch };
   const readOnly = !isOwner;
   const profileMonth = data.businessProfileFinancialYearStart;
+  const changedCount = Object.keys(patch).length;
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     const base = toFormState(data);
@@ -266,6 +268,28 @@ export function DocumentNumberingCard({ embedded = false }: DocumentNumberingCar
 
   const body = (
     <div className="space-y-6">
+      <div className="rounded-lg border border-border/70 bg-muted/25 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium text-foreground">Settings overview</p>
+          {readOnly ? (
+            <Badge variant="secondary" className="font-normal">
+              View only
+            </Badge>
+          ) : changedCount > 0 ? (
+            <Badge variant="secondary" className="font-normal">
+              {changedCount} unsaved {changedCount === 1 ? "change" : "changes"}
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="font-normal">
+              All changes saved
+            </Badge>
+          )}
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Update prefixes and sequence starts carefully. Changes apply to new documents.
+        </p>
+      </div>
+
       <Alert className="border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/25 dark:text-amber-100">
         <AlertTriangle className="h-4 w-4" />
         <AlertTitle className="text-sm">Duplicate numbers</AlertTitle>
@@ -544,18 +568,28 @@ export function DocumentNumberingCard({ embedded = false }: DocumentNumberingCar
           Only the business <strong>owner</strong> can change document numbering.
         </p>
       ) : (
-        <div className="flex flex-wrap gap-2 pt-2">
-          <Button type="button" variant="outline" onClick={onReset} disabled={update.isPending}>
-            Reset
+        <div className="sticky bottom-3 z-10 flex flex-wrap items-center gap-2 rounded-lg border border-border/70 bg-background/95 p-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onReset}
+            disabled={update.isPending || changedCount === 0}
+          >
+            Discard edits
           </Button>
           <Button
             type="button"
             onClick={() => void onSave()}
-            disabled={update.isPending || Object.keys(patch).length === 0}
+            disabled={update.isPending || changedCount === 0}
           >
             {update.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save changes
           </Button>
+          {changedCount > 0 && !update.isPending ? (
+            <span className="text-xs text-muted-foreground">
+              {changedCount} pending {changedCount === 1 ? "edit" : "edits"}
+            </span>
+          ) : null}
         </div>
       )}
     </div>
