@@ -53,7 +53,7 @@ import {
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import { normalizeMinStockThresholdValue } from "@/lib/item-api";
 import { formatIgstFromCgstSgst } from "@/lib/invoice-create";
-import { capitaliseWords, cn } from "@/lib/utils";
+import { capitaliseWords } from "@/lib/utils";
 import type { Item, Category, CreateItemRequest, Unit } from "@/types/item";
 
 function defaultUnitForType(type: "STOCK" | "SERVICE"): string {
@@ -108,12 +108,51 @@ const schema = z
       }
 
       if (data.taxType === "GST") {
-        if (!data.cgstRate && !data.sgstRate && !data.igstRate) {
+        const cgst = (data.cgstRate ?? "").trim();
+        const sgst = (data.sgstRate ?? "").trim();
+        const igst = (data.igstRate ?? "").trim();
+
+        if (!cgst) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["cgstRate"],
-            message: "At least one GST rate is required",
+            message: "CGST rate is required",
           });
+        }
+        if (!sgst) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["sgstRate"],
+            message: "SGST rate is required",
+          });
+        }
+        if (!igst) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["igstRate"],
+            message: "IGST rate is required",
+          });
+        }
+
+        const cgstNum = Number(cgst);
+        const sgstNum = Number(sgst);
+        const igstNum = Number(igst);
+        if (
+          cgst &&
+          sgst &&
+          igst &&
+          Number.isFinite(cgstNum) &&
+          Number.isFinite(sgstNum) &&
+          Number.isFinite(igstNum)
+        ) {
+          const delta = Math.abs(cgstNum + sgstNum - igstNum);
+          if (delta > 0.01) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["igstRate"],
+              message: "IGST must be equal to CGST + SGST",
+            });
+          }
         }
       } else if (data.taxType === "OTHER") {
         if (!data.otherTaxName) {
@@ -194,8 +233,6 @@ export default function ItemDialog({
   const sgstRateW = watch("sgstRate");
   const taxTypeW = watch("taxType");
   const isTaxableW = watch("isTaxable");
-  const gstIgstDerived =
-    isTaxableW && taxTypeW === "GST" && (cgstRateW?.trim() !== "" || sgstRateW?.trim() !== "");
 
   const { data: unitsData, isLoading: unitsLoading } = useUnits(productType);
   const units = useMemo(() => (Array.isArray(unitsData) ? unitsData : []), [unitsData]);
@@ -385,6 +422,67 @@ export default function ItemDialog({
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  const formatRateValue = (value: number): string => {
+    const rounded = Number(value.toFixed(2));
+    return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+  };
+
+  const parseRateValue = (value: string | undefined): number | null => {
+    if (!value) return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const n = Number(trimmed);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const syncFromIntraRates = () => {
+    const cgstRaw = getValues("cgstRate") ?? "";
+    const sgstRaw = getValues("sgstRate") ?? "";
+    const cgst = parseRateValue(cgstRaw);
+    const sgst = parseRateValue(sgstRaw);
+
+    if (!cgstRaw.trim() || !sgstRaw.trim()) {
+      setValue("igstRate", "", {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      return;
+    }
+
+    if (cgst == null || sgst == null) {
+      setValue("igstRate", "", {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      return;
+    }
+
+    setValue("igstRate", formatRateValue(cgst + sgst), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  const syncFromIgstRate = (igstText: string) => {
+    if (!igstText.trim()) {
+      setValue("cgstRate", "", { shouldDirty: true, shouldValidate: true });
+      setValue("sgstRate", "", { shouldDirty: true, shouldValidate: true });
+      return;
+    }
+
+    const igst = parseRateValue(igstText);
+    if (igst == null) {
+      setValue("cgstRate", "", { shouldDirty: true, shouldValidate: true });
+      setValue("sgstRate", "", { shouldDirty: true, shouldValidate: true });
+      return;
+    }
+
+    const half = igst / 2;
+    const halfText = formatRateValue(half);
+    setValue("cgstRate", halfText, { shouldDirty: true, shouldValidate: true });
+    setValue("sgstRate", halfText, { shouldDirty: true, shouldValidate: true });
+  };
+
   const onInvalidSubmit = () => {
     if (!category?.id || category.id <= 0) {
       setShowCategoryError(true);
@@ -570,7 +668,11 @@ export default function ItemDialog({
                           <Input
                             placeholder="e.g. 9"
                             className="placeholder:opacity-80"
-                            {...register("cgstRate")}
+                            {...register("cgstRate", {
+                              onChange: () => {
+                                syncFromIntraRates();
+                              },
+                            })}
                           />
                           {errors.cgstRate && <FieldError>{errors.cgstRate.message}</FieldError>}
                         </div>
@@ -581,7 +683,11 @@ export default function ItemDialog({
                           <Input
                             placeholder="e.g. 9"
                             className="placeholder:opacity-80"
-                            {...register("sgstRate")}
+                            {...register("sgstRate", {
+                              onChange: () => {
+                                syncFromIntraRates();
+                              },
+                            })}
                           />
                           {errors.sgstRate && <FieldError>{errors.sgstRate.message}</FieldError>}
                         </div>
@@ -591,17 +697,12 @@ export default function ItemDialog({
                           </Label>
                           <Input
                             placeholder="e.g. 18"
-                            title={
-                              gstIgstDerived
-                                ? "Computed as CGST % + SGST %"
-                                : "Enter IGST %, or fill CGST and SGST to calculate automatically"
-                            }
-                            readOnly={gstIgstDerived}
-                            className={cn(
-                              "placeholder:opacity-80",
-                              gstIgstDerived && "cursor-default bg-muted/50",
-                            )}
-                            {...register("igstRate")}
+                            className="placeholder:opacity-80"
+                            {...register("igstRate", {
+                              onChange: (event) => {
+                                syncFromIgstRate(event.target.value);
+                              },
+                            })}
                           />
                           {errors.igstRate && <FieldError>{errors.igstRate.message}</FieldError>}
                         </div>
