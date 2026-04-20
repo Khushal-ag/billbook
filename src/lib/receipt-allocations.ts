@@ -48,7 +48,8 @@ export function maxReceiptAllocToInvoice(
 }
 
 /**
- * Pool left on this receipt for new tags + suggested opening (opening is filled first, then invoices).
+ * Pool left on this receipt for new tags + suggested opening (invoices are suggested first, then
+ * any remainder toward opening when the opening row is shown).
  * Caller should pass the shared {@link OpeningLedger}; when absent we derive it from
  * `partyOpeningBalanceRaw` so ad‑hoc callers still work.
  */
@@ -99,10 +100,13 @@ export function buildReceiptAllocationState(
     ? Math.min(Math.max(0, apiUnalloc), poolFromMath + 0.01)
     : poolFromMath;
 
-  const maxOpenTag = maxReceiptAllocToOpening(receipt, 0, usedOpening, ledger);
-  const takeOpening = Math.min(pool, maxOpenTag);
-  let poolInv = pool - takeOpening;
-
+  /**
+   * Invoice-first auto-suggest: fill open invoice lines from the pool, then suggest any remainder
+   * toward opening. Opening-first caused a visible bug — before party/ledger loads, invoices could
+   * fill; after `takeOpening` jumped to consume the full pool, invoice rows reset to 0.00.
+   */
+  const openingAdvanceReceipt = receipt.paymentMethod === "OPENING_BALANCE";
+  let poolInv = pool;
   for (const inv of open) {
     if (amountForId.has(inv.id)) continue;
     const due = num(inv.dueAmount);
@@ -110,9 +114,21 @@ export function buildReceiptAllocationState(
     amountForId.set(inv.id, take);
     poolInv -= take;
   }
+  const leftover = poolInv;
 
-  const suggestedOpening =
-    usedOpening <= 0.001 && takeOpening > 0.001 ? Math.round(takeOpening * 100) / 100 : 0;
+  const openIds = new Set(open.map((i) => i.id));
+  const allocOutsideOpen = (receipt.allocations ?? [])
+    .filter((a) => !openIds.has(a.invoiceId))
+    .reduce((s, a) => s + num(a.amount), 0);
+  const invoiceAllocSum =
+    open.reduce((s, inv) => s + (amountForId.get(inv.id) ?? 0), 0) + allocOutsideOpen;
+
+  const showOpeningRow = shouldShowOpeningBalanceRow(receipt, ledger);
+  let suggestedOpening = 0;
+  if (!openingAdvanceReceipt && showOpeningRow && usedOpening <= 0.001 && leftover > 0.001) {
+    const cap = maxReceiptAllocToOpening(receipt, invoiceAllocSum, usedOpening, ledger);
+    suggestedOpening = Math.round(Math.min(leftover, cap) * 100) / 100;
+  }
 
   const rows = open.map((inv) => ({
     invoiceId: inv.id,
@@ -247,9 +263,8 @@ export function totalTaggedFromSavePayload(
  * Whether to show the opening row in the allocate table.
  *
  * Like fully-paid invoices, the opening line is hidden as soon as remaining is 0. The receipt's
- * existing `openingBalanceSettlementAmount` is still visible in the read-only
- * "Where this receipt is tagged" summary — and the editor surfaces a "Clear opening tag"
- * affordance when the row is hidden but this receipt still holds a tag.
+ * existing `openingBalanceSettlementAmount` is still visible in the "Where this receipt is tagged"
+ * summary on the receipt page.
  */
 export function shouldShowOpeningBalanceRow(
   receipt: ReceiptDetail,
@@ -289,7 +304,19 @@ export function maxReceiptAllocToOpening(
     const inferredCap = Math.round(((ledger.due ?? 0) + initialOpeningFromThisReceipt) * 100) / 100;
     return Math.min(byReceipt, Math.max(0, inferredCap));
   }
-  return byReceipt;
+  /**
+   * Ledger unknown (e.g. GET /parties/:id not loaded yet). Do **not** use `byReceipt` here — that
+   * would reserve the entire receipt for opening, leave no pool for invoice auto-allocation, and
+   * suggested opening would swallow all cash before party opening is known.
+   */
+  const netFromApi =
+    receipt.partyNetOpening != null && String(receipt.partyNetOpening).trim() !== ""
+      ? num(receipt.partyNetOpening)
+      : null;
+  if (netFromApi != null && netFromApi > 0.001) {
+    return Math.min(byReceipt, netFromApi);
+  }
+  return 0;
 }
 
 /**

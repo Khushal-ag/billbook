@@ -261,7 +261,7 @@ export default function ReceiptDetailPage() {
               Where this receipt is tagged
             </CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              Opening tags label money against historical receivable; invoice lines apply to bills.
+              Opening tags apply to opening balance; invoice lines apply to bills.
             </p>
           </CardHeader>
           <CardContent className="px-6 py-4 sm:px-8 sm:py-6">
@@ -280,9 +280,7 @@ export default function ReceiptDetailPage() {
                 <tbody>
                   {openingSettled > 0.001 && (
                     <tr className="border-b border-border/50 hover:bg-muted/20">
-                      <td className="px-4 py-3 font-medium">
-                        Opening balance (historical receivable)
-                      </td>
+                      <td className="px-4 py-3 font-medium">Opening balance</td>
                       <td className="px-4 py-3 text-right font-medium tabular-nums">
                         {formatCurrency(String(openingSettled))}
                       </td>

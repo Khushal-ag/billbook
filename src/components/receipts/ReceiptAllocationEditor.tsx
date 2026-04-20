@@ -66,12 +66,6 @@ export function ReceiptAllocationEditor({
   const updateAlloc = useUpdateReceiptAllocations(receiptId);
   const [rows, setRows] = useState<ReceiptAllocationRowState[]>([]);
   const [openingDraft, setOpeningDraft] = useState("");
-  /**
-   * When the opening row is hidden (opening fully covered) but this receipt still carries a tag,
-   * the user can request a clear via the compact affordance below the summary. We remember that
-   * intent here and send `openingBalanceSettlementAmount: "0.00"` on save.
-   */
-  const [forceClearHiddenOpening, setForceClearHiddenOpening] = useState(false);
   const receiptRef = useRef(receipt);
   receiptRef.current = receipt;
 
@@ -111,16 +105,11 @@ export function ReceiptAllocationEditor({
     } else {
       setOpeningDraft("");
     }
-    setForceClearHiddenOpening(false);
   }, [initKey, openingLedger]);
 
   const serverOpeningNum = parseFloat(receipt.openingBalanceSettlementAmount ?? "0") || 0;
   const openingNum = openingDraftToNum(openingDraft);
-  const effectiveOpeningNum = showOpeningRow
-    ? openingNum
-    : forceClearHiddenOpening
-      ? 0
-      : serverOpeningNum;
+  const effectiveOpeningNum = showOpeningRow ? openingNum : serverOpeningNum;
 
   const totalReceipt = parseFloat(receipt.totalAmount ?? "0") || 0;
   const savePayload = useMemo(() => mergeAllocationsForSave(rows, receipt), [rows, receipt]);
@@ -128,9 +117,7 @@ export function ReceiptAllocationEditor({
   const totalIfSaved = totalTaggedFromSavePayload(savePayload, effectiveOpeningNum);
   const remaining = totalReceipt - totalIfSaved;
 
-  const openingUnchanged = showOpeningRow
-    ? receiptOpeningUnchanged(openingDraft, receipt)
-    : !forceClearHiddenOpening;
+  const openingUnchanged = showOpeningRow ? receiptOpeningUnchanged(openingDraft, receipt) : true;
   const noChanges = receiptAllocationsUnchanged(rows, receipt) && openingUnchanged;
 
   const updateAmount = (invoiceId: number, raw: string) => {
@@ -152,7 +139,6 @@ export function ReceiptAllocationEditor({
     } else {
       setOpeningDraft("");
     }
-    setForceClearHiddenOpening(false);
   };
 
   const initialAllocByInvoiceId = useMemo(() => {
@@ -176,12 +162,6 @@ export function ReceiptAllocationEditor({
     : 0;
   const openingOverCap = showOpeningRow && openingNum > maxOpeningAlloc + 0.01;
 
-  const canClearOpeningDraft =
-    showOpeningRow && !openingDisabled && (openingNum > 0.001 || serverOpeningNum > 0.001);
-
-  const showHiddenOpeningTagAffordance =
-    !showOpeningRow && !openingDisabled && !partyLoading && serverOpeningNum > 0.001;
-
   const hasTableRows = showOpeningRow || partyLoading || rows.length > 0;
 
   const onSave = async () => {
@@ -194,6 +174,13 @@ export function ReceiptAllocationEditor({
     if (openingOverCap) {
       showErrorToast(
         `Opening amount cannot exceed ${formatCurrency(String(maxOpeningAlloc))} for this receipt.`,
+      );
+      return;
+    }
+    if (showOpeningRow && !openingDisabled && serverOpeningNum > 0.001 && openingNum <= 0.001) {
+      showErrorToast(
+        null,
+        "Opening allocation cannot be removed once it has been saved on this receipt.",
       );
       return;
     }
@@ -212,8 +199,6 @@ export function ReceiptAllocationEditor({
       };
       if (showOpeningRow && Math.abs(openingNum - serverOpeningNum) > 0.005) {
         body.openingBalanceSettlementAmount = formatMoneyTwoDp(openingNum);
-      } else if (!showOpeningRow && forceClearHiddenOpening && serverOpeningNum > 0.001) {
-        body.openingBalanceSettlementAmount = "0.00";
       }
       await updateAlloc.mutateAsync(body);
       showSuccessToast("Allocations updated");
@@ -299,39 +284,6 @@ export function ReceiptAllocationEditor({
             </p>
           </div>
         </div>
-
-        {showHiddenOpeningTagAffordance && (
-          <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-muted/10 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-            <div className="min-w-0 text-sm leading-relaxed">
-              <p className="font-medium text-foreground">Opening tag on this receipt</p>
-              <p className="text-muted-foreground">
-                {formatCurrency(String(serverOpeningNum))} is attributed to opening balance. The
-                party opening is fully covered, so there's nothing more to tag here.
-                {forceClearHiddenOpening && (
-                  <span className="ml-1 font-medium text-destructive">
-                    Will be cleared on save.
-                  </span>
-                )}
-              </p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="shrink-0 self-start sm:self-auto"
-              onClick={() => setForceClearHiddenOpening((v) => !v)}
-            >
-              {forceClearHiddenOpening ? (
-                "Keep tag"
-              ) : (
-                <>
-                  <Eraser className="mr-2 h-4 w-4" />
-                  Clear opening tag
-                </>
-              )}
-            </Button>
-          </div>
-        )}
 
         {!hasTableRows ? (
           <div className="flex gap-4 rounded-xl border border-border/60 bg-muted/10 p-4 sm:p-5">
@@ -482,21 +434,8 @@ export function ReceiptAllocationEditor({
                               placeholder="0.00"
                               aria-label="Allocate to opening balance"
                             />
-                            <div className={ALLOC_ACTION_SLOT}>
-                              {canClearOpeningDraft && !openingDisabled && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-9 w-9 text-muted-foreground hover:text-foreground"
-                                  title="Clear opening tag"
-                                  onClick={() => setOpeningDraft("")}
-                                >
-                                  <Eraser className="h-4 w-4" aria-hidden />
-                                  <span className="sr-only">Clear opening tag</span>
-                                </Button>
-                              )}
-                            </div>
+                            {/* Reserve slot width; opening tag cannot be cleared once saved */}
+                            <div className={ALLOC_ACTION_SLOT} aria-hidden />
                           </div>
                           {openingOverCap && (
                             <span className="w-full max-w-[calc(7.25rem+0.375rem+2.25rem)] text-right text-[11px] text-destructive">
@@ -644,8 +583,8 @@ export function ReceiptAllocationEditor({
             )}
           </div>
           <p className="text-xs text-muted-foreground sm:text-right">
-            If you don&apos;t change opening, it isn&apos;t sent on save. Clear the field and save
-            to remove the tag.
+            If you don&apos;t change opening, it isn&apos;t sent on save. A saved opening allocation
+            cannot be removed here; you can still adjust the amount within allowed limits.
           </p>
         </div>
       </CardContent>
