@@ -52,6 +52,7 @@ export function useCreateOutboundPayment() {
         queryKeys.invoices.detailPrefix(),
         queryKeys.invoices.root(),
         queryKeys.receipts.root(),
+        queryKeys.receipts.detailPrefix(),
       ]);
     },
   });

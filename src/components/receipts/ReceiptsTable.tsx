@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import TablePagination from "@/components/TablePagination";
+import { receiptOpeningSettlementNum, receiptUnallocatedAmountNum } from "@/lib/receipt-amounts";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { PAYMENT_METHOD_LABEL, receiptPaymentMethodBadgeProps } from "@/constants/receipt-ui";
 import type { ReceiptListItem } from "@/types/receipt";
@@ -37,6 +38,9 @@ export function ReceiptsTable({
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Method</th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">Total</th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+                  Opening tag
+                </th>
+                <th className="px-4 py-3 text-right font-medium text-muted-foreground">
                   Unallocated
                 </th>
                 <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
@@ -44,7 +48,9 @@ export function ReceiptsTable({
             </thead>
             <tbody>
               {receipts.map((r) => {
-                const canAllocate = parseFloat(r.unallocatedAmount || "0") > 0.001;
+                const unalloc = receiptUnallocatedAmountNum(r);
+                const openingTag = receiptOpeningSettlementNum(r);
+                const canAllocate = unalloc > 0.001;
                 const methodBadge = receiptPaymentMethodBadgeProps(r.paymentMethod);
                 return (
                   <tr key={r.id} className="border-b last:border-0 hover:bg-muted/30">
@@ -75,10 +81,19 @@ export function ReceiptsTable({
                     <td className="px-4 py-3 text-right font-medium tabular-nums">
                       {formatCurrency(r.totalAmount)}
                     </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                      {openingTag > 0.001 ? (
+                        <span className="font-medium text-foreground">
+                          {formatCurrency(String(openingTag))}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right tabular-nums">
-                      {parseFloat(r.unallocatedAmount || "0") > 0 ? (
+                      {unalloc > 0.001 ? (
                         <span className="font-medium text-amber-700">
-                          {formatCurrency(r.unallocatedAmount)}
+                          {formatCurrency(String(unalloc))}
                         </span>
                       ) : (
                         <span className="text-muted-foreground">—</span>

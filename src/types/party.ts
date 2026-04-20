@@ -155,6 +155,7 @@ export interface PartyAdvanceReceiptResult {
   totalAmount?: string;
   allocatedAmount?: string;
   unallocatedAmount?: string;
+  openingBalanceSettlementAmount?: string;
   paymentMethod?: string;
   partyId?: number;
 }

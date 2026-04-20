@@ -4,7 +4,11 @@ export interface ReceiptSummary {
   id: number;
   receiptNumber: string;
   totalAmount: string;
+  /** Sum of invoice allocations plus {@link openingBalanceSettlementAmount} when provided by the API. */
+  allocatedAmount?: string | null;
   unallocatedAmount: string;
+  /** Part of this receipt attributed to historical customer debit opening (ledger unchanged). */
+  openingBalanceSettlementAmount?: string | null;
   paymentMethod: string;
   referenceNumber: string | null;
   notes: string | null;
@@ -35,8 +39,16 @@ export interface OpenInvoiceForParty {
 export interface ReceiptDetail extends ReceiptSummary {
   partyId: number;
   partyName?: string;
-  /** Sum already applied to invoices (when API sends it; else derivable from allocations). */
-  allocatedAmount?: string;
+  /**
+   * Remaining historical receivable the party can still tag receipts against (same basis as server cap).
+   * When `"0.00"` or absent meaning nothing left, the opening row is hidden—like invoices with no due.
+   * If omitted (older API), the UI still shows the opening row when not an opening-advance receipt.
+   */
+  partyOpeningRemaining?: string | null;
+  /** Net debit opening (receivable) for the party — “Total” column; aligns with ledger / `partyNetOpening` in 400 errors. */
+  partyNetOpening?: string | null;
+  /** Opening amount already tagged on other receipts — “Paid” column. */
+  partyOpeningSettledOnOtherReceipts?: string | null;
   allocations: ReceiptAllocationRow[];
   openInvoicesForParty: OpenInvoiceForParty[];
 }
@@ -61,10 +73,17 @@ export interface CreateReceiptRequest {
   notes?: string | null;
   receivedAt?: string;
   allocations?: { invoiceId: number; amount: string }[];
+  /** Omit or zero for normal receipts; must be "0.00" when paymentMethod is OPENING_BALANCE. */
+  openingBalanceSettlementAmount?: string;
 }
 
 export interface PutReceiptAllocationsRequest {
   allocations: { invoiceId: number; amount: string }[];
+  /**
+   * Omit to keep the receipt’s current opening tag unchanged.
+   * Send `"0.00"` explicitly to clear the tag.
+   */
+  openingBalanceSettlementAmount?: string;
 }
 
 /** POST /invoices/:id/payments success payload */

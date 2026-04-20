@@ -2,24 +2,35 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { FileStack, Loader2, Sparkles } from "lucide-react";
+import { Eraser, FileStack, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useParty } from "@/hooks/use-parties";
 import { useUpdateReceiptAllocations } from "@/hooks/use-receipts";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import {
-  buildReceiptAllocationRows,
+  buildReceiptAllocationState,
+  deriveOpeningLedgerAmounts,
+  EMPTY_OPENING_LEDGER,
   maxReceiptAllocToInvoice,
+  maxReceiptAllocToOpening,
   mergeAllocationsForSave,
   receiptAllocationInitKey,
   receiptAllocationsUnchanged,
+  receiptOpeningUnchanged,
+  shouldShowOpeningBalanceRow,
   totalAllocatedFromSavePayload,
+  totalTaggedFromSavePayload,
   type ReceiptAllocationRowState,
 } from "@/lib/receipt-allocations";
+import { formatMoneyTwoDp } from "@/lib/receipt-amounts";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import type { ReceiptDetail } from "@/types/receipt";
+import type { PutReceiptAllocationsRequest, ReceiptDetail } from "@/types/receipt";
+import { ApiClientError } from "@/api/error";
+import { augmentApiClientErrorForReceipt } from "@/lib/receipt-errors";
 
 /** Digits and at most one decimal point (for currency amounts). */
 function sanitizeDecimalInput(raw: string): string {
@@ -29,6 +40,19 @@ function sanitizeDecimalInput(raw: string): string {
   v = v.slice(0, i + 1) + v.slice(i + 1).replace(/\./g, "");
   return v;
 }
+
+function openingDraftToNum(draft: string): number {
+  const t = draft.trim();
+  if (t === "") return 0;
+  const x = parseFloat(sanitizeDecimalInput(t));
+  return Number.isFinite(x) ? Math.max(0, x) : 0;
+}
+
+/** Fixed width so opening + invoice rows align; matches h-9 w-9 Button + gap-1.5 */
+const ALLOC_INPUT_CLASS = "h-9 w-[7.25rem] shrink-0 text-right tabular-nums";
+const ALLOC_ACTION_SLOT = "flex h-9 w-9 shrink-0 items-center justify-center";
+
+const isOpeningAdvanceReceipt = (r: ReceiptDetail) => r.paymentMethod === "OPENING_BALANCE";
 
 export function ReceiptAllocationEditor({
   receiptId,
@@ -41,20 +65,73 @@ export function ReceiptAllocationEditor({
 }) {
   const updateAlloc = useUpdateReceiptAllocations(receiptId);
   const [rows, setRows] = useState<ReceiptAllocationRowState[]>([]);
+  const [openingDraft, setOpeningDraft] = useState("");
+  /**
+   * When the opening row is hidden (opening fully covered) but this receipt still carries a tag,
+   * the user can request a clear via the compact affordance below the summary. We remember that
+   * intent here and send `openingBalanceSettlementAmount: "0.00"` on save.
+   */
+  const [forceClearHiddenOpening, setForceClearHiddenOpening] = useState(false);
   const receiptRef = useRef(receipt);
   receiptRef.current = receipt;
 
-  const initKey = useMemo(() => receiptAllocationInitKey(receipt), [receipt]);
+  const openingDisabled = isOpeningAdvanceReceipt(receipt);
+
+  const partyQuery = useParty(receipt.partyId, {
+    enabled: receipt.partyId != null && !openingDisabled,
+  });
+  const party = partyQuery.data;
+  const partyLoading = receipt.partyId != null && !openingDisabled && partyQuery.isPending;
+  const partyOpeningRaw = party?.openingBalance ?? null;
+
+  const openingLedger = useMemo(
+    () =>
+      openingDisabled ? EMPTY_OPENING_LEDGER : deriveOpeningLedgerAmounts(receipt, partyOpeningRaw),
+    [openingDisabled, receipt, partyOpeningRaw],
+  );
+
+  const showOpeningRow = shouldShowOpeningBalanceRow(receipt, openingLedger);
+
+  const initKey = useMemo(
+    () => receiptAllocationInitKey(receipt, partyOpeningRaw),
+    [receipt, partyOpeningRaw],
+  );
 
   useEffect(() => {
-    setRows(buildReceiptAllocationRows(receiptRef.current));
-  }, [initKey]);
+    const { rows: nextRows, suggestedOpening } = buildReceiptAllocationState(receiptRef.current, {
+      ledger: openingLedger,
+    });
+    setRows(nextRows);
+    const o = receiptRef.current.openingBalanceSettlementAmount ?? "0";
+    const n = parseFloat(o) || 0;
+    if (n > 0.001) {
+      setOpeningDraft(sanitizeDecimalInput(o));
+    } else if (suggestedOpening > 0.001) {
+      setOpeningDraft(suggestedOpening.toFixed(2));
+    } else {
+      setOpeningDraft("");
+    }
+    setForceClearHiddenOpening(false);
+  }, [initKey, openingLedger]);
+
+  const serverOpeningNum = parseFloat(receipt.openingBalanceSettlementAmount ?? "0") || 0;
+  const openingNum = openingDraftToNum(openingDraft);
+  const effectiveOpeningNum = showOpeningRow
+    ? openingNum
+    : forceClearHiddenOpening
+      ? 0
+      : serverOpeningNum;
 
   const totalReceipt = parseFloat(receipt.totalAmount ?? "0") || 0;
   const savePayload = useMemo(() => mergeAllocationsForSave(rows, receipt), [rows, receipt]);
-  const totalIfSaved = totalAllocatedFromSavePayload(savePayload);
+  const invoicesIfSaved = totalAllocatedFromSavePayload(savePayload);
+  const totalIfSaved = totalTaggedFromSavePayload(savePayload, effectiveOpeningNum);
   const remaining = totalReceipt - totalIfSaved;
-  const noAllocationChanges = receiptAllocationsUnchanged(rows, receipt);
+
+  const openingUnchanged = showOpeningRow
+    ? receiptOpeningUnchanged(openingDraft, receipt)
+    : !forceClearHiddenOpening;
+  const noChanges = receiptAllocationsUnchanged(rows, receipt) && openingUnchanged;
 
   const updateAmount = (invoiceId: number, raw: string) => {
     const amount = sanitizeDecimalInput(raw);
@@ -62,7 +139,20 @@ export function ReceiptAllocationEditor({
   };
 
   const onSuggestAgain = () => {
-    setRows(buildReceiptAllocationRows(receipt));
+    const { rows: nextRows, suggestedOpening } = buildReceiptAllocationState(receipt, {
+      ledger: openingLedger,
+    });
+    setRows(nextRows);
+    const o = receipt.openingBalanceSettlementAmount ?? "0";
+    const n = parseFloat(o) || 0;
+    if (n > 0.001) {
+      setOpeningDraft(sanitizeDecimalInput(o));
+    } else if (suggestedOpening > 0.001) {
+      setOpeningDraft(suggestedOpening.toFixed(2));
+    } else {
+      setOpeningDraft("");
+    }
+    setForceClearHiddenOpening(false);
   };
 
   const initialAllocByInvoiceId = useMemo(() => {
@@ -81,15 +171,29 @@ export function ReceiptAllocationEditor({
 
   const anyOverInvoiceCap = rows.some(rowOverInvoiceCap);
 
-  const hasUnpaidInvoices = useMemo(
-    () => (receipt.openInvoicesForParty ?? []).some((i) => parseFloat(i.dueAmount || "0") > 0.001),
-    [receipt.openInvoicesForParty],
-  );
+  const maxOpeningAlloc = showOpeningRow
+    ? maxReceiptAllocToOpening(receipt, invoicesIfSaved, serverOpeningNum, openingLedger)
+    : 0;
+  const openingOverCap = showOpeningRow && openingNum > maxOpeningAlloc + 0.01;
+
+  const canClearOpeningDraft =
+    showOpeningRow && !openingDisabled && (openingNum > 0.001 || serverOpeningNum > 0.001);
+
+  const showHiddenOpeningTagAffordance =
+    !showOpeningRow && !openingDisabled && !partyLoading && serverOpeningNum > 0.001;
+
+  const hasTableRows = showOpeningRow || partyLoading || rows.length > 0;
 
   const onSave = async () => {
     if (totalIfSaved > totalReceipt + 0.001) {
       showErrorToast(
-        `Total allocated (${formatCurrency(String(totalIfSaved))}) cannot exceed receipt (${formatCurrency(receipt.totalAmount)}).`,
+        `Tagged total (${formatCurrency(String(totalIfSaved))}) cannot exceed the receipt (${formatCurrency(receipt.totalAmount)}).`,
+      );
+      return;
+    }
+    if (openingOverCap) {
+      showErrorToast(
+        `Opening amount cannot exceed ${formatCurrency(String(maxOpeningAlloc))} for this receipt.`,
       );
       return;
     }
@@ -103,72 +207,32 @@ export function ReceiptAllocationEditor({
       return;
     }
     try {
-      await updateAlloc.mutateAsync({ allocations: savePayload });
+      const body: PutReceiptAllocationsRequest = {
+        allocations: savePayload,
+      };
+      if (showOpeningRow && Math.abs(openingNum - serverOpeningNum) > 0.005) {
+        body.openingBalanceSettlementAmount = formatMoneyTwoDp(openingNum);
+      } else if (!showOpeningRow && forceClearHiddenOpening && serverOpeningNum > 0.001) {
+        body.openingBalanceSettlementAmount = "0.00";
+      }
+      await updateAlloc.mutateAsync(body);
       showSuccessToast("Allocations updated");
       onSaved?.();
     } catch (e) {
-      showErrorToast(e, "Failed to update allocations");
+      if (e instanceof ApiClientError) {
+        showErrorToast(augmentApiClientErrorForReceipt(e), "Failed to update allocations");
+      } else {
+        showErrorToast(e, "Failed to update allocations");
+      }
     }
   };
 
-  if (!hasUnpaidInvoices) {
-    const unallocated = Math.max(0, remaining);
-    return (
-      <Card
-        id="allocate"
-        className="scroll-mt-20 overflow-hidden rounded-2xl border-border/80 shadow-sm"
-      >
-        <CardHeader className="space-y-3 border-b border-border/60 bg-muted/15 px-6 py-5 sm:px-8">
-          <div className="flex gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted/80 text-muted-foreground">
-              <FileStack className="h-5 w-5" aria-hidden />
-            </div>
-            <div className="min-w-0 space-y-1">
-              <CardTitle className="text-lg font-semibold tracking-tight">
-                No open invoices for this party
-              </CardTitle>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                There are no invoices with a balance due right now, so nothing can be split across
-                line items here. Amounts already applied to paid invoices stay on this receipt; the
-                rest stays unallocated until you have open invoices to allocate against.
-              </p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4 px-6 py-5 sm:px-8">
-          <div className="grid gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 sm:grid-cols-2 sm:gap-6">
-            <div>
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Receipt total
-              </span>
-              <p className="mt-1 text-lg font-semibold tabular-nums tracking-tight">
-                {formatCurrency(receipt.totalAmount)}
-              </p>
-            </div>
-            <div>
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Unallocated after current allocations
-              </span>
-              <p
-                className={cn(
-                  "mt-1 text-lg font-semibold tabular-nums tracking-tight",
-                  unallocated > 0.001
-                    ? "text-amber-700 dark:text-amber-400"
-                    : "text-muted-foreground",
-                )}
-              >
-                {formatCurrency(String(unallocated))}
-              </p>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            When new unpaid invoices exist for this party, open this receipt again — the allocation
-            section will list them automatically.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const fmtOpening = (v: number | null) =>
+    v != null && Number.isFinite(v) ? formatCurrency(String(v)) : "—";
+
+  const openingTotalDisplay = fmtOpening(openingLedger.total);
+  const openingPaidDisplay = fmtOpening(openingLedger.paid);
+  const openingDueDisplay = fmtOpening(openingLedger.due);
 
   return (
     <Card id="allocate" className="overflow-hidden rounded-2xl border-border/80 shadow-sm">
@@ -176,12 +240,19 @@ export function ReceiptAllocationEditor({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-1">
             <CardTitle className="text-lg font-semibold tracking-tight">
-              Allocate to invoices
+              Allocate this receipt
             </CardTitle>
             <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              Only invoices with an open balance are listed. Amounts already applied to fully paid
-              invoices stay on the receipt until you change rows here. Unallocated balance is
-              suggested across these invoices (oldest first).
+              Tag amounts to <span className="font-medium text-foreground">opening balance</span> or{" "}
+              <span className="font-medium text-foreground">invoices</span> in the table below. Like
+              invoices with no balance due, the opening line disappears when there is nothing left
+              to settle against opening. The receipt stays one full money-in entry; tags are
+              attribution only.{" "}
+              {openingDisabled && (
+                <span className="font-medium text-foreground">
+                  Opening tags are not editable on opening-advance receipts.
+                </span>
+              )}
             </p>
           </div>
           <Button
@@ -208,7 +279,7 @@ export function ReceiptAllocationEditor({
           </div>
           <div className="flex flex-col justify-center px-4 py-3 sm:py-4">
             <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              In this form
+              Tagged on this form
             </span>
             <p className="mt-1 text-xl font-semibold tabular-nums tracking-tight text-primary">
               {formatCurrency(String(totalIfSaved))}
@@ -216,7 +287,7 @@ export function ReceiptAllocationEditor({
           </div>
           <div className="flex flex-col justify-center px-4 py-3 sm:py-4">
             <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Left after save
+              Unallocated after save
             </span>
             <p
               className={cn(
@@ -229,8 +300,53 @@ export function ReceiptAllocationEditor({
           </div>
         </div>
 
-        {rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No invoices to show.</p>
+        {showHiddenOpeningTagAffordance && (
+          <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-muted/10 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+            <div className="min-w-0 text-sm leading-relaxed">
+              <p className="font-medium text-foreground">Opening tag on this receipt</p>
+              <p className="text-muted-foreground">
+                {formatCurrency(String(serverOpeningNum))} is attributed to opening balance. The
+                party opening is fully covered, so there's nothing more to tag here.
+                {forceClearHiddenOpening && (
+                  <span className="ml-1 font-medium text-destructive">
+                    Will be cleared on save.
+                  </span>
+                )}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0 self-start sm:self-auto"
+              onClick={() => setForceClearHiddenOpening((v) => !v)}
+            >
+              {forceClearHiddenOpening ? (
+                "Keep tag"
+              ) : (
+                <>
+                  <Eraser className="mr-2 h-4 w-4" />
+                  Clear opening tag
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {!hasTableRows ? (
+          <div className="flex gap-4 rounded-xl border border-border/60 bg-muted/10 p-4 sm:p-5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted/80 text-muted-foreground">
+              <FileStack className="h-5 w-5" aria-hidden />
+            </div>
+            <div className="min-w-0 space-y-2 text-sm leading-relaxed text-muted-foreground">
+              <p className="font-medium text-foreground">Nothing to allocate here</p>
+              <p>
+                There is no remaining opening balance to tag for this party, and no invoices with a
+                balance due. If amounts are still applied to fully paid invoices, they stay on this
+                receipt until those lines are available again.
+              </p>
+            </div>
+          </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-border/80">
             <div className="overflow-x-auto">
@@ -238,7 +354,7 @@ export function ReceiptAllocationEditor({
                 <thead>
                   <tr className="border-b border-border/80 bg-muted/40 text-left">
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Invoice
+                      Target
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Date
@@ -246,26 +362,157 @@ export function ReceiptAllocationEditor({
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Type
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <th
+                      className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                      title="Opening: net debit opening (receivable) from the party profile or API"
+                    >
                       Total
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <th
+                      className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                      title="Opening: amount already tagged on other receipts"
+                    >
                       Paid
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <th
+                      className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                      title="Opening: remaining you can still tag toward this opening"
+                    >
                       Due
                     </th>
-                    <th className="w-[8.5rem] px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-foreground">
+                    <th className="min-w-[10.5rem] px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-foreground">
                       Allocate
                     </th>
                   </tr>
                 </thead>
                 <tbody>
+                  {partyLoading && !showOpeningRow && (
+                    <tr
+                      className={cn(
+                        "border-b border-border/50 bg-muted/10",
+                        rows.length === 0 && "last:border-0",
+                      )}
+                      aria-hidden
+                    >
+                      <td className="px-4 py-3 align-middle">
+                        <Skeleton className="h-4 w-32" />
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <Skeleton className="h-4 w-20" />
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <Skeleton className="h-4 w-16" />
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <Skeleton className="ml-auto h-4 w-20" />
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <Skeleton className="ml-auto h-4 w-16" />
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <Skeleton className="ml-auto h-4 w-20" />
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Skeleton className={cn(ALLOC_INPUT_CLASS, "rounded-md")} />
+                          <Skeleton className="h-9 w-9 rounded-md" />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  {showOpeningRow && (
+                    <tr
+                      className={cn(
+                        "border-b border-border/50 bg-muted/15 transition-colors hover:bg-muted/25",
+                        rows.length === 0 && "last:border-0",
+                      )}
+                    >
+                      <td className="px-4 py-3 align-middle font-medium">
+                        <Link
+                          href={`/parties/${receipt.partyId}/ledger`}
+                          className="text-primary hover:underline"
+                        >
+                          Opening balance
+                        </Link>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 align-middle text-muted-foreground">
+                        {formatDate(party?.createdAt)}
+                      </td>
+                      <td className="px-4 py-3 align-middle text-muted-foreground">Opening</td>
+                      <td className="px-4 py-3 text-right align-middle tabular-nums text-muted-foreground">
+                        {openingTotalDisplay}
+                      </td>
+                      <td className="px-4 py-3 text-right align-middle tabular-nums text-muted-foreground">
+                        {openingPaidDisplay}
+                      </td>
+                      <td className="px-4 py-3 text-right align-middle font-medium tabular-nums">
+                        {openingDueDisplay}
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <div className="flex flex-col items-end gap-1">
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              className={cn(
+                                ALLOC_INPUT_CLASS,
+                                openingOverCap &&
+                                  "border-destructive focus-visible:ring-destructive/30",
+                              )}
+                              value={openingDraft}
+                              disabled={openingDisabled}
+                              onChange={(e) =>
+                                setOpeningDraft(sanitizeDecimalInput(e.target.value))
+                              }
+                              onPaste={(e) => {
+                                e.preventDefault();
+                                const el = e.currentTarget;
+                                const start = el.selectionStart ?? openingDraft.length;
+                                const end = el.selectionEnd ?? openingDraft.length;
+                                const pasted = e.clipboardData.getData("text");
+                                const next =
+                                  openingDraft.slice(0, start) + pasted + openingDraft.slice(end);
+                                setOpeningDraft(sanitizeDecimalInput(next));
+                                requestAnimationFrame(() => {
+                                  const len = sanitizeDecimalInput(next).length;
+                                  el.setSelectionRange(len, len);
+                                });
+                              }}
+                              inputMode="decimal"
+                              autoComplete="off"
+                              spellCheck={false}
+                              placeholder="0.00"
+                              aria-label="Allocate to opening balance"
+                            />
+                            <div className={ALLOC_ACTION_SLOT}>
+                              {canClearOpeningDraft && !openingDisabled && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                                  title="Clear opening tag"
+                                  onClick={() => setOpeningDraft("")}
+                                >
+                                  <Eraser className="h-4 w-4" aria-hidden />
+                                  <span className="sr-only">Clear opening tag</span>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                          {openingOverCap && (
+                            <span className="w-full max-w-[calc(7.25rem+0.375rem+2.25rem)] text-right text-[11px] text-destructive">
+                              Max {formatCurrency(String(maxOpeningAlloc))}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                   {rows.map((r) => {
                     const alloc = parseFloat(r.amount) || 0;
                     const init = initialAllocByInvoiceId.get(r.invoiceId) ?? 0;
                     const cap = maxReceiptAllocToInvoice(r, init);
                     const overCap = alloc > cap + 0.01;
+                    const canClearInvoiceRow = alloc > 0.001 || init > 0.001;
                     return (
                       <tr
                         key={r.invoiceId}
@@ -296,34 +543,53 @@ export function ReceiptAllocationEditor({
                         </td>
                         <td className="px-4 py-3 align-middle">
                           <div className="flex flex-col items-end gap-0.5">
-                            <Input
-                              className={cn(
-                                "h-9 w-[7.25rem] text-right tabular-nums",
-                                overCap && "border-destructive focus-visible:ring-destructive/30",
-                              )}
-                              value={r.amount}
-                              onChange={(e) => updateAmount(r.invoiceId, e.target.value)}
-                              onPaste={(e) => {
-                                e.preventDefault();
-                                const el = e.currentTarget;
-                                const start = el.selectionStart ?? r.amount.length;
-                                const end = el.selectionEnd ?? r.amount.length;
-                                const pasted = e.clipboardData.getData("text");
-                                const next =
-                                  r.amount.slice(0, start) + pasted + r.amount.slice(end);
-                                updateAmount(r.invoiceId, next);
-                                requestAnimationFrame(() => {
-                                  const len = sanitizeDecimalInput(next).length;
-                                  el.setSelectionRange(len, len);
-                                });
-                              }}
-                              inputMode="decimal"
-                              autoComplete="off"
-                              spellCheck={false}
-                              aria-label={`Allocate to ${r.invoiceNumber}`}
-                            />
+                            <div className="flex items-center gap-1.5">
+                              <Input
+                                className={cn(
+                                  ALLOC_INPUT_CLASS,
+                                  overCap && "border-destructive focus-visible:ring-destructive/30",
+                                )}
+                                value={r.amount}
+                                onChange={(e) => updateAmount(r.invoiceId, e.target.value)}
+                                onPaste={(e) => {
+                                  e.preventDefault();
+                                  const el = e.currentTarget;
+                                  const start = el.selectionStart ?? r.amount.length;
+                                  const end = el.selectionEnd ?? r.amount.length;
+                                  const pasted = e.clipboardData.getData("text");
+                                  const next =
+                                    r.amount.slice(0, start) + pasted + r.amount.slice(end);
+                                  updateAmount(r.invoiceId, next);
+                                  requestAnimationFrame(() => {
+                                    const len = sanitizeDecimalInput(next).length;
+                                    el.setSelectionRange(len, len);
+                                  });
+                                }}
+                                inputMode="decimal"
+                                autoComplete="off"
+                                spellCheck={false}
+                                aria-label={`Allocate to ${r.invoiceNumber}`}
+                              />
+                              <div className={ALLOC_ACTION_SLOT}>
+                                {canClearInvoiceRow && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                                    title="Clear allocation"
+                                    onClick={() => updateAmount(r.invoiceId, "")}
+                                  >
+                                    <Eraser className="h-4 w-4" aria-hidden />
+                                    <span className="sr-only">
+                                      Clear allocation for {r.invoiceNumber}
+                                    </span>
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
                             {overCap && (
-                              <span className="max-w-[7.25rem] text-right text-[11px] text-destructive">
+                              <span className="w-full max-w-[calc(7.25rem+0.375rem+2.25rem)] text-right text-[11px] text-destructive">
                                 Max {formatCurrency(String(cap))}
                               </span>
                             )}
@@ -349,28 +615,37 @@ export function ReceiptAllocationEditor({
                 updateAlloc.isPending ||
                 totalIfSaved > totalReceipt + 0.001 ||
                 anyOverInvoiceCap ||
-                noAllocationChanges
+                openingOverCap ||
+                noChanges
               }
               className="min-w-[140px]"
             >
               {updateAlloc.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save allocations
+              Save
             </Button>
-            {noAllocationChanges && !anyOverInvoiceCap && totalIfSaved <= totalReceipt + 0.001 && (
-              <p className="text-sm text-muted-foreground">No changes to save.</p>
-            )}
+            {noChanges &&
+              !anyOverInvoiceCap &&
+              !openingOverCap &&
+              totalIfSaved <= totalReceipt + 0.001 && (
+                <p className="text-sm text-muted-foreground">No changes to save.</p>
+              )}
             {totalIfSaved > totalReceipt + 0.001 && (
-              <p className="text-sm text-destructive">Total must not exceed the receipt amount.</p>
-            )}
-            {anyOverInvoiceCap && totalIfSaved <= totalReceipt + 0.001 && (
               <p className="text-sm text-destructive">
-                One or more rows exceed what can be applied to that invoice.
+                Tagged total must not exceed the receipt amount.
+              </p>
+            )}
+            {openingOverCap && totalIfSaved <= totalReceipt + 0.001 && (
+              <p className="text-sm text-destructive">Opening row exceeds the allowed amount.</p>
+            )}
+            {anyOverInvoiceCap && totalIfSaved <= totalReceipt + 0.001 && !openingOverCap && (
+              <p className="text-sm text-destructive">
+                One or more invoice rows exceed what can be applied to that invoice.
               </p>
             )}
           </div>
           <p className="text-xs text-muted-foreground sm:text-right">
-            Saving updates this list and keeps any amounts on invoices that are fully paid (those
-            invoices don’t appear here).
+            If you don&apos;t change opening, it isn&apos;t sent on save. Clear the field and save
+            to remove the tag.
           </p>
         </div>
       </CardContent>

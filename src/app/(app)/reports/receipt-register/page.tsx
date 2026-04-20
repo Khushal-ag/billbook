@@ -86,6 +86,7 @@ export default function ReceiptRegisterPage() {
                 <th className={rr.th}>Party</th>
                 <th className={rr.thRight}>Total</th>
                 <th className={rr.thRight}>Allocated</th>
+                <th className={rr.thRight}>Opening tag</th>
                 <th className={rr.thRight}>Unallocated</th>
                 <th className={rr.th}>Method</th>
                 <th className={rr.th}>Received</th>
@@ -94,7 +95,7 @@ export default function ReceiptRegisterPage() {
             <tbody>
               {rowCount === 0 ? (
                 <ReportRegisterEmptyRow
-                  colSpan={7}
+                  colSpan={8}
                   message="No receipts in this period. Try widening the date range or record a receipt first."
                 />
               ) : (
@@ -108,6 +109,12 @@ export default function ReceiptRegisterPage() {
                     <td className={rr.td}>{r.partyName ?? "—"}</td>
                     <td className={rr.tdRight}>{formatCurrency(r.totalAmount)}</td>
                     <td className={rr.tdRightMuted}>{formatCurrency(r.allocatedAmount ?? "0")}</td>
+                    <td className={rr.tdRightMuted}>
+                      {r.openingBalanceSettlementAmount != null &&
+                      parseFloat(String(r.openingBalanceSettlementAmount)) > 0.001
+                        ? formatCurrency(String(r.openingBalanceSettlementAmount))
+                        : "—"}
+                    </td>
                     <td className={rr.tdRight}>{formatCurrency(r.unallocatedAmount)}</td>
                     <td className={rr.tdMuted}>
                       {r.paymentMethod

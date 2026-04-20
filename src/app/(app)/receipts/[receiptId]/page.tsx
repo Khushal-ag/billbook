@@ -16,6 +16,12 @@ import { Separator } from "@/components/ui/separator";
 import { ReceiptAllocationEditor } from "@/components/receipts/ReceiptSections";
 import { PAYMENT_METHOD_LABEL, receiptPaymentMethodBadgeProps } from "@/constants/receipt-ui";
 import { useReceipt } from "@/hooks/use-receipts";
+import {
+  receiptAllocatedAmountNum,
+  receiptInvoiceAllocationSum,
+  receiptOpeningSettlementNum,
+  receiptUnallocatedAmountNum,
+} from "@/lib/receipt-amounts";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { openSignedPdfFromApiPath } from "@/lib/signed-pdf";
 
@@ -62,13 +68,12 @@ export default function ReceiptDetailPage() {
   }
 
   const totalReceipt = parseFloat(receipt.totalAmount ?? "0") || 0;
-  const allocatedSum = (receipt.allocations ?? []).reduce(
-    (s, a) => s + (parseFloat(a.amount) || 0),
-    0,
-  );
-  const remaining = Math.max(0, totalReceipt - allocatedSum);
+  const openingSettled = receiptOpeningSettlementNum(receipt);
+  const invoiceAllocatedSum = receiptInvoiceAllocationSum(receipt);
+  const allocatedTotal = receiptAllocatedAmountNum(receipt);
+  const remaining = receiptUnallocatedAmountNum(receipt);
   const allocPct =
-    totalReceipt > 0 ? Math.min(100, Math.round((allocatedSum / totalReceipt) * 100)) : 0;
+    totalReceipt > 0 ? Math.min(100, Math.round((allocatedTotal / totalReceipt) * 100)) : 0;
   const methodLabel =
     PAYMENT_METHOD_LABEL[receipt.paymentMethod] ?? receipt.paymentMethod.replace(/_/g, " ");
   const methodBadge = receiptPaymentMethodBadgeProps(receipt.paymentMethod);
@@ -173,10 +178,22 @@ export default function ReceiptDetailPage() {
                 <div className="flex items-center justify-between gap-4 text-sm">
                   <span className="flex items-center gap-2 text-muted-foreground">
                     <Wallet className="h-4 w-4 shrink-0 opacity-70" />
-                    Allocated to invoices
+                    Opening (historical)
                   </span>
                   <span className="shrink-0 font-medium tabular-nums">
-                    {formatCurrency(String(allocatedSum))}
+                    {formatCurrency(String(openingSettled))}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4 text-sm">
+                  <span className="text-muted-foreground">Invoices</span>
+                  <span className="shrink-0 font-medium tabular-nums">
+                    {formatCurrency(String(invoiceAllocatedSum))}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4 border-t border-border/50 pt-2 text-sm">
+                  <span className="font-medium text-foreground">Tagged total</span>
+                  <span className="shrink-0 font-semibold tabular-nums">
+                    {formatCurrency(String(allocatedTotal))}
                   </span>
                 </div>
                 <div
@@ -185,7 +202,7 @@ export default function ReceiptDetailPage() {
                   aria-valuenow={allocPct}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  aria-label="Share of receipt allocated"
+                  aria-label="Share of receipt tagged to opening or invoices"
                 >
                   <div
                     className="h-full rounded-full bg-primary transition-all duration-300"
@@ -237,14 +254,14 @@ export default function ReceiptDetailPage() {
 
       <ErrorBanner error={error} />
 
-      {appliedAllocations.length > 0 && (
+      {(appliedAllocations.length > 0 || openingSettled > 0.001) && (
         <Card className="overflow-hidden rounded-2xl border-border/80 shadow-sm">
           <CardHeader className="border-b border-border/60 bg-muted/15 px-6 py-4 sm:px-8">
             <CardTitle className="text-lg font-semibold tracking-tight">
-              Applied to invoices
+              Where this receipt is tagged
             </CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              Where this receipt amount has been allocated.
+              Opening tags label money against historical receivable; invoice lines apply to bills.
             </p>
           </CardHeader>
           <CardContent className="px-6 py-4 sm:px-8 sm:py-6">
@@ -253,7 +270,7 @@ export default function ReceiptDetailPage() {
                 <thead>
                   <tr className="border-b bg-muted/40 text-left">
                     <th className="px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Invoice
+                      Target
                     </th>
                     <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Amount
@@ -261,6 +278,16 @@ export default function ReceiptDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
+                  {openingSettled > 0.001 && (
+                    <tr className="border-b border-border/50 hover:bg-muted/20">
+                      <td className="px-4 py-3 font-medium">
+                        Opening balance (historical receivable)
+                      </td>
+                      <td className="px-4 py-3 text-right font-medium tabular-nums">
+                        {formatCurrency(String(openingSettled))}
+                      </td>
+                    </tr>
+                  )}
                   {appliedAllocations.map((a) => (
                     <tr
                       key={`${a.invoiceId}-${a.amount}`}

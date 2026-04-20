@@ -3,6 +3,7 @@ import { api, generateIdempotencyKey } from "@/api";
 import { invalidateQueryKeys } from "@/lib/query";
 import { queryKeys } from "@/lib/query-keys";
 import { buildQueryString } from "@/lib/utils";
+import { normalizeReceiptDetail } from "@/lib/receipt-detail-normalize";
 import type {
   ReceiptDetail,
   ReceiptListResponse,
@@ -28,7 +29,7 @@ export function useReceipt(receiptId: number | undefined) {
     queryKey: queryKeys.receipts.detail(receiptId),
     queryFn: async () => {
       const res = await api.get<ReceiptDetail>(`/receipts/${receiptId}`);
-      return res.data;
+      return normalizeReceiptDetail(res.data);
     },
     enabled: !!receiptId,
   });
@@ -39,7 +40,7 @@ export function useCreateReceipt() {
   return useMutation({
     mutationFn: async (body: CreateReceiptRequest) => {
       const res = await api.post<ReceiptDetail>("/receipts", body, generateIdempotencyKey());
-      return res.data;
+      return normalizeReceiptDetail(res.data);
     },
     onSuccess: () => {
       invalidateQueryKeys(qc, [
@@ -58,7 +59,7 @@ export function useUpdateReceiptAllocations(receiptId: number) {
   return useMutation({
     mutationFn: async (body: PutReceiptAllocationsRequest) => {
       const res = await api.put<ReceiptDetail>(`/receipts/${receiptId}/allocations`, body);
-      return res.data;
+      return normalizeReceiptDetail(res.data);
     },
     onSuccess: () => {
       invalidateQueryKeys(qc, [

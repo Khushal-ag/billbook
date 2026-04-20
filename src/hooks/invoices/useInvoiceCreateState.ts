@@ -35,9 +35,12 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useParties, usePartyConsignees } from "@/hooks/use-parties";
 import {
   buildInvoiceItemInput,
+  canMergeInvoiceLineDrafts,
   computeBasePaiseFromAddedLines,
   effectiveLineItemName,
+  mergeInvoiceLineDraftQuantities,
   mergeItemFromInvoiceLine,
+  normalizeInvoiceLineForAdd,
   pickInvoiceTaxRate,
 } from "@/lib/invoice-create-mapping";
 import { addCalendarDaysToIsoDate } from "@/lib/date";
@@ -1473,12 +1476,16 @@ export function useInvoiceCreateState(
     if (!isSalesFamily(invoiceType)) {
       setLines((prev) => {
         const current = prev[0] ?? createLine();
-        const normalizedCurrent = {
-          ...current,
-          discountPercent: current.discountPercent.trim() === "" ? "0" : current.discountPercent,
-          discountAmount: current.discountAmount.trim() === "" ? "0" : current.discountAmount,
-        };
-        return [createLine(), normalizedCurrent, ...prev.slice(1)];
+        const normalizedCurrent = normalizeInvoiceLineForAdd(current);
+        const rest = prev.slice(1);
+        const mergeIdx = rest.findIndex((line) =>
+          canMergeInvoiceLineDrafts(line, normalizedCurrent, invoiceType),
+        );
+        if (mergeIdx < 0) {
+          return [createLine(), normalizedCurrent, ...rest];
+        }
+        const merged = mergeInvoiceLineDraftQuantities(rest[mergeIdx], normalizedCurrent);
+        return [createLine(), ...rest.map((l, i) => (i === mergeIdx ? merged : l))];
       });
       setStockLineIssues({});
       setStockSearchText("");
@@ -1553,12 +1560,16 @@ export function useInvoiceCreateState(
 
     setLines((prev) => {
       const current = prev[0] ?? createLine();
-      const normalizedCurrent = {
-        ...current,
-        discountPercent: current.discountPercent.trim() === "" ? "0" : current.discountPercent,
-        discountAmount: current.discountAmount.trim() === "" ? "0" : current.discountAmount,
-      };
-      return [createLine(), normalizedCurrent, ...prev.slice(1)];
+      const normalizedCurrent = normalizeInvoiceLineForAdd(current);
+      const rest = prev.slice(1);
+      const mergeIdx = rest.findIndex((line) =>
+        canMergeInvoiceLineDrafts(line, normalizedCurrent, invoiceType),
+      );
+      if (mergeIdx < 0) {
+        return [createLine(), normalizedCurrent, ...rest];
+      }
+      const merged = mergeInvoiceLineDraftQuantities(rest[mergeIdx], normalizedCurrent);
+      return [createLine(), ...rest.map((l, i) => (i === mergeIdx ? merged : l))];
     });
     setStockLineIssues({});
     setStockSearchText("");

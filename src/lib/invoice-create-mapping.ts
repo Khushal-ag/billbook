@@ -1,5 +1,6 @@
 import {
   effectivePurchaseLineGstPayload,
+  formatQty,
   getLineAmounts,
   isDraftLineServiceItem,
   toNum,
@@ -75,6 +76,98 @@ function purchaseFamilyTaxFields(
 /** Display / API item name: draft override or catalog name from batch picker (purchase does not send `stockEntryId`). */
 export function effectiveLineItemName(line: InvoiceLineDraft): string {
   return line.itemName.trim() || line.item?.name?.trim() || "";
+}
+
+function normDiscPct(s: string): string {
+  const t = s.trim();
+  return t === "" ? "0" : t;
+}
+
+function normDiscAmt(s: string): string {
+  const t = s.trim();
+  return t === "" ? "0" : t;
+}
+
+function normStr(s: string | undefined): string {
+  return (s ?? "").trim();
+}
+
+/**
+ * Normalize draft line before appending so empty discounts compare consistently with added rows.
+ */
+export function normalizeInvoiceLineForAdd(line: InvoiceLineDraft): InvoiceLineDraft {
+  return {
+    ...line,
+    discountPercent: line.discountPercent.trim() === "" ? "0" : line.discountPercent,
+    discountAmount: line.discountAmount.trim() === "" ? "0" : line.discountAmount,
+  };
+}
+
+/**
+ * True when two lines would produce the same API line identity (same batch/rates/taxes) so we can
+ * merge quantities instead of adding a duplicate row.
+ */
+export function canMergeInvoiceLineDrafts(
+  existing: InvoiceLineDraft,
+  incoming: InvoiceLineDraft,
+  invoiceType: InvoiceType,
+): boolean {
+  if (isSalesFamily(invoiceType)) {
+    if (existing.stockEntryId == null || incoming.stockEntryId == null) return false;
+    if (existing.stockEntryId !== incoming.stockEntryId) return false;
+    if (normStr(existing.unitPrice) !== normStr(incoming.unitPrice)) return false;
+    if (normDiscPct(existing.discountPercent) !== normDiscPct(incoming.discountPercent))
+      return false;
+    if (normDiscAmt(existing.discountAmount) !== normDiscAmt(incoming.discountAmount)) return false;
+    if ((existing.sourceInvoiceItemId ?? null) !== (incoming.sourceInvoiceItemId ?? null))
+      return false;
+    return true;
+  }
+
+  if ((existing.item?.id ?? null) !== (incoming.item?.id ?? null)) return false;
+  if (effectiveLineItemName(existing) !== effectiveLineItemName(incoming)) return false;
+  if (normStr(existing.unitPrice) !== normStr(incoming.unitPrice)) return false;
+  if (normStr(existing.sellingPrice) !== normStr(incoming.sellingPrice)) return false;
+  if (normDiscPct(existing.discountPercent) !== normDiscPct(incoming.discountPercent)) return false;
+  if (normDiscAmt(existing.discountAmount) !== normDiscAmt(incoming.discountAmount)) return false;
+
+  const g1 = effectivePurchaseLineGstPayload(existing);
+  const g2 = effectivePurchaseLineGstPayload(incoming);
+  if (g1.cgstRate !== g2.cgstRate || g1.sgstRate !== g2.sgstRate || g1.igstRate !== g2.igstRate) {
+    return false;
+  }
+
+  const hsn1 = existing.hsnCode.trim() || existing.item?.hsnCode?.trim() || "";
+  const hsn2 = incoming.hsnCode.trim() || incoming.item?.hsnCode?.trim() || "";
+  if (hsn1 !== hsn2) return false;
+
+  const sac1 = existing.sacCode.trim() || existing.item?.sacCode?.trim() || "";
+  const sac2 = incoming.sacCode.trim() || incoming.item?.sacCode?.trim() || "";
+  if (sac1 !== sac2) return false;
+
+  if ((existing.stockEntryId ?? null) !== (incoming.stockEntryId ?? null)) return false;
+  if ((existing.sourceInvoiceItemId ?? null) !== (incoming.sourceInvoiceItemId ?? null))
+    return false;
+
+  return true;
+}
+
+/** Combine quantities onto `existing`; keeps line id and merges fixed-rupee discounts when % is empty. */
+export function mergeInvoiceLineDraftQuantities(
+  existing: InvoiceLineDraft,
+  incoming: InvoiceLineDraft,
+): InvoiceLineDraft {
+  const q = toNum(existing.quantity) + toNum(incoming.quantity);
+  const next: InvoiceLineDraft = { ...existing, quantity: formatQty(q) };
+
+  if (existing.discountPercent.trim() !== "") {
+    return next;
+  }
+  if (existing.discountAmount.trim() !== "") {
+    const sumAmt = toNum(existing.discountAmount) + toNum(incoming.discountAmount);
+    return { ...next, discountAmount: sumAmt.toFixed(2) };
+  }
+  return next;
 }
 
 /** Map draft row → API `items[]` element (rules depend on `invoiceType`). */

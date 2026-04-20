@@ -34,13 +34,35 @@ import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import { maybeShowTrialExpiredToast } from "@/lib/trial";
 import { isEventFromNestedPortal } from "@/lib/dialog-nested-portal";
+import { ApiClientError } from "@/api/error";
+import { augmentApiClientErrorForReceipt } from "@/lib/receipt-errors";
 
-const schema = z.object({
-  totalAmount: requiredPriceString,
-  paymentMethod: z.enum(["CASH", "CHEQUE", "UPI", "BANK_TRANSFER", "CARD"]),
-  referenceNumber: optionalString,
-  notes: optionalString,
-});
+const schema = z
+  .object({
+    totalAmount: requiredPriceString,
+    paymentMethod: z.enum(["CASH", "CHEQUE", "UPI", "BANK_TRANSFER", "CARD"]),
+    referenceNumber: optionalString,
+    notes: optionalString,
+    openingBalanceSettlementAmount: z
+      .string()
+      .optional()
+      .transform((v) => (v ?? "").trim())
+      .refine((s) => s === "" || /^[0-9]+(\.[0-9]{1,2})?$/.test(s), {
+        message: "Invalid amount",
+      }),
+  })
+  .superRefine((data, ctx) => {
+    const openingStr = data.openingBalanceSettlementAmount ?? "";
+    const opening = openingStr === "" ? 0 : parseFloat(openingStr);
+    const total = parseFloat(data.totalAmount);
+    if (opening > total + 0.001) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["openingBalanceSettlementAmount"],
+        message: "Cannot exceed receipt total",
+      });
+    }
+  });
 
 type FormData = z.infer<typeof schema>;
 
@@ -71,6 +93,7 @@ export function NewReceiptDialog({ open, onOpenChange }: NewReceiptDialogProps) 
       paymentMethod: "CASH",
       referenceNumber: "",
       notes: "",
+      openingBalanceSettlementAmount: "",
     },
   });
 
@@ -89,6 +112,7 @@ export function NewReceiptDialog({ open, onOpenChange }: NewReceiptDialogProps) 
       paymentMethod: "CASH",
       referenceNumber: "",
       notes: "",
+      openingBalanceSettlementAmount: "",
     });
   }, [open, reset]);
 
@@ -108,18 +132,25 @@ export function NewReceiptDialog({ open, onOpenChange }: NewReceiptDialogProps) 
     }
     setPartyError(false);
     try {
+      const openingStr = data.openingBalanceSettlementAmount ?? "";
+      const openingNum = openingStr === "" ? 0 : parseFloat(openingStr);
       await createReceipt.mutateAsync({
         partyId: party.id,
         totalAmount: data.totalAmount,
         paymentMethod: data.paymentMethod as PaymentMethod,
         referenceNumber: data.referenceNumber || undefined,
         notes: data.notes || undefined,
+        ...(openingNum > 0.001 ? { openingBalanceSettlementAmount: openingNum.toFixed(2) } : {}),
       });
       showSuccessToast("Receipt created");
       handleClose(false);
     } catch (e) {
       if (maybeShowTrialExpiredToast(e)) return;
-      showErrorToast(e, "Failed to create receipt");
+      if (e instanceof ApiClientError) {
+        showErrorToast(augmentApiClientErrorForReceipt(e), "Failed to create receipt");
+      } else {
+        showErrorToast(e, "Failed to create receipt");
+      }
     }
   };
 
@@ -138,8 +169,9 @@ export function NewReceiptDialog({ open, onOpenChange }: NewReceiptDialogProps) 
           <DialogHeader>
             <DialogTitle>New receipt</DialogTitle>
             <DialogDescription>
-              Record money received from a party. Allocate it to invoices when ready — same flow as
-              opening-advance receipts created from customer credit at party setup.
+              Record money received from a party. You can optionally tag part of this receipt
+              against the customer&apos;s historical opening receivable; the full amount is still
+              one money-in entry. Allocate the rest to invoices from the receipt page when ready.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -202,6 +234,24 @@ export function NewReceiptDialog({ open, onOpenChange }: NewReceiptDialogProps) 
             <div className="space-y-2">
               <Label>Notes</Label>
               <Textarea rows={2} placeholder="Optional" {...register("notes")} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Settle against opening balance</Label>
+              <Input
+                placeholder="0.00"
+                {...register("openingBalanceSettlementAmount")}
+                aria-invalid={!!errors.openingBalanceSettlementAmount}
+                autoComplete="off"
+              />
+              {errors.openingBalanceSettlementAmount && (
+                <FieldError>{errors.openingBalanceSettlementAmount.message}</FieldError>
+              )}
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Optional: label part of this receipt against opening debt the customer already owed.
+                Invoice allocations from the receipt screen add on top; together they cannot exceed
+                the receipt total.
+              </p>
             </div>
 
             <DialogFooter>

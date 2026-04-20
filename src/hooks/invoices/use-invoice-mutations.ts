@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api, generateIdempotencyKey } from "@/api";
 import { invalidateQueryKeys } from "@/lib/query";
 import { queryKeys } from "@/lib/query-keys";
@@ -16,6 +16,21 @@ import {
   parseRecordSupplierPaymentResponse,
 } from "@/lib/invoice-api-helpers";
 
+/** Receipt detail embeds open invoices for the party; invalidate whenever invoice data changes. */
+function invalidateReceiptAndPartyCaches(qc: QueryClient) {
+  invalidateQueryKeys(qc, [
+    queryKeys.receipts.root(),
+    queryKeys.receipts.detailPrefix(),
+    queryKeys.parties.ledgerPrefix(),
+    queryKeys.parties.balancePrefix(),
+  ]);
+}
+
+function invalidateDashboardAndReports(qc: QueryClient) {
+  invalidateQueryKeys(qc, [queryKeys.business.dashboard()]);
+  void qc.invalidateQueries({ queryKey: ["reports"], refetchType: "all" });
+}
+
 export function useCreateInvoice() {
   const qc = useQueryClient();
   return useMutation({
@@ -23,8 +38,11 @@ export function useCreateInvoice() {
       const res = await api.post<Invoice>("/invoices", data, generateIdempotencyKey());
       return res.data;
     },
-    onSuccess: () =>
-      invalidateQueryKeys(qc, [queryKeys.invoices.root(), queryKeys.invoices.nextNumberRoot()]),
+    onSuccess: () => {
+      invalidateQueryKeys(qc, [queryKeys.invoices.root(), queryKeys.invoices.nextNumberRoot()]);
+      invalidateReceiptAndPartyCaches(qc);
+      invalidateDashboardAndReports(qc);
+    },
   });
 }
 
@@ -37,6 +55,7 @@ export function useUpdateInvoiceById() {
     },
     onSuccess: (_, { invoiceId }) => {
       invalidateQueryKeys(qc, [queryKeys.invoices.root(), queryKeys.invoices.detail(invoiceId)]);
+      invalidateReceiptAndPartyCaches(qc);
     },
   });
 }
@@ -64,6 +83,8 @@ export function useFinalizeInvoice() {
         queryKeys.items.stockEntryMapPrefix(),
         queryKeys.items.stockEntryDetailPrefix(),
       ]);
+      invalidateReceiptAndPartyCaches(qc);
+      invalidateDashboardAndReports(qc);
     },
   });
 }
@@ -82,6 +103,8 @@ export function useCancelInvoice() {
         queryKeys.items.root(),
         queryKeys.items.stockEntriesRoot(),
       ]);
+      invalidateReceiptAndPartyCaches(qc);
+      invalidateDashboardAndReports(qc);
     },
   });
 }
@@ -95,6 +118,8 @@ export function useRecordPayment(invoiceId: number) {
     },
     onSuccess: () => {
       invalidateQueryKeys(qc, [queryKeys.invoices.detail(invoiceId), queryKeys.invoices.root()]);
+      invalidateReceiptAndPartyCaches(qc);
+      invalidateDashboardAndReports(qc);
     },
   });
 }
@@ -115,9 +140,9 @@ export function useRecordSupplierPayment(invoiceId: number) {
         queryKeys.invoices.detail(invoiceId),
         queryKeys.invoices.root(),
         queryKeys.outboundPayments.root(),
-        queryKeys.parties.ledgerPrefix(),
-        queryKeys.parties.balancePrefix(),
       ]);
+      invalidateReceiptAndPartyCaches(qc);
+      invalidateDashboardAndReports(qc);
     },
   });
 }

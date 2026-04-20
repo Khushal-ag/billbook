@@ -65,10 +65,12 @@ export function useCreditNote(creditNoteId: number | undefined) {
   });
 }
 
-/** Invoices & party balances affected by credit notes */
+/** Invoices, receipts (open invoice lists), & party balances affected by credit notes */
 const CREDIT_NOTE_RELATED_KEYS = () => [
   queryKeys.invoices.detailPrefix(),
   queryKeys.invoices.root(),
+  queryKeys.receipts.root(),
+  queryKeys.receipts.detailPrefix(),
   queryKeys.parties.ledgerPrefix(),
   queryKeys.parties.balancePrefix(),
 ];

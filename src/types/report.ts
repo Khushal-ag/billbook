@@ -23,6 +23,7 @@ export interface ReceiptRegisterRowDto {
   totalAmount: string;
   allocatedAmount?: string;
   unallocatedAmount: string;
+  openingBalanceSettlementAmount?: string | null;
   paymentMethod: string;
   referenceNumber?: string | null;
   notes?: string | null;
