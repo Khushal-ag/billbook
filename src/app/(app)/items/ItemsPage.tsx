@@ -25,9 +25,11 @@ import { useDebounce } from "@/hooks/use-debounce";
 import type { Item } from "@/types/item";
 import { Switch } from "@/components/ui/switch";
 import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/constants/permissions";
 
 export default function ItemsPage() {
-  const { isOwner } = usePermissions();
+  const { can } = usePermissions();
+  const canCreateItem = can(P.item.create);
   const router = useRouter();
   const params = useParams<{ itemId?: string | string[] }>();
   const itemId = Array.isArray(params?.itemId) ? params.itemId[0] : params?.itemId;
@@ -77,10 +79,12 @@ export default function ItemsPage() {
         title="Items"
         description="Products and services for invoices. Set category and tax."
         action={
-          <Button onClick={openCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Item
-          </Button>
+          canCreateItem ? (
+            <Button onClick={openCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Item
+            </Button>
+          ) : undefined
         }
       />
 
@@ -127,10 +131,12 @@ export default function ItemsPage() {
           title="No items found"
           description="Add your first item or service. You can set category while adding—search existing or add a new one on the go."
           action={
-            <Button size="sm" onClick={openCreate}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Item
-            </Button>
+            canCreateItem ? (
+              <Button size="sm" onClick={openCreate}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Item
+              </Button>
+            ) : undefined
           }
         />
       ) : (
@@ -145,7 +151,7 @@ export default function ItemsPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         item={editItem}
-        canManageUnits={isOwner}
+        canManageUnits={can(P.item.unit.manage)}
       />
     </div>
   );

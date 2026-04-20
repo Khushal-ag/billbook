@@ -11,13 +11,23 @@ import { TrialExpiredOverlay } from "@/components/trial/TrialExpiredOverlay";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { RoutePermissionGate } from "@/components/auth/RoutePermissionGate";
+import { RoleGroupBlockedOverlay } from "@/components/auth/RoleGroupBlockedOverlay";
 
 export default function AppShell({ children }: { children: ReactNode }) {
-  const { user, isAuthenticated, isLoading, refreshSession } = useAuth();
+  const {
+    user,
+    isAuthenticated,
+    isLoading,
+    refreshSession,
+    accessBlockedMessage,
+    clearAccessBlocked,
+  } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const safePathname = pathname ?? "";
   const [refreshingTrial, setRefreshingTrial] = useState(false);
+  const [tryingAccessRefresh, setTryingAccessRefresh] = useState(false);
 
   const [collapsed, setCollapsed] = useState(false);
   const isMobile = useIsMobile();
@@ -66,6 +76,16 @@ export default function AppShell({ children }: { children: ReactNode }) {
       await refreshSession();
     } finally {
       setRefreshingTrial(false);
+    }
+  };
+
+  const handleBlockedTryAgain = async () => {
+    setTryingAccessRefresh(true);
+    try {
+      await refreshSession();
+      clearAccessBlocked();
+    } finally {
+      setTryingAccessRefresh(false);
     }
   };
 
@@ -146,10 +166,18 @@ export default function AppShell({ children }: { children: ReactNode }) {
           ref={mainRef}
           className="relative min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden"
         >
-          {children}
+          <RoutePermissionGate>{children}</RoutePermissionGate>
         </main>
       </div>
       <TrialExpiredOverlay validityEnd={user.validityEnd} />
+      {accessBlockedMessage && (
+        <RoleGroupBlockedOverlay
+          message={accessBlockedMessage}
+          onTryAgain={handleBlockedTryAgain}
+          trying={tryingAccessRefresh}
+          onDismiss={clearAccessBlocked}
+        />
+      )}
     </div>
   );
 }

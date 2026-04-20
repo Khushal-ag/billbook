@@ -148,11 +148,15 @@ export interface BusinessUser {
   role: Role;
   isActive: boolean;
   createdAt: string;
+  roleGroupId?: number | null;
+  roleGroupName?: string | null;
 }
 
 /** POST /business/users — owner adds staff (see API docs for password rules). */
 export interface CreateStaffRequest {
   email: string;
+  /** Required — role group from GET /business/role-groups */
+  roleGroupId: number;
   password?: string;
   firstName?: string;
   lastName?: string;
@@ -160,7 +164,8 @@ export interface CreateStaffRequest {
 
 /** PATCH /business/users/:businessUserId */
 export interface UpdateStaffMembershipRequest {
-  isActive: boolean;
+  isActive?: boolean;
+  roleGroupId?: number;
 }
 
 export interface AuthTokens {
@@ -183,6 +188,11 @@ export interface AuthMeUser {
   lastName: string | null;
   /** OWNER/STAFF for business users; ADMIN for platform admin login */
   role: Role;
+  /** Effective permission keys for the current business (OWNER/ADMIN: full catalog). */
+  permissions?: string[];
+  /** When `role` is STAFF — current business role group (if returned by API). */
+  roleGroupId?: number | null;
+  roleGroupName?: string | null;
 }
 
 /** Business object in GET /auth/me response */
@@ -299,4 +309,9 @@ export interface SessionUser {
   businessLogoUrl?: string | null;
   /** From GET /auth/me — trial / plan validity end (ISO string), null if open-ended */
   validityEnd?: string | null;
+  /** Sorted permission keys for current business (from GET /auth/me). */
+  permissions: string[];
+  /** When `role` is STAFF — current business role group (from GET /auth/me when provided). */
+  roleGroupId?: number | null;
+  roleGroupName?: string | null;
 }

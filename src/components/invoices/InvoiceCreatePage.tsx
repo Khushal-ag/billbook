@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useBusinessProfile } from "@/hooks/use-business";
 import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/constants/permissions";
 import { isPurchaseVendorBillMetaType } from "@/lib/invoice";
 import type { InvoiceType } from "@/types/invoice";
 
@@ -36,7 +37,7 @@ export function InvoiceCreatePage({
   });
   const copy = state.createCopy;
   const { data: businessProfile } = useBusinessProfile();
-  const { isOwner } = usePermissions();
+  const { can } = usePermissions();
   const showNumberRow =
     state.isEditMode || state.isNextInvoiceNumberPending || Boolean(state.nextInvoiceNumber);
   const displayNumber = state.isEditMode ? state.editingInvoiceNumber : state.nextInvoiceNumber;
@@ -247,7 +248,7 @@ export function InvoiceCreatePage({
           if (!open) state.setPendingItemName("");
         }}
         initialName={state.pendingItemName}
-        canManageUnits={isOwner}
+        canManageUnits={can(P.item.unit.manage)}
         onSuccess={state.handleItemCreated}
       />
     </div>

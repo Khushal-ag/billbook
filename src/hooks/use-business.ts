@@ -135,7 +135,7 @@ export function useUpdateBusinessProfile() {
   });
 }
 
-export function useBusinessUsers() {
+export function useBusinessUsers(enabled = true) {
   return useQuery({
     queryKey: queryKeys.business.users(),
     queryFn: async () => {
@@ -145,6 +145,7 @@ export function useBusinessUsers() {
       return (data as { users?: BusinessUser[] }).users ?? [];
     },
     retry: false,
+    enabled,
   });
 }
 
@@ -153,7 +154,7 @@ export function useCreateStaffMember() {
   return useMutation({
     mutationFn: async (body: CreateStaffRequest) => {
       const email = body.email.trim().toLowerCase();
-      const payload: Record<string, string> = { email };
+      const payload: Record<string, string | number> = { email, roleGroupId: body.roleGroupId };
       const fn = body.firstName?.trim();
       const ln = body.lastName?.trim();
       if (fn) payload.firstName = fn;
@@ -173,10 +174,11 @@ export function useUpdateStaffMembership() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (vars: UpdateStaffMembershipRequest & { businessUserId: number }) => {
-      const { businessUserId, isActive } = vars;
-      const res = await api.patch<BusinessUser>(`/business/users/${businessUserId}`, {
-        isActive,
-      });
+      const { businessUserId, isActive, roleGroupId } = vars;
+      const body: Record<string, unknown> = {};
+      if (isActive !== undefined) body.isActive = isActive;
+      if (roleGroupId !== undefined) body.roleGroupId = roleGroupId;
+      const res = await api.patch<BusinessUser>(`/business/users/${businessUserId}`, body);
       return res.data;
     },
     onSuccess: () => {

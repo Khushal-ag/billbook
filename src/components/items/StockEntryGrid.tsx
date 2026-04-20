@@ -18,6 +18,7 @@ import type { CreateStockEntryRequest, StockEntry, UpdateStockEntryRequest } fro
 import type { Party } from "@/types/party";
 import EditStockEntryDialog from "@/components/dialogs/EditStockEntryDialog";
 import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/constants/permissions";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -86,7 +87,7 @@ export function StockEntryGrid({
   onEditSessionEntry,
   isSubmitting,
 }: StockEntryGridProps) {
-  const { isOwner } = usePermissions();
+  const { can } = usePermissions();
   const [rows, setRows] = useState<StockEntryRow[]>(() => [defaultRow()]);
   const [addedRows, setAddedRows] = useState<AddedSessionRow[]>([]);
   const [rowBeingEdited, setRowBeingEdited] = useState<AddedSessionRow | null>(null);
@@ -620,7 +621,7 @@ export function StockEntryGrid({
             pendingItemRowIdRef.current = null;
           }
         }}
-        canManageUnits={isOwner}
+        canManageUnits={can(P.item.unit.manage)}
         onSuccess={(item) => {
           const rowId = pendingItemRowIdRef.current;
           if (rowId) {

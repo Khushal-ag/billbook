@@ -19,6 +19,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useBusinessSettings, useUpdateBusinessSettings } from "@/hooks/use-business-settings";
 import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/constants/permissions";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import type {
   BusinessSettingsData,
@@ -160,7 +161,7 @@ interface DocumentNumberingCardProps {
 }
 
 export function DocumentNumberingCard({ embedded = false }: DocumentNumberingCardProps) {
-  const { isOwner } = usePermissions();
+  const { can } = usePermissions();
   const { data, isPending, error } = useBusinessSettings();
   const update = useUpdateBusinessSettings();
   const [patch, setPatch] = useState<Partial<FormState>>({});
@@ -248,7 +249,7 @@ export function DocumentNumberingCard({ embedded = false }: DocumentNumberingCar
   }
 
   const form = { ...toFormState(data), ...patch };
-  const readOnly = !isOwner;
+  const readOnly = !can(P.business.settings.update);
   const profileMonth = data.businessProfileFinancialYearStart;
   const changedCount = Object.keys(patch).length;
 

@@ -16,7 +16,6 @@ import {
   PackageCheck,
   Wallet,
   ArrowDownLeft,
-  UserCog,
   ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,12 +23,20 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { BusinessIdentity } from "@/components/BusinessIdentity";
 import { reportCreditNoteRegister, reportInvoiceAging } from "@/lib/report-labels";
+import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/constants/permissions";
+import { TeamRolesSidebarBlock } from "@/components/layout/TeamRolesSidebarBlock";
 
 interface NavItem {
   label: string;
   path: string;
   icon: React.ElementType;
-  ownerOnly?: boolean;
+  /** If set, item is shown only when `can(permission)` */
+  permission?: string;
+  /** Show when user has any of these permissions (e.g. role groups view or manage) */
+  anyPermission?: string[];
+  /** `exact` = only `/path` matches, not `/path/...` (used for Business settings vs role groups) */
+  activeMatch?: "exact" | "prefix";
 }
 
 interface NavSection {
@@ -40,47 +47,69 @@ interface NavSection {
 const navSections: NavSection[] = [
   {
     title: "Overview",
-    items: [{ label: "Dashboard", path: "/dashboard", icon: LayoutDashboard }],
+    items: [
+      {
+        label: "Dashboard",
+        path: "/dashboard",
+        icon: LayoutDashboard,
+        permission: P.business.dashboard.view,
+      },
+    ],
   },
   {
     title: "Invoicing",
-    items: [{ label: "Invoices", path: "/invoices", icon: FileText }],
+    items: [{ label: "Invoices", path: "/invoices", icon: FileText, permission: P.invoice.view }],
   },
   {
     title: "Money & credit",
     items: [
-      { label: "Receipts", path: "/receipts", icon: Wallet },
-      { label: "Outbound payouts", path: "/payments/outbound", icon: ArrowDownLeft },
-      { label: "Credit notes", path: "/credit-notes", icon: FileMinus },
+      { label: "Receipts", path: "/receipts", icon: Wallet, permission: P.receipt.view },
+      {
+        label: "Outbound payouts",
+        path: "/payments/outbound",
+        icon: ArrowDownLeft,
+        permission: P.payment.outbound.view,
+      },
+      {
+        label: "Credit notes",
+        path: "/credit-notes",
+        icon: FileMinus,
+        permission: P.credit_note.view,
+      },
     ],
   },
   {
     title: "Catalog",
     items: [
-      { label: "Items", path: "/items", icon: Package },
-      { label: "Stock", path: "/stock", icon: PackageCheck },
+      { label: "Items", path: "/items", icon: Package, permission: P.item.view },
+      { label: "Stock", path: "/stock", icon: PackageCheck, permission: P.item.stock.view },
     ],
   },
   {
     title: "Parties",
     items: [
-      { label: "Customers", path: "/parties", icon: Users },
-      { label: "Vendors", path: "/vendors", icon: Truck },
+      { label: "Customers", path: "/parties", icon: Users, permission: P.party.view },
+      { label: "Vendors", path: "/vendors", icon: Truck, permission: P.party.view },
     ],
   },
   {
     title: "Reports & tax",
     items: [
-      { label: "Reports", path: "/reports", icon: BarChart3 },
-      { label: "Tax / GST", path: "/tax", icon: Receipt },
+      { label: "Reports", path: "/reports", icon: BarChart3, permission: P.reports.view },
+      { label: "Tax / GST", path: "/tax", icon: Receipt, permission: P.tax.view },
     ],
   },
   {
-    title: "Account",
+    title: "Organization",
     items: [
-      { label: "Business settings", path: "/settings", icon: Settings },
-      { label: "Team", path: "/team", icon: UserCog, ownerOnly: true },
-      { label: "Audit logs", path: "/audit-logs", icon: ScrollText, ownerOnly: true },
+      {
+        label: "Business settings",
+        path: "/settings",
+        icon: Settings,
+        permission: P.business.settings.view,
+        activeMatch: "exact",
+      },
+      { label: "Audit logs", path: "/audit-logs", icon: ScrollText, permission: P.audit.view },
     ],
   },
 ];
@@ -107,6 +136,7 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { logout, user } = useAuth();
+  const { can } = usePermissions();
   const safePathname = pathname ?? "";
   const ledgerSource = searchParams.get("from");
   const isPartyLedgerRoute = /^\/parties\/[^/]+\/ledger\/?$/.test(safePathname);
@@ -125,6 +155,18 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
 
     if (path === "/dashboard") return safePathname === "/dashboard";
     return safePathname.startsWith(path);
+  };
+
+  const isNavItemActive = (item: NavItem) => {
+    if (isPartyLedgerRoute && ledgerSource === "vendors") {
+      if (item.path === "/vendors") return true;
+      if (item.path === "/parties") return false;
+    }
+    const p = (safePathname.split("?")[0] ?? "").replace(/\/$/, "") || "/";
+    const base = item.path.replace(/\/$/, "") || "/";
+    if (item.path === "/dashboard") return p === "/dashboard";
+    if (item.activeMatch === "exact") return p === base;
+    return p === base || p.startsWith(`${base}/`);
   };
 
   const isInvoiceTypeActive = (path: string) => {
@@ -150,7 +192,11 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
       .map((section) => ({
         ...section,
         items: section.items.filter((item) => {
-          if (item.ownerOnly && user?.role !== "OWNER") return false;
+          if (item.anyPermission?.length) {
+            if (!item.anyPermission.some((key) => can(key))) return false;
+          } else if (item.permission && !can(item.permission)) {
+            return false;
+          }
           return true;
         }),
       }))
@@ -195,6 +241,14 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
               </h3>
             )}
             <div className="space-y-0.5">
+              {section.title === "Organization" && (
+                <TeamRolesSidebarBlock
+                  collapsed={collapsed}
+                  safePathname={safePathname}
+                  can={can}
+                  onNavigate={onNavigate}
+                />
+              )}
               {section.items.map((item) =>
                 item.path === "/invoices" && !collapsed ? (
                   <div key={item.path} className="space-y-0.5">
@@ -285,7 +339,7 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
                     onClick={onNavigate}
                     className={cn(
                       "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                      isActive(item.path)
+                      isNavItemActive(item)
                         ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
                         : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
                     )}

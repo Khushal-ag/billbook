@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from "react";
 import type {
   SessionUser,
   LoginOtpRequest,
@@ -11,8 +19,14 @@ import type {
   AdminLoginRequest,
 } from "@/types/auth";
 import { AUTH_EXPIRED_EVENT } from "@/constants/auth-events";
+import { ACCESS_BLOCKED_EVENT, REFRESH_PERMISSIONS_EVENT } from "@/constants/access-events";
 import { LAST_ORGANIZATION_CODE_KEY } from "@/constants/auth-storage";
 import { api, setAccessToken, setRefreshToken, ApiClientError } from "@/api";
+import {
+  extractRoleGroupFromAuthMeBusiness,
+  extractRoleGroupFromAuthMeUser,
+} from "@/lib/auth-me-user";
+import { parseAuthMePayload } from "@/lib/parse-auth-me-payload";
 
 interface AuthState {
   user: SessionUser | null;
@@ -28,6 +42,9 @@ interface AuthContextValue extends AuthState {
   adminLogin: (data: AdminLoginRequest) => Promise<void>;
   refreshSession: () => Promise<void>;
   logout: () => Promise<void>;
+  /** When set, scoped access is blocked (e.g. inactive role group) — show full-screen message. */
+  accessBlockedMessage: string | null;
+  clearAccessBlocked: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -84,6 +101,7 @@ function toSessionUser(auth: AuthResponse, role: "OWNER" | "STAFF" = "OWNER"): S
     businessId: auth.business.id,
     businessName: auth.business.name,
     organizationCode: auth.business.organizationCode,
+    permissions: [],
   };
 }
 
@@ -97,6 +115,13 @@ function persistLastOrganizationCode(code: string | undefined) {
 
 function sessionUserFromMe(me: AuthMeResponse): SessionUser {
   const { user: meUser, business: meBusiness } = me;
+  const permissions = Array.isArray(meUser.permissions) ? meUser.permissions.slice() : [];
+  const rg = extractRoleGroupFromAuthMeUser(meUser);
+  const rgMembership =
+    meUser && typeof meUser === "object" && "membership" in meUser
+      ? extractRoleGroupFromAuthMeUser((meUser as Record<string, unknown>).membership)
+      : { roleGroupId: null, roleGroupName: null };
+  const rgBiz = extractRoleGroupFromAuthMeBusiness(meBusiness);
   return {
     id: meUser.id,
     email: meUser.email,
@@ -108,11 +133,28 @@ function sessionUserFromMe(me: AuthMeResponse): SessionUser {
     organizationCode: meBusiness.organizationCode,
     businessLogoUrl: meBusiness.logoUrl ?? null,
     validityEnd: meBusiness.validityEnd ?? null,
+    permissions,
+    roleGroupId:
+      rg.roleGroupId ?? rgMembership.roleGroupId ?? rgBiz.roleGroupId ?? meUser.roleGroupId ?? null,
+    roleGroupName:
+      rg.roleGroupName ??
+      rgMembership.roleGroupName ??
+      rgBiz.roleGroupName ??
+      meUser.roleGroupName ??
+      null,
   };
 }
 
 function persistSession(sessionUser: SessionUser) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
+}
+
+/** Persist and return the session derived from GET /auth/me (single code path for hydration). */
+function commitSessionFromMe(me: AuthMeResponse): SessionUser {
+  const sessionUser = sessionUserFromMe(me);
+  persistSession(sessionUser);
+  persistLastOrganizationCode(sessionUser.organizationCode);
+  return sessionUser;
 }
 
 function clearSession() {
@@ -121,22 +163,50 @@ function clearSession() {
   localStorage.removeItem(SESSION_KEY);
 }
 
+function authMeFromApiGet(res: unknown): AuthMeResponse | null {
+  return parseAuthMePayload(res) ?? parseAuthMePayload((res as { data?: unknown }).data);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [accessBlockedMessage, setAccessBlockedMessage] = useState<string | null>(null);
+  const refreshPermissionsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isAuthenticated = user !== null;
+
+  const clearAccessBlocked = useCallback(() => {
+    setAccessBlockedMessage(null);
+  }, []);
 
   useEffect(() => {
     function onAuthExpired() {
       clearSession();
       setUser(null);
       setIsLoading(false);
+      setAccessBlockedMessage(null);
     }
 
     window.addEventListener(AUTH_EXPIRED_EVENT, onAuthExpired);
     return () => {
       window.removeEventListener(AUTH_EXPIRED_EVENT, onAuthExpired);
+    };
+  }, []);
+
+  useEffect(() => {
+    function onAccessBlocked(e: Event) {
+      const detail = (e as CustomEvent<{ message?: string }>).detail;
+      const msg =
+        typeof detail?.message === "string" && detail.message.trim() ? detail.message.trim() : null;
+      setAccessBlockedMessage(
+        msg ??
+          "Your role group is no longer active. Please contact the business owner to restore access.",
+      );
+    }
+
+    window.addEventListener(ACCESS_BLOCKED_EVENT, onAccessBlocked);
+    return () => {
+      window.removeEventListener(ACCESS_BLOCKED_EVENT, onAccessBlocked);
     };
   }, []);
 
@@ -147,11 +217,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async function restore() {
       try {
         const res = await api.get<AuthMeResponse>("/auth/me");
+        const me = authMeFromApiGet(res);
+        if (!me) throw new Error("Invalid /auth/me response");
         if (!cancelled) {
-          const updated = sessionUserFromMe(res.data);
-          persistSession(updated);
-          persistLastOrganizationCode(updated.organizationCode);
-          setUser(updated);
+          setUser(commitSessionFromMe(me));
         }
       } catch {
         if (!cancelled) {
@@ -176,10 +245,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Fetch /auth/me to get accurate role, validity, and branding
     try {
       const res = await api.get<AuthMeResponse>("/auth/me");
-      const sessionUser = sessionUserFromMe(res.data);
-      persistSession(sessionUser);
-      persistLastOrganizationCode(sessionUser.organizationCode);
-      setUser(sessionUser);
+      const me = authMeFromApiGet(res);
+      if (!me) throw new Error("Invalid /auth/me response");
+      setUser(commitSessionFromMe(me));
     } catch {
       const sessionUser = toSessionUser(auth);
       persistSession(sessionUser);
@@ -257,14 +325,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshSession = useCallback(async () => {
     try {
       const res = await api.get<AuthMeResponse>("/auth/me");
-      const sessionUser = sessionUserFromMe(res.data);
-      persistSession(sessionUser);
-      persistLastOrganizationCode(sessionUser.organizationCode);
-      setUser(sessionUser);
+      const me = authMeFromApiGet(res);
+      if (!me) throw new Error("Invalid /auth/me response");
+      setUser(commitSessionFromMe(me));
     } catch {
       clearSession();
       setUser(null);
     }
+  }, []);
+
+  const refreshSessionRef = useRef(refreshSession);
+  refreshSessionRef.current = refreshSession;
+
+  useEffect(() => {
+    function onRefreshPermissions() {
+      if (refreshPermissionsTimer.current) clearTimeout(refreshPermissionsTimer.current);
+      refreshPermissionsTimer.current = setTimeout(() => {
+        refreshPermissionsTimer.current = null;
+        void refreshSessionRef.current();
+      }, 400);
+    }
+
+    window.addEventListener(REFRESH_PERMISSIONS_EVENT, onRefreshPermissions);
+    return () => {
+      window.removeEventListener(REFRESH_PERMISSIONS_EVENT, onRefreshPermissions);
+      if (refreshPermissionsTimer.current) clearTimeout(refreshPermissionsTimer.current);
+    };
   }, []);
 
   const logout = useCallback(async () => {
@@ -276,6 +362,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearSession();
       setUser(null);
       setIsLoading(false);
+      setAccessBlockedMessage(null);
     }
   }, []);
 
@@ -292,6 +379,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         adminLogin,
         refreshSession,
         logout,
+        accessBlockedMessage,
+        clearAccessBlocked,
       }}
     >
       {children}

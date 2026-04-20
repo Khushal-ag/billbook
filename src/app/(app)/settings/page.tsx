@@ -4,15 +4,17 @@ import { Building2 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { DocumentNumberingCard } from "@/components/settings/SettingsSections";
 import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/constants/permissions";
 
 export default function SettingsPage() {
-  const { isOwner } = usePermissions();
+  const { can } = usePermissions();
+  const canEditSettings = can(P.business.settings.update);
 
   return (
     <div className="page-container animate-fade-in">
       <PageHeader
         title="Business settings"
-        description="Configure document numbering and defaults for your organization. Owners manage team access from Team in the sidebar."
+        description="Document numbering, sequences, and defaults for everyone in this organization. Team and role groups are under Team & roles in the sidebar."
       />
 
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-10">
@@ -35,9 +37,8 @@ export default function SettingsPage() {
                 </span>
               </h2>
               <p className="text-sm text-muted-foreground">
-                Applies to everyone in this business. Only <strong>owners</strong> can change
-                document numbering and defaults.{" "}
-                {!isOwner && "You can review prefixes and sequences below."}
+                Applies to everyone in this business.{" "}
+                {!canEditSettings && "You can review prefixes and sequences below."}
               </p>
             </div>
           </div>

@@ -32,11 +32,14 @@ import type { Party } from "@/types/party";
 import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/constants/permissions";
 
 type ListViewMode = "item" | "stock";
 
 export default function Stock() {
-  const { isOwner } = usePermissions();
+  const { can } = usePermissions();
+  const canAdjustStock = can(P.item.adjust_stock);
+  const canSeeAlerts = can(P.alerts.view);
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [listViewMode, setListViewMode] = useState<ListViewMode>("stock");
@@ -58,7 +61,7 @@ export default function Stock() {
     isPending: stockPending,
     error: stockError,
   } = useStockList({ limit: 200, search: debouncedSearch || undefined });
-  const { data: alertsData } = useAlerts(true);
+  const { data: alertsData } = useAlerts(true, canSeeAlerts);
   const markAlertRead = useMarkAlertRead();
   const {
     data: stockEntriesData,
@@ -262,7 +265,7 @@ export default function Stock() {
           <ErrorBanner error={stockError} fallbackMessage="Failed to load stock" />
           {/* Keep search and toolbar mounted so focus is not lost when list refetches */}
           <>
-            {unreadAlerts.length > 0 && (
+            {canSeeAlerts && unreadAlerts.length > 0 && (
               <StockAlertsBanner
                 alerts={unreadAlerts}
                 onMarkRead={handleMarkAlertRead}
@@ -334,14 +337,14 @@ export default function Stock() {
                 <StockReportTable
                   rows={stockList}
                   items={items}
-                  onAdjust={isOwner ? openAdjustStock : undefined}
+                  onAdjust={canAdjustStock ? openAdjustStock : undefined}
                 />
               ) : (
                 <StockEntriesTable
                   entries={stockEntries}
                   items={items}
                   onView={handleViewEntry}
-                  onAdjust={isOwner ? openAdjustStock : undefined}
+                  onAdjust={canAdjustStock ? openAdjustStock : undefined}
                   onEditEntry={openEditStockEntry}
                 />
               )}

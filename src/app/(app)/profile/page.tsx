@@ -26,6 +26,7 @@ import type {
   BusinessClassificationOption,
 } from "@/types/auth";
 import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/constants/permissions";
 
 function trimOrNull(value: string | null | undefined): string | null {
   const t = (value ?? "").trim();
@@ -276,7 +277,7 @@ function ProfileEditor({
 }
 
 export default function Profile() {
-  const { isOwner } = usePermissions();
+  const { can } = usePermissions();
   const {
     data: business,
     isPending: isBusinessPending,
@@ -311,8 +312,10 @@ export default function Profile() {
           business={business}
           businessTypeOptions={businessTypeOptions}
           industryTypeOptions={industryTypeOptions}
-          canManageTypeOptions={isOwner}
-          canEditProfile={isOwner}
+          canManageTypeOptions={
+            can(P.business.business_types.manage) && can(P.business.industry_types.manage)
+          }
+          canEditProfile={can(P.business.profile.update)}
         />
       ) : (
         <PageHeader

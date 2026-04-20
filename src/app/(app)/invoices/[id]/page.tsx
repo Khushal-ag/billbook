@@ -31,6 +31,7 @@ import {
 import { useStockEntriesByIds } from "@/hooks/use-items";
 import { useBusinessProfile } from "@/hooks/use-business";
 import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/constants/permissions";
 import { useResourceAuditLogs } from "@/hooks/use-audit-logs";
 import {
   getInvoiceBalanceDue,
@@ -54,7 +55,7 @@ export default function InvoiceDetail() {
   const idParamStr = idParam != null ? String(idParam).trim() : "";
   const invoiceId = idParamStr && /^\d+$/.test(idParamStr) ? Number(idParamStr) : undefined;
   const invalidInvoiceId = Boolean(idParamStr) && invoiceId === undefined;
-  const { isOwner } = usePermissions();
+  const { can } = usePermissions();
 
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [supplierPaymentOpen, setSupplierPaymentOpen] = useState(false);
@@ -217,7 +218,14 @@ export default function InvoiceDetail() {
             action={
               <InvoiceHeaderActions
                 invoice={invoice}
-                isOwner={isOwner}
+                canEditDraft={can(P.invoice.update)}
+                canCancelDraft={can(P.invoice.cancel)}
+                canFinalizeDraft={can(P.invoice.finalize)}
+                canRecordPayment={can(P.invoice.payment.record)}
+                canOutboundRefund={can(P.payment.outbound.create)}
+                canCreateRefundCreditNote={can(P.credit_note.create)}
+                canPdf={can(P.invoice.pdf)}
+                canCommunication={can(P.invoice.communication)}
                 balanceDueValue={balanceDueValue}
                 balanceDue={balanceDue}
                 sentToday={sentToday}

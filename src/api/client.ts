@@ -1,6 +1,8 @@
 import type { ApiResponse } from "@/types/api";
 import type { AuthTokens } from "@/types/auth";
 import { AUTH_EXPIRED_EVENT } from "@/constants/auth-events";
+import { ACCESS_BLOCKED_EVENT } from "@/constants/access-events";
+import { isInactiveRoleGroupAccessMessage } from "@/lib/rbac-access";
 import { env } from "@/lib/env";
 import { getAccessToken, getRefreshToken, setAccessToken, setRefreshToken } from "./token";
 import { ApiClientError } from "./error";
@@ -143,6 +145,14 @@ async function request<T>(
         ? "Too many requests — please wait a moment and try again."
         : errorData?.error || `Request failed (${response.status})`;
 
+    if (
+      response.status === 403 &&
+      typeof window !== "undefined" &&
+      isInactiveRoleGroupAccessMessage(message)
+    ) {
+      window.dispatchEvent(new CustomEvent(ACCESS_BLOCKED_EVENT, { detail: { message } }));
+    }
+
     throw new ApiClientError(message, response.status, errorData?.details, requestId);
   }
 
@@ -244,12 +254,18 @@ async function requestBlob(
       clearSessionAndNotify();
     }
 
-    throw new ApiClientError(
-      errorData?.error || `Request failed (${response.status})`,
-      response.status,
-      undefined,
-      requestId,
-    );
+    const blobErrMsg = errorData?.error || `Request failed (${response.status})`;
+    if (
+      response.status === 403 &&
+      typeof window !== "undefined" &&
+      isInactiveRoleGroupAccessMessage(blobErrMsg)
+    ) {
+      window.dispatchEvent(
+        new CustomEvent(ACCESS_BLOCKED_EVENT, { detail: { message: blobErrMsg } }),
+      );
+    }
+
+    throw new ApiClientError(blobErrMsg, response.status, undefined, requestId);
   }
 
   const blob = await response.blob();

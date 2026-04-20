@@ -4,7 +4,7 @@ import { invalidateQueryKeys } from "@/lib/query";
 import { queryKeys } from "@/lib/query-keys";
 import type { Alert, AlertListResponse } from "@/types/alert";
 
-export function useAlerts(unreadOnly = false) {
+export function useAlerts(unreadOnly = false, enabled = true) {
   const qs = unreadOnly ? "?unreadOnly=true" : "";
   return useQuery({
     queryKey: queryKeys.alerts.list(unreadOnly),
@@ -12,6 +12,7 @@ export function useAlerts(unreadOnly = false) {
       const res = await api.get<AlertListResponse>(`/alerts${qs}`);
       return res.data;
     },
+    enabled,
   });
 }
 

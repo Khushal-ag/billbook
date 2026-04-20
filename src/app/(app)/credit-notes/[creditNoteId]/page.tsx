@@ -18,6 +18,7 @@ import ConfirmDialog from "@/components/dialogs/ConfirmDialog";
 import StatusBadge from "@/components/StatusBadge";
 import { useCreditNote, useDeleteCreditNote } from "@/hooks/use-credit-notes";
 import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/constants/permissions";
 import { ApiClientError } from "@/api/error";
 import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
 import { maybeShowTrialExpiredToast } from "@/lib/trial";
@@ -39,7 +40,7 @@ export default function CreditNoteDetailPage() {
     : params?.creditNoteId;
   const creditNoteId = idParam ? parseInt(idParam, 10) : NaN;
 
-  const { isOwner } = usePermissions();
+  const { can } = usePermissions();
   const deleteMutation = useDeleteCreditNote();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
@@ -121,7 +122,9 @@ export default function CreditNoteDetailPage() {
   const canLinkPartyLedger = partyLedgerId != null && partyNameForLink !== "";
 
   const canDelete =
-    isOwner && creditNote.deletedAt == null && isFullyUnallocated(creditNote.allocatedAmount);
+    can(P.credit_note.delete) &&
+    creditNote.deletedAt == null &&
+    isFullyUnallocated(creditNote.allocatedAmount);
 
   return (
     <div className="page-container w-full min-w-0 max-w-5xl animate-fade-in space-y-6 pb-8 sm:space-y-8 sm:pb-10">
@@ -340,7 +343,7 @@ export default function CreditNoteDetailPage() {
         onSaved={() => void refetch()}
       />
 
-      {isOwner && (
+      {can(P.credit_note.delete) && (
         <div className="min-w-0 rounded-xl border border-border/60 bg-muted/10 p-4 sm:p-6">
           <p className="text-sm leading-relaxed text-muted-foreground">
             Deleting removes this credit from the customer’s account and archives the note. You can

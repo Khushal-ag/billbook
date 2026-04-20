@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { ApiClientError } from "@/api/error";
+import { REFRESH_PERMISSIONS_EVENT } from "@/constants/access-events";
+import { isInactiveRoleGroupAccessMessage } from "@/lib/rbac-access";
 
 /** Turn generic HTTP fallbacks into clearer language; keep real API messages as-is. */
 function normalizeErrorMessage(message: string, _status?: number): string {
@@ -92,6 +94,15 @@ function ErrorToastBody({
  */
 export function showErrorToast(errorOrMessage: unknown, title?: string) {
   const requestId = errorOrMessage instanceof ApiClientError ? errorOrMessage.requestId : undefined;
+
+  if (
+    errorOrMessage instanceof ApiClientError &&
+    errorOrMessage.status === 403 &&
+    typeof window !== "undefined" &&
+    !isInactiveRoleGroupAccessMessage(errorOrMessage.message)
+  ) {
+    window.dispatchEvent(new Event(REFRESH_PERMISSIONS_EVENT));
+  }
 
   /** `showErrorToast(null, "…")` — only the second string is shown (validation-style messages). */
   if ((errorOrMessage === null || errorOrMessage === undefined) && title !== undefined) {

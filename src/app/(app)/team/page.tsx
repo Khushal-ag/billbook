@@ -1,42 +1,41 @@
 "use client";
 
 import Link from "next/link";
+import { KeyRound } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { BusinessUsersCard } from "@/components/settings/SettingsSections";
 import { Button } from "@/components/ui/button";
 import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/constants/permissions";
+import { AccessDeniedPage } from "@/components/auth/AccessDeniedPage";
 
 export default function TeamPage() {
-  const { isOwner } = usePermissions();
+  const { can } = usePermissions();
 
-  if (!isOwner) {
-    return (
-      <div className="page-container animate-fade-in">
-        <PageHeader
-          title="Team"
-          description="Only the business owner can manage who can sign in to this organization."
-        />
-        <div className="mx-auto max-w-lg rounded-lg border border-border bg-muted/20 px-6 py-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            If you need access for a colleague, ask your owner to add them from{" "}
-            <strong>Team</strong> in the sidebar.
-          </p>
-          <Button asChild variant="outline" className="mt-6">
-            <Link href="/dashboard">Back to dashboard</Link>
-          </Button>
-        </div>
-      </div>
-    );
+  if (!can(P.business.team.view)) {
+    return <AccessDeniedPage />;
   }
+
+  const canRoleGroups = can(P.business.role_groups.view) || can(P.business.role_groups.manage);
 
   return (
     <div className="page-container animate-fade-in">
       <PageHeader
         title="Team"
-        description="Invite staff with the same organization code they use at login. Deactivate access when someone should no longer use this business."
+        description="Invite staff with your organization code, assign a role group for permissions, and manage who can access this business."
+        action={
+          canRoleGroups ? (
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/settings/role-groups">
+                <KeyRound className="mr-2 h-4 w-4" />
+                Role groups
+              </Link>
+            </Button>
+          ) : undefined
+        }
       />
 
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-4xl">
         <BusinessUsersCard />
       </div>
     </div>

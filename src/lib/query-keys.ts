@@ -209,5 +209,8 @@ export const queryKeys = {
     industryTypes: () => ["industry-type-options"] as const,
     users: () => ["business-users"] as const,
     settings: () => ["business-settings"] as const,
+    roleGroups: () => ["business-role-groups"] as const,
+    roleGroup: (id: number | undefined) => ["business-role-groups", id] as const,
+    permissionCatalog: () => ["business-permission-catalog"] as const,
   },
 } as const;

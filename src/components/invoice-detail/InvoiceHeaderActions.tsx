@@ -67,7 +67,14 @@ const BALANCE_EMAIL_HELP = (
 
 interface InvoiceHeaderActionsProps {
   invoice: InvoiceDetail;
-  isOwner: boolean;
+  canEditDraft: boolean;
+  canCancelDraft: boolean;
+  canFinalizeDraft: boolean;
+  canRecordPayment: boolean;
+  canOutboundRefund: boolean;
+  canCreateRefundCreditNote: boolean;
+  canPdf: boolean;
+  canCommunication: boolean;
   balanceDueValue: number;
   balanceDue: string;
   sentToday: boolean;
@@ -92,7 +99,14 @@ interface InvoiceHeaderActionsProps {
 
 export function InvoiceHeaderActions({
   invoice,
-  isOwner,
+  canEditDraft,
+  canCancelDraft,
+  canFinalizeDraft,
+  canRecordPayment,
+  canOutboundRefund,
+  canCreateRefundCreditNote,
+  canPdf,
+  canCommunication,
   balanceDueValue,
   balanceDue,
   sentToday,
@@ -128,34 +142,36 @@ export function InvoiceHeaderActions({
     <div className="flex gap-2">
       {invoice.status === "DRAFT" && (
         <>
-          <Button variant="outline" size="sm" onClick={onEdit}>
-            <Pencil className="mr-2 h-3.5 w-3.5" />
-            Edit
-          </Button>
-          {isOwner && (
-            <>
-              <Button variant="outline" size="sm" onClick={onCancel} disabled={isCancelPending}>
-                Cancel Invoice
-              </Button>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex">
-                    <Button size="sm" onClick={onFinalize} disabled={isFinalizePending}>
-                      {isFinalizePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Finalize
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-sm text-left text-xs leading-snug">
-                  {FINALIZE_INVENTORY_HELP}
-                </TooltipContent>
-              </Tooltip>
-            </>
+          {canEditDraft && (
+            <Button variant="outline" size="sm" onClick={onEdit}>
+              <Pencil className="mr-2 h-3.5 w-3.5" />
+              Edit
+            </Button>
+          )}
+          {canCancelDraft && (
+            <Button variant="outline" size="sm" onClick={onCancel} disabled={isCancelPending}>
+              Cancel Invoice
+            </Button>
+          )}
+          {canFinalizeDraft && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Button size="sm" onClick={onFinalize} disabled={isFinalizePending}>
+                    {isFinalizePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Finalize
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-sm text-left text-xs leading-snug">
+                {FINALIZE_INVENTORY_HELP}
+              </TooltipContent>
+            </Tooltip>
           )}
         </>
       )}
 
-      {invoice.status === "FINAL" && showRecordPayment && (
+      {invoice.status === "FINAL" && showRecordPayment && canRecordPayment && (
         <Button
           variant="outline"
           size="sm"
@@ -177,7 +193,7 @@ export function InvoiceHeaderActions({
         </Button>
       )}
 
-      {invoice.status === "FINAL" && showRecordRefund && (
+      {invoice.status === "FINAL" && showRecordRefund && canOutboundRefund && (
         <>
           <Button
             variant="outline"
@@ -194,7 +210,7 @@ export function InvoiceHeaderActions({
             <Banknote className="mr-2 h-3.5 w-3.5" />
             Pay refund
           </Button>
-          {onOpenRefundCreditNote && (
+          {onOpenRefundCreditNote && canCreateRefundCreditNote && (
             <Button
               variant="outline"
               size="sm"
@@ -208,7 +224,7 @@ export function InvoiceHeaderActions({
         </>
       )}
 
-      {invoice.status === "FINAL" && (showWhatsAppLog || showBalanceEmail) && (
+      {invoice.status === "FINAL" && canCommunication && (showWhatsAppLog || showBalanceEmail) && (
         <>
           {showWhatsAppLog && (
             <Tooltip>
@@ -278,7 +294,7 @@ export function InvoiceHeaderActions({
         </>
       )}
 
-      {pdfUrl && (
+      {pdfUrl && canPdf && (
         <Button variant="outline" size="sm" asChild>
           <a href={pdfUrl} target="_blank" rel="noreferrer">
             <Download className="mr-2 h-3.5 w-3.5" />
@@ -287,7 +303,7 @@ export function InvoiceHeaderActions({
         </Button>
       )}
 
-      {!pdfUrl && pdfError && invoice.status === "FINAL" && (
+      {!pdfUrl && pdfError && invoice.status === "FINAL" && canPdf && (
         <Button variant="outline" size="sm" disabled title="PDF generation failed — try refreshing">
           <Download className="mr-2 h-3.5 w-3.5" />
           PDF unavailable
