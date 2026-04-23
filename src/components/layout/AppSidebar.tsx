@@ -1,11 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard,
   FileText,
   ChevronDown,
+  ChevronRight,
   Package,
   Users,
   Truck,
@@ -43,6 +46,8 @@ interface NavSection {
   title: string;
   items: NavItem[];
 }
+
+type SectionTitle = NavSection["title"];
 
 const navSections: NavSection[] = [
   {
@@ -159,6 +164,7 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
   const router = useRouter();
   const { logout, user } = useAuth();
   const { can } = usePermissions();
+  const [manualOpenSection, setManualOpenSection] = useState<SectionTitle | null>(null);
   const safePathname = pathname ?? "";
   const normalizedPathname = (safePathname.split("?")[0] ?? "").replace(/\/$/, "") || "/";
   const ledgerSource = searchParams.get("from");
@@ -215,6 +221,45 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
       .filter((section) => section.items.length > 0);
   }, [can]);
 
+  const isSettingsSidebarRoute =
+    normalizedPathname === "/profile" ||
+    normalizedPathname === "/settings" ||
+    normalizedPathname === "/team" ||
+    normalizedPathname.startsWith("/settings/role-groups");
+
+  const activeSection = useMemo(() => {
+    return (
+      visibleSections.find((section) => {
+        if (section.title === "Settings") {
+          return (
+            isSettingsSidebarRoute ||
+            section.items.some((item) => isPathActive(item.path, item.activeMatch))
+          );
+        }
+
+        return section.items.some((item) => isPathActive(item.path, item.activeMatch));
+      })?.title ?? null
+    );
+  }, [isPathActive, isSettingsSidebarRoute, visibleSections]);
+
+  useEffect(() => {
+    setManualOpenSection(null);
+  }, [activeSection]);
+
+  const openSection = manualOpenSection ?? activeSection;
+
+  const handleSectionToggle = (sectionTitle: SectionTitle) => {
+    setManualOpenSection((current) => (current === sectionTitle ? null : sectionTitle));
+  };
+
+  const sectionButtonClass = (active: boolean) =>
+    cn(
+      "flex w-full items-center gap-2 rounded-md px-2 py-2 text-[11px] font-bold uppercase tracking-[0.14em] transition-colors",
+      active
+        ? "text-sidebar-foreground"
+        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+    );
+
   return (
     <aside
       className={cn(
@@ -251,23 +296,77 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
             className="rounded-lg border border-sidebar-border/50 bg-sidebar-accent/10 p-1.5"
           >
             {!collapsed && (
-              <h3 className="mb-2 px-2 text-[11px] font-bold uppercase tracking-[0.14em] text-sidebar-foreground/80">
-                {section.title}
-              </h3>
-            )}
-            <div className="space-y-1">
-              {section.title === "Settings" && (
-                <TeamRolesSidebarBlock
-                  collapsed={collapsed}
-                  safePathname={safePathname}
-                  can={can}
-                  onNavigate={onNavigate}
+              <button
+                type="button"
+                onClick={() => handleSectionToggle(section.title)}
+                className={sectionButtonClass(openSection === section.title)}
+                aria-expanded={openSection === section.title}
+              >
+                <ChevronRight
+                  className={cn(
+                    "h-3.5 w-3.5 shrink-0 transition-transform",
+                    openSection === section.title && "rotate-90",
+                  )}
+                  aria-hidden
                 />
-              )}
-              {section.items.map((item) =>
-                item.path === "/invoices" && !collapsed ? (
-                  <div key={item.path} className="space-y-0.5">
+                <span>{section.title}</span>
+              </button>
+            )}
+            {(collapsed || openSection === section.title) && (
+              <div className="space-y-1">
+                {section.title === "Settings" && (
+                  <TeamRolesSidebarBlock
+                    collapsed={collapsed}
+                    safePathname={safePathname}
+                    can={can}
+                    onNavigate={onNavigate}
+                  />
+                )}
+                {section.items.map((item) =>
+                  item.path === "/invoices" && !collapsed ? (
+                    <div key={item.path} className="space-y-0.5">
+                      <Link
+                        href={item.path}
+                        onClick={onNavigate}
+                        className={cn(
+                          "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                          isPathActive(item.path, item.activeMatch)
+                            ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+                        )}
+                      >
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        <span>Invoices</span>
+                        <ChevronDown
+                          className={cn(
+                            "ml-auto h-3.5 w-3.5 transition-transform",
+                            invoicesExpanded && "rotate-180",
+                          )}
+                        />
+                      </Link>
+                      {invoicesExpanded && (
+                        <div className="ml-6 mt-1 space-y-1">
+                          {invoiceNavItems.map((invoiceItem) => (
+                            <Link
+                              key={invoiceItem.path}
+                              href={invoiceItem.path}
+                              onClick={onNavigate}
+                              className={cn(
+                                "block rounded-md px-3 py-2 text-sm transition-colors",
+                                isInvoiceTypeActive(invoiceItem.path)
+                                  ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+                              )}
+                            >
+                              {invoiceItem.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
                     <Link
+                      key={item.path}
                       href={item.path}
                       onClick={onNavigate}
                       className={cn(
@@ -276,55 +375,15 @@ export default function AppSidebar({ collapsed, onNavigate }: AppSidebarProps) {
                           ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
                           : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
                       )}
+                      title={collapsed ? item.label : undefined}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
-                      <span>Invoices</span>
-                      <ChevronDown
-                        className={cn(
-                          "ml-auto h-3.5 w-3.5 transition-transform",
-                          invoicesExpanded && "rotate-180",
-                        )}
-                      />
+                      {!collapsed && <span>{item.label}</span>}
                     </Link>
-                    {invoicesExpanded && (
-                      <div className="ml-6 mt-1 space-y-1">
-                        {invoiceNavItems.map((invoiceItem) => (
-                          <Link
-                            key={invoiceItem.path}
-                            href={invoiceItem.path}
-                            onClick={onNavigate}
-                            className={cn(
-                              "block rounded-md px-3 py-2 text-sm transition-colors",
-                              isInvoiceTypeActive(invoiceItem.path)
-                                ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-                            )}
-                          >
-                            {invoiceItem.label}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <Link
-                    key={item.path}
-                    href={item.path}
-                    onClick={onNavigate}
-                    className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                      isPathActive(item.path, item.activeMatch)
-                        ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-                    )}
-                    title={collapsed ? item.label : undefined}
-                  >
-                    <item.icon className="h-4 w-4 shrink-0" />
-                    {!collapsed && <span>{item.label}</span>}
-                  </Link>
-                ),
-              )}
-            </div>
+                  ),
+                )}
+              </div>
+            )}
           </div>
         ))}
       </nav>
