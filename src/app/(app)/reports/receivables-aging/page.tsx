@@ -15,9 +15,9 @@ import {
 import { ReceivablesAgingSection } from "@/components/reports/ReceivablesAgingSection";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { useReceivablesAging } from "@/hooks/use-reports";
-import { parseISODateString, toISODateString } from "@/lib/date";
+import { parseISODateString, toISODateString } from "@/lib/core/date";
 import { DEFAULT_REPORT_LIMIT } from "@/constants";
-import { reportInvoiceAging } from "@/lib/report-labels";
+import { reportInvoiceAging } from "@/lib/reports/report-labels";
 
 export default function ReceivablesAgingPage() {
   const [asOf, setAsOf] = useState(() => toISODateString(new Date()));

@@ -1,6 +1,6 @@
 import { IndianRupee, AlertTriangle, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrency, formatStockQuantity } from "@/lib/utils";
+import { formatCurrency, formatStockQuantity } from "@/lib/core/utils";
 
 interface StockOverviewCardsProps {
   /** Total cost of inventory (summary.stockValue.totalPurchasedValue) */

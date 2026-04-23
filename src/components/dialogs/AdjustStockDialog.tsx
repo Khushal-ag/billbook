@@ -23,9 +23,9 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { useAdjustStock, useStockEntries } from "@/hooks/use-items";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { stockBatchSelectLabel } from "@/lib/stock-entry-labels";
-import { formatStockQuantity } from "@/lib/utils";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
+import { stockBatchSelectLabel } from "@/lib/items/stock-entry-labels";
+import { formatStockQuantity } from "@/lib/core/utils";
 import { isServiceType } from "@/types/item";
 
 const schema = z.object({
@@ -97,11 +97,13 @@ export default function AdjustStockDialog({
     const validIds = new Set(batches.map((b) => b.id));
     const current = Number.parseInt(selectedEntryId, 10);
     if (selectedEntryId !== "" && !validIds.has(current)) {
-      setSelectedEntryId(batches.length === 1 ? String(batches[0].id) : "");
+      const only = batches[0];
+      setSelectedEntryId(batches.length === 1 && only ? String(only.id) : "");
       return;
     }
     if (selectedEntryId === "" && batches.length === 1) {
-      setSelectedEntryId(String(batches[0].id));
+      const only = batches[0];
+      if (only) setSelectedEntryId(String(only.id));
     }
   }, [open, entriesLoading, batches, selectedEntryId]);
 

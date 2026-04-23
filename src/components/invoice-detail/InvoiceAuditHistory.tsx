@@ -5,8 +5,8 @@ import {
   getAuditActivityTitle,
   getAuditChangeHighlights,
   resolveInvoiceAuditDisplayContext,
-} from "@/lib/audit-log";
-import { formatDate, formatTime } from "@/lib/utils";
+} from "@/lib/data/audit-log";
+import { formatDate, formatTime } from "@/lib/core/utils";
 import type { AuditLog } from "@/types/audit-log";
 
 interface InvoiceAuditHistoryProps {

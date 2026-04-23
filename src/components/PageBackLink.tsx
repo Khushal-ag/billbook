@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 /** Shared primary back control: always top-left, above the page title (see `PageHeader` `backHref` / `backLabel`). */
 export const pageBackLinkClassName =

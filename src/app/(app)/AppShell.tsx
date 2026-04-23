@@ -10,7 +10,7 @@ import { TrialBanner } from "@/components/trial/TrialBanner";
 import { TrialExpiredOverlay } from "@/components/trial/TrialExpiredOverlay";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 import { RoutePermissionGate } from "@/components/auth/RoutePermissionGate";
 import { RoleGroupBlockedOverlay } from "@/components/auth/RoleGroupBlockedOverlay";
 

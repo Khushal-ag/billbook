@@ -20,8 +20,8 @@ import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { useReceiptRegister } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
-import { reportReceiptRegister } from "@/lib/report-labels";
-import { capitaliseWords, formatCurrency, formatDate } from "@/lib/utils";
+import { reportReceiptRegister } from "@/lib/reports/report-labels";
+import { capitaliseWords, formatCurrency, formatDate } from "@/lib/core/utils";
 
 export default function ReceiptRegisterPage() {
   const {

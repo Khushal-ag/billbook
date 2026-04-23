@@ -8,8 +8,8 @@ import {
   RESOURCE_TYPE_LABELS,
   type AuditBadgeVariant,
 } from "@/constants/audit";
-import { formatISODateDisplay } from "./date";
-import { formatCurrency } from "./utils";
+import { formatISODateDisplay } from "@/lib/core/date";
+import { formatCurrency } from "@/lib/core/utils";
 
 export function getActionBadgeVariant(action: string): AuditBadgeVariant {
   return ACTION_BADGE_VARIANTS[action] ?? "outline";
@@ -90,6 +90,7 @@ function getPreviousAuditChanges(
   if (idx === -1) return null;
   for (let i = idx + 1; i < logs.length; i++) {
     const o = logs[i];
+    if (!o) continue;
     if (o.resourceType === current.resourceType && o.resourceId === current.resourceId) {
       return extractChanges(o.changes);
     }
@@ -272,7 +273,8 @@ function buildInvoiceUpdateTitle(
 
   if (hasLineDiff || (hasLineDetail && scalarLabels.length > 0)) {
     if (scalarLabels.length > 0) {
-      return `updated ${scalarLabels[0].toLowerCase()} and items`;
+      const first = scalarLabels[0];
+      return first != null ? `updated ${first.toLowerCase()} and items` : "updated items";
     }
     return "updated items";
   }

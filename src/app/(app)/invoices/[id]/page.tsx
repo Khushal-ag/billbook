@@ -41,11 +41,14 @@ import {
   invoiceTypeSupportsReceiptPayment,
   invoiceTypeSupportsSaleReturnRefund,
   invoiceTypeSupportsSupplierPayment,
-} from "@/lib/invoice";
-import { withInvoiceQuantityErrorDetails } from "@/lib/invoice-quantity-error-details";
-import { markReminderFeedbackMessage, markSentFeedbackMessage } from "@/lib/invoice-api-helpers";
-import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
-import { maybeShowTrialExpiredToast } from "@/lib/trial";
+} from "@/lib/invoice/invoice";
+import { withInvoiceQuantityErrorDetails } from "@/lib/invoice/invoice-quantity-error-details";
+import {
+  markReminderFeedbackMessage,
+  markSentFeedbackMessage,
+} from "@/lib/invoice/invoice-api-helpers";
+import { showSuccessToast, showErrorToast } from "@/lib/ui/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/business/trial";
 import { ApiClientError } from "@/api/error";
 
 export default function InvoiceDetail() {

@@ -24,13 +24,13 @@ import { ExternalLink, Loader2 } from "lucide-react";
 import { useRecordSupplierPayment } from "@/hooks/use-invoices";
 import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 import type { PaymentMethod, RecordSupplierPaymentData } from "@/types/invoice";
-import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
-import { showErrorToast } from "@/lib/toast-helpers";
-import { maybeShowTrialExpiredToast } from "@/lib/trial";
-import { formatCurrency } from "@/lib/utils";
-import { openSignedPdfFromApiPath } from "@/lib/signed-pdf";
+import { requiredPriceString, optionalString } from "@/lib/core/validation-schemas";
+import { showErrorToast } from "@/lib/ui/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/business/trial";
+import { formatCurrency } from "@/lib/core/utils";
+import { openSignedPdfFromApiPath } from "@/lib/ui/signed-pdf";
 import { ApiClientError } from "@/api/error";
-import { augmentApiClientErrorForPayment } from "@/lib/payment-errors";
+import { augmentApiClientErrorForPayment } from "@/lib/payments/payment-errors";
 
 const schema = z.object({
   amount: requiredPriceString,

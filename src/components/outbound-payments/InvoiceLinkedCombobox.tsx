@@ -11,7 +11,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useInvoices } from "@/hooks/use-invoices";
 import type { Invoice, InvoiceType } from "@/types/invoice";
@@ -219,9 +219,10 @@ export function InvoiceLinkedCombobox({
             value={
               noneOptionLabel && highlightedIndex === 0
                 ? NONE_VALUE
-                : rows[highlightedIndex - noneCount]
-                  ? String(rows[highlightedIndex - noneCount].id)
-                  : "__none__"
+                : (() => {
+                    const row = rows[highlightedIndex - noneCount];
+                    return row ? String(row.id) : "__none__";
+                  })()
             }
           >
             <CommandList ref={listRef} className="max-h-72">

@@ -10,7 +10,7 @@ import { useRoleGroupsList } from "@/hooks/use-role-groups";
 import { usePermissions } from "@/hooks/use-permissions";
 import { PAGE } from "@/constants/page-access";
 import { AccessDeniedPage } from "@/components/auth/AccessDeniedPage";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 export default function RoleGroupsListPage() {
   const { can } = usePermissions();

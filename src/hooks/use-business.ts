@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
 import { ApiClientError } from "@/api/error";
-import { invalidateQueryKeys } from "@/lib/query";
-import { queryKeys } from "@/lib/query-keys";
-import { normalizeBusinessProfile, normalizeDashboard } from "@/lib/mappers/business";
+import { invalidateQueryKeys } from "@/lib/query/invalidate";
+import { queryKeys } from "@/lib/query/keys";
+import { normalizeBusinessProfile, normalizeDashboard } from "@/lib/business/api-normalizers";
 import type {
   BusinessProfile,
   UpdateBusinessProfile,

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { ApiClientError } from "@/api/error";
 import { REFRESH_PERMISSIONS_EVENT } from "@/constants/access-events";
-import { isInactiveRoleGroupAccessMessage } from "@/lib/rbac-access";
+import { isInactiveRoleGroupAccessMessage } from "@/lib/access/rbac-access";
 
 /** Turn generic HTTP fallbacks into clearer language; keep real API messages as-is. */
 function normalizeErrorMessage(message: string, _status?: number): string {

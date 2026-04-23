@@ -1,5 +1,5 @@
 import { ApiClientError } from "@/api/error";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/core/utils";
 
 /**
  * Enrich receipt create / allocation 400 responses when the API sends structured `details`

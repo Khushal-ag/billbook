@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/constants/permissions";
-import { isPurchaseVendorBillMetaType } from "@/lib/invoice";
+import { isPurchaseVendorBillMetaType } from "@/lib/invoice/invoice";
 import type { InvoiceType } from "@/types/invoice";
 
 interface InvoiceCreatePageProps {

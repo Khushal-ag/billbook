@@ -1,6 +1,6 @@
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
-import { formatLedgerEntryTypeLabel } from "@/lib/party-ledger-display";
-import type { LedgerEntry } from "@/lib/party-ledger";
+import { cn, formatCurrency, formatDate } from "@/lib/core/utils";
+import { formatLedgerEntryTypeLabel } from "@/lib/party/party-ledger-display";
+import type { LedgerEntry } from "@/lib/party/party-ledger";
 import { LedgerBalanceText } from "@/components/party-ledger/LedgerBalanceText";
 
 export type PartyLedgerTableVariant = "ledger" | "statement";

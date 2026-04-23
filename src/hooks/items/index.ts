@@ -16,4 +16,4 @@ export {
   useAdjustStock,
   useItemLedger,
 } from "./use-stock";
-export { getStockEntryById } from "@/lib/item-api";
+export { getStockEntryById } from "@/lib/items/item-api";

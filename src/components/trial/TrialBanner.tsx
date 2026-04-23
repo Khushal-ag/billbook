@@ -2,7 +2,7 @@
 
 import { CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { shouldShowTrialBanner } from "@/lib/trial";
+import { shouldShowTrialBanner } from "@/lib/business/trial";
 
 type TrialBannerProps = {
   validityEnd: string | null | undefined;

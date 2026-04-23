@@ -3,7 +3,7 @@
  * Convention (aligned with opening balance): positive = debit balance, negative = credit balance.
  */
 
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/core/utils";
 
 export type PartyLedgerBalanceNature = "DEBIT" | "CREDIT" | "ZERO";
 

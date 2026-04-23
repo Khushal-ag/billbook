@@ -6,7 +6,7 @@ import { SlidersHorizontal, Package, History } from "lucide-react";
 import type { StockListItem } from "@/types/item";
 import type { Item } from "@/types/item";
 import { isServiceType } from "@/types/item";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/core/utils";
 import {
   STOCK_TABLE_OUTBOUND_COLUMN_TITLE,
   stockTableThClass,
@@ -15,7 +15,7 @@ import {
   stockTableTdRight,
   formatStockQtyOrDash,
   formatStockAdjustmentDelta,
-} from "@/lib/stock-table-display";
+} from "@/lib/items/stock-table-display";
 
 interface StockReportTableProps {
   rows: StockListItem[];

@@ -1,5 +1,5 @@
 import { ApiClientError } from "@/api/error";
-import { showErrorToast } from "@/lib/toast-helpers";
+import { showErrorToast } from "@/lib/ui/toast-helpers";
 
 /** Client-side: trial is expired when validity end is strictly before now. Null/undefined = not limited by trial end. */
 export function isValidityPeriodEnded(validityEndIso: string | null | undefined): boolean {

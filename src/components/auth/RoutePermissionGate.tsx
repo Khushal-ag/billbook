@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { getRequiredPermissions } from "@/lib/route-permissions";
+import { getRequiredPermissions } from "@/lib/access/route-permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { AccessDeniedPage } from "@/components/auth/AccessDeniedPage";
 

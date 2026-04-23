@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
 import "../index.css";
 import Providers from "./providers";
-import { siteConfig } from "@/lib/site-config";
-import { defaultOgImages, defaultTwitterImageUrl } from "@/lib/seo-metadata";
-import { env } from "@/lib/env";
+import { siteConfig } from "@/lib/site/site-config";
+import { defaultOgImages, defaultTwitterImageUrl } from "@/lib/site/seo-metadata";
+import { env } from "@/lib/core/env";
 
 const apiOrigin = new URL(env.NEXT_PUBLIC_API_BASE_URL).origin;
 

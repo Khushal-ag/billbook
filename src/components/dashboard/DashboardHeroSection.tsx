@@ -2,8 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { IndianRupee, Landmark, Scale, FileText } from "lucide-react";
-import { partyLedgerBalanceInlineParts } from "@/lib/party-ledger-display";
-import { formatCurrency } from "@/lib/utils";
+import { partyLedgerBalanceInlineParts } from "@/lib/party/party-ledger-display";
+import { formatCurrency } from "@/lib/core/utils";
 import { HeroCard } from "./dashboard-utils";
 import type { DashboardData } from "@/types/dashboard";
 
@@ -23,8 +23,11 @@ function toNumber(v: string | number | undefined | null): number {
 function computeRevenueTrend(months: DashboardData["revenueByMonth"]): "up" | "down" | undefined {
   const arr = months ?? [];
   if (arr.length < 2) return undefined;
-  const latest = toNumber(arr[arr.length - 1].revenue);
-  const previous = toNumber(arr[arr.length - 2].revenue);
+  const last = arr[arr.length - 1];
+  const prior = arr[arr.length - 2];
+  if (last == null || prior == null) return undefined;
+  const latest = toNumber(last.revenue);
+  const previous = toNumber(prior.revenue);
   if (latest === previous) return undefined;
   return latest > previous ? "up" : "down";
 }

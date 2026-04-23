@@ -2,7 +2,7 @@ import { api } from "@/api";
 import { ApiClientError } from "@/api/error";
 import { getAccessToken, getRefreshToken } from "@/api/token";
 import type { AuthMeResponse, SessionUser } from "@/types/auth";
-import { parseAuthMePayload } from "@/lib/parse-auth-me-payload";
+import { parseAuthMePayload } from "@/lib/auth/parse-auth-me-payload";
 import { BILLBOOK_SESSION_KEY } from "@/constants/auth-storage";
 
 function authMeFromEnvelope(res: unknown): AuthMeResponse | null {

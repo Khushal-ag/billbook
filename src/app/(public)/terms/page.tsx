@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicMarketingShell } from "@/components/landing/PublicMarketingShell";
-import { siteConfig } from "@/lib/site-config";
-import { publicPageMetadata } from "@/lib/seo-metadata";
+import { siteConfig } from "@/lib/site/site-config";
+import { publicPageMetadata } from "@/lib/site/seo-metadata";
 
 export const metadata: Metadata = publicPageMetadata({
   title: "Terms of use",

@@ -3,7 +3,7 @@ import { Package, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardSectionHeader } from "./dashboard-utils";
-import { formatCurrency, formatStockQuantity } from "@/lib/utils";
+import { formatCurrency, formatStockQuantity } from "@/lib/core/utils";
 import type { TopItem, TopCustomer } from "@/types/dashboard";
 
 interface DashboardHighlightsSectionProps {

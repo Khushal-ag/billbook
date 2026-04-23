@@ -22,8 +22,8 @@ import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { useInvoiceRegister } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
-import { reportInvoiceRegister } from "@/lib/report-labels";
-import { cn, capitaliseWords, formatCurrency, formatDate } from "@/lib/utils";
+import { reportInvoiceRegister } from "@/lib/reports/report-labels";
+import { cn, capitaliseWords, formatCurrency, formatDate } from "@/lib/core/utils";
 
 export default function InvoiceRegisterPage() {
   const {

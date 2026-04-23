@@ -19,8 +19,8 @@ import {
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { usePayablesRegister } from "@/hooks/use-reports";
 import { DEFAULT_REPORT_LIMIT } from "@/constants";
-import { reportPayablesRegister } from "@/lib/report-labels";
-import { cn, formatCurrency } from "@/lib/utils";
+import { reportPayablesRegister } from "@/lib/reports/report-labels";
+import { cn, formatCurrency } from "@/lib/core/utils";
 
 export default function PayablesRegisterPage() {
   const [limit, setLimit] = useState(DEFAULT_REPORT_LIMIT);

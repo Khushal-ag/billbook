@@ -1,5 +1,5 @@
-import { parseISODateString, toISODateString } from "@/lib/date";
-import { isPurchaseVendorBillMetaType } from "@/lib/invoice";
+import { parseISODateString, toISODateString } from "@/lib/core/date";
+import { isPurchaseVendorBillMetaType } from "@/lib/invoice/invoice";
 import type { InvoiceType } from "@/types/invoice";
 
 export function validatePurchaseVendorBillFields(

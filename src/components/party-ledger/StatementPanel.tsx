@@ -2,9 +2,9 @@ import { Download, Loader2, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DateRangePicker from "@/components/DateRangePicker";
 import { PartyLedgerEntriesTable } from "@/components/party-ledger/PartyLedgerEntriesTable";
-import { partyLedgerBalanceInlineParts } from "@/lib/party-ledger-display";
-import { cn, formatCurrency } from "@/lib/utils";
-import type { StatementJsonData, StatementPdfData } from "@/lib/party-ledger";
+import { partyLedgerBalanceInlineParts } from "@/lib/party/party-ledger-display";
+import { cn, formatCurrency } from "@/lib/core/utils";
+import type { StatementJsonData, StatementPdfData } from "@/lib/party/party-ledger";
 
 interface StatementPanelProps {
   startDate: string;

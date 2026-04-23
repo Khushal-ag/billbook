@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, formatDate, formatQuantity } from "@/lib/utils";
+import { formatCurrency, formatDate, formatQuantity } from "@/lib/core/utils";
 import type { InvoiceItem, InvoiceType } from "@/types/invoice";
 
 interface InvoiceLineItemsTableProps {

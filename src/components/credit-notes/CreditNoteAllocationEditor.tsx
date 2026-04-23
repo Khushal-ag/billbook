@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useUpdateCreditNoteAllocations } from "@/hooks/use-credit-notes";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { cn, formatCurrency, formatDate } from "@/lib/core/utils";
 import {
   buildCreditNoteAllocationRows,
   creditNoteAllocationInitKey,
@@ -17,8 +17,8 @@ import {
   mergeCreditNoteAllocationsForSave,
   totalAllocatedFromCreditNoteSavePayload,
   type CreditNoteAllocationRowState,
-} from "@/lib/credit-note-allocations";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+} from "@/lib/credit-notes/credit-note-allocations";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
 import type { CreditNoteDetail } from "@/types/credit-note";
 
 function sanitizeDecimalInput(raw: string): string {

@@ -10,9 +10,9 @@ import {
 } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { formatISODateDisplay } from "@/lib/date";
-import { getEntryDateIso } from "@/lib/invoice-create";
-import { cn, formatCurrency, formatStockQuantity } from "@/lib/utils";
+import { formatISODateDisplay } from "@/lib/core/date";
+import { getEntryDateIso } from "@/lib/invoice/invoice-create";
+import { cn, formatCurrency, formatStockQuantity } from "@/lib/core/utils";
 import type { StockChoice } from "@/types/invoice-create";
 import type { Item } from "@/types/item";
 

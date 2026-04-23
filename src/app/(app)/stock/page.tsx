@@ -26,7 +26,7 @@ import { useParties } from "@/hooks/use-parties";
 import { useAlerts, useMarkAlertRead } from "@/hooks/use-alerts";
 import type { CreateStockEntryRequest, StockEntry, UpdateStockEntryRequest } from "@/types/item";
 import type { Party } from "@/types/party";
-import { showSuccessToast, showErrorToast } from "@/lib/toast-helpers";
+import { showSuccessToast, showErrorToast } from "@/lib/ui/toast-helpers";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/constants/permissions";
 import { PAGE } from "@/constants/page-access";

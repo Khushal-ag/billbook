@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig } from "@/lib/site/site-config";
 
 function siteOrigin(): string {
   return siteConfig.url.replace(/\/$/, "");

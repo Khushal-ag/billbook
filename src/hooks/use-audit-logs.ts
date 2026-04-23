@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
-import { queryKeys } from "@/lib/query-keys";
-import { buildQueryString } from "@/lib/utils";
+import { queryKeys } from "@/lib/query/keys";
+import { buildQueryString } from "@/lib/core/utils";
 import type { AuditLogListResponse } from "@/types/audit-log";
 
 export function useAuditLogs(params: { page?: number; pageSize?: number; action?: string } = {}) {

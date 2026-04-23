@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig } from "@/lib/site/site-config";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

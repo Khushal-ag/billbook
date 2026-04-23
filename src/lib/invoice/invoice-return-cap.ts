@@ -1,4 +1,4 @@
-import { formatQty, getEntryTotalQty, toNum } from "@/lib/invoice-create";
+import { formatQty, getEntryTotalQty, toNum } from "@/lib/invoice/invoice-create";
 import type { InvoiceItem } from "@/types/invoice";
 import type { InvoiceLineDraft } from "@/types/invoice-create";
 import type { StockEntry } from "@/types/item";

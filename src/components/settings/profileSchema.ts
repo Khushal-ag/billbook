@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { gstinString, panString } from "@/lib/validation-schemas";
+import { gstinString, panString } from "@/lib/core/validation-schemas";
 
 const extraDetailSchema = z.object({
   key: z.string().trim().min(1, "Key is required"),

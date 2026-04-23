@@ -3,9 +3,9 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getInvoiceBillSummary, getInvoiceTypeCreateCopy } from "@/lib/invoice";
-import { formatInvoicePartyAddressLines } from "@/lib/party-address-display";
-import { cn, formatCurrency, formatDate, formatSignedCurrency, formatTime } from "@/lib/utils";
+import { getInvoiceBillSummary, getInvoiceTypeCreateCopy } from "@/lib/invoice/invoice";
+import { formatInvoicePartyAddressLines } from "@/lib/party/party-address-display";
+import { cn, formatCurrency, formatDate, formatSignedCurrency, formatTime } from "@/lib/core/utils";
 import type { InvoiceDetail } from "@/types/invoice";
 import { useInvoice } from "@/hooks/use-invoices";
 

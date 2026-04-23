@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
-import { invalidateQueryKeys } from "@/lib/query";
-import { queryKeys } from "@/lib/query-keys";
+import { invalidateQueryKeys } from "@/lib/query/invalidate";
+import { queryKeys } from "@/lib/query/keys";
 import type { Item, ItemDetail, ItemListResponse, CreateItemRequest } from "@/types/item";
-import { ITEMS_API_BASE, normalizeItem } from "@/lib/item-api";
+import { ITEMS_API_BASE, normalizeItem } from "@/lib/items/item-api";
 
 export function useItems(
   params?: {

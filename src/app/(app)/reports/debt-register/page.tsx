@@ -19,8 +19,8 @@ import {
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { useDebtRegister } from "@/hooks/use-reports";
 import { DEFAULT_REPORT_LIMIT } from "@/constants";
-import { reportDebtRegister } from "@/lib/report-labels";
-import { cn, formatCurrency } from "@/lib/utils";
+import { reportDebtRegister } from "@/lib/reports/report-labels";
+import { cn, formatCurrency } from "@/lib/core/utils";
 
 export default function DebtRegisterPage() {
   const [limit, setLimit] = useState(DEFAULT_REPORT_LIMIT);

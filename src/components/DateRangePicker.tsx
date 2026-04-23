@@ -5,8 +5,8 @@ import ErrorBanner from "./ErrorBanner";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { parseISODateString, toISODateString, formatISODateDisplay } from "@/lib/date";
+import { cn } from "@/lib/core/utils";
+import { parseISODateString, toISODateString, formatISODateDisplay } from "@/lib/core/date";
 
 const DEFAULT_DISPLAY_LOCALE = "en-GB";
 const DEFAULT_DISPLAY_DATE_OPTIONS: Intl.DateTimeFormatOptions = {

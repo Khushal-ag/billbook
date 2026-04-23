@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { LinkedInvoiceLink } from "@/components/invoices/LinkedInvoiceLink";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/core/utils";
 import {
   creditNotePartyNameDisplay,
   creditNoteSourceInvoiceLinkProps,
-} from "@/lib/credit-note-display";
+} from "@/lib/credit-notes/credit-note-display";
 import type { CreditNoteSummary } from "@/types/credit-note";
 
 interface CreditNotesTableProps {

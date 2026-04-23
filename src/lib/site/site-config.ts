@@ -1,4 +1,4 @@
-import { env } from "@/lib/env";
+import { env } from "@/lib/core/env";
 
 const defaultSiteUrl = "https://billbook-henchsolutions.vercel.app";
 

@@ -1,5 +1,5 @@
-import { cn, formatCurrency } from "@/lib/utils";
-import { parsePartyLedgerAmount, partyLedgerBalanceNature } from "@/lib/party-ledger-display";
+import { cn, formatCurrency } from "@/lib/core/utils";
+import { parsePartyLedgerAmount, partyLedgerBalanceNature } from "@/lib/party/party-ledger-display";
 
 type Size = "sm" | "md" | "lg";
 

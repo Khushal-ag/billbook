@@ -1,5 +1,5 @@
 import type { ReceiptDetail } from "@/types/receipt";
-import { openingBalanceFromApi } from "@/lib/party-opening-balance";
+import { openingBalanceFromApi } from "@/lib/party/party-opening-balance";
 
 function num(s: string | undefined): number {
   const x = parseFloat(s ?? "0");

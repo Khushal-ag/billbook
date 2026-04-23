@@ -28,7 +28,11 @@ const DashboardInsightsSection = dynamic(
     ),
   },
 );
-import { buildPaymentStatusData, buildInvoiceStatusData, EMPTY_DASHBOARD } from "@/lib/dashboard";
+import {
+  buildPaymentStatusData,
+  buildInvoiceStatusData,
+  EMPTY_DASHBOARD,
+} from "@/lib/business/dashboard";
 import { useDashboard } from "@/hooks/use-business";
 import { useCanCreateInvoice } from "@/hooks/use-can-create-invoice";
 

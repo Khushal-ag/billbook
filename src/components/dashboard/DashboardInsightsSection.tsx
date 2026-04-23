@@ -4,8 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardSectionHeader } from "./dashboard-utils";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
-import { CHART_COLORS, type PaymentStatusItem, type InvoiceStatusItem } from "@/lib/dashboard";
-import { formatCurrency } from "@/lib/utils";
+import {
+  CHART_COLORS,
+  type PaymentStatusItem,
+  type InvoiceStatusItem,
+} from "@/lib/business/dashboard";
+import { formatCurrency } from "@/lib/core/utils";
 import type { RevenueByMonth } from "@/types/dashboard";
 
 /** Placeholder so bar chart always shows axes and frame with no data */

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import LandingClient from "./LandingClient";
-import { marketingContactEmail, siteConfig } from "@/lib/site-config";
-import { homePageMetadata } from "@/lib/seo-metadata";
+import { marketingContactEmail, siteConfig } from "@/lib/site/site-config";
+import { homePageMetadata } from "@/lib/site/seo-metadata";
 
 interface LandingPageProps {
   searchParams?: Promise<{

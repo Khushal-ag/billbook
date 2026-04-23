@@ -17,8 +17,12 @@ import { useInvoicesListFilters } from "@/hooks/invoices";
 import { useParties } from "@/hooks/use-parties";
 import { useCanCreateInvoice } from "@/hooks/use-can-create-invoice";
 import { BusinessProfileGateAlert } from "@/components/business/BusinessProfileGateAlert";
-import { getInvoiceBalanceDue, getInvoiceListStatsLabels, isSalesFamily } from "@/lib/invoice";
-import { formatCurrency } from "@/lib/utils";
+import {
+  getInvoiceBalanceDue,
+  getInvoiceListStatsLabels,
+  isSalesFamily,
+} from "@/lib/invoice/invoice";
+import { formatCurrency } from "@/lib/core/utils";
 import type { InvoiceType } from "@/types/invoice";
 
 interface InvoicesByTypePageProps {

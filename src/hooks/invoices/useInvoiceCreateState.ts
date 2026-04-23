@@ -15,7 +15,7 @@ import {
   itemFromStockEntry,
   sellingPriceFromPurchaseAndMargin,
   toNum,
-} from "@/lib/invoice-create";
+} from "@/lib/invoice/invoice-create";
 import type { InvoiceLineDraft, StockChoice, StockLineIssue } from "@/types/invoice-create";
 import {
   useCreateInvoice,
@@ -42,26 +42,26 @@ import {
   mergeItemFromInvoiceLine,
   normalizeInvoiceLineForAdd,
   pickInvoiceTaxRate,
-} from "@/lib/invoice-create-mapping";
-import { addCalendarDaysToIsoDate } from "@/lib/date";
-import { computeInvoiceCreateBillSummary } from "@/lib/invoice-create-bill-summary";
-import { validatePurchaseVendorBillFields } from "@/lib/invoice-create-vendor-validation";
+} from "@/lib/invoice/invoice-create-mapping";
+import { addCalendarDaysToIsoDate } from "@/lib/core/date";
+import { computeInvoiceCreateBillSummary } from "@/lib/invoice/invoice-create-bill-summary";
+import { validatePurchaseVendorBillFields } from "@/lib/invoice/invoice-create-vendor-validation";
 import {
   getInvoiceTypeCreateCopy,
   INVOICE_TYPE_OPTIONS,
   isPurchaseVendorBillMetaType,
   isSalesFamily,
-} from "@/lib/invoice";
-import { formatCurrency } from "@/lib/utils";
+} from "@/lib/invoice/invoice";
+import { formatCurrency } from "@/lib/core/utils";
 import {
   clampQuantityToRemainingCap,
   defaultLinkedReturnQuantity,
   isReturnQuantityOverCap,
   purchaseReturnMaxReturnableQtyStr,
-} from "@/lib/invoice-return-cap";
-import { withInvoiceQuantityErrorDetails } from "@/lib/invoice-quantity-error-details";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { maybeShowTrialExpiredToast } from "@/lib/trial";
+} from "@/lib/invoice/invoice-return-cap";
+import { withInvoiceQuantityErrorDetails } from "@/lib/invoice/invoice-quantity-error-details";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/business/trial";
 import { isServiceType, type Item, type StockEntry } from "@/types/item";
 import type { Party, PartyConsignee } from "@/types/party";
 import type { InvoiceType } from "@/types/invoice";
@@ -121,7 +121,7 @@ export function useInvoiceCreateState(
   const stockSearchQuery = debouncedStockSearch.trim();
   const partyType: "CUSTOMER" | "SUPPLIER" = isSalesFamily(invoiceType) ? "CUSTOMER" : "SUPPLIER";
   const pageMeta =
-    INVOICE_TYPE_OPTIONS.find((o) => o.type === invoiceType) ?? INVOICE_TYPE_OPTIONS[0];
+    INVOICE_TYPE_OPTIONS.find((o) => o.type === invoiceType) ?? INVOICE_TYPE_OPTIONS[0]!;
 
   const { data: partiesData } = useParties({ type: partyType, includeInactive: false });
   const { data: consigneesData, isPending: isConsigneesLoading } = usePartyConsignees(party?.id, {
@@ -271,6 +271,7 @@ export function useInvoiceCreateState(
 
       for (let index = 0; index < sorted.length; index += 1) {
         const entry = sorted[index];
+        if (!entry) continue;
         const availableQty = getEntryTotalQty(entry);
         const usedQty = usedQtyByEntryId.get(entry.id) ?? 0;
         const remainingQty = Math.max(0, availableQty - usedQty);
@@ -1484,7 +1485,11 @@ export function useInvoiceCreateState(
         if (mergeIdx < 0) {
           return [createLine(), normalizedCurrent, ...rest];
         }
-        const merged = mergeInvoiceLineDraftQuantities(rest[mergeIdx], normalizedCurrent);
+        const toMerge = rest[mergeIdx];
+        if (!toMerge) {
+          return [createLine(), normalizedCurrent, ...rest];
+        }
+        const merged = mergeInvoiceLineDraftQuantities(toMerge, normalizedCurrent);
         return [createLine(), ...rest.map((l, i) => (i === mergeIdx ? merged : l))];
       });
       setStockLineIssues({});
@@ -1568,7 +1573,11 @@ export function useInvoiceCreateState(
       if (mergeIdx < 0) {
         return [createLine(), normalizedCurrent, ...rest];
       }
-      const merged = mergeInvoiceLineDraftQuantities(rest[mergeIdx], normalizedCurrent);
+      const toMerge = rest[mergeIdx];
+      if (!toMerge) {
+        return [createLine(), normalizedCurrent, ...rest];
+      }
+      const merged = mergeInvoiceLineDraftQuantities(toMerge, normalizedCurrent);
       return [createLine(), ...rest.map((l, i) => (i === mergeIdx ? merged : l))];
     });
     setStockLineIssues({});
@@ -1587,11 +1596,16 @@ export function useInvoiceCreateState(
 
   const removeAddedLine = useCallback(
     (lineId: string) => {
-      setLines((prev) =>
-        invoiceType === "SALE_RETURN" || invoiceType === "PURCHASE_RETURN"
-          ? prev.filter((line) => line.id !== lineId)
-          : [prev[0], ...prev.slice(1).filter((line) => line.id !== lineId)],
-      );
+      setLines((prev) => {
+        if (invoiceType === "SALE_RETURN" || invoiceType === "PURCHASE_RETURN") {
+          return prev.filter((line) => line.id !== lineId);
+        }
+        const head = prev[0];
+        if (head === undefined) {
+          return prev.filter((line) => line.id !== lineId);
+        }
+        return [head, ...prev.slice(1).filter((line) => line.id !== lineId)];
+      });
       setStockLineIssues((prev) => {
         if (!prev[lineId]) return prev;
         const next = { ...prev };

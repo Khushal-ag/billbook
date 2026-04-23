@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig } from "@/lib/site/site-config";
 
 /** Web app manifest — Next serves this from `app/manifest.ts` and injects the link tag. */
 export default function manifest(): MetadataRoute.Manifest {

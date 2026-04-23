@@ -19,7 +19,7 @@ import {
   isRoleGroupDeleteConflict,
 } from "@/hooks/use-role-groups";
 import { usePermissions } from "@/hooks/use-permissions";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
 import {
   AlertDialog,
   AlertDialogCancel,

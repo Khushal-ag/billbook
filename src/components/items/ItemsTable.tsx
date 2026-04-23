@@ -1,7 +1,7 @@
 import { Pencil, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 import type { Item } from "@/types/item";
 import { getItemCategoryDisplay, getItemTaxDisplay, isServiceType } from "@/types/item";
 

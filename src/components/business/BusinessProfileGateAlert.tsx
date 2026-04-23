@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getProfileGateFlags } from "@/lib/business-document-gate";
+import { getProfileGateFlags } from "@/lib/business/business-document-gate";
 import type { BusinessProfile } from "@/types/auth";
 
 const COPY = {

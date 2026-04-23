@@ -10,7 +10,7 @@ import PageHeader from "@/components/PageHeader";
 import { PageBackLink } from "@/components/PageBackLink";
 import ItemDetailSkeleton from "@/components/skeletons/ItemDetailSkeleton";
 import { useItem, useItemLedger } from "@/hooks/use-items";
-import { cn, formatDate, formatStockQuantity } from "@/lib/utils";
+import { cn, formatDate, formatStockQuantity } from "@/lib/core/utils";
 import {
   type LedgerMovementType,
   getItemCategoryDisplay,

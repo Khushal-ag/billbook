@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronDown, Shield, UserCog } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 import { PAGE } from "@/constants/page-access";
 
 type CanFn = (key: string) => boolean;

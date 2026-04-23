@@ -8,7 +8,7 @@ import { ReportsDashboardSkeleton } from "@/components/skeletons/ReportTabSkelet
 import { useReportsDashboard } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
 import { MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
-import { reportHub } from "@/lib/report-labels";
+import { reportHub } from "@/lib/reports/report-labels";
 
 export default function ReportsPage() {
   const {

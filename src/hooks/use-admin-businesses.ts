@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/lib/query/keys";
 import type { AdminBusinessesResponse, ExtendValidityBody } from "@/types/admin";
 import { useAuth } from "@/contexts/AuthContext";
 

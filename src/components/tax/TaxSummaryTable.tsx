@@ -1,4 +1,4 @@
-import { formatMonthYear } from "@/lib/utils";
+import { formatMonthYear } from "@/lib/core/utils";
 
 interface MonthlyTaxRow {
   month: string;

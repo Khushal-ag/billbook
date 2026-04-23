@@ -5,7 +5,7 @@ import { AlertTriangle, ChevronDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { Alert } from "@/types/alert";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/core/utils";
 
 const ALERTS_PREVIEW_COUNT = 3;
 

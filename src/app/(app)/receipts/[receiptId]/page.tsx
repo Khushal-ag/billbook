@@ -21,9 +21,9 @@ import {
   receiptInvoiceAllocationSum,
   receiptOpeningSettlementNum,
   receiptUnallocatedAmountNum,
-} from "@/lib/receipt-amounts";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
-import { openSignedPdfFromApiPath } from "@/lib/signed-pdf";
+} from "@/lib/receipts/receipt-amounts";
+import { cn, formatCurrency, formatDate } from "@/lib/core/utils";
+import { openSignedPdfFromApiPath } from "@/lib/ui/signed-pdf";
 
 export default function ReceiptDetailPage() {
   const params = useParams<{ receiptId?: string | string[] }>();

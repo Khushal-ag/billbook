@@ -38,15 +38,15 @@ import {
   optionalEmail,
   optionalString,
   unsignedPriceString,
-} from "@/lib/validation-schemas";
+} from "@/lib/core/validation-schemas";
 import {
   hasPersistedOpeningBalance,
   openingBalanceFromApi,
   openingBalanceToApi,
-} from "@/lib/party-opening-balance";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { capitaliseWords } from "@/lib/utils";
-import { fetchPostalOffice } from "@/lib/pincode";
+} from "@/lib/party/party-opening-balance";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
+import { capitaliseWords } from "@/lib/core/utils";
+import { fetchPostalOffice } from "@/lib/india/pincode";
 import { PartyConsigneesSection } from "@/components/parties/PartyConsigneesSection";
 
 const schema = z.object({

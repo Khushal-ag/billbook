@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { formatISODateDisplay, parseISODateString, toISODateString } from "@/lib/date";
-import { cn } from "@/lib/utils";
+import { formatISODateDisplay, parseISODateString, toISODateString } from "@/lib/core/date";
+import { cn } from "@/lib/core/utils";
 
 interface DateFieldProps {
   label: string;

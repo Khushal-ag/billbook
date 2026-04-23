@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { FieldValues, Path, UseFormGetValues, UseFormSetValue } from "react-hook-form";
-import { fetchPostalOffice } from "@/lib/pincode";
+import { fetchPostalOffice } from "@/lib/india/pincode";
 
 type AddressFields = {
   area?: string | null;

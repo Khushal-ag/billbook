@@ -3,7 +3,7 @@ import { Package, Users, TrendingDown, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardSectionHeader, QuickStat } from "./dashboard-utils";
 import type { DashboardData } from "@/types/dashboard";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/core/utils";
 
 interface DashboardQuickStatsSectionProps {
   dashboard: DashboardData;

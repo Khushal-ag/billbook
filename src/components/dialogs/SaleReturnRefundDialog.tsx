@@ -24,9 +24,9 @@ import { Loader2 } from "lucide-react";
 import { useCreateOutboundPayment } from "@/hooks/use-outbound-payments";
 import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 import type { PaymentMethod } from "@/types/invoice";
-import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { maybeShowTrialExpiredToast } from "@/lib/trial";
+import { requiredPriceString, optionalString } from "@/lib/core/validation-schemas";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/business/trial";
 
 const schema = z.object({
   amount: requiredPriceString,

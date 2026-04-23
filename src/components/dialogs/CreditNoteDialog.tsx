@@ -26,11 +26,11 @@ import { useCreateCreditNote, useCreditNotes } from "@/hooks/use-credit-notes";
 import { useInvoices, useInvoice } from "@/hooks/use-invoices";
 import type { CreditNoteSummary } from "@/types/credit-note";
 import type { Invoice } from "@/types/invoice";
-import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
-import { withInvoiceQuantityErrorDetails } from "@/lib/invoice-quantity-error-details";
-import { formatCurrency } from "@/lib/utils";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { maybeShowTrialExpiredToast } from "@/lib/trial";
+import { requiredPriceString, optionalString } from "@/lib/core/validation-schemas";
+import { withInvoiceQuantityErrorDetails } from "@/lib/invoice/invoice-quantity-error-details";
+import { formatCurrency } from "@/lib/core/utils";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/business/trial";
 
 const schema = z.object({
   invoiceId: z.coerce.number().min(1, "Select a document"),

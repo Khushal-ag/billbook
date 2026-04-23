@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useRoleGroupsList } from "@/hooks/use-role-groups";
 import { PAGE } from "@/constants/page-access";

@@ -1,6 +1,6 @@
-import { getEntryDateIso } from "@/lib/invoice-create";
-import { formatISODateDisplay } from "@/lib/date";
-import { formatDate, formatStockQuantity } from "@/lib/utils";
+import { getEntryDateIso } from "@/lib/invoice/invoice-create";
+import { formatISODateDisplay } from "@/lib/core/date";
+import { formatDate, formatStockQuantity } from "@/lib/core/utils";
 import type { StockEntry, StockEntrySource } from "@/types/item";
 
 /** Column / field tooltips for stock tables */

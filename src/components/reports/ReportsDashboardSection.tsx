@@ -4,9 +4,9 @@ import Link from "next/link";
 import { ChevronRight, FileText, Info, Receipt, Wallet } from "lucide-react";
 import { DashboardSectionHeader } from "@/components/dashboard/dashboard-utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/core/utils";
 import type { ReportsDashboardData } from "@/types/report";
-import { reportDashboard } from "@/lib/report-labels";
+import { reportDashboard } from "@/lib/reports/report-labels";
 
 interface ReportsDashboardSectionProps {
   data: ReportsDashboardData;

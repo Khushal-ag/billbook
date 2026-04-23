@@ -2,7 +2,7 @@ import { memo } from "react";
 import type { InvoiceStatus } from "@/types/invoice";
 import type { CreditNoteStatus } from "@/types/credit-note";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 /** User-facing copy for known API status enums (invoice, credit note, payment-style rows). */
 const statusLabels: Record<string, string> = {

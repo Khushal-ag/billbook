@@ -17,8 +17,8 @@ import {
   invoiceTypeSupportsReceiptPayment,
   invoiceTypeSupportsSaleReturnRefund,
   invoiceTypeSupportsSupplierPayment,
-} from "@/lib/invoice";
-import { formatCurrency } from "@/lib/utils";
+} from "@/lib/invoice/invoice";
+import { formatCurrency } from "@/lib/core/utils";
 import type { InvoiceDetail } from "@/types/invoice";
 
 const FINALIZE_INVENTORY_HELP: ReactNode = (

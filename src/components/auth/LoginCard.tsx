@@ -8,7 +8,7 @@ import { Loader2, Eye, EyeOff } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { LAST_ORGANIZATION_CODE_KEY } from "@/constants/auth-storage";
-import { isReservedAdminOrganizationCode } from "@/lib/organization-code";
+import { isReservedAdminOrganizationCode } from "@/lib/org/organization-code";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FieldError, Label } from "@/components/ui/label";

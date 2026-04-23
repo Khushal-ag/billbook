@@ -30,12 +30,12 @@ import { useCreateReceipt } from "@/hooks/use-receipts";
 import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 import type { PaymentMethod } from "@/types/invoice";
 import type { Party } from "@/types/party";
-import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { maybeShowTrialExpiredToast } from "@/lib/trial";
-import { isEventFromNestedPortal } from "@/lib/dialog-nested-portal";
+import { requiredPriceString, optionalString } from "@/lib/core/validation-schemas";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/business/trial";
+import { isEventFromNestedPortal } from "@/lib/ui/dialog-nested-portal";
 import { ApiClientError } from "@/api/error";
-import { augmentApiClientErrorForReceipt } from "@/lib/receipt-errors";
+import { augmentApiClientErrorForReceipt } from "@/lib/receipts/receipt-errors";
 
 const schema = z
   .object({

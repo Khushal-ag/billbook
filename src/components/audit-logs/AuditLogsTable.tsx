@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { formatDate, formatTime } from "@/lib/utils";
+import { formatDate, formatTime } from "@/lib/core/utils";
 import {
   buildAuditHighlightParams,
   getActionBadgeVariant,
@@ -8,7 +8,7 @@ import {
   getAuditMeta,
   getAuditResourceTypeLabel,
   resolveInvoiceAuditDisplayContext,
-} from "@/lib/audit-log";
+} from "@/lib/data/audit-log";
 import { ACTION_DOT_COLORS } from "@/constants/audit";
 import type { AuditLog } from "@/types/audit-log";
 

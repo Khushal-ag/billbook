@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
-import { getInvoiceBalanceDue } from "@/lib/invoice";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { getInvoiceBalanceDue } from "@/lib/invoice/invoice";
+import { cn, formatCurrency, formatDate } from "@/lib/core/utils";
 import type { Invoice, InvoiceType } from "@/types/invoice";
 
 interface InvoicesTableProps {

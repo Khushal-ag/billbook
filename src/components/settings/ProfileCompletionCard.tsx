@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress";
 import type { ProfileCompletion, ProfileCompletionSection } from "@/types/auth";
 import { CheckCircle2, CircleDashed } from "lucide-react";
-import { INVOICE_PROFILE_MIN_PERCENT } from "@/lib/business-document-gate";
+import { INVOICE_PROFILE_MIN_PERCENT } from "@/lib/business/business-document-gate";
 
 interface ProfileCompletionCardProps {
   profileCompletion: ProfileCompletion;

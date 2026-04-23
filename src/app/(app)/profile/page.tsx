@@ -15,11 +15,11 @@ import {
   useCreateBusinessTypeOption,
   useCreateIndustryTypeOption,
 } from "@/hooks/use-business";
-import { fileToDataUrl } from "@/lib/file-to-url";
+import { fileToDataUrl } from "@/lib/ui/file-to-url";
 import { profileSchema, type ProfileForm } from "@/components/settings/profileSchema";
 import { Button } from "@/components/ui/button";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { getProfileFormValues } from "@/lib/profile-form-values";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
+import { getProfileFormValues } from "@/lib/business/profile-form-values";
 import type {
   BusinessProfile,
   UpdateBusinessProfile,

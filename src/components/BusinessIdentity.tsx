@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 interface BusinessIdentityProps {
   name?: string | null;
@@ -26,7 +26,13 @@ function getBusinessInitials(name?: string | null) {
   const value = name?.trim() || "";
   if (!value) return "B";
   const words = value.split(/\s+/).filter(Boolean);
-  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  if (words.length >= 2) {
+    const a = words[0];
+    const b = words[1];
+    const ac = a?.[0];
+    const bc = b?.[0];
+    if (ac && bc) return (ac + bc).toUpperCase();
+  }
   return value.slice(0, 2).toUpperCase();
 }
 

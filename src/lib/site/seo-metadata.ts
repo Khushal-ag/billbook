@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig } from "@/lib/site/site-config";
 
 const OG_IMAGE_PATH = "/opengraph-image";
 const OG_SIZE = { width: 1200, height: 630 } as const;

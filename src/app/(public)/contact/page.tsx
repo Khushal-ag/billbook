@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Mail, MessageCircle, ArrowRight } from "lucide-react";
 import { PublicMarketingShell } from "@/components/landing/PublicMarketingShell";
-import { marketingContactEmail, siteConfig } from "@/lib/site-config";
-import { publicPageMetadata } from "@/lib/seo-metadata";
+import { marketingContactEmail, siteConfig } from "@/lib/site/site-config";
+import { publicPageMetadata } from "@/lib/site/seo-metadata";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 

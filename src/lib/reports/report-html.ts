@@ -1,4 +1,4 @@
-import { formatDate, formatTime } from "@/lib/utils";
+import { formatDate, formatTime } from "@/lib/core/utils";
 
 /**
  * Generate a human-readable HTML GST report from export data.

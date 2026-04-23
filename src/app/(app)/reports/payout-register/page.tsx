@@ -19,9 +19,9 @@ import {
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { usePayoutRegister } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
-import { cn, formatCurrency, formatDate, humanizeApiEnum } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, humanizeApiEnum } from "@/lib/core/utils";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
-import { reportPayoutRegister } from "@/lib/report-labels";
+import { reportPayoutRegister } from "@/lib/reports/report-labels";
 import type { PayoutRegisterRowDto } from "@/types/report";
 
 function payoutDisplayNumber(p: PayoutRegisterRowDto) {

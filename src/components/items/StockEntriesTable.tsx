@@ -2,7 +2,7 @@ import Link from "next/link";
 import { History, SlidersHorizontal, Layers, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrency, formatDateCompact, formatStockQuantity, cn } from "@/lib/utils";
+import { formatCurrency, formatDateCompact, formatStockQuantity, cn } from "@/lib/core/utils";
 import {
   STOCK_TABLE_OUTBOUND_COLUMN_TITLE,
   stockTableThClass,
@@ -10,7 +10,7 @@ import {
   stockTableTdClass,
   stockTableTdRight,
   formatStockAdjustmentDelta,
-} from "@/lib/stock-table-display";
+} from "@/lib/items/stock-table-display";
 import { StockEntrySourceBadge } from "@/components/items/StockEntrySourceBadge";
 import type { StockEntry } from "@/types/item";
 import type { Item } from "@/types/item";

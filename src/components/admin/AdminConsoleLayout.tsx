@@ -6,14 +6,14 @@ import { useState, type ReactNode } from "react";
 import { LogOut, Menu } from "lucide-react";
 
 import Logo from "@/components/Logo";
-import { adminConsoleHomePath, adminConsoleNavItems } from "@/lib/admin-nav";
+import { adminConsoleHomePath, adminConsoleNavItems } from "@/lib/admin/admin-nav";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminRouteGuard } from "@/components/admin/AdminRouteGuard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname() ?? "";

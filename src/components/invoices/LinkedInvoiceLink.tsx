@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useInvoice } from "@/hooks/use-invoices";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 type Props = {
   invoiceId?: number | null;

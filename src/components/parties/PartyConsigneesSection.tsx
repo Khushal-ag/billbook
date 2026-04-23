@@ -82,10 +82,10 @@ function consigneeUiLabels(partyType: PartyType) {
     deleteDescription: (name: string) => `This will remove “${name}” from delivery addresses.`,
   };
 }
-import { optionalEmail, optionalString } from "@/lib/validation-schemas";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { fetchPostalOffice } from "@/lib/pincode";
-import { formatConsigneeAddressInline } from "@/lib/party-address-display";
+import { optionalEmail, optionalString } from "@/lib/core/validation-schemas";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
+import { fetchPostalOffice } from "@/lib/india/pincode";
+import { formatConsigneeAddressInline } from "@/lib/party/party-address-display";
 
 function sortConsignees(list: PartyConsignee[]): PartyConsignee[] {
   return [...list].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.id - b.id);

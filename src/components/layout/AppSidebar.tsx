@@ -23,7 +23,7 @@ import {
   ScrollText,
   Folder,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { BusinessIdentity } from "@/components/BusinessIdentity";

@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { differenceInMonths } from "date-fns";
-import { parseISODateString, toISODateString } from "@/lib/date";
+import { parseISODateString, toISODateString } from "@/lib/core/date";
 
 interface UseDateRangeOptions {
   defaultStartDate?: string;

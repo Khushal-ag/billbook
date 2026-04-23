@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 import type { PermissionCatalogNode } from "@/types/role-group";
 
 function collectKeys(node: PermissionCatalogNode): string[] {

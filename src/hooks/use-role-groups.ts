@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
 import { ApiClientError } from "@/api/error";
-import { invalidateQueryKeys } from "@/lib/query";
-import { queryKeys } from "@/lib/query-keys";
+import { invalidateQueryKeys } from "@/lib/query/invalidate";
+import { queryKeys } from "@/lib/query/keys";
 import { REFRESH_PERMISSIONS_EVENT } from "@/constants/access-events";
 import type {
   CreateRoleGroupBody,

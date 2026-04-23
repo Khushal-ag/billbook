@@ -1,5 +1,5 @@
 import { api } from "@/api";
-import { showErrorToast } from "@/lib/toast-helpers";
+import { showErrorToast } from "@/lib/ui/toast-helpers";
 
 /** GET …/pdf then open signed URL in a new tab. */
 export async function openSignedPdfFromApiPath(

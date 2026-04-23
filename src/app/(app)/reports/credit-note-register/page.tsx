@@ -22,8 +22,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useCreditNoteRegister } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
-import { reportCreditNoteRegister } from "@/lib/report-labels";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { reportCreditNoteRegister } from "@/lib/reports/report-labels";
+import { cn, formatCurrency, formatDate } from "@/lib/core/utils";
 
 export default function CreditNoteRegisterPage() {
   const {

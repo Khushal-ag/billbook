@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/utils";
-import type { BalanceSummary } from "@/lib/party-ledger";
+import { formatCurrency } from "@/lib/core/utils";
+import type { BalanceSummary } from "@/lib/party/party-ledger";
 import { LedgerBalanceText } from "@/components/party-ledger/LedgerBalanceText";
 import { Skeleton } from "@/components/ui/skeleton";
 

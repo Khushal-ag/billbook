@@ -1,7 +1,7 @@
 "use client";
 
 import { Lock } from "lucide-react";
-import { isValidityPeriodEnded } from "@/lib/trial";
+import { isValidityPeriodEnded } from "@/lib/business/trial";
 
 type TrialExpiredOverlayProps = {
   validityEnd: string | null | undefined;

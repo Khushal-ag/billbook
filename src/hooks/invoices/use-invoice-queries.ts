@@ -1,8 +1,8 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
 import { ApiClientError } from "@/api/error";
-import { queryKeys } from "@/lib/query-keys";
-import { buildQueryString } from "@/lib/utils";
+import { queryKeys } from "@/lib/query/keys";
+import { buildQueryString } from "@/lib/core/utils";
 import type {
   InvoiceDetail,
   InvoiceListResponse,
@@ -11,7 +11,7 @@ import type {
   InvoiceCommunicationsSummary,
   NextInvoiceNumberData,
 } from "@/types/invoice";
-import { normalizeCommunicationsSummary } from "@/lib/invoice-api-helpers";
+import { normalizeCommunicationsSummary } from "@/lib/invoice/invoice-api-helpers";
 
 export type UseNextInvoiceNumberOptions = {
   invoiceDate?: string;

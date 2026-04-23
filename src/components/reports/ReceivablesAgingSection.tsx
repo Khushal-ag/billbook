@@ -5,14 +5,14 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
-import { formatISODateDisplay } from "@/lib/date";
+import { cn, formatCurrency, formatDate } from "@/lib/core/utils";
+import { formatISODateDisplay } from "@/lib/core/date";
 import type {
   ReceivablesAgingBucket,
   ReceivablesAgingData,
   ReceivablesAgingLine,
 } from "@/types/report";
-import { reportInvoiceAging } from "@/lib/report-labels";
+import { reportInvoiceAging } from "@/lib/reports/report-labels";
 import {
   ReportRegisterEmptyRow,
   ReportRegisterResultBar,

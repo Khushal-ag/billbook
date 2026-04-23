@@ -1,5 +1,5 @@
 import { useBusinessProfile } from "@/hooks/use-business";
-import { isDocumentCreationAllowed } from "@/lib/business-document-gate";
+import { isDocumentCreationAllowed } from "@/lib/business/business-document-gate";
 
 /**
  * After GET /business/profile loads: `true` when the account allows document creation

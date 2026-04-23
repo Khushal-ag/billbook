@@ -20,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { useBusinessSettings, useUpdateBusinessSettings } from "@/hooks/use-business-settings";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/constants/permissions";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
 import type {
   BusinessSettingsData,
   UpdateBusinessSettingsRequest,

@@ -15,8 +15,8 @@ import { useInvoices, useInvoicesListFilters } from "@/hooks/invoices";
 import { useParties } from "@/hooks/use-parties";
 import { useCanCreateInvoice } from "@/hooks/use-can-create-invoice";
 import { BusinessProfileGateAlert } from "@/components/business/BusinessProfileGateAlert";
-import { INVOICE_TYPE_OPTIONS } from "@/lib/invoice";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { INVOICE_TYPE_OPTIONS } from "@/lib/invoice/invoice";
+import { formatCurrency, formatDate } from "@/lib/core/utils";
 import type { Invoice, InvoiceType } from "@/types/invoice";
 
 export type ReturnDocumentType = Extract<InvoiceType, "SALE_RETURN" | "PURCHASE_RETURN">;
@@ -30,7 +30,7 @@ export function ReturnSourceInvoicePicker({ returnType }: ReturnSourceInvoicePic
   const sourceInvoiceType: InvoiceType =
     returnType === "SALE_RETURN" ? "SALE_INVOICE" : "PURCHASE_INVOICE";
   const partyQueryType = returnType === "SALE_RETURN" ? "CUSTOMER" : "SUPPLIER";
-  const meta = INVOICE_TYPE_OPTIONS.find((o) => o.type === returnType) ?? INVOICE_TYPE_OPTIONS[0];
+  const meta = INVOICE_TYPE_OPTIONS.find((o) => o.type === returnType) ?? INVOICE_TYPE_OPTIONS[0]!;
   const sourceLabel = sourceInvoiceType === "SALE_INVOICE" ? "sale invoice" : "purchase invoice";
   const searchPlaceholder =
     sourceInvoiceType === "SALE_INVOICE"

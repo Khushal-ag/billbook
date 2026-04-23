@@ -25,12 +25,12 @@ import { Loader2 } from "lucide-react";
 import { useRecordPayment } from "@/hooks/use-invoices";
 import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 import type { PaymentMethod } from "@/types/invoice";
-import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { maybeShowTrialExpiredToast } from "@/lib/trial";
-import { formatCurrency } from "@/lib/utils";
+import { requiredPriceString, optionalString } from "@/lib/core/validation-schemas";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/business/trial";
+import { formatCurrency } from "@/lib/core/utils";
 import { ApiClientError } from "@/api/error";
-import { augmentApiClientErrorForPayment } from "@/lib/payment-errors";
+import { augmentApiClientErrorForPayment } from "@/lib/payments/payment-errors";
 import type { RecordInvoicePaymentData } from "@/types/receipt";
 
 const schema = z.object({

@@ -24,16 +24,16 @@ import { useInvoice } from "@/hooks/use-invoices";
 import { useCreateOutboundPayment } from "@/hooks/use-outbound-payments";
 import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 import { OUTBOUND_CATEGORY_OPTIONS } from "@/constants/outbound-payment";
-import { requiredPriceString, optionalString } from "@/lib/validation-schemas";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { maybeShowTrialExpiredToast } from "@/lib/trial";
-import { getInvoiceBalanceDue } from "@/lib/invoice";
+import { requiredPriceString, optionalString } from "@/lib/core/validation-schemas";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/business/trial";
+import { getInvoiceBalanceDue } from "@/lib/invoice/invoice";
 import { ApiClientError } from "@/api/error";
-import { augmentApiClientErrorForPayment } from "@/lib/payment-errors";
+import { augmentApiClientErrorForPayment } from "@/lib/payments/payment-errors";
 import type { Party } from "@/types/party";
 import type { Invoice, PaymentMethod } from "@/types/invoice";
 import type { OutboundPaymentCategory } from "@/types/outbound-payment";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/core/utils";
 
 function purchaseInvoiceOptionLabel(inv: Invoice): string {
   const due = formatCurrency(String(getInvoiceBalanceDue(inv)));

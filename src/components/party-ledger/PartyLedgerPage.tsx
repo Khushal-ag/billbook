@@ -12,7 +12,7 @@ import PartyLedgerSkeleton from "@/components/skeletons/PartyLedgerSkeleton";
 import { BalanceSummaryCards } from "@/components/party-ledger/BalanceSummaryCards";
 import { LedgerEntriesTable } from "@/components/party-ledger/LedgerEntriesTable";
 import { StatementPanel } from "@/components/party-ledger/StatementPanel";
-import { showErrorToast } from "@/lib/toast-helpers";
+import { showErrorToast } from "@/lib/ui/toast-helpers";
 
 export default function PartyLedgerPage() {
   const params = useParams<{ partyId?: string | string[] }>();

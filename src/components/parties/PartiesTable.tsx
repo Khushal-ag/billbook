@@ -7,7 +7,7 @@ import { api } from "@/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LedgerBalanceText } from "@/components/party-ledger/LedgerBalanceText";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/lib/query/keys";
 import type { Party, PartyBalanceResponse } from "@/types/party";
 
 interface PartiesTableProps {

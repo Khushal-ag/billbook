@@ -13,7 +13,7 @@ import { useItems, useStockList } from "@/hooks/use-items";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/constants/permissions";
 import { PAGE } from "@/constants/page-access";
-import { reportItemRegister } from "@/lib/report-labels";
+import { reportItemRegister } from "@/lib/reports/report-labels";
 
 export default function ItemRegisterPage() {
   const { can } = usePermissions();

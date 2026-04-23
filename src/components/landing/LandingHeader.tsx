@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 /**
  * Sticky header + allowance so we align with `scroll-mt-24` after `scrollIntoView`.

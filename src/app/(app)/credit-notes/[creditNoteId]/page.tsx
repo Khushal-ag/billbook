@@ -20,13 +20,13 @@ import { useCreditNote, useDeleteCreditNote } from "@/hooks/use-credit-notes";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/constants/permissions";
 import { ApiClientError } from "@/api/error";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { maybeShowTrialExpiredToast } from "@/lib/trial";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
+import { maybeShowTrialExpiredToast } from "@/lib/business/trial";
 import {
   creditNoteSourceInvoiceLinkProps,
   resolvedCreditNotePartyId,
-} from "@/lib/credit-note-display";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+} from "@/lib/credit-notes/credit-note-display";
+import { cn, formatCurrency, formatDate } from "@/lib/core/utils";
 
 function isFullyUnallocated(allocated: string | undefined): boolean {
   return (parseFloat(allocated ?? "0") || 0) <= 0.001;

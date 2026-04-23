@@ -1,5 +1,5 @@
 import type { CreditNoteDetail } from "@/types/credit-note";
-import { maxReceiptAllocToInvoice } from "@/lib/receipt-allocations";
+import { maxReceiptAllocToInvoice } from "@/lib/receipts/receipt-allocations";
 
 function num(s: string | undefined): number {
   const x = parseFloat(s ?? "0");

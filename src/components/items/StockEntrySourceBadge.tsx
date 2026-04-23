@@ -1,5 +1,8 @@
 import { Badge } from "@/components/ui/badge";
-import { stockEntrySourceFullLabel, stockEntrySourceShortLabel } from "@/lib/stock-entry-labels";
+import {
+  stockEntrySourceFullLabel,
+  stockEntrySourceShortLabel,
+} from "@/lib/items/stock-entry-labels";
 import type { StockEntrySource } from "@/types/item";
 
 type Props = {

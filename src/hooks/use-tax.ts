@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys } from "@/lib/query/keys";
 import type { GSTSummaryData, GSTItemizedData, GSTExportData } from "@/types/tax";
 
 export function useGSTSummary(startDate: string, endDate: string) {

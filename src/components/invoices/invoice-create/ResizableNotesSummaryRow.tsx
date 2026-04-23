@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GripVertical } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 const LG_MIN = 1024;
 const DEFAULT_NOTES_WIDTH = 720;

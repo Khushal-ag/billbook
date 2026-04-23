@@ -38,8 +38,8 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { useAuth } from "@/contexts/AuthContext";
 import { P } from "@/constants/permissions";
 import { PAGE } from "@/constants/page-access";
-import { strongPasswordSchema } from "@/lib/validation-schemas";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+import { strongPasswordSchema } from "@/lib/core/validation-schemas";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
 import type { BusinessUser } from "@/types/auth";
 import type { RoleGroup } from "@/types/role-group";
 import {
@@ -49,7 +49,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 interface BusinessUsersCardProps {
   embedded?: boolean;

@@ -9,8 +9,8 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { PublicMarketingShell } from "@/components/landing/PublicMarketingShell";
-import { siteConfig } from "@/lib/site-config";
-import { publicPageMetadata } from "@/lib/seo-metadata";
+import { siteConfig } from "@/lib/site/site-config";
+import { publicPageMetadata } from "@/lib/site/seo-metadata";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 

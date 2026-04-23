@@ -26,7 +26,7 @@ import {
   INVOICE_CANCEL_PRESET_REASONS,
   validateCancelInvoiceReason,
 } from "@/constants/invoice-cancel";
-import { showErrorToast } from "@/lib/toast-helpers";
+import { showErrorToast } from "@/lib/ui/toast-helpers";
 
 interface CancelInvoiceDialogProps {
   open: boolean;

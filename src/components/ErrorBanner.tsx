@@ -1,6 +1,6 @@
 import { AlertCircle } from "lucide-react";
 import { ApiClientError } from "@/api/error";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 interface ErrorBannerProps {
   error: unknown;

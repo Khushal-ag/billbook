@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useParty } from "@/hooks/use-parties";
 import { useUpdateReceiptAllocations } from "@/hooks/use-receipts";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import { cn, formatCurrency, formatDate } from "@/lib/core/utils";
 import {
   buildReceiptAllocationState,
   deriveOpeningLedgerAmounts,
@@ -25,12 +25,12 @@ import {
   totalAllocatedFromSavePayload,
   totalTaggedFromSavePayload,
   type ReceiptAllocationRowState,
-} from "@/lib/receipt-allocations";
-import { formatMoneyTwoDp } from "@/lib/receipt-amounts";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
+} from "@/lib/receipts/receipt-allocations";
+import { formatMoneyTwoDp } from "@/lib/receipts/receipt-amounts";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
 import type { PutReceiptAllocationsRequest, ReceiptDetail } from "@/types/receipt";
 import { ApiClientError } from "@/api/error";
-import { augmentApiClientErrorForReceipt } from "@/lib/receipt-errors";
+import { augmentApiClientErrorForReceipt } from "@/lib/receipts/receipt-errors";
 
 /** Digits and at most one decimal point (for currency amounts). */
 function sanitizeDecimalInput(raw: string): string {

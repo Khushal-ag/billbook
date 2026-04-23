@@ -13,15 +13,15 @@ import {
 import { DateField } from "@/components/invoices/invoice-create/DateField";
 import { Input } from "@/components/ui/input";
 import { PartyAutocomplete } from "@/components/invoices/PartyAutocomplete";
-import { getInvoiceTypeCreateCopy } from "@/lib/invoice";
+import { getInvoiceTypeCreateCopy } from "@/lib/invoice/invoice";
 import {
   formatConsigneeAddressInline,
   formatPartyAddressInline,
-} from "@/lib/party-address-display";
-import { toISODateString } from "@/lib/date";
+} from "@/lib/party/party-address-display";
+import { toISODateString } from "@/lib/core/date";
 import type { Party, PartyConsignee, PartyType } from "@/types/party";
-import { isPurchaseVendorBillMetaType } from "@/lib/invoice";
-import { cn } from "@/lib/utils";
+import { isPurchaseVendorBillMetaType } from "@/lib/invoice/invoice";
+import { cn } from "@/lib/core/utils";
 import type { InvoiceType } from "@/types/invoice";
 
 interface PartyAndDatesCardsProps {

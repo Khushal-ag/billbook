@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, ChevronsUpDown, Plus, Ruler } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 import { Button } from "@/components/ui/button";
 import {
   Command,

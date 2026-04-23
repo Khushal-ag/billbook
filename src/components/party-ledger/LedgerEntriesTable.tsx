@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react";
-import type { LedgerEntry } from "@/lib/party-ledger";
+import type { LedgerEntry } from "@/lib/party/party-ledger";
 import { PartyLedgerEntriesTable } from "@/components/party-ledger/PartyLedgerEntriesTable";
 
 interface LedgerEntriesTableProps {

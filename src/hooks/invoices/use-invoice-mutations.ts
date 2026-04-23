@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api, generateIdempotencyKey } from "@/api";
-import { invalidateQueryKeys } from "@/lib/query";
-import { queryKeys } from "@/lib/query-keys";
+import { invalidateQueryKeys } from "@/lib/query/invalidate";
+import { queryKeys } from "@/lib/query/keys";
 import type {
   Invoice,
   CreateInvoiceRequest,
@@ -14,7 +14,7 @@ import {
   parseInvoiceMarkCommunicationResponse,
   parseRecordPaymentResponse,
   parseRecordSupplierPaymentResponse,
-} from "@/lib/invoice-api-helpers";
+} from "@/lib/invoice/invoice-api-helpers";
 
 /** Receipt detail embeds open invoices for the party; invalidate whenever invoice data changes. */
 function invalidateReceiptAndPartyCaches(qc: QueryClient) {

@@ -5,8 +5,8 @@ import {
   getInvoiceBalanceDue,
   INVOICE_TYPE_OPTIONS,
   isPurchaseVendorBillMetaType,
-} from "@/lib/invoice";
-import { cn, formatCurrency, formatDate } from "@/lib/utils";
+} from "@/lib/invoice/invoice";
+import { cn, formatCurrency, formatDate } from "@/lib/core/utils";
 import type { InvoiceDetail } from "@/types/invoice";
 
 interface InvoiceSummaryCardsProps {

@@ -3,7 +3,7 @@ import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/core/utils";
 import type { RecentInvoice } from "@/types/dashboard";
 
 interface DashboardRecentInvoicesSectionProps {

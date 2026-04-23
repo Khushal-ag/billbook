@@ -11,8 +11,8 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
-import { formatPartyCitySummary } from "@/lib/party-address-display";
-import { cn } from "@/lib/utils";
+import { formatPartyCitySummary } from "@/lib/party/party-address-display";
+import { cn } from "@/lib/core/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useParties } from "@/hooks/use-parties";
 import type { Party, PartyType } from "@/types/party";

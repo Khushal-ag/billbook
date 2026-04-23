@@ -50,19 +50,19 @@ import {
   optionalString,
   percentString,
   otherTaxName,
-} from "@/lib/validation-schemas";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { normalizeMinStockThresholdValue } from "@/lib/item-api";
-import { formatIgstFromCgstSgst } from "@/lib/invoice-create";
+} from "@/lib/core/validation-schemas";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
+import { normalizeMinStockThresholdValue } from "@/lib/items/item-api";
+import { formatIgstFromCgstSgst } from "@/lib/invoice/invoice-create";
 import {
   isDuplicateItemName,
   isDuplicateItemNameApiError,
   ITEM_NAME_DUPLICATE_ERROR,
   ITEM_NAME_REQUIRED_ERROR,
   normalizeItemName,
-} from "@/lib/item-name";
-import { queryKeys } from "@/lib/query-keys";
-import { capitaliseWords } from "@/lib/utils";
+} from "@/lib/items/item-name";
+import { queryKeys } from "@/lib/query/keys";
+import { capitaliseWords } from "@/lib/core/utils";
 import type { Item, Category, CreateItemRequest, ItemListResponse, Unit } from "@/types/item";
 
 function defaultUnitForType(type: "STOCK" | "SERVICE"): string {

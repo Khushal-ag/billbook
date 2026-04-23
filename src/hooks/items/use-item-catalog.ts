@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
-import { invalidateQueryKeys } from "@/lib/query";
-import { queryKeys } from "@/lib/query-keys";
-import { ITEMS_API_BASE } from "@/lib/item-api";
+import { invalidateQueryKeys } from "@/lib/query/invalidate";
+import { queryKeys } from "@/lib/query/keys";
+import { ITEMS_API_BASE } from "@/lib/items/item-api";
 import type { Category, ItemType, Unit } from "@/types/item";
 
 export function useCategories() {

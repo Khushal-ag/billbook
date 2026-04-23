@@ -27,14 +27,14 @@ import { api, setAccessToken, setRefreshToken, ApiClientError } from "@/api";
 import {
   extractRoleGroupFromAuthMeBusiness,
   extractRoleGroupFromAuthMeUser,
-} from "@/lib/auth-me-user";
+} from "@/lib/auth/auth-me-user";
 import {
   fetchAuthMeValidated,
   hasStoredCredentials,
   isLikelyTransientRestoreFailure,
   readCachedSessionUser,
-} from "@/lib/auth-restore";
-import { isInactiveRoleGroupAccessMessage } from "@/lib/rbac-access";
+} from "@/lib/auth/auth-restore";
+import { isInactiveRoleGroupAccessMessage } from "@/lib/access/rbac-access";
 
 interface AuthState {
   user: SessionUser | null;

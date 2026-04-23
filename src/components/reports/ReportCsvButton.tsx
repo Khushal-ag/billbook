@@ -4,8 +4,8 @@ import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { downloadReportCsv } from "@/api";
-import { buildQueryString } from "@/lib/utils";
-import { showErrorToast } from "@/lib/toast-helpers";
+import { buildQueryString } from "@/lib/core/utils";
+import { showErrorToast } from "@/lib/ui/toast-helpers";
 
 type ReportCsvButtonProps = {
   /** e.g. `/reports/receipt-register` */

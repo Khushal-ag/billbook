@@ -2,8 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api";
-import { queryKeys } from "@/lib/query-keys";
-import { buildQueryString } from "@/lib/utils";
+import { queryKeys } from "@/lib/query/keys";
+import { buildQueryString } from "@/lib/core/utils";
 import type { AdminTransactionsData } from "@/types/admin";
 import { useAuth } from "@/contexts/AuthContext";
 

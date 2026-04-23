@@ -11,8 +11,8 @@ import DateRangePicker from "@/components/DateRangePicker";
 import { TaxItemizedTable, TaxSummaryTable } from "@/components/tax/TaxSections";
 import { useGSTSummary, useGSTItemized, useGSTExport } from "@/hooks/use-tax";
 import { useDateRange } from "@/hooks/use-date-range";
-import { generateGSTReportHTML, downloadHTML } from "@/lib/report-html";
-import { formatNumber } from "@/lib/utils";
+import { generateGSTReportHTML, downloadHTML } from "@/lib/reports/report-html";
+import { formatNumber } from "@/lib/core/utils";
 
 export default function Tax() {
   const {

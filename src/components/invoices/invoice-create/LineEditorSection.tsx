@@ -8,17 +8,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getInvoiceTypeCreateCopy, isSalesFamily } from "@/lib/invoice";
+import { getInvoiceTypeCreateCopy, isSalesFamily } from "@/lib/invoice/invoice";
 import {
   formatIgstFromCgstSgst,
   formatLineGstRateDisplay,
   getEntryDateIso,
   getLineAmounts,
   toNum,
-} from "@/lib/invoice-create";
-import { getReturnQuantityCap, isReturnQuantityOverCap } from "@/lib/invoice-return-cap";
-import { formatISODateDisplay } from "@/lib/date";
-import { cn, formatCurrency } from "@/lib/utils";
+} from "@/lib/invoice/invoice-create";
+import { getReturnQuantityCap, isReturnQuantityOverCap } from "@/lib/invoice/invoice-return-cap";
+import { formatISODateDisplay } from "@/lib/core/date";
+import { cn, formatCurrency } from "@/lib/core/utils";
 import type { InvoiceLineDraft, StockChoice, StockLineIssue } from "@/types/invoice-create";
 import type { Item, StockEntry } from "@/types/item";
 import type { InvoiceType } from "@/types/invoice";

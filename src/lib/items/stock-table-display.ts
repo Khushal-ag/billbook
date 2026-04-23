@@ -1,4 +1,4 @@
-import { formatStockQuantity } from "@/lib/utils";
+import { formatStockQuantity } from "@/lib/core/utils";
 
 /** Tooltip / title for the net outbound quantity column (sales + returns to supplier). */
 export const STOCK_TABLE_OUTBOUND_COLUMN_TITLE =

@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 /** Result bar + header row + body rows — matches `ReportRegisterTableScroll` + `rr` table. */
 function RegisterTableSkeleton({

@@ -16,15 +16,15 @@ import { useAdminTransactions } from "@/hooks/use-admin-transactions";
 import { useDateRange } from "@/hooks/use-date-range";
 import { MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
 import type { AdminTransactionRow } from "@/types/admin";
-import { downloadCsvText, recordsToCsv } from "@/lib/records-csv";
+import { downloadCsvText, recordsToCsv } from "@/lib/data/records-csv";
 import {
   APP_DISPLAY_LOCALE,
   appDisplayDateOnlyOptions,
   formatAppDateOnlyFromYmd,
   formatAppDateTimeFromIso,
-} from "@/lib/date";
-import { showErrorToast } from "@/lib/toast-helpers";
-import { cn, formatNumber, humanizeApiEnum } from "@/lib/utils";
+} from "@/lib/core/date";
+import { showErrorToast } from "@/lib/ui/toast-helpers";
+import { cn, formatNumber, humanizeApiEnum } from "@/lib/core/utils";
 
 /** CSV columns (subset of API; enough for support without internal ids in the sheet). */
 const ADMIN_TRANSACTION_CSV_COLUMNS = [

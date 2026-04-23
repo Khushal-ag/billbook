@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FieldError, Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { strongPasswordSchema } from "@/lib/validation-schemas";
+import { strongPasswordSchema } from "@/lib/core/validation-schemas";
 
 const signupSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(100),

@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api";
-import { invalidateQueryKeys } from "@/lib/query";
-import { queryKeys } from "@/lib/query-keys";
-import { getStockEntryById, ITEMS_API_BASE, normalizeStockEntry } from "@/lib/item-api";
+import { invalidateQueryKeys } from "@/lib/query/invalidate";
+import { queryKeys } from "@/lib/query/keys";
+import { getStockEntryById, ITEMS_API_BASE, normalizeStockEntry } from "@/lib/items/item-api";
 import { normalizeItemType } from "@/types/item";
 import type {
   StockEntry,

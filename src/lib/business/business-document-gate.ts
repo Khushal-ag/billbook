@@ -1,5 +1,5 @@
 import type { BusinessProfile } from "@/types/auth";
-import { isValidityPeriodEnded } from "@/lib/trial";
+import { isValidityPeriodEnded } from "@/lib/business/trial";
 
 /** Minimum weighted profile score used in UI checklist (matches server bundle for invoices). */
 export const INVOICE_PROFILE_MIN_PERCENT = 75;

@@ -25,12 +25,12 @@ import { Check, Loader2, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import type { ProfileForm } from "@/components/settings/profileSchema";
 import { MONTHS, REGISTRATION_TYPES, COUNTRIES } from "@/constants";
 import { usePincodeAutofill } from "@/hooks/use-pincode-autofill";
-import { showErrorToast } from "@/lib/toast-helpers";
-import { countryCodeToFlagEmoji } from "@/lib/country-flags";
-import { lookupIfscCode } from "@/lib/ifsc";
+import { showErrorToast } from "@/lib/ui/toast-helpers";
+import { countryCodeToFlagEmoji } from "@/lib/india/country-flags";
+import { lookupIfscCode } from "@/lib/india/ifsc";
 import type { BusinessClassificationOption } from "@/types/auth";
 import { ApiClientError } from "@/api/error";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 const LOGO_MAX_SIZE_MB = 5;
 

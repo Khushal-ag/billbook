@@ -3,8 +3,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import TablePagination from "@/components/TablePagination";
-import { receiptOpeningSettlementNum, receiptUnallocatedAmountNum } from "@/lib/receipt-amounts";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import {
+  receiptOpeningSettlementNum,
+  receiptUnallocatedAmountNum,
+} from "@/lib/receipts/receipt-amounts";
+import { formatCurrency, formatDate } from "@/lib/core/utils";
 import { PAYMENT_METHOD_LABEL, receiptPaymentMethodBadgeProps } from "@/constants/receipt-ui";
 import type { ReceiptListItem } from "@/types/receipt";
 

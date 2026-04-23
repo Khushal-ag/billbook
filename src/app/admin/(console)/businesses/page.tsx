@@ -21,9 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import { useAdminBusinesses, useExtendBusinessValidity } from "@/hooks/use-admin-businesses";
 import type { AdminBusinessListItem } from "@/types/admin";
-import { showErrorToast, showSuccessToast } from "@/lib/toast-helpers";
-import { formatAppDateFromInstant } from "@/lib/date";
-import { cn } from "@/lib/utils";
+import { showErrorToast, showSuccessToast } from "@/lib/ui/toast-helpers";
+import { formatAppDateFromInstant } from "@/lib/core/date";
+import { cn } from "@/lib/core/utils";
 
 const PAGE_SIZE = 30;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;

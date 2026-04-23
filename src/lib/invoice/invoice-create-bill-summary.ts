@@ -1,5 +1,5 @@
-import { getLineAmounts, toNum } from "@/lib/invoice-create";
-import { moneyToPaise, paiseToMoney } from "@/lib/invoice-create-mapping";
+import { getLineAmounts, toNum } from "@/lib/invoice/invoice-create";
+import { moneyToPaise, paiseToMoney } from "@/lib/invoice/invoice-create-mapping";
 import type { InvoiceLineDraft } from "@/types/invoice-create";
 
 export type InvoiceCreateBillSummary = {

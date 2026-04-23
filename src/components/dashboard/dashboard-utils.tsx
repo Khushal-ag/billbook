@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowDownRight, ArrowUpRight, CircleHelp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 type HeroCardVariant = "default" | "success" | "warning";
 

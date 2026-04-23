@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 interface SearchInputProps {
   value: string;

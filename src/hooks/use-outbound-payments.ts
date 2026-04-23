@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, generateIdempotencyKey } from "@/api";
-import { invalidateQueryKeys } from "@/lib/query";
-import { queryKeys } from "@/lib/query-keys";
-import { buildQueryString } from "@/lib/utils";
+import { invalidateQueryKeys } from "@/lib/query/invalidate";
+import { queryKeys } from "@/lib/query/keys";
+import { buildQueryString } from "@/lib/core/utils";
 import type {
   OutboundPaymentListResponse,
   OutboundPayment,

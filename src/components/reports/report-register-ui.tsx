@@ -1,5 +1,5 @@
 import { Table2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/core/utils";
 
 /** Filter row(s) for date range, limit, extra actions — card on the page. */
 export function ReportRegisterFilterCard({
