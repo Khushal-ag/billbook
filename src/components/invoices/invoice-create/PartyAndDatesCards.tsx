@@ -143,7 +143,7 @@ export function PartyAndDatesCards({
               }}
               disabled={!party || isConsigneesLoading}
             >
-              <SelectTrigger className="h-auto min-h-10 items-start py-2 [&>span]:line-clamp-none">
+              <SelectTrigger className="h-auto min-h-8 items-start py-1 [&>span]:line-clamp-none">
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5 text-left leading-tight">
                   {party ? (
                     <>
@@ -222,6 +222,7 @@ export function PartyAndDatesCards({
                   value={originalBillNumber}
                   onChange={(e) => onOriginalBillNumberChange(e.target.value)}
                   placeholder="Vendor’s bill number"
+                  className="h-8"
                   autoComplete="off"
                 />
               </div>
@@ -257,7 +258,7 @@ export function PartyAndDatesCards({
                   placeholder="e.g. 30"
                   value={paymentTermsDays}
                   onChange={(e) => onPaymentTermsDaysChange(e.target.value)}
-                  className={cn("tabular-nums", !showSellingPriceMargin && "sm:col-span-2")}
+                  className={cn("h-8 tabular-nums", !showSellingPriceMargin && "sm:col-span-2")}
                   autoComplete="off"
                 />
               )}
@@ -275,7 +276,7 @@ export function PartyAndDatesCards({
                       sellingMarginErrorText ? "selling-price-margin-error" : undefined
                     }
                     className={cn(
-                      "tabular-nums",
+                      "h-8 tabular-nums",
                       sellingMarginErrorText &&
                         "border-destructive focus-visible:ring-destructive/40",
                     )}

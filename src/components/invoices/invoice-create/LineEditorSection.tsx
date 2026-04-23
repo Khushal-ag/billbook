@@ -364,7 +364,7 @@ export function LineEditorSection({
                     onSearchChange={setStockSearchText}
                     triggerLabel={triggerLabel}
                     inputTrigger={stockPickerMode === "catalog"}
-                    triggerClassName="h-9 w-full max-w-full truncate text-sm"
+                    triggerClassName="h-8 w-full max-w-full truncate text-sm"
                     draftLineStockEntryId={draftLine.stockEntryId}
                     filteredStockChoices={filteredStockChoices}
                     itemsWithoutStockOptions={itemsWithoutStockOptions}
@@ -384,7 +384,7 @@ export function LineEditorSection({
                   <Input
                     value={draftLine.item?.unit?.trim() ? draftLine.item.unit : "—"}
                     disabled
-                    className="h-9 cursor-default bg-muted/40 text-sm tabular-nums"
+                    className="h-8 cursor-default bg-muted/40 text-sm tabular-nums"
                     title="Unit of measure from item master"
                   />
                 </div>
@@ -394,7 +394,7 @@ export function LineEditorSection({
                     value={draftLine.quantity}
                     onChange={(e) => onLineQuantityChange(draftLine.id, e.target.value)}
                     className={cn(
-                      "h-9 text-right text-sm tabular-nums transition-colors",
+                      "h-8 text-right text-sm tabular-nums transition-colors",
                       qtyAutoAdjusted &&
                         "animate-pulse bg-amber-50 ring-2 ring-amber-300 focus-visible:ring-amber-400",
                     )}
@@ -412,7 +412,7 @@ export function LineEditorSection({
                         : updateLine(draftLine.id, { unitPrice: e.target.value })
                     }
                     placeholder="0.00"
-                    className="h-9 min-w-0 text-right text-sm tabular-nums"
+                    className="h-8 min-w-0 text-right text-sm tabular-nums"
                   />
                 </div>
                 <div className="min-w-0">
@@ -420,7 +420,7 @@ export function LineEditorSection({
                   <Input
                     value={formatCurrency(getLineAmounts(draftLine).taxable)}
                     disabled
-                    className="h-9 min-w-0 cursor-default bg-muted/40 text-right text-sm tabular-nums"
+                    className="h-8 min-w-0 cursor-default bg-muted/40 text-right text-sm tabular-nums"
                     title="Amount before GST on this line"
                   />
                 </div>
@@ -429,7 +429,7 @@ export function LineEditorSection({
                   <Input
                     value={formatLineGstRateDisplay(draftLine)}
                     disabled
-                    className="h-9 min-w-0 cursor-default bg-muted/40 text-right text-sm tabular-nums"
+                    className="h-8 min-w-0 cursor-default bg-muted/40 text-right text-sm tabular-nums"
                     title="From item master (GST on line)"
                   />
                 </div>
@@ -438,7 +438,7 @@ export function LineEditorSection({
                   <Input
                     value={formatCurrency(getLineAmounts(draftLine).tax)}
                     disabled
-                    className="h-9 min-w-0 text-right text-sm tabular-nums"
+                    className="h-8 min-w-0 text-right text-sm tabular-nums"
                   />
                 </div>
                 <div className="min-w-0">
@@ -446,11 +446,11 @@ export function LineEditorSection({
                   <Input
                     value={formatCurrency(getLineAmounts(draftLine).total)}
                     disabled
-                    className="h-9 min-w-0 text-right text-sm font-medium tabular-nums"
+                    className="h-8 min-w-0 text-right text-sm font-medium tabular-nums"
                   />
                 </div>
                 <div className="flex items-end justify-end pb-0.5">
-                  <Button type="button" onClick={addCurrentLine} size="sm" className="h-9 shrink-0">
+                  <Button type="button" onClick={addCurrentLine} size="sm" className="h-8 shrink-0">
                     <Plus className="mr-1 h-3.5 w-3.5" />
                     Add
                   </Button>
@@ -473,7 +473,7 @@ export function LineEditorSection({
                     searchText={stockSearchText}
                     onSearchChange={setStockSearchText}
                     triggerLabel={triggerLabel}
-                    triggerClassName="h-9 text-sm"
+                    triggerClassName="h-8 text-sm"
                     draftLineStockEntryId={draftLine.stockEntryId}
                     filteredStockChoices={filteredStockChoices}
                     itemsWithoutStockOptions={itemsWithoutStockOptions}
@@ -496,7 +496,7 @@ export function LineEditorSection({
                         ? "Override catalog name if needed"
                         : "As on vendor bill"
                     }
-                    className="h-9 text-sm"
+                    className="h-8 text-sm"
                   />
                 </div>
                 <div>
@@ -505,7 +505,7 @@ export function LineEditorSection({
                     value={draftLine.hsnCode}
                     onChange={(e) => updateLine(draftLine.id, { hsnCode: e.target.value })}
                     placeholder="—"
-                    className="h-9 text-sm tabular-nums"
+                    className="h-8 text-sm tabular-nums"
                   />
                 </div>
                 <div>
@@ -514,7 +514,7 @@ export function LineEditorSection({
                     value={draftLine.sacCode}
                     onChange={(e) => updateLine(draftLine.id, { sacCode: e.target.value })}
                     placeholder="—"
-                    className="h-9 text-sm tabular-nums"
+                    className="h-8 text-sm tabular-nums"
                   />
                 </div>
                 <div>
@@ -523,7 +523,7 @@ export function LineEditorSection({
                     value={draftLine.quantity}
                     onChange={(e) => onLineQuantityChange(draftLine.id, e.target.value)}
                     className={cn(
-                      "h-9 text-right text-sm tabular-nums transition-colors",
+                      "h-8 text-right text-sm tabular-nums transition-colors",
                       qtyAutoAdjusted &&
                         "animate-pulse bg-amber-50 ring-2 ring-amber-300 focus-visible:ring-amber-400",
                     )}
@@ -540,7 +540,7 @@ export function LineEditorSection({
                         ? onPurchaseUnitPriceChange(draftLine.id, e.target.value)
                         : updateLine(draftLine.id, { unitPrice: e.target.value })
                     }
-                    className="h-9 text-right text-sm tabular-nums"
+                    className="h-8 text-right text-sm tabular-nums"
                   />
                 </div>
                 {isPurchaseCostLine ? (
@@ -550,7 +550,7 @@ export function LineEditorSection({
                       value={draftLine.sellingPrice ?? ""}
                       onChange={(e) => updateLine(draftLine.id, { sellingPrice: e.target.value })}
                       placeholder="Auto"
-                      className="h-9 text-right text-sm tabular-nums"
+                      className="h-8 text-right text-sm tabular-nums"
                     />
                   </div>
                 ) : null}
@@ -560,7 +560,7 @@ export function LineEditorSection({
                     value={draftLine.discountPercent}
                     onChange={(e) => onLineDiscountChange(draftLine.id, e.target.value)}
                     placeholder="0"
-                    className="h-9 text-right text-sm tabular-nums"
+                    className="h-8 text-right text-sm tabular-nums"
                   />
                 </div>
                 <div>
@@ -569,7 +569,7 @@ export function LineEditorSection({
                     value={draftLine.discountAmount}
                     onChange={(e) => onLineDiscountAmountChange(draftLine.id, e.target.value)}
                     placeholder="0"
-                    className="h-9 text-right text-sm tabular-nums"
+                    className="h-8 text-right text-sm tabular-nums"
                   />
                 </div>
                 <div>
@@ -586,7 +586,7 @@ export function LineEditorSection({
                       }
                       updateLine(draftLine.id, patch);
                     }}
-                    className="h-9 text-right text-sm tabular-nums"
+                    className="h-8 text-right text-sm tabular-nums"
                   />
                 </div>
                 <div>
@@ -603,7 +603,7 @@ export function LineEditorSection({
                       }
                       updateLine(draftLine.id, patch);
                     }}
-                    className="h-9 text-right text-sm tabular-nums"
+                    className="h-8 text-right text-sm tabular-nums"
                   />
                 </div>
                 <div>
@@ -624,7 +624,7 @@ export function LineEditorSection({
                       !draftGstDerived && updateLine(draftLine.id, { igstRate: e.target.value })
                     }
                     className={cn(
-                      "h-9 text-right text-sm tabular-nums",
+                      "h-8 text-right text-sm tabular-nums",
                       draftGstDerived && "cursor-default bg-muted/50",
                     )}
                   />
@@ -634,7 +634,7 @@ export function LineEditorSection({
                   <Input
                     value={formatCurrency(getLineAmounts(draftLine).taxable)}
                     disabled
-                    className="h-9 text-right text-sm tabular-nums"
+                    className="h-8 text-right text-sm tabular-nums"
                   />
                 </div>
                 <div>
@@ -642,7 +642,7 @@ export function LineEditorSection({
                   <Input
                     value={formatCurrency(getLineAmounts(draftLine).tax)}
                     disabled
-                    className="h-9 text-right text-sm tabular-nums"
+                    className="h-8 text-right text-sm tabular-nums"
                   />
                 </div>
                 <div>
@@ -650,11 +650,11 @@ export function LineEditorSection({
                   <Input
                     value={formatCurrency(getLineAmounts(draftLine).total)}
                     disabled
-                    className="h-9 text-right text-sm font-medium tabular-nums"
+                    className="h-8 text-right text-sm font-medium tabular-nums"
                   />
                 </div>
                 <div className="flex items-end justify-end pb-0.5">
-                  <Button type="button" onClick={addCurrentLine} size="sm" className="h-9 shrink-0">
+                  <Button type="button" onClick={addCurrentLine} size="sm" className="h-8 shrink-0">
                     <Plus className="mr-1 h-3.5 w-3.5" />
                     Add
                   </Button>

@@ -82,7 +82,7 @@ export function StockSearchPopover({
               onFocus={() => onOpenChange(true)}
               placeholder="Search item by name…"
               className={cn(
-                "h-9 w-full max-w-full truncate text-left text-sm font-normal",
+                "h-8 w-full max-w-full truncate text-left text-sm font-normal",
                 triggerClassName,
               )}
               autoComplete="off"
@@ -96,7 +96,7 @@ export function StockSearchPopover({
           <Button
             type="button"
             variant="outline"
-            className={cn("h-10 w-full justify-start text-left font-normal", triggerClassName)}
+            className={cn("h-8 w-full justify-start text-left font-normal", triggerClassName)}
           >
             {triggerLabel}
           </Button>

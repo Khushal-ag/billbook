@@ -44,7 +44,7 @@ export function DateField({ label, value, onChange, minDate, maxDate, required }
             type="button"
             variant="outline"
             className={cn(
-              "h-10 w-full justify-start gap-2 bg-background px-3 text-left font-normal",
+              "h-8 w-full justify-start gap-2 bg-background px-3 text-left font-normal",
               !value && "text-muted-foreground",
             )}
           >
