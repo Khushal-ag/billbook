@@ -23,6 +23,7 @@ import { useCreditNoteRegister } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
 import { reportCreditNoteRegister } from "@/lib/reports/report-labels";
+import type { ClientReportTableExport } from "@/lib/reports/report-table-export";
 import { cn, formatCurrency, formatDate } from "@/lib/core/utils";
 
 export default function CreditNoteRegisterPage() {
@@ -39,7 +40,7 @@ export default function CreditNoteRegisterPage() {
   const [limit, setLimit] = useState(DEFAULT_REPORT_LIMIT);
   const { data, isPending, error } = useCreditNoteRegister(validStartDate, validEndDate, limit);
 
-  const rows = data?.creditNotes ?? [];
+  const rows = useMemo(() => data?.creditNotes ?? [], [data?.creditNotes]);
   const rowCount = rows.length;
 
   const exportQuery = useMemo(
@@ -50,6 +51,34 @@ export default function CreditNoteRegisterPage() {
     }),
     [validStartDate, validEndDate, limit],
   );
+
+  const clientTableExport = useMemo((): ClientReportTableExport | null => {
+    if (!data) return null;
+    const headers = [
+      "Credit note",
+      "Status",
+      "Party",
+      "Invoice",
+      "Amount",
+      "Inventory",
+      "Created",
+    ] as const;
+    const body = rows.map((cnRow) => [
+      cnRow.creditNoteNumber,
+      cnRow.status,
+      cnRow.partyName ?? "—",
+      cnRow.invoiceNumber ?? (cnRow.invoiceId ? `#${cnRow.invoiceId}` : "—"),
+      formatCurrency(cnRow.totalAmount),
+      cnRow.affectsInventory === undefined ? "—" : cnRow.affectsInventory ? "Yes" : "No",
+      formatDate(cnRow.createdAt),
+    ]);
+    return {
+      reportTitle: reportCreditNoteRegister.title,
+      subtitle: `Period ${formatDate(data.period.startDate)} – ${formatDate(data.period.endDate)}`,
+      headers: [...headers],
+      rows: body,
+    };
+  }, [data, rows]);
 
   return (
     <div className="page-container animate-fade-in">
@@ -91,6 +120,7 @@ export default function CreditNoteRegisterPage() {
               csvFilename={reportCreditNoteRegister.csvFilename}
               pdfFilename={reportCreditNoteRegister.pdfFilename}
               xlsxFilename={reportCreditNoteRegister.xlsxFilename}
+              clientTableExport={clientTableExport}
               disabled={!validStartDate || !validEndDate}
             />
           </div>

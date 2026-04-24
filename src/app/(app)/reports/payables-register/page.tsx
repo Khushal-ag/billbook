@@ -23,6 +23,7 @@ import { usePayablesRegister } from "@/hooks/use-reports";
 import { DEFAULT_REPORT_LIMIT } from "@/constants";
 import { REGISTER_FLOAT_EPS } from "@/lib/reports/invoice-register-filters";
 import { reportPayablesRegister } from "@/lib/reports/report-labels";
+import type { ClientReportTableExport } from "@/lib/reports/report-table-export";
 import { cn, formatCurrency } from "@/lib/core/utils";
 import type { Party } from "@/types/party";
 import type { PayablesRegisterPartyRow } from "@/types/report";
@@ -80,6 +81,24 @@ export default function PayablesRegisterPage() {
   };
 
   const rowCount = rows.length;
+
+  const clientTableExport = useMemo((): ClientReportTableExport | null => {
+    if (!data) return null;
+    const headers = ["Party", "Type", "We owe", "Invoiced", "Paid"] as const;
+    const body = rows.map((p) => [
+      p.partyName,
+      p.type,
+      formatCurrency(p.payableAmount),
+      formatCurrency(p.totalInvoiced),
+      formatCurrency(p.totalPaid),
+    ]);
+    return {
+      reportTitle: reportPayablesRegister.title,
+      subtitle: `Row limit ${limit}`,
+      headers: [...headers],
+      rows: body,
+    };
+  }, [data, rows, limit]);
 
   return (
     <div className="page-container animate-fade-in">
@@ -173,6 +192,7 @@ export default function PayablesRegisterPage() {
               csvFilename={reportPayablesRegister.csvFilename}
               pdfFilename={reportPayablesRegister.pdfFilename}
               xlsxFilename={reportPayablesRegister.xlsxFilename}
+              clientTableExport={clientTableExport}
             />
           </div>
 

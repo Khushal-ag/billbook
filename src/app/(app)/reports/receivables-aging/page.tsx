@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ErrorBanner from "@/components/ErrorBanner";
@@ -12,19 +12,60 @@ import {
   ReportRegisterFilterGrid,
   ReportRegisterFilterGroup,
 } from "@/components/reports/report-register-ui";
-import { ReceivablesAgingSection } from "@/components/reports/ReceivablesAgingSection";
+import {
+  ReceivablesAgingSection,
+  receivablesAgingBucketDisplay,
+} from "@/components/reports/ReceivablesAgingSection";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { useReceivablesAging } from "@/hooks/use-reports";
-import { parseISODateString, toISODateString } from "@/lib/core/date";
+import { formatISODateDisplay, parseISODateString, toISODateString } from "@/lib/core/date";
+import { formatCurrency, formatDate } from "@/lib/core/utils";
+import type { ClientReportTableExport } from "@/lib/reports/report-table-export";
 import { DEFAULT_REPORT_LIMIT } from "@/constants";
 import { reportInvoiceAging } from "@/lib/reports/report-labels";
+import type { ReceivablesAgingBucket } from "@/types/report";
 
 export default function ReceivablesAgingPage() {
   const [asOf, setAsOf] = useState(() => toISODateString(new Date()));
   const [limit, setLimit] = useState(DEFAULT_REPORT_LIMIT);
+  const [bucketFilter, setBucketFilter] = useState<ReceivablesAgingBucket | "ALL">("ALL");
 
   const asOfValid = parseISODateString(asOf) !== undefined;
   const { data, isPending, error } = useReceivablesAging(asOfValid ? asOf : "", limit);
+
+  const clientTableExport = useMemo((): ClientReportTableExport | null => {
+    if (!data) return null;
+    const lines =
+      bucketFilter === "ALL"
+        ? data.lines
+        : data.lines.filter((l) => l.agingBucket === bucketFilter);
+    const subtitleParts = [`As of ${formatISODateDisplay(data.asOf)}`];
+    if (bucketFilter !== "ALL") {
+      subtitleParts.push(`Age: ${receivablesAgingBucketDisplay[bucketFilter]}`);
+    }
+    return {
+      reportTitle: reportInvoiceAging.title,
+      subtitle: subtitleParts.join(" · "),
+      headers: [
+        "Invoice",
+        "Type",
+        "Party",
+        reportInvoiceAging.tableColumnAge,
+        reportInvoiceAging.tableColumnOutstanding,
+        "Days past due",
+        "Due date",
+      ],
+      rows: lines.map((line) => [
+        line.invoiceNumber,
+        line.invoiceType,
+        line.partyName,
+        receivablesAgingBucketDisplay[line.agingBucket],
+        formatCurrency(line.dueAmount),
+        String(line.daysPastDue),
+        line.dueDate ? formatDate(line.dueDate) : formatDate(line.invoiceDate),
+      ]),
+    };
+  }, [data, bucketFilter]);
 
   return (
     <div className="page-container animate-fade-in">
@@ -70,10 +111,15 @@ export default function ReceivablesAgingPage() {
               csvFilename={reportInvoiceAging.csvFilename}
               pdfFilename={reportInvoiceAging.pdfFilename}
               xlsxFilename={reportInvoiceAging.xlsxFilename}
+              clientTableExport={clientTableExport}
               disabled={!asOfValid}
             />
           </div>
-          <ReceivablesAgingSection data={data} />
+          <ReceivablesAgingSection
+            data={data}
+            bucketFilter={bucketFilter}
+            onBucketFilterChange={setBucketFilter}
+          />
         </div>
       ) : (
         <p className="rounded-xl border border-dashed border-border bg-muted/20 py-10 text-center text-sm text-muted-foreground">

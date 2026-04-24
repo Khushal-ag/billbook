@@ -29,6 +29,7 @@ import { useReceivablesAging } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
 import { reportDebtRegister } from "@/lib/reports/report-labels";
+import type { ClientReportTableExport } from "@/lib/reports/report-table-export";
 import { parseISODateString, formatISODateDisplay } from "@/lib/core/date";
 import { cn, formatCurrency, formatDate } from "@/lib/core/utils";
 import type { ReceivablesAgingBucket, ReceivablesAgingLine } from "@/types/report";
@@ -129,6 +130,58 @@ export default function DebtRegisterPage() {
       return outstandingKind(line) === applied.outstanding;
     });
   }, [data?.lines, applied, validStartDate]);
+
+  const clientTableExport = useMemo((): ClientReportTableExport | null => {
+    if (!data || !validEndDate) return null;
+    const headers = [
+      "S. no.",
+      "Customer",
+      "Invoice no.",
+      "Invoice date",
+      "Total",
+      "Return",
+      "Net",
+      "Paid",
+      "Balance",
+      "Days",
+      "0–30",
+      "31–60",
+      "61–90",
+      "90+",
+    ] as const;
+    const body = rows.map((line, idx) => {
+      const ret = returnNum(line);
+      const net = netAmountNum(line);
+      const [b0, b1, b2, b3] = bucketAmounts(line);
+      const days = daysFromInvoiceToAsOf(line.invoiceDate, data.asOf);
+      return [
+        String(idx + 1),
+        line.partyName,
+        line.invoiceNumber,
+        formatDate(line.invoiceDate),
+        formatCurrency(line.totalAmount),
+        ret > MONEY_EPS ? formatCurrency(String(ret.toFixed(2))) : "—",
+        formatCurrency(String(net.toFixed(2))),
+        formatCurrency(line.paidAmount),
+        formatCurrency(line.dueAmount),
+        String(days),
+        b0 > MONEY_EPS ? formatCurrency(String(b0.toFixed(2))) : "—",
+        b1 > MONEY_EPS ? formatCurrency(String(b1.toFixed(2))) : "—",
+        b2 > MONEY_EPS ? formatCurrency(String(b2.toFixed(2))) : "—",
+        b3 > MONEY_EPS ? formatCurrency(String(b3.toFixed(2))) : "—",
+      ];
+    });
+    const subtitleParts = [`As of ${formatISODateDisplay(data.asOf)}`];
+    if (validStartDate) {
+      subtitleParts.push(`Invoice date from ${formatISODateDisplay(validStartDate)}`);
+    }
+    return {
+      reportTitle: reportDebtRegister.title,
+      subtitle: subtitleParts.join(" · "),
+      headers: [...headers],
+      rows: body,
+    };
+  }, [data, validEndDate, validStartDate, rows]);
 
   const totals = useMemo(() => {
     return rows.reduce(
@@ -309,6 +362,7 @@ export default function DebtRegisterPage() {
               csvFilename={reportDebtRegister.csvFilename}
               pdfFilename={reportDebtRegister.pdfFilename}
               xlsxFilename={reportDebtRegister.xlsxFilename}
+              clientTableExport={clientTableExport}
               disabled={!validEndDate}
             />
           </div>

@@ -5,7 +5,7 @@
 export const reportHub = {
   title: "Reports",
   description:
-    "Choose dates for activity totals, then open a report to see details. Registers load up to a row limit (not paged); raise the limit in the filter card when you need more rows. Use CSV, PDF, or Excel on each register when your API supports export formats.",
+    "Choose dates for activity totals, then open a report to see details. Registers load up to a row limit (not paged); raise the limit in the filter card when you need more rows. Download CSV from the API, or PDF and Excel built from the rows shown (including your filters).",
 } as const;
 
 export const reportDashboard = {

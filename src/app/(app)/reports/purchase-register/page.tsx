@@ -30,6 +30,7 @@ import { useInvoiceRegister } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
 import { reportPurchaseRegister } from "@/lib/reports/report-labels";
+import type { ClientReportTableExport } from "@/lib/reports/report-table-export";
 import {
   REGISTER_FLOAT_EPS,
   calcInvoiceRegisterPayStatus,
@@ -119,6 +120,44 @@ export default function PurchaseRegisterPage() {
     }),
     [validStartDate, validEndDate, limit, applied.docType],
   );
+
+  const clientTableExport = useMemo((): ClientReportTableExport | null => {
+    if (!data) return null;
+    const payLabel = { PAID: "Paid", PARTIAL: "Partial", UNPAID: "Unpaid" } as const;
+    const headers = [
+      "Date",
+      "Invoice no.",
+      "Type",
+      "Supplier",
+      "Total",
+      "Paid",
+      "Balance",
+      "Status",
+    ] as const;
+    const body = rows.map((inv) => {
+      const ps = calcInvoiceRegisterPayStatus(
+        inv.totalAmount,
+        inv.paidAmount ?? undefined,
+        inv.dueAmount,
+      );
+      return [
+        formatDate(inv.invoiceDate),
+        inv.invoiceNumber,
+        invoiceTypeRegisterLabel(inv.invoiceType),
+        inv.partyName ?? "—",
+        formatCurrency(inv.totalAmount),
+        formatCurrency(inv.paidAmount ?? "0"),
+        formatCurrency(inv.dueAmount ?? "0"),
+        payLabel[ps],
+      ];
+    });
+    return {
+      reportTitle: reportPurchaseRegister.title,
+      subtitle: `Period ${formatDate(data.period.startDate)} – ${formatDate(data.period.endDate)}`,
+      headers: [...headers],
+      rows: body,
+    };
+  }, [data, rows]);
 
   return (
     <div className="page-container animate-fade-in">
@@ -268,6 +307,7 @@ export default function PurchaseRegisterPage() {
               csvFilename={reportPurchaseRegister.csvFilename}
               pdfFilename={reportPurchaseRegister.pdfFilename}
               xlsxFilename={reportPurchaseRegister.xlsxFilename}
+              clientTableExport={clientTableExport}
               disabled={!validStartDate || !validEndDate}
             />
           </div>

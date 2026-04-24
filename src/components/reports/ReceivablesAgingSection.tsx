@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +32,7 @@ const ReceivablesAgingBarChart = dynamic(
   },
 );
 
-const BUCKET_LABEL: Record<ReceivablesAgingBucket, string> = {
+export const receivablesAgingBucketDisplay: Record<ReceivablesAgingBucket, string> = {
   CURRENT: "Current",
   DAYS_1_30: "1–30 days",
   DAYS_31_60: "31–60 days",
@@ -54,9 +54,15 @@ function moneyToNumber(s: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-export function ReceivablesAgingSection({ data }: { data: ReceivablesAgingData }) {
-  const [bucketFilter, setBucketFilter] = useState<ReceivablesAgingBucket | "ALL">("ALL");
-
+export function ReceivablesAgingSection({
+  data,
+  bucketFilter,
+  onBucketFilterChange,
+}: {
+  data: ReceivablesAgingData;
+  bucketFilter: ReceivablesAgingBucket | "ALL";
+  onBucketFilterChange: (next: ReceivablesAgingBucket | "ALL") => void;
+}) {
   const chartRows = useMemo(
     () => [
       {
@@ -115,7 +121,7 @@ export function ReceivablesAgingSection({ data }: { data: ReceivablesAgingData }
           <button
             key={c.id}
             type="button"
-            onClick={() => setBucketFilter(c.id)}
+            onClick={() => onBucketFilterChange(c.id)}
             className={cn(
               "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
               bucketFilter === c.id
@@ -172,7 +178,7 @@ function AgingRow({ line }: { line: ReceivablesAgingLine }) {
       <td className={rr.td}>{line.partyName}</td>
       <td className={rr.td}>
         <Badge variant="outline" className="font-normal">
-          {BUCKET_LABEL[line.agingBucket]}
+          {receivablesAgingBucketDisplay[line.agingBucket]}
         </Badge>
       </td>
       <td className={cn(rr.tdRight, "font-medium")}>{formatCurrency(line.dueAmount)}</td>

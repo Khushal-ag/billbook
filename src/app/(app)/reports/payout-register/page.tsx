@@ -22,6 +22,7 @@ import { useDateRange } from "@/hooks/use-date-range";
 import { cn, formatCurrency, formatDate, humanizeApiEnum } from "@/lib/core/utils";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
 import { reportPayoutRegister } from "@/lib/reports/report-labels";
+import type { ClientReportTableExport } from "@/lib/reports/report-table-export";
 import type { PayoutRegisterRowDto } from "@/types/report";
 
 function payoutDisplayNumber(p: PayoutRegisterRowDto) {
@@ -53,7 +54,7 @@ export default function PayoutRegisterPage() {
   const [limit, setLimit] = useState(DEFAULT_REPORT_LIMIT);
   const { data, isPending, error } = usePayoutRegister(validStartDate, validEndDate, limit);
 
-  const rows = data?.payouts ?? [];
+  const rows = useMemo(() => data?.payouts ?? [], [data?.payouts]);
   const rowCount = rows.length;
 
   const exportQuery = useMemo(
@@ -64,6 +65,34 @@ export default function PayoutRegisterPage() {
     }),
     [validStartDate, validEndDate, limit],
   );
+
+  const clientTableExport = useMemo((): ClientReportTableExport | null => {
+    if (!data) return null;
+    const headers = [
+      "Payment",
+      "Category",
+      "Party",
+      "Invoice",
+      "Amount",
+      "Method",
+      "Date",
+    ] as const;
+    const body = rows.map((p) => [
+      payoutDisplayNumber(p),
+      payoutCategoryLabel(p),
+      p.partyName ?? p.payeeName ?? "—",
+      p.invoiceId ? `#${p.invoiceId}` : "—",
+      formatCurrency(p.amount),
+      payoutMethodLabel(p.paymentMethod),
+      formatDate(p.paidAt ?? p.createdAt),
+    ]);
+    return {
+      reportTitle: reportPayoutRegister.title,
+      subtitle: `Period ${formatDate(data.period.startDate)} – ${formatDate(data.period.endDate)}`,
+      headers: [...headers],
+      rows: body,
+    };
+  }, [data, rows]);
 
   return (
     <div className="page-container animate-fade-in">
@@ -105,6 +134,7 @@ export default function PayoutRegisterPage() {
               csvFilename={reportPayoutRegister.csvFilename}
               pdfFilename={reportPayoutRegister.pdfFilename}
               xlsxFilename={reportPayoutRegister.xlsxFilename}
+              clientTableExport={clientTableExport}
               disabled={!validStartDate || !validEndDate}
             />
           </div>

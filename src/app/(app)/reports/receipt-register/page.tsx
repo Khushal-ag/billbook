@@ -31,6 +31,7 @@ import { useReceipt } from "@/hooks/use-receipts";
 import { useDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
 import { reportReceiptRegister } from "@/lib/reports/report-labels";
+import type { ClientReportTableExport } from "@/lib/reports/report-table-export";
 import { cn, capitaliseWords, formatCurrency, formatDate } from "@/lib/core/utils";
 import type { ReceiptRegisterRowDto } from "@/types/report";
 import type { Party } from "@/types/party";
@@ -247,6 +248,43 @@ export default function ReceiptRegisterPage() {
     [validStartDate, validEndDate, limit],
   );
 
+  const clientTableExport = useMemo((): ClientReportTableExport | null => {
+    if (!data) return null;
+    const headers = [
+      "Date",
+      "Receipt no.",
+      "Customer",
+      "Ref. invoices",
+      "Mode",
+      "Amount",
+      "Adjusted",
+      "Unadjusted",
+    ] as const;
+    const body = rows.map((r) => {
+      const adjDisplay = totalAppliedAmount(r);
+      const unadjDisplay = remainingUnallocatedDisplay(r);
+      const refParts = splitLinkedInvoiceSummary(r.linkedInvoiceSummary);
+      const ref =
+        refParts.length > 0 ? refParts.join("; ") : (r.linkedInvoiceSummary?.trim() ?? "—");
+      return [
+        formatDate(r.receivedAt),
+        r.receiptNumber,
+        r.partyName ?? "—",
+        ref,
+        r.paymentMethod ? capitaliseWords(String(r.paymentMethod).replace(/_/g, " ")) : "—",
+        formatCurrency(r.totalAmount),
+        formatCurrency(String(adjDisplay.toFixed(2))),
+        formatCurrency(String(unadjDisplay.toFixed(2))),
+      ];
+    });
+    return {
+      reportTitle: reportReceiptRegister.title,
+      subtitle: `Period ${formatDate(data.period.startDate)} – ${formatDate(data.period.endDate)}`,
+      headers: [...headers],
+      rows: body,
+    };
+  }, [data, rows]);
+
   const invoiceAllocRows = allocDetail?.allocations?.filter((a) => num(a.amount) > MONEY_EPS) ?? [];
   const openingSettlementOnDetail = num(allocDetail?.openingBalanceSettlementAmount);
 
@@ -405,6 +443,7 @@ export default function ReceiptRegisterPage() {
               csvFilename={reportReceiptRegister.csvFilename}
               pdfFilename={reportReceiptRegister.pdfFilename}
               xlsxFilename={reportReceiptRegister.xlsxFilename}
+              clientTableExport={clientTableExport}
               disabled={!validStartDate || !validEndDate}
             />
           </div>
