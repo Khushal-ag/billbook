@@ -1,5 +1,29 @@
-import { Table2 } from "lucide-react";
+import { Search, Table2 } from "lucide-react";
 import { cn } from "@/lib/core/utils";
+
+/** Search / filter card shell used on register report pages. */
+export function ReportRegisterSearchCard({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "mb-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm",
+        className,
+      )}
+    >
+      <div className="flex items-center gap-2 border-b border-border/70 bg-muted/30 px-4 py-2">
+        <Search className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+        <span className="text-xs font-semibold text-foreground">Search</span>
+      </div>
+      <div className="px-4 py-3">{children}</div>
+    </div>
+  );
+}
 
 /** Filter row(s) for date range, limit, extra actions — card on the page. */
 export function ReportRegisterFilterCard({
@@ -11,7 +35,10 @@ export function ReportRegisterFilterCard({
 }) {
   return (
     <div
-      className={cn("mb-6 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5", className)}
+      className={cn(
+        "mb-4 rounded-xl border border-border bg-card px-3 py-3 shadow-sm sm:px-4",
+        className,
+      )}
     >
       {children}
     </div>
@@ -33,7 +60,7 @@ export function ReportRegisterFilterGrid({
   return (
     <div
       className={cn(
-        "grid gap-3 sm:gap-4 xl:items-end",
+        "grid gap-2.5 sm:gap-3 xl:items-end",
         cols === 1 && "xl:grid-cols-1",
         cols === 2 && "xl:grid-cols-[minmax(0,1fr)_auto]",
         cols === 3 && "xl:grid-cols-[minmax(0,1fr)_auto_auto]",
@@ -55,9 +82,9 @@ export function ReportRegisterFilterGroup({
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-lg border border-border/70 bg-muted/15 p-3 sm:p-4", className)}>
+    <div className={cn("rounded-lg border border-border/70 bg-muted/15 p-2.5 sm:p-3", className)}>
       {title ? (
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {title}
         </p>
       ) : null}
@@ -80,7 +107,7 @@ export function ReportRegisterResultBar({
   const maybeTruncated = limit !== undefined && count > 0 && count >= limit;
 
   return (
-    <div className="border-b border-border bg-muted/30 px-4 py-2.5 text-xs text-muted-foreground">
+    <div className="border-b border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
       <span className="font-medium text-foreground">{count}</span> {rowLabel}
       {maybeTruncated ? (
         <span className="text-amber-800/90 dark:text-amber-400/85">

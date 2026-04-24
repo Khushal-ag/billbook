@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
-import { ReportCsvButton } from "@/components/reports/ReportCsvButton";
+import { ReportRegisterExportToolbar } from "@/components/reports/ReportRegisterExportToolbar";
 import { ReportLimitInput } from "@/components/reports/ReportLimitInput";
 import {
   ReportRegisterFilterCard,
@@ -33,14 +33,6 @@ export default function ReceivablesAgingPage() {
         description={reportInvoiceAging.description}
         backHref="/reports"
         backLabel="Back to reports"
-        action={
-          <ReportCsvButton
-            reportPath="/reports/receivables-aging"
-            query={{ asOf, limit }}
-            filename={reportInvoiceAging.csvFilename}
-            disabled={!asOfValid}
-          />
-        }
       />
 
       <ErrorBanner error={error} fallbackMessage={reportInvoiceAging.loadError} />
@@ -70,7 +62,19 @@ export default function ReceivablesAgingPage() {
       {isPending ? (
         <ReportTabSkeleton layout="aging" />
       ) : data ? (
-        <ReceivablesAgingSection data={data} />
+        <div className="space-y-4">
+          <div className="flex flex-wrap justify-end gap-2">
+            <ReportRegisterExportToolbar
+              reportPath="/reports/receivables-aging"
+              query={{ asOf, limit }}
+              csvFilename={reportInvoiceAging.csvFilename}
+              pdfFilename={reportInvoiceAging.pdfFilename}
+              xlsxFilename={reportInvoiceAging.xlsxFilename}
+              disabled={!asOfValid}
+            />
+          </div>
+          <ReceivablesAgingSection data={data} />
+        </div>
       ) : (
         <p className="rounded-xl border border-dashed border-border bg-muted/20 py-10 text-center text-sm text-muted-foreground">
           Enter a valid as-of date.

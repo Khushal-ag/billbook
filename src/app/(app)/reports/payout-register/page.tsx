@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import DateRangePicker from "@/components/DateRangePicker";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
-import { ReportCsvButton } from "@/components/reports/ReportCsvButton";
+import { ReportRegisterExportToolbar } from "@/components/reports/ReportRegisterExportToolbar";
 import { ReportLimitInput } from "@/components/reports/ReportLimitInput";
 import {
   ReportRegisterEmptyRow,
@@ -56,6 +56,15 @@ export default function PayoutRegisterPage() {
   const rows = data?.payouts ?? [];
   const rowCount = rows.length;
 
+  const exportQuery = useMemo(
+    () => ({
+      startDate: validStartDate,
+      endDate: validEndDate,
+      limit,
+    }),
+    [validStartDate, validEndDate, limit],
+  );
+
   return (
     <div className="page-container animate-fade-in">
       <PageHeader
@@ -63,14 +72,6 @@ export default function PayoutRegisterPage() {
         description={reportPayoutRegister.description}
         backHref="/reports"
         backLabel="Back to reports"
-        action={
-          <ReportCsvButton
-            reportPath="/reports/payout-register"
-            query={{ startDate: validStartDate, endDate: validEndDate, limit }}
-            filename={reportPayoutRegister.csvFilename}
-            disabled={!validStartDate || !validEndDate}
-          />
-        }
       />
 
       <ErrorBanner error={error} fallbackMessage={reportPayoutRegister.loadError} />
@@ -94,58 +95,70 @@ export default function PayoutRegisterPage() {
       </ReportRegisterFilterCard>
 
       {isPending ? (
-        <ReportTabSkeleton />
+        <ReportTabSkeleton layout="register-with-toolbar" />
       ) : data ? (
-        <ReportRegisterTableScroll>
-          <ReportRegisterResultBar
-            count={rowCount}
-            rowLabel="payments in this period"
-            limit={limit}
-          />
-          <table className={rr.table}>
-            <thead className={rr.thead}>
-              <tr>
-                <th className={rr.th}>Payment</th>
-                <th className={rr.th}>Category</th>
-                <th className={rr.th}>Party</th>
-                <th className={rr.th}>Invoice</th>
-                <th className={rr.thRight}>Amount</th>
-                <th className={rr.th}>Method</th>
-                <th className={rr.th}>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rowCount === 0 ? (
-                <ReportRegisterEmptyRow
-                  colSpan={7}
-                  message="No payouts in this period. Widen the date range or record a payout from Payouts."
-                />
-              ) : (
-                rows.map((p) => (
-                  <tr key={p.id} className={rr.tr}>
-                    <td className={cn(rr.td, "font-medium tabular-nums")}>
-                      {payoutDisplayNumber(p)}
-                    </td>
-                    <td className={rr.td}>{payoutCategoryLabel(p)}</td>
-                    <td className={rr.td}>{p.partyName ?? p.payeeName ?? "—"}</td>
-                    <td className={rr.td}>
-                      {p.invoiceId ? (
-                        <Link href={`/invoices/${p.invoiceId}`} className={rr.link}>
-                          #{p.invoiceId}
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className={cn(rr.tdRight, "font-medium")}>{formatCurrency(p.amount)}</td>
-                    <td className={rr.tdMuted}>{payoutMethodLabel(p.paymentMethod)}</td>
-                    <td className={rr.tdMuted}>{formatDate(p.paidAt ?? p.createdAt)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </ReportRegisterTableScroll>
+        <div className="space-y-2">
+          <div className="flex flex-wrap justify-end gap-2">
+            <ReportRegisterExportToolbar
+              reportPath="/reports/payout-register"
+              query={exportQuery}
+              csvFilename={reportPayoutRegister.csvFilename}
+              pdfFilename={reportPayoutRegister.pdfFilename}
+              xlsxFilename={reportPayoutRegister.xlsxFilename}
+              disabled={!validStartDate || !validEndDate}
+            />
+          </div>
+          <ReportRegisterTableScroll>
+            <ReportRegisterResultBar
+              count={rowCount}
+              rowLabel="payments in this period"
+              limit={limit}
+            />
+            <table className={rr.table}>
+              <thead className={rr.thead}>
+                <tr>
+                  <th className={rr.th}>Payment</th>
+                  <th className={rr.th}>Category</th>
+                  <th className={rr.th}>Party</th>
+                  <th className={rr.th}>Invoice</th>
+                  <th className={rr.thRight}>Amount</th>
+                  <th className={rr.th}>Method</th>
+                  <th className={rr.th}>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rowCount === 0 ? (
+                  <ReportRegisterEmptyRow
+                    colSpan={7}
+                    message="No payouts in this period. Widen the date range or record a payout from Payouts."
+                  />
+                ) : (
+                  rows.map((p) => (
+                    <tr key={p.id} className={rr.tr}>
+                      <td className={cn(rr.td, "font-medium tabular-nums")}>
+                        {payoutDisplayNumber(p)}
+                      </td>
+                      <td className={rr.td}>{payoutCategoryLabel(p)}</td>
+                      <td className={rr.td}>{p.partyName ?? p.payeeName ?? "—"}</td>
+                      <td className={rr.td}>
+                        {p.invoiceId ? (
+                          <Link href={`/invoices/${p.invoiceId}`} className={rr.link}>
+                            #{p.invoiceId}
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className={cn(rr.tdRight, "font-medium")}>{formatCurrency(p.amount)}</td>
+                      <td className={rr.tdMuted}>{payoutMethodLabel(p.paymentMethod)}</td>
+                      <td className={rr.tdMuted}>{formatDate(p.paidAt ?? p.createdAt)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </ReportRegisterTableScroll>
+        </div>
       ) : (
         <p className="rounded-xl border border-dashed border-border bg-muted/20 py-10 text-center text-sm text-muted-foreground">
           Select a valid date range to load data.

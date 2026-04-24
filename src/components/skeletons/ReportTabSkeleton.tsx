@@ -54,13 +54,20 @@ function RegisterTableSkeleton({
   );
 }
 
-export type ReportTabSkeletonLayout = "register-table" | "balance-register" | "aging" | "simple";
+export type ReportTabSkeletonLayout =
+  | "register-table"
+  /** Filter / search card + export toolbar + table (sales, purchase, receipt, payout, credit, debt). */
+  | "register-with-toolbar"
+  | "balance-register"
+  | "aging"
+  | "simple";
 
 type ReportTabSkeletonProps = {
   /**
-   * `register-table` — KPI-style result bar + column header + rows (dated registers).
-   * `balance-register` — summary strip + table (outstanding receivables / payables).
-   * `aging` — summary + chart + chips + table.
+   * `register-table` — table-only shell (legacy).
+   * `register-with-toolbar` — search/filter card + export row + table.
+   * `balance-register` — summary + exports + table (payables).
+   * `aging` — summary + exports + chart + chips + table.
    * `simple` — single block (escape hatch).
    */
   layout?: ReportTabSkeletonLayout;
@@ -76,10 +83,49 @@ export function ReportTabSkeleton({
     return <Skeleton className={cn(height, "w-full rounded-xl")} />;
   }
 
+  if (layout === "register-with-toolbar") {
+    return (
+      <div className="space-y-3">
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          <div className="flex items-center gap-2 border-b border-border/70 bg-muted/30 px-4 py-2">
+            <Skeleton className="h-4 w-4 rounded-sm" />
+            <Skeleton className="h-4 w-28" />
+          </div>
+          <div className="px-4 py-3">
+            <Skeleton className="mb-3 h-12 max-w-lg rounded-md" />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full sm:col-span-2" />
+            </div>
+            <div className="mt-3 flex justify-end gap-2 border-t border-border/60 pt-3">
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-8 w-24" />
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Skeleton className="h-4 w-40" />
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-9 w-[8.5rem]" />
+            <Skeleton className="h-9 w-36" />
+            <Skeleton className="h-9 w-36" />
+          </div>
+        </div>
+        <RegisterTableSkeleton rows={8} />
+      </div>
+    );
+  }
+
   if (layout === "balance-register") {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         <Skeleton className="h-[5.25rem] w-full rounded-xl border border-border/80 shadow-sm sm:h-24" />
+        <div className="flex flex-wrap justify-end gap-2">
+          <Skeleton className="h-9 w-[8.5rem]" />
+          <Skeleton className="h-9 w-36" />
+          <Skeleton className="h-9 w-36" />
+        </div>
         <RegisterTableSkeleton rows={7} />
       </div>
     );
@@ -87,8 +133,13 @@ export function ReportTabSkeleton({
 
   if (layout === "aging") {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-16 w-full rounded-xl border border-border/80 shadow-sm sm:h-14" />
+      <div className="space-y-4">
+        <Skeleton className="h-12 w-full rounded-xl border border-border/80 shadow-sm sm:h-11" />
+        <div className="flex flex-wrap justify-end gap-2">
+          <Skeleton className="h-9 w-[8.5rem]" />
+          <Skeleton className="h-9 w-36" />
+          <Skeleton className="h-9 w-36" />
+        </div>
         <div className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
           <Skeleton className="mb-3 h-5 w-48" />
           <Skeleton className="h-[220px] w-full rounded-lg" />

@@ -21,11 +21,17 @@ export interface ReceiptRegisterRowDto {
   partyId?: number;
   partyName?: string;
   totalAmount: string;
+  /**
+   * Invoice-line allocations only on some report APIs; when so, `allocatedAmount` + `unallocatedAmount`
+   * ≈ `totalAmount` and opening is only in `openingBalanceSettlementAmount`. Other APIs sum both into `allocatedAmount`.
+   */
   allocatedAmount?: string;
   unallocatedAmount: string;
   openingBalanceSettlementAmount?: string | null;
   paymentMethod: string;
   referenceNumber?: string | null;
+  /** Invoice number(s) from the report when not the same field as {@link referenceNumber}. */
+  linkedInvoiceSummary?: string | null;
   notes?: string | null;
   receivedAt: string;
   createdAt: string;
@@ -111,6 +117,8 @@ export interface ReceivablesAgingLine {
   invoiceDate: string;
   dueDate: string | null;
   totalAmount: string;
+  /** Linked sale returns — when the aging API includes it (else treat as 0). */
+  returnAmount?: string | null;
   paidAmount: string;
   dueAmount: string;
   daysPastDue: number;

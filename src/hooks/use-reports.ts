@@ -12,6 +12,8 @@ import type {
   CreditNoteRegisterData,
   PayoutRegisterData,
 } from "@/types/report";
+import type { InvoiceType } from "@/types/invoice";
+import { normalizeReceiptRegisterData } from "@/lib/reports/receipt-register-normalize";
 
 export function useReportsDashboard(startDate: string, endDate: string) {
   return useQuery({
@@ -31,17 +33,22 @@ export function useReceiptRegister(startDate: string, endDate: string, limit: nu
     queryFn: async () => {
       const qs = buildQueryString({ startDate, endDate, limit });
       const res = await api.get<ReceiptRegisterData>(`/reports/receipt-register?${qs}`);
-      return res.data;
+      return normalizeReceiptRegisterData(res.data as unknown);
     },
     enabled: !!startDate && !!endDate,
   });
 }
 
-export function useInvoiceRegister(startDate: string, endDate: string, limit: number) {
+export function useInvoiceRegister(
+  startDate: string,
+  endDate: string,
+  limit: number,
+  invoiceType?: InvoiceType,
+) {
   return useQuery({
-    queryKey: queryKeys.reports.invoiceRegister(startDate, endDate, limit),
+    queryKey: queryKeys.reports.invoiceRegister(startDate, endDate, limit, invoiceType),
     queryFn: async () => {
-      const qs = buildQueryString({ startDate, endDate, limit });
+      const qs = buildQueryString({ startDate, endDate, limit, invoiceType });
       const res = await api.get<InvoiceRegisterData>(`/reports/invoice-register?${qs}`);
       return res.data;
     },

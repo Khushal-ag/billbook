@@ -24,9 +24,11 @@ import { P } from "@/constants/permissions";
  * - page.credit_notes
  * - page.payments_outbound
  * - page.reports
- * - page.reports.sales_register
- * - page.reports.purchase_register
- * - page.reports.receipt_register
+ * - page.reports.sales_register (Sales register)
+ * - page.reports.purchase_register (Purchase register)
+ * - page.reports.receipt_register (Receipt register)
+ * - page.reports.debt_register (Debt register)
+ * - page.reports.payables_register (Payables register)
  * - page.reports.item_register
  * - page.profile
  * - page.settings
@@ -58,7 +60,9 @@ export const PAGE = {
   reports: "page.reports",
   reports_sales_register: "page.reports.sales_register",
   reports_purchase_register: "page.reports.purchase_register",
+  reports_payables_register: "page.reports.payables_register",
   reports_receipt_register: "page.reports.receipt_register",
+  reports_debt_register: "page.reports.debt_register",
   reports_item_register: "page.reports.item_register",
   profile: "page.profile",
   settings: "page.settings",
@@ -108,6 +112,8 @@ export const ALL_PAGE_ACCESS_KEYS: PageAccessKey[] = [
   PAGE.reports_sales_register,
   PAGE.reports_purchase_register,
   PAGE.reports_receipt_register,
+  PAGE.reports_debt_register,
+  PAGE.reports_payables_register,
   PAGE.reports_item_register,
   PAGE.profile,
   PAGE.settings,
@@ -173,7 +179,9 @@ export const PAGE_IMPLIES_LEGACY: Record<PageAccessKey, readonly string[]> = {
   [PAGE.reports]: [P.reports.view],
   [PAGE.reports_sales_register]: [P.reports.view],
   [PAGE.reports_purchase_register]: [P.reports.view],
+  [PAGE.reports_payables_register]: [P.reports.view],
   [PAGE.reports_receipt_register]: [P.reports.view],
+  [PAGE.reports_debt_register]: [P.reports.view],
   [PAGE.reports_item_register]: [P.reports.view],
   [PAGE.profile]: [
     P.business.profile.view,
@@ -276,9 +284,31 @@ export function buildPageAccessCatalog(): PermissionCatalogNode[] {
       label: "Reports",
       children: [
         { type: "permission", key: PAGE.reports, label: "Reports dashboard" },
-        { type: "permission", key: PAGE.reports_sales_register, label: "Sales register" },
-        { type: "permission", key: PAGE.reports_purchase_register, label: "Purchase register" },
-        { type: "permission", key: PAGE.reports_receipt_register, label: "Receipt register" },
+        {
+          type: "permission",
+          key: PAGE.reports_sales_register,
+          label: "Sales register",
+        },
+        {
+          type: "permission",
+          key: PAGE.reports_purchase_register,
+          label: "Purchase register",
+        },
+        {
+          type: "permission",
+          key: PAGE.reports_receipt_register,
+          label: "Receipt register",
+        },
+        {
+          type: "permission",
+          key: PAGE.reports_debt_register,
+          label: "Debt register",
+        },
+        {
+          type: "permission",
+          key: PAGE.reports_payables_register,
+          label: "Payables register",
+        },
         { type: "permission", key: PAGE.reports_item_register, label: "Item register" },
       ],
     },

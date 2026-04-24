@@ -151,8 +151,12 @@ export const queryKeys = {
       ["reports", "dashboard", startDate, endDate] as const,
     receiptRegister: (startDate: string, endDate: string, limit: number) =>
       ["reports", "receipt-register", startDate, endDate, limit] as const,
-    invoiceRegister: (startDate: string, endDate: string, limit: number) =>
-      ["reports", "invoice-register", startDate, endDate, limit] as const,
+    invoiceRegister: (
+      startDate: string,
+      endDate: string,
+      limit: number,
+      invoiceType: InvoiceType | undefined,
+    ) => ["reports", "invoice-register", startDate, endDate, limit, invoiceType ?? ""] as const,
     debtRegister: (limit: number) => ["reports", "debt-register", limit] as const,
     payablesRegister: (limit: number) => ["reports", "payables-register", limit] as const,
     receivablesAging: (asOf: string, limit: number) =>

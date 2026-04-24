@@ -29,7 +29,7 @@ import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { useInvoiceRegister } from "@/hooks/use-reports";
 import { useDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
-import { reportInvoiceRegister } from "@/lib/reports/report-labels";
+import { reportPurchaseRegister } from "@/lib/reports/report-labels";
 import {
   REGISTER_FLOAT_EPS,
   calcInvoiceRegisterPayStatus,
@@ -43,26 +43,26 @@ import type { InvoiceType } from "@/types/invoice";
 import type { Party } from "@/types/party";
 import { PartyAutocomplete } from "@/components/invoices/PartyAutocomplete";
 
-type DocTypeFilter = "ALL" | "SALE_INVOICE" | "SALE_RETURN";
+type DocTypeFilter = "ALL" | "PURCHASE_INVOICE" | "PURCHASE_RETURN";
 type PayStatusFilter = InvoiceRegisterPayStatusFilter;
 
-const SALES_TYPES: InvoiceType[] = ["SALE_INVOICE", "SALE_RETURN"];
+const PURCHASE_TYPES: InvoiceType[] = ["PURCHASE_INVOICE", "PURCHASE_RETURN"];
 
 interface Filters {
   billNo: string;
-  customerParty: Party | null;
+  supplierParty: Party | null;
   docType: DocTypeFilter;
   payStatus: PayStatusFilter;
 }
 
 const EMPTY_FILTERS: Filters = {
   billNo: "",
-  customerParty: null,
+  supplierParty: null,
   docType: "ALL",
   payStatus: "ALL",
 };
 
-export default function InvoiceRegisterPage() {
+export default function PurchaseRegisterPage() {
   const {
     startDate,
     endDate,
@@ -88,10 +88,10 @@ export default function InvoiceRegisterPage() {
     const bill = applied.billNo.trim();
     return (data?.invoices ?? []).filter((inv) =>
       invoiceRegisterRowMatches(inv, {
-        allowedTypes: SALES_TYPES,
+        allowedTypes: PURCHASE_TYPES,
         docType: applied.docType,
         billNoTrimmed: bill,
-        party: applied.customerParty,
+        party: applied.supplierParty,
         payStatus: applied.payStatus,
       }),
     );
@@ -106,7 +106,7 @@ export default function InvoiceRegisterPage() {
   };
   const isFiltered =
     !!applied.billNo.trim() ||
-    applied.customerParty != null ||
+    applied.supplierParty != null ||
     applied.docType !== "ALL" ||
     applied.payStatus !== "ALL";
 
@@ -123,13 +123,13 @@ export default function InvoiceRegisterPage() {
   return (
     <div className="page-container animate-fade-in">
       <PageHeader
-        title={reportInvoiceRegister.title}
-        description={reportInvoiceRegister.description}
+        title={reportPurchaseRegister.title}
+        description={reportPurchaseRegister.description}
         backHref="/reports"
         backLabel="Back to reports"
       />
 
-      <ErrorBanner error={error} fallbackMessage={reportInvoiceRegister.loadError} />
+      <ErrorBanner error={error} fallbackMessage={reportPurchaseRegister.loadError} />
 
       <ReportRegisterSearchCard>
         <div className="mb-3">
@@ -157,7 +157,7 @@ export default function InvoiceRegisterPage() {
               className="h-8"
               value={draft.billNo}
               onChange={(e) => setDraft((d) => ({ ...d, billNo: e.target.value }))}
-              placeholder="e.g. INV-0042"
+              placeholder="e.g. BILL-0012"
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             />
           </div>
@@ -173,22 +173,22 @@ export default function InvoiceRegisterPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All</SelectItem>
-                <SelectItem value="SALE_INVOICE">Sales invoice</SelectItem>
-                <SelectItem value="SALE_RETURN">Sales return</SelectItem>
+                <SelectItem value="PURCHASE_INVOICE">Purchase invoice</SelectItem>
+                <SelectItem value="PURCHASE_RETURN">Purchase return</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs font-medium text-muted-foreground">Customer</Label>
+            <Label className="text-xs font-medium text-muted-foreground">Supplier</Label>
             <PartyAutocomplete
-              value={draft.customerParty}
-              onValueChange={(p) => setDraft((d) => ({ ...d, customerParty: p }))}
+              value={draft.supplierParty}
+              onValueChange={(p) => setDraft((d) => ({ ...d, supplierParty: p }))}
               serverSearch
-              partiesQueryType="CUSTOMER"
-              placeholder="Type to search customers…"
+              partiesQueryType="SUPPLIER"
+              placeholder="Type to search suppliers…"
               className="h-8"
-              inputId="sales-register-customer"
+              inputId="purchase-register-supplier"
             />
           </div>
 
@@ -221,7 +221,7 @@ export default function InvoiceRegisterPage() {
             disabled={
               !isFiltered &&
               !draft.billNo &&
-              !draft.customerParty &&
+              !draft.supplierParty &&
               draft.docType === "ALL" &&
               draft.payStatus === "ALL"
             }
@@ -265,9 +265,9 @@ export default function InvoiceRegisterPage() {
             <ReportRegisterExportToolbar
               reportPath="/reports/invoice-register"
               query={exportQuery}
-              csvFilename={reportInvoiceRegister.csvFilename}
-              pdfFilename={reportInvoiceRegister.pdfFilename}
-              xlsxFilename={reportInvoiceRegister.xlsxFilename}
+              csvFilename={reportPurchaseRegister.csvFilename}
+              pdfFilename={reportPurchaseRegister.pdfFilename}
+              xlsxFilename={reportPurchaseRegister.xlsxFilename}
               disabled={!validStartDate || !validEndDate}
             />
           </div>
@@ -280,7 +280,7 @@ export default function InvoiceRegisterPage() {
                   <th className={rr.th}>Date</th>
                   <th className={rr.th}>Invoice no.</th>
                   <th className={rr.th}>Type</th>
-                  <th className={rr.th}>Customer</th>
+                  <th className={rr.th}>Supplier</th>
                   <th className={rr.thRight}>Total</th>
                   <th className={rr.thRight}>Paid</th>
                   <th className={rr.thRight}>Balance</th>
@@ -291,7 +291,7 @@ export default function InvoiceRegisterPage() {
                 {rows.length === 0 ? (
                   <ReportRegisterEmptyRow
                     colSpan={8}
-                    message="No sales invoices found. Try adjusting your filters or date range."
+                    message="No purchase documents found. Try adjusting your filters or date range."
                   />
                 ) : (
                   rows.map((inv) => {

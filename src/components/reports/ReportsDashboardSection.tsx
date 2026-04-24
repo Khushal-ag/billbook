@@ -32,12 +32,15 @@ export function ReportsDashboardSection({ data }: ReportsDashboardSectionProps) 
             totalAmount={receipts.totalAmount}
             icon={Receipt}
           />
-          <KpiLinkCard
-            href="/reports/invoice-register"
+          <KpiSplitCard
             label={reportDashboard.kpiInvoices}
             count={invoices.count}
             totalAmount={invoices.totalAmount}
             icon={FileText}
+            primaryHref="/reports/invoice-register"
+            primaryLabel={reportDashboard.kpiInvoicesSalesCta}
+            secondaryHref="/reports/purchase-register"
+            secondaryLabel={reportDashboard.kpiInvoicesPurchaseCta}
           />
           <KpiLinkCard
             href="/reports/payout-register"
@@ -123,6 +126,68 @@ function KpiLinkCard({
         {reportDashboard.viewReportCta} <span aria-hidden>→</span>
       </p>
     </Link>
+  );
+}
+
+function KpiSplitCard({
+  label,
+  count,
+  totalAmount,
+  icon: Icon,
+  primaryHref,
+  primaryLabel,
+  secondaryHref,
+  secondaryLabel,
+}: {
+  label: string;
+  count: number;
+  totalAmount: string;
+  icon: React.ComponentType<{ className?: string }>;
+  primaryHref: string;
+  primaryLabel: string;
+  secondaryHref: string;
+  secondaryLabel: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "group relative block h-full rounded-xl border border-border/80 bg-card/90 p-4 shadow-sm ring-1 ring-black/[0.03]",
+        "dark:bg-card/80 dark:ring-white/[0.04]",
+        "sm:p-5",
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {label}
+          </p>
+          <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground sm:text-[1.75rem]">
+            {count}
+          </p>
+          <p className="text-sm tabular-nums text-muted-foreground">
+            Total {formatCurrency(totalAmount)}
+          </p>
+        </div>
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground">
+          <Icon className="h-5 w-5" aria-hidden />
+        </div>
+      </div>
+      <div className="mt-4 flex items-center gap-3 border-t border-border/60 pt-3">
+        <Link
+          href={primaryHref}
+          className="flex-1 text-center text-xs font-semibold text-primary/90 transition-colors hover:text-primary"
+        >
+          {primaryLabel} <span aria-hidden>→</span>
+        </Link>
+        <div className="h-3.5 w-px shrink-0 bg-border/70" aria-hidden />
+        <Link
+          href={secondaryHref}
+          className="flex-1 text-center text-xs font-semibold text-primary/90 transition-colors hover:text-primary"
+        >
+          {secondaryLabel} <span aria-hidden>→</span>
+        </Link>
+      </div>
+    </div>
   );
 }
 

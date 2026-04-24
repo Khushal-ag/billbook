@@ -1,4 +1,5 @@
 import { api } from "./client";
+import { buildQueryString } from "@/lib/core/utils";
 
 /**
  * Parse RFC 5987 / simple `filename="..."` from Content-Disposition.
@@ -32,9 +33,27 @@ function triggerBlobDownload(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-/** GET report with `format=csv` and save using Content-Disposition filename when present. */
-export async function downloadReportCsv(pathWithQuery: string, fallbackFilename: string) {
+/** GET report blob; `pathWithQuery` must already include `?` query string. */
+export async function downloadReportBlob(pathWithQuery: string, fallbackFilename: string) {
   const { blob, contentDisposition } = await api.getBlob(pathWithQuery);
   const name = parseFilenameFromContentDisposition(contentDisposition) ?? fallbackFilename;
   triggerBlobDownload(blob, name);
+}
+
+export type ReportDownloadFormat = "csv" | "pdf" | "xlsx";
+
+/** GET `/path?...&format=` for exports (CSV, PDF, Excel) when the API supports it. */
+export async function downloadReportFile(
+  reportPath: string,
+  query: Record<string, string | number | boolean | undefined | null>,
+  format: ReportDownloadFormat,
+  fallbackFilename: string,
+) {
+  const qs = buildQueryString({ ...query, format });
+  await downloadReportBlob(`${reportPath}?${qs}`, fallbackFilename);
+}
+
+/** GET report with `format=csv` and save using Content-Disposition filename when present. */
+export async function downloadReportCsv(pathWithQuery: string, fallbackFilename: string) {
+  await downloadReportBlob(pathWithQuery, fallbackFilename);
 }

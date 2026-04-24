@@ -70,8 +70,10 @@ export function getRequiredPermissions(
   if (p.startsWith("/vendors")) return [PAGE.vendors];
 
   if (p.startsWith("/reports/invoice-register")) return [PAGE.reports_sales_register];
-  if (p.startsWith("/reports/payables-register")) return [PAGE.reports_purchase_register];
+  if (p.startsWith("/reports/purchase-register")) return [PAGE.reports_purchase_register];
+  if (p.startsWith("/reports/payables-register")) return [PAGE.reports_payables_register];
   if (p.startsWith("/reports/receipt-register")) return [PAGE.reports_receipt_register];
+  if (p.startsWith("/reports/debt-register")) return [PAGE.reports_debt_register];
   if (p.startsWith("/reports/item-register")) return [PAGE.reports_item_register];
   if (p.startsWith("/reports")) return [PAGE.reports];
 
