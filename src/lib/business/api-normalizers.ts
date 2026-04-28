@@ -100,11 +100,16 @@ export function normalizeDashboard(raw: Record<string, unknown>): DashboardData 
       : undefined;
 
   const fallbackTopCustomers = toTopCustomerList((d as { topCustomers?: unknown }).topCustomers);
-  const topCustomers = fallbackTopCustomers;
+  const preferredReceivableCustomers = toTopCustomerList(
+    (d as { topCustomersByReceivable?: unknown }).topCustomersByReceivable,
+  );
+  const topCustomers =
+    preferredReceivableCustomers.length > 0 ? preferredReceivableCustomers : fallbackTopCustomers;
 
   return {
     ...d,
-    todaySales: d.todaySales ?? 0,
+    todaySales:
+      (d as { todaySalesByInvoiceDate?: unknown }).todaySalesByInvoiceDate ?? d.todaySales ?? 0,
     totalItems: d.totalItems ?? d.totalProducts ?? 0,
     topItems,
     totalReceivables: d.totalReceivables != null ? d.totalReceivables : undefined,
@@ -112,6 +117,7 @@ export function normalizeDashboard(raw: Record<string, unknown>): DashboardData 
     netOutstanding: d.netOutstanding != null ? d.netOutstanding : undefined,
     revenueByMonth: Array.isArray(d.revenueByMonth) ? d.revenueByMonth : [],
     topCustomers,
+    topCustomersByReceivable: preferredReceivableCustomers,
     invoiceStatusBreakdown: Array.isArray(d.invoiceStatusBreakdown) ? d.invoiceStatusBreakdown : [],
     paymentStatusBreakdown: Array.isArray(d.paymentStatusBreakdown) ? d.paymentStatusBreakdown : [],
     recentInvoices: Array.isArray(d.recentInvoices) ? d.recentInvoices : [],

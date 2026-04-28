@@ -44,12 +44,14 @@ export interface DashboardData {
   revenueByMonth: RevenueByMonth[];
   topItems: TopItem[];
   topCustomers: TopCustomer[];
+  topCustomersByReceivable?: TopCustomer[];
   invoiceStatusBreakdown: InvoiceStatusBreakdown[];
   paymentStatusBreakdown: PaymentStatusBreakdown[];
   recentInvoices: RecentInvoice[];
 
   snapshotDate?: string | null;
   todaySales?: string | number | null;
+  todaySalesByInvoiceDate?: string | number | null;
   monthSales?: string | number | null;
   totalPayables?: string | number | null;
   overdueReceivables?: string | number | null;
@@ -88,8 +90,8 @@ export interface TopItem {
 export interface TopCustomer {
   partyId: number;
   partyName: string;
-  totalRevenue: string | number;
-  invoiceCount: number;
+  totalRevenue?: string | number;
+  invoiceCount?: number;
   totalReceivable?: string | number;
   totalOutstanding?: string | number;
 }
