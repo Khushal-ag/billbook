@@ -13,7 +13,6 @@ type MarginDashboardPick = Pick<
   | "summaryProfit"
   | "monthProfit"
   | "summaryPurchase"
-  | "summaryRevenue"
   | "monthSales"
   | "totalRevenueNet"
   | "totalRevenue"
@@ -134,11 +133,7 @@ export function resolveDashboardMarginDisplay(dashboard: MarginDashboardPick): s
   const margin = dashboard.grossMarginPercent;
   if (margin != null && margin !== "") return formatMarginPercent(margin);
 
-  const revenue =
-    dashboard.summaryRevenue ??
-    dashboard.monthSales ??
-    dashboard.totalRevenueNet ??
-    dashboard.totalRevenue;
+  const revenue = dashboard.monthSales ?? dashboard.totalRevenueNet ?? dashboard.totalRevenue;
   const revenueNum = dashboardToNumber(revenue);
   const purchaseNum =
     dashboard.summaryPurchase != null && dashboard.summaryPurchase !== ""

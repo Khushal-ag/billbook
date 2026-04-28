@@ -3,11 +3,29 @@ import type {
   DashboardData,
   DashboardRecentLedgerRow,
   SalesPurchaseByMonth,
+  TopCustomer,
   TopItem,
   TopVendor,
 } from "@/types/dashboard";
 
 export function normalizeDashboard(raw: Record<string, unknown>): DashboardData {
+  const toTopCustomerList = (input: unknown): TopCustomer[] => {
+    if (!Array.isArray(input)) return [];
+    return input.map((row) => {
+      const r = row as Record<string, unknown>;
+      return {
+        partyId: Number(r.partyId) || 0,
+        partyName: typeof r.partyName === "string" ? r.partyName : "",
+        totalReceivable: (r.totalReceivable ?? r.totalOutstanding ?? r.totalRevenue ?? 0) as
+          | string
+          | number,
+        totalOutstanding: (r.totalOutstanding ?? 0) as string | number,
+        totalRevenue: (r.totalRevenue ?? 0) as string | number,
+        invoiceCount: Number(r.invoiceCount) || 0,
+      };
+    });
+  };
+
   const d = raw as unknown as DashboardData & {
     totalItems?: number;
     totalProducts?: number;
@@ -44,13 +62,8 @@ export function normalizeDashboard(raw: Record<string, unknown>): DashboardData 
         return {
           partyId: Number(x.partyId) || 0,
           partyName: typeof x.partyName === "string" ? x.partyName : "",
-          totalPayable: (x.totalPayable ?? x.totalAmount ?? x.payable ?? 0) as string | number,
-          documentCount:
-            typeof x.documentCount === "number"
-              ? x.documentCount
-              : typeof x.invoiceCount === "number"
-                ? x.invoiceCount
-                : undefined,
+          totalPayable: (x.totalPayable ?? 0) as string | number,
+          documentCount: typeof x.documentCount === "number" ? x.documentCount : undefined,
         };
       })
     : [];
@@ -86,20 +99,25 @@ export function normalizeDashboard(raw: Record<string, unknown>): DashboardData 
         }
       : undefined;
 
+  const fallbackTopCustomers = toTopCustomerList((d as { topCustomers?: unknown }).topCustomers);
+  const topCustomers = fallbackTopCustomers;
+
   return {
     ...d,
+    todaySales: d.todaySales ?? 0,
     totalItems: d.totalItems ?? d.totalProducts ?? 0,
     topItems,
     totalReceivables: d.totalReceivables != null ? d.totalReceivables : undefined,
     totalAdvanceBalance: d.totalAdvanceBalance != null ? d.totalAdvanceBalance : undefined,
     netOutstanding: d.netOutstanding != null ? d.netOutstanding : undefined,
     revenueByMonth: Array.isArray(d.revenueByMonth) ? d.revenueByMonth : [],
-    topCustomers: Array.isArray(d.topCustomers) ? d.topCustomers : [],
+    topCustomers,
     invoiceStatusBreakdown: Array.isArray(d.invoiceStatusBreakdown) ? d.invoiceStatusBreakdown : [],
     paymentStatusBreakdown: Array.isArray(d.paymentStatusBreakdown) ? d.paymentStatusBreakdown : [],
     recentInvoices: Array.isArray(d.recentInvoices) ? d.recentInvoices : [],
     salesVsPurchaseByMonth,
     topVendors,
+    cashAndBankBalance: d.cashAndBankBalance,
     recentLedgerActivity,
     stockPulse,
   } as DashboardData;

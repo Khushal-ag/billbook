@@ -94,7 +94,7 @@ export function DashboardHomeKpis({ dashboard }: DashboardHomeKpisProps) {
       />
       <Kpi label="Margin" value={marginStr} tone={marginToneResolved} />
       <Kpi
-        label="Cash / Bank"
+        label="Net cashflow"
         value={cashBank != null && cashBank !== "" ? formatCurrency(cashBank) : "—"}
         tone={cashBank != null && cashBank !== "" ? "cash" : "default"}
       />

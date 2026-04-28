@@ -2,8 +2,6 @@ export interface SalesPurchaseByMonth {
   month: string;
   sales: string | number;
   purchase: string | number;
-  sale?: string | number;
-  purchases?: string | number;
 }
 
 export interface TopVendor {
@@ -11,9 +9,6 @@ export interface TopVendor {
   partyName: string;
   totalPayable: string | number;
   documentCount?: number;
-  totalAmount?: string | number;
-  payable?: string | number;
-  invoiceCount?: number;
 }
 
 export interface DashboardRecentLedgerRow {
@@ -40,8 +35,6 @@ export interface DashboardData {
   totalCredited?: string | number;
   totalRevenueNet?: string | number;
   totalPaid: string | number;
-  totalPaidFromLedger?: string | number;
-  totalPaidFromInvoiceField?: string | number;
   totalOutstanding: string | number;
   totalReceivables?: string | number;
   totalAdvanceBalance?: string | number;
@@ -67,7 +60,6 @@ export interface DashboardData {
   topVendors?: TopVendor[];
   recentLedgerActivity?: DashboardRecentLedgerRow[];
   stockPulse?: DashboardStockPulse | null;
-  summaryRevenue?: string | number | null;
   summaryPurchase?: string | number | null;
   summaryProfit?: string | number | null;
   grossMarginPercent?: string | number | null;
@@ -98,6 +90,7 @@ export interface TopCustomer {
   partyName: string;
   totalRevenue: string | number;
   invoiceCount: number;
+  totalReceivable?: string | number;
   totalOutstanding?: string | number;
 }
 
