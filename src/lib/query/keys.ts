@@ -198,6 +198,7 @@ export const queryKeys = {
 
   admin: {
     businesses: (limit: number, offset: number) => ["admin", "businesses", limit, offset] as const,
+    invoiceTemplates: () => ["admin", "invoice-templates"] as const,
     transactions: (
       startDate: string,
       endDate: string,

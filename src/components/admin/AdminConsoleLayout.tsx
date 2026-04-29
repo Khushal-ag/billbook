@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { LogOut, Menu } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, Menu } from "lucide-react";
 
 import Logo from "@/components/Logo";
 import { adminConsoleHomePath, adminConsoleNavItems } from "@/lib/admin/admin-nav";
@@ -62,15 +62,46 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+function NavIconRail() {
+  const pathname = usePathname() ?? "";
+
+  return (
+    <ul className="flex flex-col items-center gap-2" role="list">
+      {adminConsoleNavItems.map(({ href, label, icon: Icon }) => {
+        const active = pathname === href || pathname.startsWith(`${href}/`);
+        return (
+          <li key={href}>
+            <Link
+              href={href}
+              aria-current={active ? "page" : undefined}
+              aria-label={label}
+              title={label}
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-md border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                active
+                  ? "border-primary/25 bg-primary/10 text-primary shadow-sm"
+                  : "border-border/60 bg-background/80 text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+              )}
+            >
+              <Icon className="h-4 w-4" />
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function AdminConsoleFrame({ children }: { children: ReactNode }) {
   const { logout } = useAuth();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const closeMobile = () => setMobileOpen(false);
 
   const onSignOut = () => {
-    void logout().then(() => router.replace("/admin/login"));
+    void logout().then(() => router.replace("/"));
   };
 
   return (
@@ -122,9 +153,6 @@ function AdminConsoleFrame({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button type="button" variant="outline" size="sm" asChild className="shadow-sm">
-              <Link href="/">Marketing site</Link>
-            </Button>
             <Button
               type="button"
               variant="default"
@@ -139,21 +167,55 @@ function AdminConsoleFrame({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="flex min-h-[calc(100vh-3.5rem)] w-full">
+      <div className="relative flex min-h-[calc(100vh-3.5rem)] w-full">
         <aside
-          className="sticky top-14 z-30 hidden h-[calc(100vh-3.5rem)] w-[15.5rem] shrink-0 border-r border-border/70 bg-card/50 shadow-[inset_-1px_0_0_0_hsl(var(--border)/0.5)] backdrop-blur-sm lg:block"
+          className={cn(
+            "sticky top-14 z-30 hidden h-[calc(100vh-3.5rem)] shrink-0 border-r border-border/70 bg-card/50 backdrop-blur-sm transition-[width] duration-300 ease-in-out lg:block",
+            sidebarCollapsed
+              ? "w-[4rem] shadow-[inset_-1px_0_0_0_hsl(var(--border)/0.5)]"
+              : "w-[15.5rem] shadow-[inset_-1px_0_0_0_hsl(var(--border)/0.5)]",
+          )}
           aria-label="Admin console"
         >
-          <div className="flex h-full flex-col px-3 py-5">
-            <p className="mb-3 px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Navigation
-            </p>
-            <NavLinks />
-          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="absolute -right-4 top-6 z-40 hidden h-8 w-8 rounded-full border-border/80 bg-background shadow-sm transition-all duration-300 ease-in-out lg:inline-flex"
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
+
+          {sidebarCollapsed ? (
+            <div className="flex h-full flex-col items-center px-2 py-5 transition-opacity duration-200 ease-in-out">
+              <NavIconRail />
+            </div>
+          ) : (
+            <div className="flex h-full flex-col px-3 py-5 transition-opacity duration-200 ease-in-out">
+              <p className="mb-3 px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Navigation
+              </p>
+              <NavLinks />
+            </div>
+          )}
         </aside>
 
         <main className="min-w-0 flex-1 px-4 pb-12 pt-6 sm:px-6 sm:pt-8">
-          <div className="mx-auto max-w-7xl">{children}</div>
+          <div
+            className={cn(
+              "mx-auto w-full",
+              sidebarCollapsed ? "max-w-[min(1800px,100%)]" : "max-w-7xl",
+            )}
+          >
+            {children}
+          </div>
         </main>
       </div>
     </div>

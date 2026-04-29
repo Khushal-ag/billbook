@@ -64,7 +64,9 @@ export function DashboardHomeReceivablesPayables({
                       <span className="truncate text-sm font-medium">{c.partyName}</span>
                     </span>
                     <span className="shrink-0 text-sm font-semibold tabular-nums">
-                      {formatCurrency(c.totalRevenue ?? 0)}
+                      {formatCurrency(
+                        c.totalReceivable ?? c.totalOutstanding ?? c.totalRevenue ?? 0,
+                      )}
                     </span>
                   </li>
                 ))}

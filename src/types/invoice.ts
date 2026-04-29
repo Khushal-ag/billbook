@@ -336,8 +336,11 @@ export interface InvoicePdfResponse {
   invoiceNumber: string;
   downloadUrl: string | null;
   format: string;
+  filename?: string;
   /** ISO date string when PDF URL is returned */
   generatedAt: string | null;
+  templateId?: string;
+  templateVersion?: string;
   message?: string;
 }
 

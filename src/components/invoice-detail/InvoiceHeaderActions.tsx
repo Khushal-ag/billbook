@@ -10,6 +10,7 @@ import {
   FileMinus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   invoiceTypeSupportsBalanceReminderEmail,
@@ -81,6 +82,8 @@ interface InvoiceHeaderActionsProps {
   reminderToday: boolean;
   pdfUrl?: string | null;
   pdfError?: Error | null;
+  /** True while the signed PDF URL is still loading (FINAL invoices only). */
+  isInvoicePdfPending?: boolean;
   isFinalizePending: boolean;
   isCancelPending: boolean;
   isMarkSentPending: boolean;
@@ -93,6 +96,7 @@ interface InvoiceHeaderActionsProps {
   onOpenRefund?: () => void;
   /** Sales return: open credit note dialog for this return (refund generation). */
   onOpenRefundCreditNote?: () => void;
+  onOpenPdf?: () => void;
   onMarkSent: () => void;
   onMarkReminder: () => void;
 }
@@ -113,6 +117,7 @@ export function InvoiceHeaderActions({
   reminderToday,
   pdfUrl,
   pdfError,
+  isInvoicePdfPending,
   isFinalizePending,
   isCancelPending,
   isMarkSentPending,
@@ -123,6 +128,7 @@ export function InvoiceHeaderActions({
   onOpenPayment,
   onOpenRefund,
   onOpenRefundCreditNote,
+  onOpenPdf,
   onMarkSent,
   onMarkReminder,
 }: InvoiceHeaderActionsProps) {
@@ -294,19 +300,32 @@ export function InvoiceHeaderActions({
         </>
       )}
 
+      {invoice.status === "FINAL" && canPdf && isInvoicePdfPending && !pdfUrl && !pdfError && (
+        <div role="status" aria-live="polite" aria-busy="true" className="inline-flex shrink-0">
+          <Skeleton className="h-9 w-[4.25rem] rounded-md" />
+          <span className="sr-only">Loading PDF…</span>
+        </div>
+      )}
+
       {pdfUrl && canPdf && (
-        <Button variant="outline" size="sm" asChild>
-          <a href={pdfUrl} target="_blank" rel="noreferrer">
-            <Download className="mr-2 h-3.5 w-3.5" />
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onOpenPdf}
+            title="Saves a copy; if the file is a PDF, also opens a preview in a new tab"
+            aria-label="Download invoice document; open PDF preview in a new tab when applicable"
+          >
+            <Download className="h-3.5 w-3.5" />
             PDF
-          </a>
-        </Button>
+          </Button>
+        </>
       )}
 
       {!pdfUrl && pdfError && invoice.status === "FINAL" && canPdf && (
         <Button variant="outline" size="sm" disabled title="PDF generation failed — try refreshing">
-          <Download className="mr-2 h-3.5 w-3.5" />
-          PDF unavailable
+          <Download className="h-3.5 w-3.5" />
+          PDF
         </Button>
       )}
     </div>
