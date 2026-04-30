@@ -1,6 +1,6 @@
 import { Building2, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn, formatCurrency } from "@/lib/core/utils";
+import { formatCurrency } from "@/lib/core/utils";
 import type { DashboardData, TopCustomer, TopVendor } from "@/types/dashboard";
 import { dashboardToNumber } from "@/lib/business/dashboard-home";
 
@@ -11,6 +11,8 @@ interface DashboardHomeReceivablesPayablesProps {
 export function DashboardHomeReceivablesPayables({
   dashboard,
 }: DashboardHomeReceivablesPayablesProps) {
+  const formatOptionalCurrency = (value: string | number | null | undefined) =>
+    value != null && value !== "" ? formatCurrency(value) : "—";
   const receivables = dashboardToNumber(dashboard.totalReceivables ?? dashboard.totalOutstanding);
   const overdueRec = dashboard.overdueReceivables;
   const payables = dashboard.totalPayables;
@@ -18,17 +20,16 @@ export function DashboardHomeReceivablesPayables({
   const customers: TopCustomer[] = Array.isArray(dashboard.topCustomers)
     ? dashboard.topCustomers
     : [];
+  const showReceivableRanking =
+    Array.isArray(dashboard.topCustomersByReceivable) &&
+    dashboard.topCustomersByReceivable.length > 0 &&
+    customers.every((c) => c.totalRevenue == null || c.totalRevenue === "");
   const vendors: TopVendor[] = Array.isArray(dashboard.topVendors) ? dashboard.topVendors : [];
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card
-        className={cn(
-          "rounded-xl border border-border/80 bg-card shadow-sm ring-1 ring-black/[0.02] dark:ring-white/[0.03]",
-          "border-l-4 border-l-emerald-600/70 dark:border-l-emerald-500/55",
-        )}
-      >
-        <CardHeader className="pb-2">
+      <Card className="rounded-2xl border border-border/80 bg-card shadow-sm">
+        <CardHeader className="pb-2.5">
           <CardTitle className="text-base font-semibold">Receivables</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
@@ -46,12 +47,14 @@ export function DashboardHomeReceivablesPayables({
                 Overdue
               </p>
               <p className="mt-1 text-2xl font-semibold tabular-nums text-status-overdue">
-                {overdueRec != null && overdueRec !== "" ? formatCurrency(overdueRec) : "—"}
+                {formatOptionalCurrency(overdueRec)}
               </p>
             </div>
           </div>
           <div className="border-t border-border/70 pt-4">
-            <p className="mb-2 text-sm font-medium">Top customers</p>
+            <p className="mb-2 text-sm font-semibold">
+              {showReceivableRanking ? "Top customers (receivable)" : "Top customers"}
+            </p>
             {customers.length > 0 ? (
               <ul className="space-y-2">
                 {customers.slice(0, 6).map((c) => (
@@ -64,27 +67,22 @@ export function DashboardHomeReceivablesPayables({
                       <span className="truncate text-sm font-medium">{c.partyName}</span>
                     </span>
                     <span className="shrink-0 text-sm font-semibold tabular-nums">
-                      {formatCurrency(c.totalRevenue ?? 0)}
+                      {formatCurrency(
+                        c.totalRevenue ?? c.totalReceivable ?? c.totalOutstanding ?? 0,
+                      )}
                     </span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                No ranked customers yet. Record sale invoices to see top customers here.
-              </p>
+              <p className="text-sm text-muted-foreground">No ranked customers yet.</p>
             )}
           </div>
         </CardContent>
       </Card>
 
-      <Card
-        className={cn(
-          "rounded-xl border border-border/80 bg-card shadow-sm ring-1 ring-black/[0.02] dark:ring-white/[0.03]",
-          "border-l-4 border-l-amber-600/75 dark:border-l-amber-500/55",
-        )}
-      >
-        <CardHeader className="pb-2">
+      <Card className="rounded-2xl border border-border/80 bg-card shadow-sm">
+        <CardHeader className="pb-2.5">
           <CardTitle className="text-base font-semibold">Payables</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
@@ -94,7 +92,7 @@ export function DashboardHomeReceivablesPayables({
                 Total
               </p>
               <p className="mt-1 text-2xl font-semibold tabular-nums text-amber-900 dark:text-amber-400">
-                {payables != null && payables !== "" ? formatCurrency(payables) : "—"}
+                {formatOptionalCurrency(payables)}
               </p>
             </div>
             <div>
@@ -102,12 +100,12 @@ export function DashboardHomeReceivablesPayables({
                 Overdue
               </p>
               <p className="mt-1 text-2xl font-semibold tabular-nums text-status-overdue">
-                {overduePay != null && overduePay !== "" ? formatCurrency(overduePay) : "—"}
+                {formatOptionalCurrency(overduePay)}
               </p>
             </div>
           </div>
           <div className="border-t border-border/70 pt-4">
-            <p className="mb-2 text-sm font-medium">Top vendors</p>
+            <p className="mb-2 text-sm font-semibold">Top vendors</p>
             {vendors.length > 0 ? (
               <ul className="space-y-2">
                 {vendors.slice(0, 6).map((v) => (

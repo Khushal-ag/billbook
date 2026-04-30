@@ -13,43 +13,41 @@ type KpiTone =
   | "default";
 
 const CARD_SHELL: Record<KpiTone, string> = {
-  sales:
-    "border-primary/20 bg-gradient-to-br from-primary/[0.08] via-card to-card shadow-sm ring-1 ring-primary/[0.06]",
-  purchase:
-    "border-amber-500/25 bg-gradient-to-br from-amber-500/[0.09] via-card to-card shadow-sm ring-1 ring-amber-500/[0.06]",
-  margin:
-    "border-violet-500/20 bg-gradient-to-br from-violet-500/[0.08] via-card to-card shadow-sm ring-1 ring-violet-500/[0.05]",
-  "profit-positive":
-    "border-emerald-500/30 bg-gradient-to-br from-emerald-500/[0.12] via-card to-card shadow-sm ring-1 ring-emerald-500/[0.08]",
-  "profit-negative":
-    "border-red-500/25 bg-gradient-to-br from-red-500/[0.08] via-card to-card shadow-sm ring-1 ring-red-500/[0.06]",
-  "profit-neutral": "border-border/80 bg-card shadow-sm",
-  cash: "border-sky-500/25 bg-gradient-to-br from-sky-500/[0.09] via-card to-card shadow-sm ring-1 ring-sky-500/[0.06]",
-  default: "border-border/80 bg-card shadow-sm",
+  sales: "border-border/80 border-t-2 border-t-primary/45 bg-card shadow-sm",
+  purchase: "border-border/80 border-t-2 border-t-amber-500/45 bg-card shadow-sm",
+  margin: "border-border/80 border-t-2 border-t-violet-500/40 bg-card shadow-sm",
+  "profit-positive": "border-border/80 border-t-2 border-t-emerald-500/45 bg-card shadow-sm",
+  "profit-negative": "border-border/80 border-t-2 border-t-red-500/45 bg-card shadow-sm",
+  "profit-neutral": "border-border/80 border-t-2 border-t-border bg-card shadow-sm",
+  cash: "border-border/80 border-t-2 border-t-sky-500/45 bg-card shadow-sm",
+  default: "border-border/80 border-t-2 border-t-border bg-card shadow-sm",
 };
 
 const VALUE_CLASS: Record<KpiTone, string> = {
-  sales: "text-primary",
-  purchase: "text-amber-800 dark:text-amber-400",
-  margin: "text-violet-700 dark:text-violet-300",
+  sales: "text-foreground",
+  purchase: "text-foreground",
+  margin: "text-foreground",
   "profit-positive": "text-emerald-700 dark:text-emerald-400",
   "profit-negative": "text-red-600 dark:text-red-400",
-  "profit-neutral": "text-muted-foreground",
-  cash: "text-sky-800 dark:text-sky-300",
+  "profit-neutral": "text-foreground",
+  cash: "text-foreground",
   default: "text-foreground",
 };
 
 function Kpi({ label, value, tone }: { label: string; value: string; tone: KpiTone }) {
   return (
     <div
-      className={cn("rounded-xl border p-4 transition-shadow hover:shadow-md", CARD_SHELL[tone])}
+      className={cn(
+        "flex h-full min-h-[92px] flex-col justify-between rounded-xl border px-3.5 py-3.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:min-h-[108px] sm:px-4 sm:py-4",
+        CARD_SHELL[tone],
+      )}
     >
       <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <p
         className={cn(
-          "mt-2 text-xl font-semibold tabular-nums tracking-tight sm:text-2xl",
+          "mt-1.5 text-lg font-semibold tabular-nums leading-none tracking-tight sm:mt-2 sm:text-[1.75rem]",
           VALUE_CLASS[tone],
         )}
       >
@@ -84,21 +82,28 @@ export function DashboardHomeKpis({ dashboard }: DashboardHomeKpisProps) {
   const marginToneResolved: KpiTone = marginStr === "—" ? "profit-neutral" : "margin";
 
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-      <Kpi label="Today sales" value={todayStr} tone={todayStr === "—" ? "default" : "sales"} />
-      <Kpi label="Month sales" value={formatCurrency(monthSales)} tone="sales" />
-      <Kpi
-        label="Month purchase"
-        value={monthPurchase != null && monthPurchase !== "" ? formatCurrency(monthPurchase) : "—"}
-        tone={monthPurchase != null && monthPurchase !== "" ? "purchase" : "default"}
-      />
-      <Kpi label="Margin" value={marginStr} tone={marginToneResolved} />
-      <Kpi
-        label="Net cashflow"
-        value={cashBank != null && cashBank !== "" ? formatCurrency(cashBank) : "—"}
-        tone={cashBank != null && cashBank !== "" ? "cash" : "default"}
-      />
-      <Kpi label="Profit" value={profitStr} tone={profitTone} />
-    </div>
+    <section className="space-y-2.5">
+      <div>
+        <h2 className="text-base font-semibold tracking-tight">Performance snapshot</h2>
+      </div>
+      <div className="grid auto-rows-fr grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6">
+        <Kpi label="Today sales" value={todayStr} tone={todayStr === "—" ? "default" : "sales"} />
+        <Kpi label="Month sales" value={formatCurrency(monthSales)} tone="sales" />
+        <Kpi
+          label="Month purchase"
+          value={
+            monthPurchase != null && monthPurchase !== "" ? formatCurrency(monthPurchase) : "—"
+          }
+          tone={monthPurchase != null && monthPurchase !== "" ? "purchase" : "default"}
+        />
+        <Kpi label="Margin" value={marginStr} tone={marginToneResolved} />
+        <Kpi
+          label="Net cashflow"
+          value={cashBank != null && cashBank !== "" ? formatCurrency(cashBank) : "—"}
+          tone={cashBank != null && cashBank !== "" ? "cash" : "default"}
+        />
+        <Kpi label="Profit" value={profitStr} tone={profitTone} />
+      </div>
+    </section>
   );
 }
