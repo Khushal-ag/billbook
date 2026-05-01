@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { ChevronRight, FileText, Info, Receipt, Wallet } from "lucide-react";
-import { DashboardSectionHeader } from "@/components/dashboard/dashboard-utils";
+import {
+  DashboardSectionHeader,
+  fluidMetricShellClass,
+  fluidReportsCountClass,
+  fluidReportsTotalLineClass,
+  fluidSnapshotValueClass,
+} from "@/components/dashboard/dashboard-utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn, formatCurrency } from "@/lib/core/utils";
 import type { ReportsDashboardData } from "@/types/report";
@@ -24,7 +30,7 @@ export function ReportsDashboardSection({ data }: ReportsDashboardSectionProps) 
           description={reportDashboard.sectionActivityDescription}
           className="mb-4 sm:mb-5"
         />
-        <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+        <div className="grid gap-3 sm:grid-cols-3 sm:gap-4 [&>*]:min-w-0">
           <KpiLinkCard
             href="/reports/receipt-register"
             label={reportDashboard.kpiReceipts}
@@ -59,7 +65,7 @@ export function ReportsDashboardSection({ data }: ReportsDashboardSectionProps) 
           description={reportDashboard.sectionBalancesDescription}
           className="mb-4 sm:mb-5"
         />
-        <div className="grid gap-3 md:grid-cols-2 md:gap-4">
+        <div className="grid gap-3 md:grid-cols-2 md:gap-4 [&>*]:min-w-0">
           <BalanceLinkCard
             href="/reports/debt-register"
             title={reportDashboard.balanceReceivablesTitle}
@@ -99,6 +105,7 @@ function KpiLinkCard({
     <Link
       href={href}
       className={cn(
+        fluidMetricShellClass,
         "group relative block h-full rounded-xl border border-border/80 bg-card/90 p-4 shadow-sm ring-1 ring-black/[0.03] transition-all",
         "hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
@@ -108,15 +115,11 @@ function KpiLinkCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {label}
           </p>
-          <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground sm:text-[1.75rem]">
-            {count}
-          </p>
-          <p className="text-sm tabular-nums text-muted-foreground">
-            Total {formatCurrency(totalAmount)}
-          </p>
+          <p className={cn(fluidReportsCountClass, "text-foreground")}>{count}</p>
+          <p className={fluidReportsTotalLineClass}>Total {formatCurrency(totalAmount)}</p>
         </div>
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground transition-colors group-hover:border-border group-hover:bg-muted/60">
           <Icon className="h-5 w-5" aria-hidden />
@@ -151,6 +154,7 @@ function KpiSplitCard({
   return (
     <div
       className={cn(
+        fluidMetricShellClass,
         "group relative block h-full rounded-xl border border-border/80 bg-card/90 p-4 shadow-sm ring-1 ring-black/[0.03]",
         "dark:bg-card/80 dark:ring-white/[0.04]",
         "sm:p-5",
@@ -158,15 +162,11 @@ function KpiSplitCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {label}
           </p>
-          <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground sm:text-[1.75rem]">
-            {count}
-          </p>
-          <p className="text-sm tabular-nums text-muted-foreground">
-            Total {formatCurrency(totalAmount)}
-          </p>
+          <p className={cn(fluidReportsCountClass, "text-foreground")}>{count}</p>
+          <p className={fluidReportsTotalLineClass}>Total {formatCurrency(totalAmount)}</p>
         </div>
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground">
           <Icon className="h-5 w-5" aria-hidden />
@@ -221,7 +221,8 @@ function BalanceLinkCard({
       <Link
         href={href}
         className={cn(
-          "group min-w-0 flex-1 p-4 pl-5 outline-none transition-colors sm:p-5 sm:pl-6",
+          fluidMetricShellClass,
+          "group flex-1 p-4 pl-5 outline-none transition-colors sm:p-5 sm:pl-6",
           "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
         )}
       >
@@ -236,7 +237,8 @@ function BalanceLinkCard({
         </div>
         <p
           className={cn(
-            "mt-2 text-2xl font-semibold tabular-nums tracking-tight sm:text-[1.75rem]",
+            "mt-2",
+            fluidSnapshotValueClass,
             accent === "emerald" && "text-emerald-950 dark:text-emerald-100",
             accent === "rose" && "text-rose-950 dark:text-rose-100",
           )}

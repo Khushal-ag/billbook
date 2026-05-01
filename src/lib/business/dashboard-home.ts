@@ -2,20 +2,12 @@ import { humanizeApiEnum } from "@/lib/core/utils";
 import type {
   DashboardData,
   DashboardRecentLedgerRow,
-  RecentInvoice,
-  RevenueByMonth,
   SalesPurchaseByMonth,
 } from "@/types/dashboard";
 
 type MarginDashboardPick = Pick<
   DashboardData,
-  | "grossMarginPercent"
-  | "summaryProfit"
-  | "monthProfit"
-  | "summaryPurchase"
-  | "monthSales"
-  | "totalRevenueNet"
-  | "totalRevenue"
+  "grossMarginPercent" | "monthProfit" | "summaryPurchase" | "monthSales" | "totalRevenue"
 >;
 
 export function dashboardToNumber(v: string | number | null | undefined): number {
@@ -51,42 +43,18 @@ export function buildSalesPurchaseChartData(dashboard: DashboardData): {
   purchaseIsEstimated: boolean;
 } {
   const combined = dashboard.salesVsPurchaseByMonth ?? [];
-  if (combined.length > 0) {
-    return {
-      rows: combined.map((m: SalesPurchaseByMonth) => ({
-        month: m.month,
-        sales: dashboardToNumber(m.sales),
-        purchase: dashboardToNumber(m.purchase),
-      })),
-      purchaseIsEstimated: false,
-    };
-  }
-  const months = dashboard.revenueByMonth ?? [];
   return {
-    rows: months.map((m: RevenueByMonth) => ({
+    rows: combined.map((m: SalesPurchaseByMonth) => ({
       month: m.month,
-      sales: dashboardToNumber(m.revenue),
-      purchase: 0,
+      sales: dashboardToNumber(m.sales),
+      purchase: dashboardToNumber(m.purchase),
     })),
-    purchaseIsEstimated: true,
+    purchaseIsEstimated: false,
   };
 }
 
 export function buildRecentActivityRows(dashboard: DashboardData): DashboardRecentLedgerRow[] {
-  const fromApi = dashboard.recentLedgerActivity ?? [];
-  if (fromApi.length > 0) return fromApi;
-
-  const inv = dashboard.recentInvoices ?? [];
-  return inv.slice(0, 12).map(
-    (r: RecentInvoice): DashboardRecentLedgerRow => ({
-      id: r.id,
-      occurredAt: r.invoiceDate,
-      entryType: "SALE_INVOICE",
-      partyName: r.partyName ?? "—",
-      amount: r.totalAmount,
-      mode: null,
-    }),
-  );
+  return dashboard.recentLedgerActivity ?? [];
 }
 
 export function ledgerTypeLabel(entryType: string): string {
@@ -133,13 +101,13 @@ export function resolveDashboardMarginDisplay(dashboard: MarginDashboardPick): s
   const margin = dashboard.grossMarginPercent;
   if (margin != null && margin !== "") return formatMarginPercent(margin);
 
-  const revenue = dashboard.monthSales ?? dashboard.totalRevenueNet ?? dashboard.totalRevenue;
+  const revenue = dashboard.monthSales ?? dashboard.totalRevenue;
   const revenueNum = dashboardToNumber(revenue);
   const purchaseNum =
     dashboard.summaryPurchase != null && dashboard.summaryPurchase !== ""
       ? dashboardToNumber(dashboard.summaryPurchase)
       : null;
-  const profitFromApi = dashboard.summaryProfit ?? dashboard.monthProfit;
+  const profitFromApi = dashboard.monthProfit;
   const profitNum =
     profitFromApi != null && profitFromApi !== ""
       ? dashboardToNumber(profitFromApi)

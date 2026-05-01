@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import ErrorBanner from "@/components/ErrorBanner";
 import DashboardSkeleton from "@/components/skeletons/DashboardSkeleton";
@@ -29,8 +30,11 @@ const DashboardHomeSalesPurchaseChart = dynamic(
   },
 );
 
+type DashboardFilter = "monthly" | "overall";
+
 export default function DashboardPageClient() {
-  const { data: dashboard, isPending, error } = useDashboard();
+  const [filter, setFilter] = useState<DashboardFilter>("monthly");
+  const { data: dashboard, isPending, error } = useDashboard(filter);
   const { canCreateInvoice } = useCanCreateInvoice();
 
   if (isPending) {
@@ -60,7 +64,7 @@ export default function DashboardPageClient() {
           greeting={greeting}
           canCreateInvoice={canCreateInvoice}
         />
-        <DashboardHomeKpis dashboard={data} />
+        <DashboardHomeKpis dashboard={data} filter={filter} onFilterChange={setFilter} />
         <DashboardHomeSalesPurchaseChart dashboard={data} />
         <DashboardHomeReceivablesPayables dashboard={data} />
         <DashboardHomeStockPulse dashboard={data} />

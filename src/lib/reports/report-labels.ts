@@ -11,7 +11,7 @@ export const reportHub = {
 export const reportDashboard = {
   sectionActivity: "In this period",
   sectionActivityDescription:
-    "Receipt register, sales & purchase invoices, and payout register totals for the date range above.",
+    "Receipt register, sales & purchase invoices, and payment register totals for the date range above.",
   sectionBalances: "Money owed",
   sectionBalancesDescription:
     "Debt register and Payables register use each party’s current balance — independent of the date range above.",
@@ -19,7 +19,7 @@ export const reportDashboard = {
   kpiInvoices: "Invoices",
   kpiInvoicesSalesCta: "Sales register",
   kpiInvoicesPurchaseCta: "Purchase register",
-  kpiPayouts: "Payout register",
+  kpiPayouts: "Payment register",
   balanceReceivablesTitle: "Debt register",
   balanceReceivablesTooltip:
     "Total amount customers and other parties owe you right now, from their running balances.",
@@ -66,10 +66,10 @@ export const reportPurchaseRegister = {
 } as const;
 
 export const reportPayoutRegister = {
-  title: "Payout register",
+  title: "Payment register",
   description:
     "Money you paid out in the selected period — suppliers, parties, refunds on returns, and expenses.",
-  loadError: "Failed to load payout register",
+  loadError: "Failed to load payment register",
   csvFilename: "payout-register.csv",
   pdfFilename: "payout-register.pdf",
   xlsxFilename: "payout-register.xlsx",

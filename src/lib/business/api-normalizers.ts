@@ -4,7 +4,6 @@ import type {
   DashboardRecentLedgerRow,
   SalesPurchaseByMonth,
   TopCustomer,
-  TopItem,
   TopVendor,
 } from "@/types/dashboard";
 
@@ -32,23 +31,8 @@ export function normalizeDashboard(raw: Record<string, unknown>): DashboardData 
     });
   };
 
-  const d = raw as unknown as DashboardData & {
-    totalItems?: number;
-    totalProducts?: number;
-    topItems?: Array<{
-      itemId?: number;
-      itemName?: string;
-      totalRevenue?: number;
-      totalQuantity?: number;
-    }>;
-  };
-  const rawTopItems = Array.isArray(d.topItems) ? d.topItems : [];
-  const topItems: TopItem[] = rawTopItems.map((i) => ({
-    itemId: i.itemId ?? 0,
-    itemName: i.itemName ?? "",
-    totalRevenue: i.totalRevenue ?? 0,
-    totalQuantity: i.totalQuantity ?? 0,
-  }));
+  const d = raw as unknown as DashboardData;
+
   const rawSp = (d as { salesVsPurchaseByMonth?: unknown }).salesVsPurchaseByMonth;
   const salesVsPurchaseByMonth: SalesPurchaseByMonth[] = Array.isArray(rawSp)
     ? rawSp.map((row) => {
@@ -105,36 +89,16 @@ export function normalizeDashboard(raw: Record<string, unknown>): DashboardData 
         }
       : undefined;
 
-  const fallbackTopCustomers = toTopCustomerList((d as { topCustomers?: unknown }).topCustomers);
-  const preferredReceivableCustomers = toTopCustomerList(
+  const topCustomers = toTopCustomerList(
     (d as { topCustomersByReceivable?: unknown }).topCustomersByReceivable,
   );
-  const topCustomers =
-    fallbackTopCustomers.length > 0 ? fallbackTopCustomers : preferredReceivableCustomers;
-  const revenueByMonth = Array.isArray(d.revenueByMonth) ? d.revenueByMonth : [];
-  const invoiceStatusBreakdown = Array.isArray(d.invoiceStatusBreakdown)
-    ? d.invoiceStatusBreakdown
-    : [];
-  const paymentStatusBreakdown = Array.isArray(d.paymentStatusBreakdown)
-    ? d.paymentStatusBreakdown
-    : [];
-  const recentInvoices = Array.isArray(d.recentInvoices) ? d.recentInvoices : [];
 
   return {
     ...d,
-    todaySales:
-      (d as { todaySalesByInvoiceDate?: unknown }).todaySalesByInvoiceDate ?? d.todaySales ?? 0,
-    totalItems: d.totalItems ?? d.totalProducts ?? 0,
-    topItems,
-    totalReceivables: d.totalReceivables != null ? d.totalReceivables : undefined,
-    totalAdvanceBalance: d.totalAdvanceBalance != null ? d.totalAdvanceBalance : undefined,
-    netOutstanding: d.netOutstanding != null ? d.netOutstanding : undefined,
-    revenueByMonth,
+    todaySales: d.todaySales ?? 0,
     topCustomers,
-    topCustomersByReceivable: preferredReceivableCustomers,
-    invoiceStatusBreakdown,
-    paymentStatusBreakdown,
-    recentInvoices,
+    topCustomersByReceivable: topCustomers,
+    totalReceivables: d.totalReceivables != null ? d.totalReceivables : undefined,
     salesVsPurchaseByMonth,
     topVendors,
     cashAndBankBalance: d.cashAndBankBalance,

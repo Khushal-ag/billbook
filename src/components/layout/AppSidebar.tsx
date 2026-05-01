@@ -1,11 +1,13 @@
 "use client";
 
+import type { ElementType } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard,
+  LayoutGrid,
   FileText,
   ChevronDown,
   ChevronRight,
@@ -22,6 +24,13 @@ import {
   ArrowDownLeft,
   ScrollText,
   Folder,
+  TrendingUp,
+  ShoppingCart,
+  ReceiptIndianRupee,
+  HandCoins,
+  Landmark,
+  Boxes,
+  CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/core/utils";
 import { Button } from "@/components/ui/button";
@@ -34,7 +43,7 @@ import { TeamRolesSidebarBlock } from "@/components/layout/TeamRolesSidebarBlock
 interface NavItem {
   label: string;
   path: string;
-  icon: React.ElementType;
+  icon: ElementType;
   /** If set, item is shown only when `can(pageKey)` — see `PAGE` in `@/constants/page-access`. */
   pageKey?: string;
   /** Show when user has any of these page keys */
@@ -52,6 +61,35 @@ type SectionTitle = NavSection["title"];
 
 /** Sidebar sections follow the active route until the user folds/expands; then we store explicit open state (including “none”). */
 type SectionFoldMode = { kind: "route" } | { kind: "custom"; open: SectionTitle | null };
+
+/** Distinct icons per reports route; unknown paths use {@link BarChart3}. */
+function reportSidebarIcon(reportPath: string): ElementType {
+  const base = reportPath.replace(/\/$/, "") || "/";
+  switch (base) {
+    case "/reports":
+      return LayoutGrid;
+    case "/reports/invoice-register":
+      return TrendingUp;
+    case "/reports/purchase-register":
+      return ShoppingCart;
+    case "/reports/receipt-register":
+      return ReceiptIndianRupee;
+    case "/reports/debt-register":
+      return HandCoins;
+    case "/reports/payables-register":
+      return Landmark;
+    case "/reports/item-register":
+      return Boxes;
+    case "/reports/credit-note-register":
+      return FileMinus;
+    case "/reports/payout-register":
+      return ArrowDownLeft;
+    case "/reports/receivables-aging":
+      return CalendarClock;
+    default:
+      return BarChart3;
+  }
+}
 
 const navSections: NavSection[] = [
   {
@@ -108,44 +146,44 @@ const navSections: NavSection[] = [
       {
         label: "Reports Dashboard",
         path: "/reports",
-        icon: BarChart3,
+        icon: reportSidebarIcon("/reports"),
         pageKey: PAGE.reports,
         activeMatch: "exact",
       },
       {
         label: "Sales register",
         path: "/reports/invoice-register",
-        icon: BarChart3,
+        icon: reportSidebarIcon("/reports/invoice-register"),
         pageKey: PAGE.reports_sales_register,
       },
       {
         label: "Purchase register",
         path: "/reports/purchase-register",
-        icon: BarChart3,
+        icon: reportSidebarIcon("/reports/purchase-register"),
         pageKey: PAGE.reports_purchase_register,
       },
       {
         label: "Receipt register",
         path: "/reports/receipt-register",
-        icon: BarChart3,
+        icon: reportSidebarIcon("/reports/receipt-register"),
         pageKey: PAGE.reports_receipt_register,
       },
       {
         label: "Debt register",
         path: "/reports/debt-register",
-        icon: BarChart3,
+        icon: reportSidebarIcon("/reports/debt-register"),
         pageKey: PAGE.reports_debt_register,
       },
       {
         label: "Payables register",
         path: "/reports/payables-register",
-        icon: BarChart3,
+        icon: reportSidebarIcon("/reports/payables-register"),
         pageKey: PAGE.reports_payables_register,
       },
       {
         label: "Item register",
         path: "/reports/item-register",
-        icon: BarChart3,
+        icon: reportSidebarIcon("/reports/item-register"),
         pageKey: PAGE.reports_item_register,
       },
     ],

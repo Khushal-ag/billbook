@@ -5,6 +5,16 @@ export interface ReportPeriod {
   endDate: string;
 }
 
+/**
+ * GET `/reports/dashboard` query string (one of):
+ * - `filter=monthly` — current calendar month
+ * - `filter=overall` — all-time activity totals
+ * - `startDate` + `endDate` — explicit range (unchanged)
+ */
+export type ReportsDashboardQuery =
+  | { filter: "monthly" | "overall" }
+  | { startDate: string; endDate: string };
+
 /** GET /reports/dashboard */
 export interface ReportsDashboardData {
   period: ReportPeriod;

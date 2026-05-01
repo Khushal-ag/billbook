@@ -127,8 +127,8 @@ export function DashboardHomeSalesPurchaseChart({
             purchase: { label: "Purchase", color: "hsl(var(--chart-3))" },
           }}
           className={cn(
-            "h-[min(320px,55vw)] min-h-[260px] w-full",
-            "[&_.recharts-rectangle.recharts-tooltip-cursor]:fill-transparent",
+            "h-[min(320px,55vw)] min-h-[260px] w-full cursor-pointer",
+            "[&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted/40",
           )}
         >
           <BarChart

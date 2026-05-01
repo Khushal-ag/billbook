@@ -43,11 +43,12 @@ function toBusinessClassificationOptions(input: unknown): BusinessClassification
     .filter((item): item is BusinessClassificationOption => item !== null);
 }
 
-export function useDashboard() {
+export function useDashboard(filter?: "monthly" | "overall") {
   return useQuery({
-    queryKey: queryKeys.business.dashboard(),
+    queryKey: queryKeys.business.dashboard(filter),
     queryFn: async () => {
-      const res = await api.get<DashboardData>("/business/dashboard");
+      const url = filter ? `/business/dashboard?filter=${filter}` : "/business/dashboard";
+      const res = await api.get<DashboardData>(url);
       return normalizeDashboard(res.data as unknown as Record<string, unknown>);
     },
     retry: (failureCount, err) => {
