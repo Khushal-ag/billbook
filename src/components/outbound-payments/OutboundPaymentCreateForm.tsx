@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
+import { Banknote, FileText, Loader2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FieldError, Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -19,8 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PartyAutocomplete } from "@/components/invoices/PartyAutocomplete";
-import { InvoiceLinkedCombobox } from "@/components/outbound-payments/InvoiceLinkedCombobox";
-import { useInvoice } from "@/hooks/use-invoices";
+import { OutboundDocumentPickerDialog } from "@/components/outbound-payments/OutboundDocumentPickerDialog";
 import { useCreateOutboundPayment } from "@/hooks/use-outbound-payments";
 import { PAYMENT_METHOD_OPTIONS } from "@/constants";
 import { OUTBOUND_CATEGORY_OPTIONS } from "@/constants/outbound-payment";
@@ -33,21 +32,7 @@ import { augmentApiClientErrorForPayment } from "@/lib/payments/payment-errors";
 import type { Party } from "@/types/party";
 import type { Invoice, PaymentMethod } from "@/types/invoice";
 import type { OutboundPaymentCategory } from "@/types/outbound-payment";
-import { cn, formatCurrency } from "@/lib/core/utils";
-
-function purchaseInvoiceOptionLabel(inv: Invoice): string {
-  const due = formatCurrency(String(getInvoiceBalanceDue(inv)));
-  const vendorBill = inv.originalBillNumber?.trim();
-  if (vendorBill) {
-    return `${inv.invoiceNumber} · Vendor bill ${vendorBill} · ${due} due`;
-  }
-  return `${inv.invoiceNumber} · ${due} due`;
-}
-
-function saleReturnOptionLabel(inv: Invoice): string {
-  const name = inv.partyName?.trim() ?? "Customer";
-  return `${inv.invoiceNumber} · ${name}`;
-}
+import { formatCurrency, cn } from "@/lib/core/utils";
 
 const baseSchema = z.object({
   amount: requiredPriceString,
@@ -58,34 +43,19 @@ const baseSchema = z.object({
 
 type BaseForm = z.infer<typeof baseSchema>;
 
+function amountStringForBalance(n: number): string {
+  return n.toFixed(2);
+}
+
 export function OutboundPaymentCreateForm() {
   const router = useRouter();
   const [category, setCategory] = useState<OutboundPaymentCategory>("PARTY_PAYMENT");
   const [party, setParty] = useState<Party | null>(null);
-  const [saleReturnId, setSaleReturnId] = useState<string>("");
   const [expensePayee, setExpensePayee] = useState("");
   const [expenseCategory, setExpenseCategory] = useState("");
-  const [purchaseBillId, setPurchaseBillId] = useState<string>("");
 
-  const parsedPurchaseBillId = useMemo(() => {
-    const n = parseInt(purchaseBillId, 10);
-    return Number.isFinite(n) ? n : undefined;
-  }, [purchaseBillId]);
-
-  const { data: purchaseBillDetail, isPending: purchaseBillDetailLoading } = useInvoice(
-    category === "PARTY_PAYMENT" && parsedPurchaseBillId != null ? parsedPurchaseBillId : undefined,
-  );
-  const selectedPurchaseBill = purchaseBillDetail ?? null;
-
-  const parsedReturnId = useMemo(() => {
-    const n = parseInt(saleReturnId, 10);
-    return Number.isFinite(n) ? n : undefined;
-  }, [saleReturnId]);
-
-  const { data: returnDetail, isPending: returnDetailLoading } = useInvoice(
-    category === "SALE_RETURN_REFUND" && parsedReturnId != null ? parsedReturnId : undefined,
-  );
-  const selectedReturn = returnDetail ?? null;
+  const [linkedInvoices, setLinkedInvoices] = useState<Invoice[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const createOutbound = useCreateOutboundPayment();
 
@@ -106,266 +76,374 @@ export function OutboundPaymentCreateForm() {
     },
   });
 
-  useEffect(() => {
-    if (category === "SALE_RETURN_REFUND" && selectedReturn?.totalAmount) {
-      setValue("amount", selectedReturn.totalAmount);
-    }
-  }, [category, selectedReturn?.id, selectedReturn?.totalAmount, setValue]);
+  const paymentMethod = watch("paymentMethod");
 
   useEffect(() => {
-    if (category !== "PARTY_PAYMENT" || !selectedPurchaseBill) return;
-    const due = getInvoiceBalanceDue(selectedPurchaseBill);
-    if (due > 0) setValue("amount", String(due));
-  }, [category, selectedPurchaseBill?.id, selectedPurchaseBill, setValue]);
+    setParty(null);
+    setLinkedInvoices([]);
+    reset({ amount: "", paymentMethod: "BANK_TRANSFER", referenceNumber: "", notes: "" });
+  }, [category, reset]);
 
   useEffect(() => {
-    setPurchaseBillId("");
+    setLinkedInvoices([]);
   }, [party?.id]);
 
-  const onCategoryChange = (c: OutboundPaymentCategory) => {
-    setCategory(c);
-    setParty(null);
-    setSaleReturnId("");
-    setExpensePayee("");
-    setExpenseCategory("");
-    setPurchaseBillId("");
-    reset({ amount: "", paymentMethod: "BANK_TRANSFER", referenceNumber: "", notes: "" });
+  const handlePickerConfirm = (invoices: Invoice[]) => {
+    setLinkedInvoices(invoices);
+    const sum = invoices.reduce((acc, inv) => acc + getInvoiceBalanceDue(inv), 0);
+    setValue("amount", amountStringForBalance(sum), { shouldValidate: true, shouldDirty: true });
   };
+
+  const openPicker = () => {
+    if (category === "SALE_RETURN_REFUND" && !party) {
+      showErrorToast("Select a customer first.");
+      return;
+    }
+    if (category === "PARTY_PAYMENT" && !party) {
+      showErrorToast("Select a vendor first.");
+      return;
+    }
+    setPickerOpen(true);
+  };
+
+  const singleLinked = linkedInvoices.length === 1;
+  const multipleLinked = linkedInvoices.length > 1;
+  const amountReadOnly =
+    multipleLinked && (category === "SALE_RETURN_REFUND" || category === "PARTY_PAYMENT");
 
   const onSubmit = async (data: BaseForm) => {
     try {
       if (category === "SALE_RETURN_REFUND") {
-        if (!selectedReturn) {
-          showErrorToast("Select a finalized sales return.");
-          return;
-        }
-        await createOutbound.mutateAsync({
-          category: "SALE_RETURN_REFUND",
-          partyId: selectedReturn.partyId,
-          invoiceId: selectedReturn.id,
-          amount: data.amount,
-          paymentMethod: data.paymentMethod,
-          referenceNumber: data.referenceNumber || undefined,
-          notes: data.notes || undefined,
-        });
-      } else if (category === "PARTY_PAYMENT") {
         if (!party) {
-          showErrorToast("Select a supplier.");
+          showErrorToast("Select a customer.");
           return;
         }
-        await createOutbound.mutateAsync({
-          category: "PARTY_PAYMENT",
-          partyId: party.id,
-          ...(parsedPurchaseBillId != null ? { invoiceId: parsedPurchaseBillId } : {}),
-          amount: data.amount,
-          paymentMethod: data.paymentMethod,
-          referenceNumber: data.referenceNumber || undefined,
-          notes: data.notes || undefined,
-        });
-      } else {
-        const payeeName = expensePayee.trim();
-        if (!payeeName) {
-          showErrorToast("Enter who was paid (payee name).");
+        if (linkedInvoices.length === 0) {
+          showErrorToast("Choose one or more sales returns with balance.");
           return;
         }
-        await createOutbound.mutateAsync({
-          category: "EXPENSE",
-          payeeName,
-          amount: data.amount,
-          paymentMethod: data.paymentMethod,
-          referenceNumber: data.referenceNumber || undefined,
-          notes: data.notes || undefined,
-          expenseCategory: expenseCategory.trim() || undefined,
-        });
+        let count = 0;
+        for (const inv of linkedInvoices) {
+          const due = getInvoiceBalanceDue(inv);
+          const amountStr = linkedInvoices.length === 1 ? data.amount : amountStringForBalance(due);
+          await createOutbound.mutateAsync({
+            category: "SALE_RETURN_REFUND",
+            partyId: inv.partyId,
+            invoiceId: inv.id,
+            amount: amountStr,
+            paymentMethod: data.paymentMethod,
+            referenceNumber: data.referenceNumber || undefined,
+            notes: data.notes || undefined,
+          });
+          count++;
+        }
+        showSuccessToast(count > 1 ? `Recorded ${count} payments` : "Payment recorded");
+        router.push("/payments/outbound");
+        return;
       }
-      showSuccessToast("Payout recorded");
+
+      if (category === "PARTY_PAYMENT") {
+        if (!party) {
+          showErrorToast("Select a vendor.");
+          return;
+        }
+        if (linkedInvoices.length === 0) {
+          await createOutbound.mutateAsync({
+            category: "PARTY_PAYMENT",
+            partyId: party.id,
+            amount: data.amount,
+            paymentMethod: data.paymentMethod,
+            referenceNumber: data.referenceNumber || undefined,
+            notes: data.notes || undefined,
+          });
+          showSuccessToast("Payment recorded");
+          router.push("/payments/outbound");
+          return;
+        }
+        let count = 0;
+        for (const inv of linkedInvoices) {
+          const due = getInvoiceBalanceDue(inv);
+          const amountStr = linkedInvoices.length === 1 ? data.amount : amountStringForBalance(due);
+          await createOutbound.mutateAsync({
+            category: "PARTY_PAYMENT",
+            partyId: party.id,
+            invoiceId: inv.id,
+            amount: amountStr,
+            paymentMethod: data.paymentMethod,
+            referenceNumber: data.referenceNumber || undefined,
+            notes: data.notes || undefined,
+          });
+          count++;
+        }
+        showSuccessToast(count > 1 ? `Recorded ${count} payments` : "Payment recorded");
+        router.push("/payments/outbound");
+        return;
+      }
+
+      const payeeName = expensePayee.trim();
+      if (!payeeName) {
+        showErrorToast("Enter who was paid (payee name).");
+        return;
+      }
+      await createOutbound.mutateAsync({
+        category: "EXPENSE",
+        payeeName,
+        amount: data.amount,
+        paymentMethod: data.paymentMethod,
+        referenceNumber: data.referenceNumber || undefined,
+        notes: data.notes || undefined,
+        expenseCategory: expenseCategory.trim() || undefined,
+      });
+      showSuccessToast("Payment recorded");
       router.push("/payments/outbound");
     } catch (e) {
       if (maybeShowTrialExpiredToast(e)) return;
       if (e instanceof ApiClientError) {
-        showErrorToast(augmentApiClientErrorForPayment(e), "Failed to record payout");
+        showErrorToast(augmentApiClientErrorForPayment(e), "Failed to record payment");
       } else {
-        showErrorToast(e, "Failed to record payout");
+        showErrorToast(e, "Failed to record payment");
       }
     }
   };
 
-  const linkingPurchasePending =
-    category === "PARTY_PAYMENT" && parsedPurchaseBillId != null && purchaseBillDetailLoading;
+  const payeeLabel =
+    category === "SALE_RETURN_REFUND" ? "Customer" : category === "PARTY_PAYMENT" ? "Vendor" : null;
 
-  const linkingReturnPending =
-    category === "SALE_RETURN_REFUND" && parsedReturnId != null && returnDetailLoading;
+  const pickerMode =
+    category === "SALE_RETURN_REFUND"
+      ? ("SALE_RETURN" as const)
+      : category === "PARTY_PAYMENT"
+        ? ("PURCHASE_INVOICE" as const)
+        : null;
+
+  const linkedSummary =
+    linkedInvoices.length > 0
+      ? `${linkedInvoices.length} document${linkedInvoices.length === 1 ? "" : "s"} · ${formatCurrency(
+          linkedInvoices.reduce((acc, inv) => acc + getInvoiceBalanceDue(inv), 0).toFixed(2),
+        )} balance total`
+      : null;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-8">
-      <div className="space-y-3">
-        <Label required>Type</Label>
-        <RadioGroup
-          value={category}
-          onValueChange={(v) => onCategoryChange(v as OutboundPaymentCategory)}
-          className="grid gap-3 sm:grid-cols-3"
-        >
-          {OUTBOUND_CATEGORY_OPTIONS.map((opt) => (
-            <label
-              key={opt.value}
-              className={cn(
-                "flex cursor-pointer items-center gap-3 rounded-xl border border-border/80 bg-card/50 p-4 text-sm shadow-sm transition-colors",
-                category === opt.value
-                  ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                  : "hover:border-border hover:bg-muted/40",
-              )}
-            >
-              <RadioGroupItem value={opt.value} id={opt.value} />
-              <span className="leading-tight">{opt.label}</span>
-            </label>
-          ))}
-        </RadioGroup>
-      </div>
+    <>
+      {pickerMode ? (
+        <OutboundDocumentPickerDialog
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          mode={pickerMode}
+          partyId={party?.id ?? null}
+          partyNameHint={party?.name ?? null}
+          onConfirm={handlePickerConfirm}
+        />
+      ) : null}
 
-      {category === "SALE_RETURN_REFUND" && (
-        <div className="space-y-3">
-          <Label required>Sales return</Label>
-          <p className="text-xs text-muted-foreground">
-            Same idea as picking a party on an invoice: click the field, type to search, then choose
-            a row. Finds finalized sales returns by return number or customer name.
-          </p>
-          <InvoiceLinkedCombobox
-            invoiceType="SALE_RETURN"
-            valueId={saleReturnId}
-            onValueIdChange={setSaleReturnId}
-            formatOption={saleReturnOptionLabel}
-            displayLabel={returnDetail ? saleReturnOptionLabel(returnDetail) : null}
-            placeholder="Search return no. or customer…"
-            inputId="payout-sale-return-invoice"
-          />
-          {selectedReturn ? (
-            <p className="text-xs text-muted-foreground">
-              Total <span className="font-semibold tabular-nums">{selectedReturn.totalAmount}</span>
-            </p>
-          ) : null}
-        </div>
-      )}
-
-      {category === "PARTY_PAYMENT" && (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label required>Supplier</Label>
-            <PartyAutocomplete
-              value={party}
-              onValueChange={setParty}
-              serverSearch
-              partiesQueryType="SUPPLIER"
-              placeholder="Search vendor…"
-              inputId="payout-supplier-party"
-            />
+      <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-xl space-y-8">
+        <section className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground">
+              1
+            </span>
+            Type
           </div>
-          {party && (
-            <div className="space-y-3">
-              <Label>Purchase invoice (optional)</Label>
-              <p className="text-xs text-muted-foreground">
-                Same as above: open the field, type to search. Only this supplier&apos;s purchase
-                bills appear. Pick <span className="font-medium text-foreground">On account</span>{" "}
-                to pay without linking a bill.
-              </p>
-              <InvoiceLinkedCombobox
-                invoiceType="PURCHASE_INVOICE"
-                partyId={party.id}
-                valueId={purchaseBillId}
-                onValueIdChange={setPurchaseBillId}
-                noneOptionLabel="On account (not linked to a bill)"
-                formatOption={purchaseInvoiceOptionLabel}
-                displayLabel={
-                  purchaseBillDetail ? purchaseInvoiceOptionLabel(purchaseBillDetail) : null
-                }
-                placeholder="Search purchase no. or vendor bill…"
-                inputId="payout-purchase-invoice"
-              />
-              {linkingPurchasePending ? (
-                <p className="text-xs text-muted-foreground">Loading invoice details…</p>
-              ) : null}
-              {selectedPurchaseBill ? (
-                <p className="text-xs text-muted-foreground">
-                  Balance due on this bill:{" "}
-                  <span className="font-semibold tabular-nums text-foreground">
-                    {formatCurrency(String(getInvoiceBalanceDue(selectedPurchaseBill)))}
-                  </span>
+          <div className="rounded-xl border border-border/60 bg-muted/20 p-4 shadow-sm ring-1 ring-border/30">
+            <Label htmlFor="payment-type" className="mb-2 block">
+              Payment type
+            </Label>
+            <Select
+              value={category}
+              onValueChange={(v) => setCategory(v as OutboundPaymentCategory)}
+            >
+              <SelectTrigger id="payment-type" className="h-11 bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {OUTBOUND_CATEGORY_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </section>
+
+        <Separator />
+
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground">
+              2
+            </span>
+            {category === "EXPENSE" ? "Payee" : "Party & documents"}
+          </div>
+
+          {category === "EXPENSE" ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="expense-payee" required>
+                  Payee name
+                </Label>
+                <Input
+                  id="expense-payee"
+                  placeholder="Who received the payment"
+                  value={expensePayee}
+                  onChange={(e) => setExpensePayee(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="expense-category">Expense category</Label>
+                <Input
+                  id="expense-category"
+                  placeholder="Optional"
+                  value={expenseCategory}
+                  onChange={(e) => setExpenseCategory(e.target.value)}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label required className="inline-flex items-center gap-1.5">
+                  <UserRound className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                  {payeeLabel}
+                </Label>
+                <PartyAutocomplete
+                  value={party}
+                  onValueChange={setParty}
+                  serverSearch
+                  partiesQueryType={category === "SALE_RETURN_REFUND" ? "CUSTOMER" : "SUPPLIER"}
+                  placeholder={
+                    category === "SALE_RETURN_REFUND" ? "Search customer…" : "Search vendor…"
+                  }
+                  inputId="payout-party"
+                />
+              </div>
+
+              <div className="space-y-3 rounded-xl border border-dashed border-primary/25 bg-gradient-to-br from-primary/[0.06] to-transparent px-4 py-4 ring-1 ring-primary/10">
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary/90">
+                  {category === "SALE_RETURN_REFUND"
+                    ? "Link sales returns"
+                    : "Link purchase bills (optional)"}
                 </p>
-              ) : null}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-auto w-full justify-start gap-2 border-primary/20 bg-background/80 py-3 text-left font-medium text-primary shadow-sm hover:bg-primary/5 sm:w-auto"
+                  onClick={openPicker}
+                >
+                  <FileText className="h-4 w-4 shrink-0" />
+                  <span>
+                    {category === "SALE_RETURN_REFUND"
+                      ? "Browse sales returns for this customer"
+                      : "Browse purchase bills for this vendor"}
+                  </span>
+                </Button>
+                {linkedSummary ? (
+                  <p className="rounded-md bg-background/80 px-3 py-2 text-sm font-medium text-foreground ring-1 ring-border/60">
+                    {linkedSummary}
+                  </p>
+                ) : (
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {category === "PARTY_PAYMENT"
+                      ? "Skip this to record an on-account payment — enter the amount below."
+                      : "Open the list, tick returns with a balance, then Select — the amount field updates automatically."}
+                  </p>
+                )}
+              </div>
             </div>
           )}
-        </div>
-      )}
+        </section>
 
-      {category === "EXPENSE" && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2">
-            <Label required>Payee name</Label>
+        <Separator />
+
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted text-xs font-bold text-muted-foreground">
+              3
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Banknote className="h-4 w-4 text-muted-foreground" aria-hidden />
+              Payment
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="payout-amount" required>
+              Amount
+            </Label>
             <Input
-              placeholder="Who received the payment"
-              value={expensePayee}
-              onChange={(e) => setExpensePayee(e.target.value)}
+              id="payout-amount"
+              placeholder="0.00"
+              readOnly={amountReadOnly}
+              className={cn(amountReadOnly && "bg-muted/60")}
+              {...register("amount")}
+              aria-invalid={!!errors.amount}
+            />
+            {errors.amount && <FieldError>{errors.amount.message}</FieldError>}
+            {multipleLinked && category !== "EXPENSE" ? (
+              <p className="text-xs text-muted-foreground">
+                Each selected document is recorded as its own payment for the row&apos;s balance.
+                This total matches the sum of those balances.
+              </p>
+            ) : singleLinked && category !== "EXPENSE" ? (
+              <p className="text-xs text-muted-foreground">
+                You can adjust the amount for a single linked document (e.g. partial payment).
+              </p>
+            ) : null}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="payout-method" required>
+              Payment method
+            </Label>
+            <Select
+              value={paymentMethod}
+              onValueChange={(v) =>
+                setValue("paymentMethod", v as PaymentMethod, { shouldDirty: true })
+              }
+            >
+              <SelectTrigger id="payout-method">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PAYMENT_METHOD_OPTIONS.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="payout-reference">Reference</Label>
+            <Input
+              id="payout-reference"
+              placeholder="UTR / cheque no."
+              {...register("referenceNumber")}
             />
           </div>
-          <div className="space-y-2 sm:col-span-2">
-            <Label>Expense category</Label>
-            <Input
-              placeholder="Optional"
-              value={expenseCategory}
-              onChange={(e) => setExpenseCategory(e.target.value)}
-            />
+
+          <div className="space-y-2">
+            <Label htmlFor="payout-notes">Notes</Label>
+            <Textarea id="payout-notes" rows={3} {...register("notes")} />
           </div>
+        </section>
+
+        <div className="flex flex-col-reverse gap-3 border-t border-border/60 pt-8 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" onClick={() => router.push("/payments/outbound")}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            size="lg"
+            className="min-w-[160px] shadow-sm"
+            disabled={createOutbound.isPending}
+          >
+            {createOutbound.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Record payment
+          </Button>
         </div>
-      )}
-
-      <div className="space-y-2">
-        <Label required>Amount</Label>
-        <Input placeholder="0.00" {...register("amount")} aria-invalid={!!errors.amount} />
-        {errors.amount && <FieldError>{errors.amount.message}</FieldError>}
-      </div>
-
-      <div className="space-y-2">
-        <Label required>Payment method</Label>
-        <Select
-          value={watch("paymentMethod")}
-          onValueChange={(v) => setValue("paymentMethod", v as PaymentMethod)}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {PAYMENT_METHOD_OPTIONS.map((m) => (
-              <SelectItem key={m.value} value={m.value}>
-                {m.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Reference</Label>
-        <Input placeholder="UTR / ref." {...register("referenceNumber")} />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Notes</Label>
-        <Textarea rows={2} {...register("notes")} />
-      </div>
-
-      <div className="flex flex-col-reverse gap-3 border-t border-border/60 pt-6 sm:flex-row sm:justify-end">
-        <Button type="button" variant="outline" onClick={() => router.push("/payments/outbound")}>
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          disabled={createOutbound.isPending || linkingPurchasePending || linkingReturnPending}
-        >
-          {(createOutbound.isPending || linkingPurchasePending || linkingReturnPending) && (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          )}
-          Record payout
-        </Button>
-      </div>
-    </form>
+      </form>
+    </>
   );
 }

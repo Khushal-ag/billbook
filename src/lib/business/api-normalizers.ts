@@ -4,7 +4,6 @@ import type {
   DashboardRecentLedgerRow,
   SalesPurchaseByMonth,
   TopCustomer,
-  TopItem,
   TopVendor,
 } from "@/types/dashboard";
 
@@ -13,36 +12,27 @@ export function normalizeDashboard(raw: Record<string, unknown>): DashboardData 
     if (!Array.isArray(input)) return [];
     return input.map((row) => {
       const r = row as Record<string, unknown>;
+      const totalRevenueRaw = r.totalRevenue;
+      const totalReceivableRaw = r.totalReceivable ?? r.totalOutstanding;
       return {
         partyId: Number(r.partyId) || 0,
         partyName: typeof r.partyName === "string" ? r.partyName : "",
-        totalReceivable: (r.totalReceivable ?? r.totalOutstanding ?? r.totalRevenue ?? 0) as
-          | string
-          | number,
-        totalOutstanding: (r.totalOutstanding ?? 0) as string | number,
-        totalRevenue: (r.totalRevenue ?? 0) as string | number,
+        totalReceivable:
+          totalReceivableRaw != null
+            ? (totalReceivableRaw as string | number)
+            : totalRevenueRaw != null
+              ? (totalRevenueRaw as string | number)
+              : undefined,
+        totalOutstanding:
+          r.totalOutstanding != null ? (r.totalOutstanding as string | number) : undefined,
+        totalRevenue: totalRevenueRaw != null ? (totalRevenueRaw as string | number) : undefined,
         invoiceCount: Number(r.invoiceCount) || 0,
       };
     });
   };
 
-  const d = raw as unknown as DashboardData & {
-    totalItems?: number;
-    totalProducts?: number;
-    topItems?: Array<{
-      itemId?: number;
-      itemName?: string;
-      totalRevenue?: number;
-      totalQuantity?: number;
-    }>;
-  };
-  const rawTopItems = Array.isArray(d.topItems) ? d.topItems : [];
-  const topItems: TopItem[] = rawTopItems.map((i) => ({
-    itemId: i.itemId ?? 0,
-    itemName: i.itemName ?? "",
-    totalRevenue: i.totalRevenue ?? 0,
-    totalQuantity: i.totalQuantity ?? 0,
-  }));
+  const d = raw as unknown as DashboardData;
+
   const rawSp = (d as { salesVsPurchaseByMonth?: unknown }).salesVsPurchaseByMonth;
   const salesVsPurchaseByMonth: SalesPurchaseByMonth[] = Array.isArray(rawSp)
     ? rawSp.map((row) => {
@@ -99,28 +89,16 @@ export function normalizeDashboard(raw: Record<string, unknown>): DashboardData 
         }
       : undefined;
 
-  const fallbackTopCustomers = toTopCustomerList((d as { topCustomers?: unknown }).topCustomers);
-  const preferredReceivableCustomers = toTopCustomerList(
+  const topCustomers = toTopCustomerList(
     (d as { topCustomersByReceivable?: unknown }).topCustomersByReceivable,
   );
-  const topCustomers =
-    preferredReceivableCustomers.length > 0 ? preferredReceivableCustomers : fallbackTopCustomers;
 
   return {
     ...d,
-    todaySales:
-      (d as { todaySalesByInvoiceDate?: unknown }).todaySalesByInvoiceDate ?? d.todaySales ?? 0,
-    totalItems: d.totalItems ?? d.totalProducts ?? 0,
-    topItems,
-    totalReceivables: d.totalReceivables != null ? d.totalReceivables : undefined,
-    totalAdvanceBalance: d.totalAdvanceBalance != null ? d.totalAdvanceBalance : undefined,
-    netOutstanding: d.netOutstanding != null ? d.netOutstanding : undefined,
-    revenueByMonth: Array.isArray(d.revenueByMonth) ? d.revenueByMonth : [],
+    todaySales: d.todaySales ?? 0,
     topCustomers,
-    topCustomersByReceivable: preferredReceivableCustomers,
-    invoiceStatusBreakdown: Array.isArray(d.invoiceStatusBreakdown) ? d.invoiceStatusBreakdown : [],
-    paymentStatusBreakdown: Array.isArray(d.paymentStatusBreakdown) ? d.paymentStatusBreakdown : [],
-    recentInvoices: Array.isArray(d.recentInvoices) ? d.recentInvoices : [],
+    topCustomersByReceivable: topCustomers,
+    totalReceivables: d.totalReceivables != null ? d.totalReceivables : undefined,
     salesVsPurchaseByMonth,
     topVendors,
     cashAndBankBalance: d.cashAndBankBalance,

@@ -111,7 +111,7 @@ export default function PartyLedgerPage() {
 
   const paymentHref =
     party.type === "CUSTOMER" ? "/receipts?openNewReceipt=1" : "/payments/outbound/new";
-  const paymentLabel = party.type === "CUSTOMER" ? "New receipt" : "New payout";
+  const paymentLabel = party.type === "CUSTOMER" ? "New receipt" : "New payment";
 
   return (
     <div className="page-container animate-fade-in">

@@ -4,6 +4,7 @@ import { queryKeys } from "@/lib/query/keys";
 import { buildQueryString } from "@/lib/core/utils";
 import type {
   ReportsDashboardData,
+  ReportsDashboardQuery,
   ReceiptRegisterData,
   InvoiceRegisterData,
   DebtRegisterData,
@@ -15,15 +16,21 @@ import type {
 import type { InvoiceType } from "@/types/invoice";
 import { normalizeReceiptRegisterData } from "@/lib/reports/receipt-register-normalize";
 
-export function useReportsDashboard(startDate: string, endDate: string) {
+export function useReportsDashboard(params: ReportsDashboardQuery) {
+  const enabled =
+    "filter" in params ? true : !!(params.startDate?.trim() && params.endDate?.trim());
+
   return useQuery({
-    queryKey: queryKeys.reports.dashboard(startDate, endDate),
+    queryKey: queryKeys.reports.dashboard(params),
     queryFn: async () => {
-      const qs = buildQueryString({ startDate, endDate });
+      const qs =
+        "filter" in params
+          ? buildQueryString({ filter: params.filter })
+          : buildQueryString({ startDate: params.startDate, endDate: params.endDate });
       const res = await api.get<ReportsDashboardData>(`/reports/dashboard?${qs}`);
       return res.data;
     },
-    enabled: !!startDate && !!endDate,
+    enabled,
   });
 }
 

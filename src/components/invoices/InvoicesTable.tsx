@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
+import { LinkedInvoiceLink } from "@/components/invoices/LinkedInvoiceLink";
 import { getInvoiceBalanceDue } from "@/lib/invoice/invoice";
 import { cn, formatCurrency, formatDate } from "@/lib/core/utils";
 import type { Invoice, InvoiceType } from "@/types/invoice";
@@ -15,7 +16,8 @@ export function InvoicesTable({ invoices, invoiceType }: InvoicesTableProps) {
   const router = useRouter();
   const showVendorBillColumn =
     invoiceType === "PURCHASE_INVOICE" || invoiceType === "PURCHASE_RETURN";
-  const mobileColSpan = showVendorBillColumn ? 8 : 7;
+  const showRefInvoiceColumn = invoiceType === "SALE_RETURN" || invoiceType === "PURCHASE_RETURN";
+  const mobileColSpan = 7 + (showVendorBillColumn ? 1 : 0) + (showRefInvoiceColumn ? 1 : 0);
 
   return (
     <div className="data-table-container -mx-1 px-1 sm:mx-0 sm:px-0">
@@ -37,6 +39,14 @@ export function InvoicesTable({ invoices, invoiceType }: InvoicesTableProps) {
                 className="hidden px-3 py-3 text-left font-medium text-muted-foreground lg:table-cell"
               >
                 Vendor bill
+              </th>
+            )}
+            {showRefInvoiceColumn && (
+              <th
+                scope="col"
+                className="hidden px-3 py-3 text-left font-medium text-muted-foreground lg:table-cell"
+              >
+                Linked Invoice
               </th>
             )}
             <th
@@ -97,6 +107,17 @@ export function InvoicesTable({ invoices, invoiceType }: InvoicesTableProps) {
                           Vendor bill {inv.originalBillNumber.trim()}
                         </div>
                       ) : null}
+                      {showRefInvoiceColumn && (inv.sourceInvoiceId || inv.sourceInvoiceNumber) ? (
+                        <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                          Linked invoice{" "}
+                          <LinkedInvoiceLink
+                            invoiceId={inv.sourceInvoiceId}
+                            invoiceNumber={inv.sourceInvoiceNumber}
+                            className="text-muted-foreground"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      ) : null}
                       <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                         <span>{formatDate(inv.invoiceDate)}</span>
                         {showOverdueChrome && inv.overdueDays && inv.overdueDays > 0 && (
@@ -130,6 +151,16 @@ export function InvoicesTable({ invoices, invoiceType }: InvoicesTableProps) {
                 {showVendorBillColumn && (
                   <td className="hidden max-w-[10rem] truncate px-3 py-3 text-muted-foreground lg:table-cell">
                     {inv.originalBillNumber?.trim() || "—"}
+                  </td>
+                )}
+                {showRefInvoiceColumn && (
+                  <td className="hidden max-w-[10rem] truncate px-3 py-3 text-muted-foreground lg:table-cell">
+                    <LinkedInvoiceLink
+                      invoiceId={inv.sourceInvoiceId}
+                      invoiceNumber={inv.sourceInvoiceNumber}
+                      className="text-muted-foreground"
+                      onClick={(e) => e.stopPropagation()}
+                    />
                   </td>
                 )}
                 <td className="hidden px-3 py-3 text-muted-foreground sm:table-cell">

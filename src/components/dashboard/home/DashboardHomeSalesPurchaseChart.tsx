@@ -104,11 +104,11 @@ export function DashboardHomeSalesPurchaseChart({
   const showPurchaseSeries = maxPurchase > 0;
 
   return (
-    <Card className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-muted/20 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
+    <Card className="rounded-2xl border border-border/80 bg-card shadow-sm">
       <CardHeader className="pb-3 sm:pb-4">
         <div>
           <CardTitle className="text-base font-semibold">Sales vs purchase</CardTitle>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
             {showPurchaseSeries
               ? "Grouped bars per month — easy to compare sales and purchases side by side."
               : "Sales by month. Purchase bars appear when purchase totals exist for each month."}
@@ -127,8 +127,8 @@ export function DashboardHomeSalesPurchaseChart({
             purchase: { label: "Purchase", color: "hsl(var(--chart-3))" },
           }}
           className={cn(
-            "h-[min(320px,55vw)] min-h-[260px] w-full",
-            "[&_.recharts-rectangle.recharts-tooltip-cursor]:fill-transparent",
+            "h-[min(320px,55vw)] min-h-[260px] w-full cursor-pointer",
+            "[&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted/40",
           )}
         >
           <BarChart

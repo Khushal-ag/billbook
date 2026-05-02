@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, ListOrdered } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,43 +54,65 @@ export function OutboundPaymentsTable({
   partyNamesById,
 }: OutboundPaymentsTableProps) {
   return (
-    <Card className="overflow-hidden border-border/80 shadow-sm">
+    <Card className="overflow-hidden rounded-xl border-border/70 shadow-md ring-1 ring-border/40">
       <CardContent className="p-0">
-        <div className="border-b border-border bg-muted/30 px-4 py-2.5 text-xs text-muted-foreground">
-          <span className="font-medium tabular-nums text-foreground">
-            {rangeStart}–{rangeEnd}
-          </span>{" "}
-          of <span className="font-medium tabular-nums text-foreground">{total}</span> payout
-          {total === 1 ? "" : "s"}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 bg-muted/20 px-4 py-3 sm:px-5">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm ring-1 ring-border/60">
+              <ListOrdered className="h-4 w-4 text-muted-foreground" aria-hidden />
+            </span>
+            Vouchers
+          </div>
+          <p className="text-xs tabular-nums text-muted-foreground">
+            <span className="font-medium text-foreground">
+              {rangeStart}–{rangeEnd}
+            </span>{" "}
+            of {total}
+          </p>
         </div>
         <div className="data-table-container overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead>
-              <tr className="border-b bg-muted/40">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Voucher</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Type</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Date</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+              <tr className="border-b border-border/60 bg-muted/35">
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Voucher
+                </th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Type
+                </th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Date
+                </th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Party / payee
                 </th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Method</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Amount</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">
-                  Voucher PDF
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Method
+                </th>
+                <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Amount
+                </th>
+                <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  PDF
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="[&_tr:nth-child(even)]:bg-muted/15">
               {payments.map((p) => (
-                <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30">
-                  <td className="px-4 py-3 font-medium tabular-nums">{p.paymentNumber}</td>
-                  <td className="px-4 py-3">
-                    <Badge variant="outline" className="whitespace-nowrap">
+                <tr
+                  key={p.id}
+                  className="border-b border-border/50 transition-colors last:border-0 hover:bg-muted/40"
+                >
+                  <td className="px-4 py-3.5 font-medium tabular-nums text-foreground">
+                    {p.paymentNumber}
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <Badge variant="outline" className="whitespace-nowrap shadow-sm">
                       {OUTBOUND_CATEGORY_LABELS[p.category] ?? p.category}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{formatDate(p.createdAt)}</td>
-                  <td className="max-w-[200px] px-4 py-3">
+                  <td className="px-4 py-3.5 text-muted-foreground">{formatDate(p.createdAt)}</td>
+                  <td className="max-w-[200px] px-4 py-3.5">
                     <span className="truncate">{outboundPartyDisplayName(p, partyNamesById)}</span>
                     {p.invoiceId != null && p.category === "SALE_RETURN_REFUND" && (
                       <div className="mt-0.5 text-xs">
@@ -113,20 +135,20 @@ export function OutboundPaymentsTable({
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3">
-                    <Badge variant="outline" className="font-normal">
+                  <td className="px-4 py-3.5">
+                    <Badge variant="outline" className="font-normal shadow-sm">
                       {PAYMENT_METHOD_LABEL[p.paymentMethod] ?? p.paymentMethod}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold tabular-nums text-rose-700">
+                  <td className="px-4 py-3.5 text-right font-semibold tabular-nums text-rose-700 dark:text-rose-400">
                     {formatCurrency(p.amount)}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3.5 text-right">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-8 gap-1"
+                      className="h-8 gap-1 rounded-md shadow-sm"
                       onClick={() =>
                         void openSignedPdfFromApiPath(`/payments/outbound/${p.id}/pdf`, {
                           unavailable: "Voucher PDF not available (configure storage).",
@@ -144,7 +166,7 @@ export function OutboundPaymentsTable({
           </table>
         </div>
         {totalPages > 1 ? (
-          <div className="border-t border-border bg-muted/20 px-4 py-3">
+          <div className="border-t border-border/60 bg-muted/15 px-4 py-3 sm:px-5">
             <TablePagination
               className="mt-0"
               page={page}

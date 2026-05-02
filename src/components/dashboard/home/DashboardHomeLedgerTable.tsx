@@ -46,18 +46,18 @@ export function DashboardHomeLedgerTable({ dashboard }: DashboardHomeLedgerTable
 
   return (
     <section>
-      <Card className="rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card to-muted/15 shadow-sm ring-1 ring-black/[0.03] dark:ring-white/[0.04]">
+      <Card className="rounded-2xl border border-border/80 bg-card shadow-sm">
         <CardHeader className="pb-3 sm:pb-4">
           <div className="min-w-0">
             <CardTitle className="text-base font-semibold">Recent activity</CardTitle>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
               Latest movements. Use the tabs to filter by type.
             </p>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
           <Tabs value={tab} onValueChange={onTabChange} className="w-full">
-            <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-lg bg-muted/60 p-1 sm:w-auto">
+            <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-lg bg-muted/50 p-1 sm:w-auto">
               {ACTIVITY_TABS.map((t) => (
                 <TabsTrigger key={t.value} value={t.value} className="text-xs sm:text-sm">
                   {t.label}

@@ -2,6 +2,7 @@ import type { InvoiceType } from "@/types/invoice";
 import type { ItemType } from "@/types/item";
 import type { PartyType } from "@/types/party";
 import type { OutboundPaymentCategory } from "@/types/outbound-payment";
+import type { ReportsDashboardQuery } from "@/types/report";
 
 /**
  * Central query key factories for TanStack Query — use for useQuery and invalidateQueries
@@ -147,8 +148,12 @@ export const queryKeys = {
   },
 
   reports: {
-    dashboard: (startDate: string, endDate: string) =>
-      ["reports", "dashboard", startDate, endDate] as const,
+    dashboard: (params: ReportsDashboardQuery) => {
+      if ("filter" in params) {
+        return ["reports", "dashboard", "filter", params.filter] as const;
+      }
+      return ["reports", "dashboard", "range", params.startDate, params.endDate] as const;
+    },
     receiptRegister: (startDate: string, endDate: string, limit: number) =>
       ["reports", "receipt-register", startDate, endDate, limit] as const,
     invoiceRegister: (
@@ -209,7 +214,7 @@ export const queryKeys = {
   },
 
   business: {
-    dashboard: () => ["dashboard"] as const,
+    dashboard: (filter?: "monthly" | "overall") => ["dashboard", filter ?? "monthly"] as const,
     profile: () => ["business-profile"] as const,
     businessTypes: () => ["business-type-options"] as const,
     industryTypes: () => ["industry-type-options"] as const,
