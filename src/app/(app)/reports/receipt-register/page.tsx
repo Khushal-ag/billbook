@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { RotateCcw, Search } from "lucide-react";
+import { ChevronRight, RotateCcw, Search } from "lucide-react";
 import ErrorBanner from "@/components/ErrorBanner";
 import PageHeader from "@/components/PageHeader";
 import DateRangePicker from "@/components/DateRangePicker";
@@ -28,7 +28,7 @@ import {
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { useReceiptRegister } from "@/hooks/use-reports";
 import { useReceipt } from "@/hooks/use-receipts";
-import { useDateRange } from "@/hooks/use-date-range";
+import { useRegisterDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
 import { reportReceiptRegister } from "@/lib/reports/report-labels";
 import type { ClientReportTableExport } from "@/lib/reports/report-table-export";
@@ -97,10 +97,18 @@ function receiptKind(r: ReceiptRegisterRowDto): Exclude<ReceiptKindFilter, "ALL"
 /** Split report `linkedInvoiceSummary` (comma / semicolon / pipe / slash / newline separated). */
 function splitLinkedInvoiceSummary(raw: string | null | undefined): string[] {
   if (!raw?.trim()) return [];
+  const isPlaceholderDash = (s: string) => /^[-–—]+$/.test(s) || /^n\/?a$/i.test(s);
   return raw
     .split(/[,;|/\n]+/)
     .map((p) => p.trim())
-    .filter(Boolean);
+    .filter((p) => p.length > 0 && !isPlaceholderDash(p));
+}
+
+/** Comma-separated ref invoice numbers for exports (single column). */
+function refInvoicesExportCell(r: ReceiptRegisterRowDto): string {
+  const parts = splitLinkedInvoiceSummary(r.linkedInvoiceSummary);
+  if (parts.length > 0) return parts.join(", ");
+  return "—";
 }
 
 function ReceiptRegisterRefInvoicesCell({
@@ -114,8 +122,9 @@ function ReceiptRegisterRefInvoicesCell({
   const hasInvoiceMoney = invoiceAllocationsOnly(row) > MONEY_EPS;
   const btnClass = cn(
     rr.link,
-    "max-w-full cursor-pointer border-0 bg-transparent p-0 text-left text-sm font-medium",
+    "inline-flex max-w-full cursor-pointer items-center gap-0.5 border-0 bg-transparent p-0 text-left text-sm font-medium",
   );
+  const arrow = <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />;
 
   if (parts.length >= 2) {
     return (
@@ -125,7 +134,8 @@ function ReceiptRegisterRefInvoicesCell({
         className={btnClass}
         title="View allocated invoices"
       >
-        Invoices
+        <span className="min-w-0 truncate">Invoices</span>
+        {arrow}
       </button>
     );
   }
@@ -134,10 +144,11 @@ function ReceiptRegisterRefInvoicesCell({
       <button
         type="button"
         onClick={onOpenDialog}
-        className={cn(btnClass, "block truncate")}
+        className={btnClass}
         title="View allocated invoices"
       >
-        {parts[0]}
+        <span className="min-w-0 truncate">{parts[0]}</span>
+        {arrow}
       </button>
     );
   }
@@ -149,7 +160,8 @@ function ReceiptRegisterRefInvoicesCell({
         className={btnClass}
         title="View allocated invoices"
       >
-        Invoices
+        <span className="min-w-0 truncate">Invoices</span>
+        {arrow}
       </button>
     );
   }
@@ -187,7 +199,7 @@ export default function ReceiptRegisterPage() {
     error: dateRangeError,
     validStartDate,
     validEndDate,
-  } = useDateRange({ maxMonths: MAX_REPORT_DATE_RANGE_MONTHS });
+  } = useRegisterDateRange();
 
   const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
   const [applied, setApplied] = useState<Filters>(EMPTY_FILTERS);
@@ -263,9 +275,7 @@ export default function ReceiptRegisterPage() {
     const body = rows.map((r) => {
       const adjDisplay = totalAppliedAmount(r);
       const unadjDisplay = remainingUnallocatedDisplay(r);
-      const refParts = splitLinkedInvoiceSummary(r.linkedInvoiceSummary);
-      const ref =
-        refParts.length > 0 ? refParts.join("; ") : (r.linkedInvoiceSummary?.trim() ?? "—");
+      const ref = refInvoicesExportCell(r);
       return [
         formatDate(r.receivedAt),
         r.receiptNumber,

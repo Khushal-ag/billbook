@@ -35,6 +35,35 @@ function normalizeBody(
   return rows.map((r) => padRow(w, r));
 }
 
+function escapeCsvCell(value: string): string {
+  const s = String(value);
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+/** Same rows as PDF/XLSX — matches on-screen filters when used from register toolbars. */
+export function downloadClientTableCsv(
+  payload: ClientReportTableExport & { filename: string },
+): void {
+  const headers = [...payload.headers];
+  const body = normalizeBody(payload.headers, payload.rows);
+  const lines = [
+    headers.map(escapeCsvCell).join(","),
+    ...body.map((row) => row.map(escapeCsvCell).join(",")),
+  ];
+  const csv = `\ufeff${lines.join("\r\n")}`;
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const name = payload.filename.toLowerCase().endsWith(".csv")
+    ? payload.filename
+    : `${payload.filename}.csv`;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 /** Build `.xlsx` from header + body rows (strings). */
 export function downloadReportExcel(payload: ClientReportTableExport & { filename: string }): void {
   const headers = [...payload.headers];

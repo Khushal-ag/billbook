@@ -26,7 +26,7 @@ import {
 } from "@/components/reports/report-register-ui";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { useReceivablesAging } from "@/hooks/use-reports";
-import { useDateRange } from "@/hooks/use-date-range";
+import { useRegisterDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
 import { reportDebtRegister } from "@/lib/reports/report-labels";
 import type { ClientReportTableExport } from "@/lib/reports/report-table-export";
@@ -100,7 +100,7 @@ export default function DebtRegisterPage() {
     error: dateRangeError,
     validStartDate,
     validEndDate,
-  } = useDateRange({ maxMonths: MAX_REPORT_DATE_RANGE_MONTHS });
+  } = useRegisterDateRange();
 
   const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
   const [applied, setApplied] = useState<Filters>(EMPTY_FILTERS);

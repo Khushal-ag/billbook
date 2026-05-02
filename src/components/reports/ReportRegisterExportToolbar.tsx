@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { downloadReportFile } from "@/api";
 import { Button } from "@/components/ui/button";
 import { ReportCsvButton } from "@/components/reports/ReportCsvButton";
 import { cn } from "@/lib/core/utils";
 import {
+  downloadClientTableCsv,
   downloadReportExcel,
   downloadReportPdf,
   type ClientReportTableExport,
@@ -38,11 +39,12 @@ export function ReportRegisterExportToolbar({
   csvFilename: string;
   pdfFilename: string;
   xlsxFilename: string;
-  /** When set, PDF/XLSX are generated in the browser from these rows (matches filters shown in the table). */
+  /** When set, CSV/PDF/XLSX use these rows in the browser (matches filters shown in the table). */
   clientTableExport?: ClientReportTableExport | null;
   disabled?: boolean;
   className?: string;
 }) {
+  const [csvLoading, setCsvLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [xlsxLoading, setXlsxLoading] = useState(false);
 
@@ -73,14 +75,49 @@ export function ReportRegisterExportToolbar({
     }
   };
 
+  const runClientCsv = () => {
+    if (!clientTableExport) return;
+    setCsvLoading(true);
+    try {
+      downloadClientTableCsv({
+        reportTitle: clientTableExport.reportTitle,
+        subtitle: clientTableExport.subtitle,
+        headers: clientTableExport.headers,
+        rows: clientTableExport.rows,
+        filename: csvFilename,
+      });
+    } catch (e) {
+      showErrorToast(e);
+    } finally {
+      setCsvLoading(false);
+    }
+  };
+
   return (
     <div className={cn("flex flex-wrap items-center justify-end gap-2", className)}>
-      <ReportCsvButton
-        reportPath={reportPath}
-        query={query}
-        filename={csvFilename}
-        disabled={disabled}
-      />
+      {clientTableExport ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={runClientCsv}
+          disabled={disabled || csvLoading}
+        >
+          {csvLoading ? (
+            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Download className="mr-2 h-3.5 w-3.5" />
+          )}
+          Download CSV
+        </Button>
+      ) : (
+        <ReportCsvButton
+          reportPath={reportPath}
+          query={query}
+          filename={csvFilename}
+          disabled={disabled}
+        />
+      )}
       <Button
         type="button"
         variant="outline"

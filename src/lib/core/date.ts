@@ -19,6 +19,17 @@ export function toISODateString(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * April 1 of the financial year containing `reference` (Indian FY: Apr–Mar).
+ * Used for register / report “YTD” defaults.
+ */
+export function getIndianFinancialYearStartIsoDate(reference: Date = new Date()): string {
+  const month = reference.getMonth();
+  const year = reference.getFullYear();
+  const startYear = month >= 3 ? year : year - 1;
+  return toISODateString(new Date(startYear, 3, 1));
+}
+
 /** Add calendar days to a YYYY-MM-DD string (local date). */
 export function addCalendarDaysToIsoDate(isoDate: string, days: number): string | null {
   const d = parseISODateString(isoDate);

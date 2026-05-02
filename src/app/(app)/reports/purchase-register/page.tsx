@@ -27,16 +27,18 @@ import {
 } from "@/components/reports/report-register-ui";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { useInvoiceRegister } from "@/hooks/use-reports";
-import { useDateRange } from "@/hooks/use-date-range";
+import { useRegisterDateRange } from "@/hooks/use-date-range";
 import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
 import { reportPurchaseRegister } from "@/lib/reports/report-labels";
 import type { ClientReportTableExport } from "@/lib/reports/report-table-export";
 import {
   REGISTER_FLOAT_EPS,
+  REGISTER_NEGATIVE_AMOUNT_CLASS,
   calcInvoiceRegisterPayStatus,
   invoiceRegisterRowMatches,
   invoiceTypeRegisterLabel,
-  sumInvoiceRegisterRows,
+  signedPurchaseRegisterAmounts,
+  sumPurchaseRegisterRows,
   type InvoiceRegisterPayStatusFilter,
 } from "@/lib/reports/invoice-register-filters";
 import { cn, formatCurrency, formatDate } from "@/lib/core/utils";
@@ -72,7 +74,7 @@ export default function PurchaseRegisterPage() {
     error: dateRangeError,
     validStartDate,
     validEndDate,
-  } = useDateRange({ maxMonths: MAX_REPORT_DATE_RANGE_MONTHS });
+  } = useRegisterDateRange();
 
   const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
   const [applied, setApplied] = useState<Filters>(EMPTY_FILTERS);
@@ -98,7 +100,7 @@ export default function PurchaseRegisterPage() {
     );
   }, [data, applied]);
 
-  const totals = useMemo(() => sumInvoiceRegisterRows(rows), [rows]);
+  const totals = useMemo(() => sumPurchaseRegisterRows(rows), [rows]);
 
   const handleSearch = () => setApplied({ ...draft });
   const handleClear = () => {
@@ -140,14 +142,15 @@ export default function PurchaseRegisterPage() {
         inv.paidAmount ?? undefined,
         inv.dueAmount,
       );
+      const money = signedPurchaseRegisterAmounts(inv);
       return [
         formatDate(inv.invoiceDate),
         inv.invoiceNumber,
         invoiceTypeRegisterLabel(inv.invoiceType),
         inv.partyName ?? "—",
-        formatCurrency(inv.totalAmount),
-        formatCurrency(inv.paidAmount ?? "0"),
-        formatCurrency(inv.dueAmount ?? "0"),
+        formatCurrency(String(money.total)),
+        formatCurrency(String(money.paid)),
+        formatCurrency(String(money.balance)),
         payLabel[ps],
       ];
     });
@@ -340,7 +343,7 @@ export default function PurchaseRegisterPage() {
                       inv.paidAmount ?? undefined,
                       inv.dueAmount,
                     );
-                    const balance = parseFloat(inv.dueAmount ?? "0");
+                    const money = signedPurchaseRegisterAmounts(inv);
                     return (
                       <tr key={inv.id} className={rr.tr}>
                         <td className={rr.tdMuted}>{formatDate(inv.invoiceDate)}</td>
@@ -351,20 +354,35 @@ export default function PurchaseRegisterPage() {
                         </td>
                         <td className={rr.tdMuted}>{invoiceTypeRegisterLabel(inv.invoiceType)}</td>
                         <td className={rr.td}>{inv.partyName ?? "—"}</td>
-                        <td className={cn(rr.tdRight, "font-medium")}>
-                          {formatCurrency(inv.totalAmount)}
-                        </td>
-                        <td className={rr.tdRightMuted}>{formatCurrency(inv.paidAmount ?? "0")}</td>
                         <td
                           className={cn(
                             rr.tdRight,
                             "font-medium",
-                            balance > REGISTER_FLOAT_EPS
-                              ? "text-rose-700 dark:text-rose-400"
-                              : "text-muted-foreground",
+                            money.total < -REGISTER_FLOAT_EPS && REGISTER_NEGATIVE_AMOUNT_CLASS,
                           )}
                         >
-                          {formatCurrency(inv.dueAmount ?? "0")}
+                          {formatCurrency(String(money.total))}
+                        </td>
+                        <td
+                          className={cn(
+                            rr.tdRightMuted,
+                            money.paid < -REGISTER_FLOAT_EPS && REGISTER_NEGATIVE_AMOUNT_CLASS,
+                          )}
+                        >
+                          {formatCurrency(String(money.paid))}
+                        </td>
+                        <td
+                          className={cn(
+                            rr.tdRight,
+                            "font-medium",
+                            money.balance < -REGISTER_FLOAT_EPS
+                              ? REGISTER_NEGATIVE_AMOUNT_CLASS
+                              : money.balance > REGISTER_FLOAT_EPS
+                                ? "text-rose-700 dark:text-rose-400"
+                                : "text-muted-foreground",
+                          )}
+                        >
+                          {formatCurrency(String(money.balance))}
                         </td>
                         <td className={rr.td}>
                           <RegisterInvoicePayStatusBadge status={ps} />
@@ -383,19 +401,33 @@ export default function PurchaseRegisterPage() {
                     >
                       Total — {rows.length} {rows.length === 1 ? "record" : "records"}
                     </td>
-                    <td className={cn(rr.tdRight, "font-bold text-foreground")}>
+                    <td
+                      className={cn(
+                        rr.tdRight,
+                        "font-bold text-foreground",
+                        totals.total < -REGISTER_FLOAT_EPS && REGISTER_NEGATIVE_AMOUNT_CLASS,
+                      )}
+                    >
                       {formatCurrency(String(totals.total.toFixed(2)))}
                     </td>
-                    <td className={cn(rr.tdRightMuted, "font-semibold")}>
+                    <td
+                      className={cn(
+                        rr.tdRightMuted,
+                        "font-semibold",
+                        totals.paid < -REGISTER_FLOAT_EPS && REGISTER_NEGATIVE_AMOUNT_CLASS,
+                      )}
+                    >
                       {formatCurrency(String(totals.paid.toFixed(2)))}
                     </td>
                     <td
                       className={cn(
                         rr.tdRight,
                         "font-bold",
-                        totals.balance > REGISTER_FLOAT_EPS
-                          ? "text-rose-700 dark:text-rose-400"
-                          : "text-muted-foreground",
+                        totals.balance < -REGISTER_FLOAT_EPS
+                          ? REGISTER_NEGATIVE_AMOUNT_CLASS
+                          : totals.balance > REGISTER_FLOAT_EPS
+                            ? "text-rose-700 dark:text-rose-400"
+                            : "text-muted-foreground",
                       )}
                     >
                       {formatCurrency(String(totals.balance.toFixed(2)))}

@@ -19,6 +19,34 @@ function normalizePeriod(root: Record<string, unknown>): ReportPeriod {
   };
 }
 
+/** Invoice numbers from nested allocation rows when the report omits `linkedInvoiceSummary`. */
+function invoiceNumbersFromAllocations(root: Record<string, unknown>): string | undefined {
+  const raw =
+    root.allocations ??
+    root.invoice_allocations ??
+    root.receipt_allocations ??
+    root.receiptAllocations ??
+    root.allocation_list;
+  if (!Array.isArray(raw)) return undefined;
+  const nums: string[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as Record<string, unknown>;
+    const n = pickString(
+      row,
+      "invoiceNumber",
+      "invoice_number",
+      "billNumber",
+      "bill_number",
+      "documentNumber",
+      "document_number",
+    );
+    if (n) nums.push(n);
+  }
+  if (nums.length === 0) return undefined;
+  return nums.join(", ");
+}
+
 function normalizeRow(raw: unknown): ReceiptRegisterRowDto | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
@@ -27,6 +55,32 @@ function normalizeRow(raw: unknown): ReceiptRegisterRowDto | null {
 
   const opening =
     pickString(o, "openingBalanceSettlementAmount", "opening_balance_settlement_amount") ?? null;
+
+  const linkedFromAllocations = invoiceNumbersFromAllocations(o);
+  let linkedInvoiceSummary =
+    pickString(
+      o,
+      "linkedInvoiceSummary",
+      "linked_invoice_summary",
+      "invoiceNumbers",
+      "invoice_numbers",
+      "primaryInvoiceNumber",
+      "primary_invoice_number",
+      "allocatedInvoiceNumbers",
+      "allocated_invoice_numbers",
+      "invoiceNumberList",
+      "invoice_number_list",
+    ) ??
+    linkedFromAllocations ??
+    null;
+
+  if (!linkedInvoiceSummary?.trim()) {
+    linkedInvoiceSummary = pickString(o, "invoiceNumber", "invoice_number") ?? null;
+  }
+
+  if (linkedInvoiceSummary?.trim() && /^[-–—]+$/.test(linkedInvoiceSummary.trim())) {
+    linkedInvoiceSummary = null;
+  }
 
   return {
     id,
@@ -49,20 +103,7 @@ function normalizeRow(raw: unknown): ReceiptRegisterRowDto | null {
         "referenceInvoiceNumber",
         "reference_invoice_number",
       ) ?? null,
-    linkedInvoiceSummary:
-      pickString(
-        o,
-        "linkedInvoiceSummary",
-        "linked_invoice_summary",
-        "invoiceNumbers",
-        "invoice_numbers",
-        "primaryInvoiceNumber",
-        "primary_invoice_number",
-        "allocatedInvoiceNumbers",
-        "allocated_invoice_numbers",
-        "invoiceNumberList",
-        "invoice_number_list",
-      ) ?? null,
+    linkedInvoiceSummary,
     notes: pickString(o, "notes", "note") ?? null,
     receivedAt: pickString(o, "receivedAt", "received_at", "receiptDate", "receipt_date") ?? "",
     createdAt: pickString(o, "createdAt", "created_at") ?? "",

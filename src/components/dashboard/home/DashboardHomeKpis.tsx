@@ -68,7 +68,7 @@ export function DashboardHomeKpis({ dashboard, filter, onFilterChange }: Dashboa
   const monthSales = dashboard.monthSales ?? dashboard.totalRevenue;
   const monthPurchase = dashboard.summaryPurchase;
   const marginStr = resolveDashboardMarginDisplay(dashboard);
-  const cashBank = dashboard.cashAndBankBalance;
+  // const cashBank = dashboard.cashAndBankBalance;
   const profitRaw = dashboard.monthProfit;
   const profitNum = profitRaw != null && profitRaw !== "" ? dashboardToNumber(profitRaw) : null;
   const profitStr = profitRaw != null && profitRaw !== "" ? formatCurrency(profitRaw) : "—";
@@ -117,7 +117,7 @@ export function DashboardHomeKpis({ dashboard, filter, onFilterChange }: Dashboa
           </button>
         </div>
       </div>
-      <div className="grid auto-rows-fr grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-3 xl:grid-cols-6 [&>*]:min-w-0">
+      <div className="grid auto-rows-fr grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-3 xl:grid-cols-5 [&>*]:min-w-0">
         <Kpi label="Today sales" value={todayStr} tone={todayStr === "—" ? "default" : "sales"} />
         <Kpi label={salesLabel} value={formatCurrency(monthSales)} tone="sales" />
         <Kpi
@@ -128,11 +128,11 @@ export function DashboardHomeKpis({ dashboard, filter, onFilterChange }: Dashboa
           tone={monthPurchase != null && monthPurchase !== "" ? "purchase" : "default"}
         />
         <Kpi label="Margin" value={marginStr} tone={marginToneResolved} />
-        <Kpi
+        {/* <Kpi
           label="Net cashflow"
           value={cashBank != null && cashBank !== "" ? formatCurrency(cashBank) : "—"}
           tone={cashBank != null && cashBank !== "" ? "cash" : "default"}
-        />
+        /> */}
         <Kpi label={profitLabel} value={profitStr} tone={profitTone} />
       </div>
     </section>

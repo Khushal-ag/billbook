@@ -5,6 +5,9 @@ import type { InvoiceRegisterRowDto } from "@/types/report";
 /** Tolerance for paid / due comparisons on invoice register rows. */
 export const REGISTER_FLOAT_EPS = 0.001;
 
+/** Negative signed amounts (outflows / sale returns) in registers. */
+export const REGISTER_NEGATIVE_AMOUNT_CLASS = "text-red-600 dark:text-red-400";
+
 export type InvoiceRegisterPayStatusFilter = "ALL" | "PAID" | "UNPAID" | "PARTIAL";
 
 export type InvoiceRegisterPayStatus = Exclude<InvoiceRegisterPayStatusFilter, "ALL">;
@@ -51,17 +54,66 @@ export function invoiceRegisterRowMatches(
   return true;
 }
 
-export function sumInvoiceRegisterRows(rows: InvoiceRegisterRowDto[]): {
+/** Sales: invoice + revenue, return − (reduces net). Magnitudes absolute. */
+export function signedSalesRegisterAmounts(inv: InvoiceRegisterRowDto): {
+  total: number;
+  paid: number;
+  balance: number;
+} {
+  const t = Math.abs(parseFloat(inv.totalAmount || "0"));
+  const p = Math.abs(parseFloat(inv.paidAmount || "0"));
+  const b = Math.abs(parseFloat(inv.dueAmount || "0"));
+  if (inv.invoiceType === "SALE_RETURN") return { total: -t, paid: -p, balance: -b };
+  return { total: t, paid: p, balance: b };
+}
+
+export function sumSalesRegisterRows(rows: InvoiceRegisterRowDto[]): {
   total: number;
   paid: number;
   balance: number;
 } {
   return rows.reduce(
-    (acc, inv) => ({
-      total: acc.total + parseFloat(inv.totalAmount || "0"),
-      paid: acc.paid + parseFloat(inv.paidAmount || "0"),
-      balance: acc.balance + parseFloat(inv.dueAmount || "0"),
-    }),
+    (acc, inv) => {
+      const x = signedSalesRegisterAmounts(inv);
+      return {
+        total: acc.total + x.total,
+        paid: acc.paid + x.paid,
+        balance: acc.balance + x.balance,
+      };
+    },
+    { total: 0, paid: 0, balance: 0 },
+  );
+}
+
+/**
+ * Purchase: invoice − (cash out), return + (refund / money in). Magnitudes absolute.
+ */
+export function signedPurchaseRegisterAmounts(inv: InvoiceRegisterRowDto): {
+  total: number;
+  paid: number;
+  balance: number;
+} {
+  const t = Math.abs(parseFloat(inv.totalAmount || "0"));
+  const p = Math.abs(parseFloat(inv.paidAmount || "0"));
+  const b = Math.abs(parseFloat(inv.dueAmount || "0"));
+  if (inv.invoiceType === "PURCHASE_RETURN") return { total: t, paid: p, balance: b };
+  return { total: -t, paid: -p, balance: -b };
+}
+
+export function sumPurchaseRegisterRows(rows: InvoiceRegisterRowDto[]): {
+  total: number;
+  paid: number;
+  balance: number;
+} {
+  return rows.reduce(
+    (acc, inv) => {
+      const x = signedPurchaseRegisterAmounts(inv);
+      return {
+        total: acc.total + x.total,
+        paid: acc.paid + x.paid,
+        balance: acc.balance + x.balance,
+      };
+    },
     { total: 0, paid: 0, balance: 0 },
   );
 }

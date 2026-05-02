@@ -8,7 +8,7 @@ import { ReportsDashboardSection } from "@/components/reports/ReportsDashboardSe
 import { ReportsDashboardSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useReportsDashboard } from "@/hooks/use-reports";
-import { useDateRange } from "@/hooks/use-date-range";
+import { useRegisterDateRange } from "@/hooks/use-date-range";
 import { MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
 import { reportHub } from "@/lib/reports/report-labels";
 import type { ReportsDashboardQuery } from "@/types/report";
@@ -26,7 +26,7 @@ export default function ReportsPage() {
     error: dateRangeError,
     validStartDate,
     validEndDate,
-  } = useDateRange({ maxMonths: MAX_REPORT_DATE_RANGE_MONTHS });
+  } = useRegisterDateRange();
 
   const dashboardQuery: ReportsDashboardQuery = useMemo(() => {
     if (periodTab === "monthly") return { filter: "monthly" };

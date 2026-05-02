@@ -18,9 +18,9 @@ import {
 } from "@/components/reports/report-register-ui";
 import { ReportTabSkeleton } from "@/components/skeletons/ReportTabSkeleton";
 import { usePayoutRegister } from "@/hooks/use-reports";
-import { useDateRange } from "@/hooks/use-date-range";
+import { useRegisterDateRange } from "@/hooks/use-date-range";
 import { cn, formatCurrency, formatDate, humanizeApiEnum } from "@/lib/core/utils";
-import { DEFAULT_REPORT_LIMIT, MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
+import { DEFAULT_REPORT_LIMIT } from "@/constants";
 import { reportPayoutRegister } from "@/lib/reports/report-labels";
 import type { ClientReportTableExport } from "@/lib/reports/report-table-export";
 import type { PayoutRegisterRowDto } from "@/types/report";
@@ -49,7 +49,7 @@ export default function PayoutRegisterPage() {
     error: dateRangeError,
     validStartDate,
     validEndDate,
-  } = useDateRange({ maxMonths: MAX_REPORT_DATE_RANGE_MONTHS });
+  } = useRegisterDateRange();
 
   const [limit, setLimit] = useState(DEFAULT_REPORT_LIMIT);
   const { data, isPending, error } = usePayoutRegister(validStartDate, validEndDate, limit);

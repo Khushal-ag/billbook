@@ -1,6 +1,11 @@
 import { useState, useMemo } from "react";
 import { differenceInMonths } from "date-fns";
-import { parseISODateString, toISODateString } from "@/lib/core/date";
+import { MAX_REPORT_DATE_RANGE_MONTHS } from "@/constants";
+import {
+  getIndianFinancialYearStartIsoDate,
+  parseISODateString,
+  toISODateString,
+} from "@/lib/core/date";
 
 interface UseDateRangeOptions {
   defaultStartDate?: string;
@@ -52,4 +57,12 @@ export function useDateRange({
     validStartDate: isValid ? startDate : "",
     validEndDate: isValid ? endDate : "",
   };
+}
+
+/** Registers / report hub: default range from 1 Apr (FY YTD) through today. */
+export function useRegisterDateRange() {
+  return useDateRange({
+    maxMonths: MAX_REPORT_DATE_RANGE_MONTHS,
+    defaultStartDate: getIndianFinancialYearStartIsoDate(),
+  });
 }
