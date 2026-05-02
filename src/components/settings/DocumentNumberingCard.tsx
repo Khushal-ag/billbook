@@ -387,120 +387,126 @@ export function DocumentNumberingCard({ embedded = false }: DocumentNumberingCar
           )}
         </div>
         {templateOptions.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {templateOptions.map((option) => {
-              const optionVersionId =
-                option.invoiceTemplateVersionId ?? option.templateVersionId ?? null;
-              if (optionVersionId == null) return null;
-              const isCurrent = currentTemplateVersionId === optionVersionId;
-              const isExplicitPick = data.selectedInvoiceTemplateVersionId === optionVersionId;
-              const isSaving = templateUpdateTarget === optionVersionId;
-              const optionLabel =
-                option.displayName?.trim() ||
-                option.name?.trim() ||
-                option.templateName?.trim() ||
-                `Template v${option.version ?? optionVersionId}`;
-              const previewHtml = templatePreviewHtmlById[optionVersionId] ?? null;
-              return (
-                <button
-                  key={optionVersionId}
-                  type="button"
-                  disabled={readOnly || isSaving || update.isPending}
-                  onClick={() => void selectInvoiceTemplate(optionVersionId)}
-                  className={`group overflow-hidden rounded-xl border bg-card text-left transition-all ${
-                    isCurrent
-                      ? "border-primary shadow-sm ring-2 ring-primary/25"
-                      : "border-border/80 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md"
-                  } ${readOnly ? "cursor-not-allowed opacity-80" : ""}`}
-                >
-                  <div className="relative aspect-square w-full border-b border-border/70 bg-muted/30">
-                    {previewHtml ? (
-                      <div className="flex h-full items-center justify-center p-2">
-                        <div
-                          className="pointer-events-none overflow-hidden rounded border border-border/60 bg-background shadow-sm"
-                          style={{
-                            width: `${Math.floor(TEMPLATE_THUMBNAIL_SOURCE_WIDTH * TEMPLATE_THUMBNAIL_SCALE)}px`,
-                            height: `${Math.floor(TEMPLATE_THUMBNAIL_SOURCE_HEIGHT * TEMPLATE_THUMBNAIL_SCALE)}px`,
-                          }}
-                        >
-                          <iframe
-                            title={`${optionLabel} preview`}
-                            srcDoc={previewHtml}
-                            className="origin-top-left"
+          <div
+            className="-mx-1 snap-x snap-mandatory overflow-x-auto overflow-y-visible scroll-smooth px-1 pb-2 pt-0.5 [scrollbar-gutter:stable] sm:snap-none"
+            aria-label="Available invoice templates"
+          >
+            <div className="flex w-max min-w-full gap-3">
+              {templateOptions.map((option) => {
+                const optionVersionId =
+                  option.invoiceTemplateVersionId ?? option.templateVersionId ?? null;
+                if (optionVersionId == null) return null;
+                const isCurrent = currentTemplateVersionId === optionVersionId;
+                const isExplicitPick = data.selectedInvoiceTemplateVersionId === optionVersionId;
+                const isSaving = templateUpdateTarget === optionVersionId;
+                const optionLabel =
+                  option.displayName?.trim() ||
+                  option.name?.trim() ||
+                  option.templateName?.trim() ||
+                  "Invoice template";
+                const previewHtml = templatePreviewHtmlById[optionVersionId] ?? null;
+                return (
+                  <button
+                    key={optionVersionId}
+                    type="button"
+                    disabled={readOnly || isSaving || update.isPending}
+                    onClick={() => void selectInvoiceTemplate(optionVersionId)}
+                    className={`group w-[min(280px,calc(100vw-2.5rem))] shrink-0 snap-start overflow-hidden rounded-xl border bg-card text-left transition-all sm:w-[240px] lg:w-[260px] ${
+                      isCurrent
+                        ? "border-primary shadow-sm ring-2 ring-primary/25"
+                        : "border-border/80 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-md"
+                    } ${readOnly ? "cursor-not-allowed opacity-80" : ""}`}
+                  >
+                    <div className="relative aspect-square w-full border-b border-border/70 bg-muted/30">
+                      {previewHtml ? (
+                        <div className="flex h-full items-center justify-center p-2">
+                          <div
+                            className="pointer-events-none overflow-hidden rounded border border-border/60 bg-background shadow-sm"
                             style={{
-                              width: `${TEMPLATE_THUMBNAIL_SOURCE_WIDTH}px`,
-                              height: `${TEMPLATE_THUMBNAIL_SOURCE_HEIGHT}px`,
-                              transform: `scale(${TEMPLATE_THUMBNAIL_SCALE})`,
+                              width: `${Math.floor(TEMPLATE_THUMBNAIL_SOURCE_WIDTH * TEMPLATE_THUMBNAIL_SCALE)}px`,
+                              height: `${Math.floor(TEMPLATE_THUMBNAIL_SOURCE_HEIGHT * TEMPLATE_THUMBNAIL_SCALE)}px`,
                             }}
-                          />
+                          >
+                            <iframe
+                              title={`${optionLabel} preview`}
+                              srcDoc={previewHtml}
+                              className="origin-top-left"
+                              style={{
+                                width: `${TEMPLATE_THUMBNAIL_SOURCE_WIDTH}px`,
+                                height: `${TEMPLATE_THUMBNAIL_SOURCE_HEIGHT}px`,
+                                transform: `scale(${TEMPLATE_THUMBNAIL_SCALE})`,
+                              }}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex h-full items-center justify-center px-3 text-center text-xs text-muted-foreground">
-                        {option.previewUrl ? "Loading preview..." : "Preview unavailable"}
-                      </div>
-                    )}
-                    {previewHtml ? (
-                      <span
-                        role="button"
-                        tabIndex={readOnly ? -1 : 0}
-                        className="absolute bottom-2 right-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-border/70 bg-background/90 shadow-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (readOnly) return;
-                          setTemplatePreviewModal({ title: optionLabel, html: previewHtml });
-                        }}
-                        onKeyDown={(e) => {
-                          if (readOnly) return;
-                          if (e.key === "Enter" || e.key === " ") {
+                      ) : (
+                        <div className="flex h-full items-center justify-center px-3 text-center text-xs text-muted-foreground">
+                          {option.previewUrl ? "Loading preview..." : "Preview unavailable"}
+                        </div>
+                      )}
+                      {previewHtml ? (
+                        <span
+                          role="button"
+                          tabIndex={readOnly ? -1 : 0}
+                          className="absolute bottom-2 right-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-border/70 bg-background/90 shadow-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                          onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
+                            if (readOnly) return;
                             setTemplatePreviewModal({ title: optionLabel, html: previewHtml });
-                          }
-                        }}
-                        aria-label={`Open ${optionLabel} preview`}
-                        aria-disabled={readOnly}
-                      >
-                        <ArrowUpRight className="h-3.5 w-3.5" />
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2 p-2.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="line-clamp-1 text-sm font-semibold">{optionLabel}</p>
-                        <p className="mt-0.5 text-[11px] text-muted-foreground">
-                          Version {option.version ?? optionVersionId}
-                        </p>
-                      </div>
-                      {isCurrent ? (
-                        <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          }}
+                          onKeyDown={(e) => {
+                            if (readOnly) return;
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setTemplatePreviewModal({ title: optionLabel, html: previewHtml });
+                            }
+                          }}
+                          aria-label={`Open ${optionLabel} preview`}
+                          aria-disabled={readOnly}
+                        >
+                          <ArrowUpRight className="h-3.5 w-3.5" />
                         </span>
                       ) : null}
                     </div>
-                    <div className="flex min-h-5 flex-wrap items-center gap-1">
-                      {isExplicitPick ? (
-                        <Badge variant="secondary" className="text-[10px] font-normal">
-                          Selected
-                        </Badge>
-                      ) : null}
-                      {isCurrent && !isExplicitPick ? (
-                        <Badge variant="outline" className="text-[10px] font-normal">
-                          Active default
-                        </Badge>
-                      ) : null}
-                      {isSaving ? (
-                        <Badge variant="outline" className="text-[10px] font-normal">
-                          Saving...
-                        </Badge>
+                    <div className="space-y-2 px-2.5 pb-2 pt-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="line-clamp-1 text-sm font-semibold leading-tight">
+                            {optionLabel}
+                          </p>
+                        </div>
+                        {isCurrent ? (
+                          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                          </span>
+                        ) : null}
+                      </div>
+                      {isExplicitPick || (isCurrent && !isExplicitPick) || isSaving ? (
+                        <div className="flex flex-wrap items-center gap-1">
+                          {isExplicitPick ? (
+                            <Badge variant="secondary" className="text-[10px] font-normal">
+                              Selected
+                            </Badge>
+                          ) : null}
+                          {isCurrent && !isExplicitPick ? (
+                            <Badge variant="outline" className="text-[10px] font-normal">
+                              Active default
+                            </Badge>
+                          ) : null}
+                          {isSaving ? (
+                            <Badge variant="outline" className="text-[10px] font-normal">
+                              Saving...
+                            </Badge>
+                          ) : null}
+                        </div>
                       ) : null}
                     </div>
-                  </div>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">No invoice templates available yet.</p>
