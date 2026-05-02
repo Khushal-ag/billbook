@@ -199,9 +199,9 @@ export function OutboundPaymentCreateForm() {
     } catch (e) {
       if (maybeShowTrialExpiredToast(e)) return;
       if (e instanceof ApiClientError) {
-        showErrorToast(augmentApiClientErrorForPayment(e), "Failed to record payment");
+        showErrorToast(augmentApiClientErrorForPayment(e), "Couldn't record payment");
       } else {
-        showErrorToast(e, "Failed to record payment");
+        showErrorToast(e, "Couldn't record payment");
       }
     }
   };

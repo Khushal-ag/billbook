@@ -99,7 +99,7 @@ export function RoleGroupEditor({ roleGroupId }: RoleGroupEditorProps) {
       router.push("/settings/role-groups");
       router.refresh();
     } catch (err) {
-      showErrorToast(err, isCreate ? "Could not create role group" : "Could not save role group");
+      showErrorToast(err, isCreate ? "Couldn't create role group" : "Couldn't save role group");
     }
   };
 
@@ -119,7 +119,7 @@ export function RoleGroupEditor({ roleGroupId }: RoleGroupEditorProps) {
         );
         return;
       }
-      showErrorToast(err, "Could not delete role group");
+      showErrorToast(err, "Couldn't delete role group");
     }
   };
 

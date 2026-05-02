@@ -115,7 +115,7 @@ export default function AdminBusinessesPage() {
       setExtendOpen(false);
       setSelected(null);
     } catch (e) {
-      showErrorToast(e, "Failed to extend validity");
+      showErrorToast(e, "Couldn't extend validity");
     }
   };
 

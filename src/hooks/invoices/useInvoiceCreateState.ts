@@ -1911,18 +1911,18 @@ export function useInvoiceCreateState(
         items: linePayload,
       });
 
-      showSuccessToast(`${pageMeta.label} created — review and finalize when ready`);
+      showSuccessToast(`${pageMeta.label} saved as draft`);
       router.push(created?.id != null ? `/invoices/${created.id}` : pageMeta.path);
     } catch (err) {
       if (maybeShowTrialExpiredToast(err)) return;
       const failTitle =
         editInvoiceId != null
           ? invoiceType === "PURCHASE_RETURN"
-            ? "Could not update purchase return"
-            : "Failed to update invoice"
+            ? "Couldn't update purchase return"
+            : "Couldn't update invoice"
           : invoiceType === "PURCHASE_RETURN"
-            ? "Could not save purchase return"
-            : `Failed to create ${pageMeta.label.toLowerCase()}`;
+            ? "Couldn't save purchase return"
+            : `Couldn't create ${pageMeta.label.toLowerCase()}`;
       showErrorToast(withInvoiceQuantityErrorDetails(err), failTitle);
     } finally {
       submitGuardRef.current = false;
@@ -1999,7 +1999,7 @@ export function useInvoiceCreateState(
   const handleItemCreated = useCallback((createdItem: { name: string }) => {
     setStockSearchText(createdItem.name);
     setStockSearchOpen(true);
-    showSuccessToast("Item created. Add stock to use it in invoice.");
+    showSuccessToast("Item added — add stock to sell it");
   }, []);
 
   return {

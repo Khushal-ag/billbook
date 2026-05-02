@@ -78,7 +78,7 @@ export default function CreditNoteDetailPage() {
           "Can’t delete while allocated",
         );
       } else {
-        showErrorToast(err, "Failed to delete");
+        showErrorToast(err, "Couldn't delete");
       }
       setDeleteConfirmOpen(false);
     }

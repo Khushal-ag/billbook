@@ -101,7 +101,7 @@ export default function SaleReturnRefundDialog({
       onOpenChange(false);
     } catch (err) {
       if (maybeShowTrialExpiredToast(err)) return;
-      showErrorToast(err, "Failed to pay refund");
+      showErrorToast(err, "Couldn't pay refund");
     }
   };
 

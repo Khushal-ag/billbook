@@ -134,7 +134,7 @@ export default function AdjustStockDialog({
       showSuccessToast("Stock adjusted");
       onOpenChange(false);
     } catch (err) {
-      showErrorToast(err, "Failed to adjust stock");
+      showErrorToast(err, "Couldn't adjust stock");
     }
   };
 

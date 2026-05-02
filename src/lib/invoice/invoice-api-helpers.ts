@@ -108,7 +108,7 @@ export function markSentFeedbackMessage(res: InvoiceMarkCommunicationResponse): 
   const preview =
     typeof res.delivery.messagePreview === "string" ? res.delivery.messagePreview.trim() : "";
   if (res.delivery.outcome === "skipped_integration_pending") {
-    return preview ? `WhatsApp not live yet — ${preview}` : "WhatsApp not live yet — logged.";
+    return preview ? `WhatsApp pending — ${preview}` : "WhatsApp pending — we logged it.";
   }
   if (res.delivery.outcome === "already_recorded_today") {
     return "Already logged today";

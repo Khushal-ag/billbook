@@ -109,9 +109,9 @@ export default function PaymentDialog({ open, onOpenChange, invoiceId, balanceDu
     } catch (err) {
       if (maybeShowTrialExpiredToast(err)) return;
       if (err instanceof ApiClientError) {
-        showErrorToast(augmentApiClientErrorForPayment(err), "Failed to record payment");
+        showErrorToast(augmentApiClientErrorForPayment(err), "Couldn't record payment");
       } else {
-        showErrorToast(err, "Failed to record payment");
+        showErrorToast(err, "Couldn't record payment");
       }
     }
   };

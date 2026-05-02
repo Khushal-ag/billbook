@@ -175,7 +175,7 @@ export default function Stock() {
         showSuccessToast(entries.length === 1 ? "Stock entry saved" : "Stock entries saved");
         return created;
       } catch (err) {
-        showErrorToast(err, "Failed to save stock entries");
+        showErrorToast(err, "Couldn't save stock entries");
         throw err;
       }
     },

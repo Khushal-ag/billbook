@@ -110,7 +110,7 @@ export function CreditNoteAllocationEditor({
       showSuccessToast("Allocations updated");
       onSaved?.();
     } catch (e) {
-      showErrorToast(e, "Failed to update allocations");
+      showErrorToast(e, "Couldn't update allocations");
     }
   };
 

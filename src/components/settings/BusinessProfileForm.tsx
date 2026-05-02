@@ -470,7 +470,7 @@ export function BusinessProfileForm({
         showErrorToast(`${kind === "business" ? "Business" : "Industry"} type already exists.`);
         return;
       }
-      showErrorToast(error, `Failed to create ${kind} type`);
+      showErrorToast(error, `Couldn't add ${kind} type`);
     } finally {
       if (kind === "business") {
         setIsCreatingBusinessType(false);

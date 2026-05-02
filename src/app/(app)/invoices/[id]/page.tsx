@@ -93,23 +93,29 @@ export default function InvoiceDetail() {
     try {
       await finalizeMutation.mutateAsync(invoiceId);
       const type = invoice?.invoiceType;
-      const paymentHint =
-        type === "SALE_INVOICE"
-          ? " To reduce what the customer owes, allocate receipts (including any opening advance receipt)—finalizing the invoice does not do that by itself."
-          : type === "PURCHASE_INVOICE"
-            ? " To reduce what you owe the supplier, record supplier payments—finalizing the bill does not pay it from opening balance or advance."
-            : type === "SALE_RETURN" || type === "PURCHASE_RETURN"
-              ? " Use Record payment or refund on this document to move money—finalizing alone does not pay or collect."
-              : "";
-      showSuccessToast(`Invoice finalized.${paymentHint}`);
+      if (type === "SALE_INVOICE") {
+        showSuccessToast(
+          "Sale invoice finalized",
+          "Customer payments are recorded separately under Receipts.",
+        );
+      } else if (type === "PURCHASE_INVOICE") {
+        showSuccessToast("Purchase bill finalized", "Supplier payments are recorded on this bill.");
+      } else if (type === "SALE_RETURN" || type === "PURCHASE_RETURN") {
+        showSuccessToast(
+          "Return finalized",
+          "Record payment or refund on this document to move money.",
+        );
+      } else {
+        showSuccessToast("Finalized");
+      }
     } catch (err) {
       if (maybeShowTrialExpiredToast(err)) return;
       if (err instanceof ApiClientError && err.status === 409) {
-        showErrorToast(withInvoiceQuantityErrorDetails(err), "Insufficient stock");
+        showErrorToast(withInvoiceQuantityErrorDetails(err), "Not enough stock");
       } else if (err instanceof ApiClientError && err.status === 400) {
-        showErrorToast(withInvoiceQuantityErrorDetails(err), "Cannot finalize");
+        showErrorToast(withInvoiceQuantityErrorDetails(err), "Can't finalize");
       } else {
-        showErrorToast(withInvoiceQuantityErrorDetails(err), "Failed to finalize");
+        showErrorToast(withInvoiceQuantityErrorDetails(err), "Couldn't finalize");
       }
     } finally {
       finalizeGuard.current = false;
@@ -128,14 +134,14 @@ export default function InvoiceDetail() {
       showSuccessToast(markSentFeedbackMessage(res));
     } catch (err) {
       if (err instanceof ApiClientError && err.status === 503) {
-        showErrorToast(err, "Could not complete request — try again later");
+        showErrorToast(err, "Service busy — try again");
         return;
       }
       if (err instanceof ApiClientError && (err.status === 409 || err.status === 400)) {
-        showErrorToast(err, "Can't log WhatsApp");
+        showErrorToast(err, "Can't log to WhatsApp");
         return;
       }
-      showErrorToast(err, "WhatsApp log failed");
+      showErrorToast(err, "Couldn't log to WhatsApp");
     }
   };
 
@@ -154,14 +160,14 @@ export default function InvoiceDetail() {
       showSuccessToast(markReminderFeedbackMessage(res));
     } catch (err) {
       if (err instanceof ApiClientError && err.status === 503) {
-        showErrorToast(err, "Email failed — check SMTP or try later");
+        showErrorToast(err, "Email unavailable — check mail settings");
         return;
       }
       if (err instanceof ApiClientError && (err.status === 409 || err.status === 400)) {
         showErrorToast(err, "Can't send reminder");
         return;
       }
-      showErrorToast(err, "Reminder failed");
+      showErrorToast(err, "Couldn't send reminder");
     }
   };
 
@@ -169,13 +175,13 @@ export default function InvoiceDetail() {
     if (!invoiceId) return;
     try {
       await cancelMutation.mutateAsync({ invoiceId, reason });
-      showSuccessToast("Invoice cancelled");
+      showSuccessToast("Cancelled");
       setCancelConfirm(false);
       const listPath =
         invoice && INVOICE_TYPE_OPTIONS.find((o) => o.type === invoice.invoiceType)?.path;
       router.push(listPath ?? "/invoices");
     } catch (err) {
-      showErrorToast(err, "Failed to cancel");
+      showErrorToast(err, "Couldn't cancel");
     }
   };
 

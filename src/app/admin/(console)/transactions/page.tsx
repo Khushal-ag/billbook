@@ -152,7 +152,7 @@ export default function AdminTransactionsPage() {
       const fname = `admin-transactions-${validStartDate}-${validEndDate}.csv`;
       downloadCsvText(csv, fname);
     } catch (e) {
-      showErrorToast(e, "Failed to build CSV");
+      showErrorToast(e, "Couldn't build CSV");
     }
   };
 

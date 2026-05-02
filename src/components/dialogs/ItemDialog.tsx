@@ -331,7 +331,7 @@ export default function ItemDialog({
       });
       return created;
     } catch {
-      showErrorToast(null, "Failed to create category");
+      showErrorToast(null, "Couldn't create category");
       return null;
     }
   };
@@ -423,7 +423,7 @@ export default function ItemDialog({
         setError("name", { type: "manual", message: ITEM_NAME_DUPLICATE_ERROR });
         return;
       }
-      showErrorToast(err, isEdit ? "Failed to update item" : "Failed to create item");
+      showErrorToast(err, isEdit ? "Couldn't update item" : "Couldn't create item");
     }
   };
 
@@ -459,7 +459,7 @@ export default function ItemDialog({
       });
       return created;
     } catch {
-      showErrorToast(null, "Failed to create unit");
+      showErrorToast(null, "Couldn't create unit");
       return null;
     }
   };

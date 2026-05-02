@@ -66,7 +66,7 @@ export default function PartyLedgerPage() {
     try {
       await statementJson.refetch();
     } catch (err) {
-      showErrorToast(err, "Failed to load statement");
+      showErrorToast(err, "Couldn't load statement");
     }
   };
 
@@ -74,7 +74,7 @@ export default function PartyLedgerPage() {
     try {
       await statementPdf.refetch();
     } catch (err) {
-      showErrorToast(err, "Failed to generate PDF");
+      showErrorToast(err, "Couldn't create PDF");
     }
   };
 

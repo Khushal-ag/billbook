@@ -196,7 +196,7 @@ function ProfileEditor({
       reset(getProfileFormValues(updated));
       showSuccessToast("Business profile updated");
     } catch (err) {
-      showErrorToast(err, "Failed to update");
+      showErrorToast(err, "Couldn't save changes");
     }
   };
 

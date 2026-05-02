@@ -138,8 +138,12 @@ export function showErrorToast(errorOrMessage: unknown, title?: string) {
 }
 
 /**
- * Show a success toast
+ * Show a success toast. Optional `description` appears as secondary line (keep both short).
  */
-export function showSuccessToast(message: string) {
+export function showSuccessToast(message: string, description?: string) {
+  if (description) {
+    toast.success(message, { description });
+    return;
+  }
   toast.success(message);
 }

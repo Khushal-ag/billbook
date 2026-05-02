@@ -124,9 +124,9 @@ export function NewReceiptDialog({ open, onOpenChange }: NewReceiptDialogProps) 
     } catch (e) {
       if (maybeShowTrialExpiredToast(e)) return;
       if (e instanceof ApiClientError) {
-        showErrorToast(augmentApiClientErrorForReceipt(e), "Failed to create receipt");
+        showErrorToast(augmentApiClientErrorForReceipt(e), "Couldn't create receipt");
       } else {
-        showErrorToast(e, "Failed to create receipt");
+        showErrorToast(e, "Couldn't create receipt");
       }
     }
   };

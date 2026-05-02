@@ -205,9 +205,9 @@ export function ReceiptAllocationEditor({
       onSaved?.();
     } catch (e) {
       if (e instanceof ApiClientError) {
-        showErrorToast(augmentApiClientErrorForReceipt(e), "Failed to update allocations");
+        showErrorToast(augmentApiClientErrorForReceipt(e), "Couldn't update allocations");
       } else {
-        showErrorToast(e, "Failed to update allocations");
+        showErrorToast(e, "Couldn't update allocations");
       }
     }
   };

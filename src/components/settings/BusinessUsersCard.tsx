@@ -257,7 +257,7 @@ export function BusinessUsersCard({ embedded = false }: BusinessUsersCardProps) 
         password: "",
       });
     } catch (err) {
-      showErrorToast(err, "Could not add team member");
+      showErrorToast(err, "Couldn't add team member");
     }
   });
 
@@ -266,7 +266,7 @@ export function BusinessUsersCard({ embedded = false }: BusinessUsersCardProps) 
     const rgId =
       reactivateTarget.roleGroupId ?? roleGroups.find((g) => g.isActive)?.id ?? roleGroups[0]?.id;
     if (rgId == null) {
-      showErrorToast(null, "No role group available — create one under Role groups first.");
+      showErrorToast(null, "Add a role group first (Settings → Role groups).");
       return;
     }
     try {
@@ -286,7 +286,7 @@ export function BusinessUsersCard({ embedded = false }: BusinessUsersCardProps) 
       reactivateForm.reset({ password: "", confirmPassword: "" });
       setShowReactivatePassword(false);
     } catch (err) {
-      showErrorToast(err, "Could not reactivate");
+      showErrorToast(err, "Couldn't reactivate");
     }
   });
 
@@ -301,7 +301,7 @@ export function BusinessUsersCard({ embedded = false }: BusinessUsersCardProps) 
       setDeactivateTarget(null);
       if (deactivateTarget.userId === sessionUser?.id) void refreshSession();
     } catch (err) {
-      showErrorToast(err, "Could not deactivate");
+      showErrorToast(err, "Couldn't deactivate");
     }
   };
 
@@ -315,7 +315,7 @@ export function BusinessUsersCard({ embedded = false }: BusinessUsersCardProps) 
       showSuccessToast("Role group updated");
       if (member.userId === sessionUser?.id) void refreshSession();
     } catch (err) {
-      showErrorToast(err, "Could not update role group");
+      showErrorToast(err, "Couldn't update role group");
     }
   };
 

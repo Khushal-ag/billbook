@@ -182,7 +182,7 @@ export function DocumentNumberingCard({ embedded = false }: DocumentNumberingCar
         showErrorToast(e.message);
         return;
       }
-      showErrorToast(e, "Could not save settings");
+      showErrorToast(e, "Couldn't save settings");
     }
   };
 

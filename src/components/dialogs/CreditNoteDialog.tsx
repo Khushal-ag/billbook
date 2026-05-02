@@ -205,11 +205,11 @@ export default function CreditNoteDialog({
         reason: data.reason || undefined,
       });
       onOpenChange(false);
-      showSuccessToast("Credit note created.");
+      showSuccessToast("Credit note created");
       router.push(`/credit-notes/${created.id}#credit-note-allocate`);
     } catch (err) {
       if (maybeShowTrialExpiredToast(err)) return;
-      showErrorToast(withInvoiceQuantityErrorDetails(err), "Failed to create credit note");
+      showErrorToast(withInvoiceQuantityErrorDetails(err), "Couldn't create credit note");
     }
   };
 
