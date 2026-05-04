@@ -12,7 +12,7 @@ export function AdminRouteGuard({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
     if (!user) {
-      router.replace("/admin/login");
+      router.replace("/");
       return;
     }
     if (user.role !== "ADMIN") {

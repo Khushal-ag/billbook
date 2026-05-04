@@ -4,7 +4,7 @@ import { buildQueryString } from "@/lib/core/utils";
 /**
  * Parse RFC 5987 / simple `filename="..."` from Content-Disposition.
  */
-function parseFilenameFromContentDisposition(header: string | null): string | null {
+export function parseFilenameFromContentDisposition(header: string | null): string | null {
   if (!header) return null;
   const utf8 = /filename\*=(?:UTF-8''|)([^;\n]+)/i.exec(header);
   if (utf8?.[1]) {
@@ -21,7 +21,7 @@ function parseFilenameFromContentDisposition(header: string | null): string | nu
   return null;
 }
 
-function triggerBlobDownload(blob: Blob, filename: string) {
+export function triggerBlobDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -30,7 +30,7 @@ function triggerBlobDownload(blob: Blob, filename: string) {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 /** GET report blob; `pathWithQuery` must already include `?` query string. */

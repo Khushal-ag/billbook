@@ -48,6 +48,7 @@ import {
   markSentFeedbackMessage,
 } from "@/lib/invoice/invoice-api-helpers";
 import { showSuccessToast, showErrorToast } from "@/lib/ui/toast-helpers";
+import { downloadFileFromUrlAndOpenPdfPreview } from "@/lib/ui/signed-pdf";
 import { maybeShowTrialExpiredToast } from "@/lib/business/trial";
 import { ApiClientError } from "@/api/error";
 
@@ -73,9 +74,11 @@ export default function InvoiceDetail() {
       .map((item) => item.stockEntryId)
       .filter((id): id is number => id != null && Number.isFinite(id)) ?? [];
   const stockEntriesQuery = useStockEntriesByIds(stockEntryIds);
-  const { data: pdfData, error: pdfError } = useInvoicePdf(
-    invoice?.status === "FINAL" ? invoiceId : undefined,
-  );
+  const {
+    data: pdfData,
+    error: pdfError,
+    isPending: isInvoicePdfPending,
+  } = useInvoicePdf(invoice?.status === "FINAL" ? invoiceId : undefined);
   const { data: auditData } = useResourceAuditLogs("INVOICE", invoiceId);
   const communicationsQuery = useInvoiceCommunications(invoiceId);
   const finalizeMutation = useFinalizeInvoice();
@@ -203,6 +206,20 @@ export default function InvoiceDetail() {
   // Calculate balance due with fallback for inconsistent dueAmount from API.
   const balanceDueValue = invoice ? getInvoiceBalanceDue(invoice) : 0;
   const balanceDue = String(balanceDueValue);
+  const openInvoiceDocument = async () => {
+    const downloadUrl = pdfData?.downloadUrl;
+    if (!downloadUrl || !invoice) return;
+    const fmt = (pdfData?.format ?? "").toLowerCase();
+    const named = pdfData?.filename?.trim();
+    const fallbackFilename =
+      named ||
+      `invoice-${pdfData?.invoiceNumber ?? invoice.invoiceNumber}.${fmt === "html" || fmt === "htm" ? "html" : "pdf"}`;
+    try {
+      await downloadFileFromUrlAndOpenPdfPreview(downloadUrl, fallbackFilename);
+    } catch (err) {
+      showErrorToast(err, "Could not download document");
+    }
+  };
   const typeMeta = invoice
     ? INVOICE_TYPE_OPTIONS.find((o) => o.type === invoice.invoiceType)
     : null;
@@ -241,6 +258,7 @@ export default function InvoiceDetail() {
                 reminderToday={reminderToday}
                 pdfUrl={pdfData?.downloadUrl}
                 pdfError={pdfError}
+                isInvoicePdfPending={isInvoicePdfPending}
                 isFinalizePending={finalizeMutation.isPending}
                 isCancelPending={cancelMutation.isPending}
                 isMarkSentPending={markSentMutation.isPending}
@@ -263,6 +281,7 @@ export default function InvoiceDetail() {
                     ? () => setCreditNoteOpen(true)
                     : undefined
                 }
+                onOpenPdf={() => void openInvoiceDocument()}
                 onMarkSent={handleMarkSent}
                 onMarkReminder={handleMarkReminder}
               />

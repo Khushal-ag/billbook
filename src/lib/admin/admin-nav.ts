@@ -1,4 +1,4 @@
-import { Building2, ListOrdered, type LucideIcon } from "lucide-react";
+import { Building2, Files, ListOrdered, type LucideIcon } from "lucide-react";
 
 /** Default admin console landing (logo / home). */
 export const adminConsoleHomePath = "/admin/businesses" as const;
@@ -24,5 +24,11 @@ export const adminConsoleNavItems: AdminConsoleNavItem[] = [
     label: "Transactions",
     description: "Cross-tenant ledger",
     icon: ListOrdered,
+  },
+  {
+    href: "/admin/invoice-templates",
+    label: "Invoice templates",
+    description: "Library & publishing",
+    icon: Files,
   },
 ];
